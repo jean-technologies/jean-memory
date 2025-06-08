@@ -149,7 +149,7 @@ async def add_memories(text: str) -> str:
                         
                         if sql_memory_record:
                             sql_memory_record.state = MemoryState.deleted
-                            sql_memory_record.deleted_at = datetime.datetime.now(datetime.UTC)
+                            sql_memory_record.deleted_at = datetime.datetime.now(datetime.timezone.utc)
                             history = MemoryStatusHistory(
                                 memory_id=sql_memory_record.id,
                                 changed_by=user.id,
@@ -385,7 +385,7 @@ async def delete_all_memories() -> str:
             memory_client.delete_all(user_id=supa_uid)
 
             sql_memories_to_delete = db.query(Memory).filter(Memory.user_id == user.id).all()
-            now = datetime.datetime.now(datetime.UTC)
+            now = datetime.datetime.now(datetime.timezone.utc)
             for mem_record in sql_memories_to_delete:
                 if mem_record.state != MemoryState.deleted:
                     history = MemoryStatusHistory(

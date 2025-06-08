@@ -1,4 +1,5 @@
-from datetime import datetime, UTC
+from datetime import datetime
+import datetime as dt
 from typing import List, Optional, Set
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -43,9 +44,9 @@ def update_memory_state(db: Session, memory_id: UUID, new_state: MemoryState, ch
     old_state = memory.state
     memory.state = new_state
     if new_state == MemoryState.archived:
-        memory.archived_at = datetime.now(UTC)
+        memory.archived_at = datetime.now(dt.timezone.utc)
     elif new_state == MemoryState.deleted:
-        memory.deleted_at = datetime.now(UTC)
+        memory.deleted_at = datetime.now(dt.timezone.utc)
 
     history = MemoryStatusHistory(
         memory_id=memory_id,
@@ -136,11 +137,11 @@ async def list_memories(
         query = query.filter(Memory.app_id == app_id)
 
     if from_date:
-        from_datetime = datetime.fromtimestamp(from_date, tz=UTC)
+        from_datetime = datetime.fromtimestamp(from_date, tz=dt.timezone.utc)
         query = query.filter(Memory.created_at >= from_datetime)
 
     if to_date:
-        to_datetime = datetime.fromtimestamp(to_date, tz=UTC)
+        to_datetime = datetime.fromtimestamp(to_date, tz=dt.timezone.utc)
         query = query.filter(Memory.created_at <= to_datetime)
 
     # Add joins for app and categories after filtering
@@ -578,11 +579,11 @@ async def filter_memories(
         query = query.outerjoin(Memory.categories)
 
     if request.from_date:
-        from_datetime = datetime.fromtimestamp(request.from_date, tz=UTC)
+        from_datetime = datetime.fromtimestamp(request.from_date, tz=dt.timezone.utc)
         query = query.filter(Memory.created_at >= from_datetime)
 
     if request.to_date:
-        to_datetime = datetime.fromtimestamp(request.to_date, tz=UTC)
+        to_datetime = datetime.fromtimestamp(request.to_date, tz=dt.timezone.utc)
         query = query.filter(Memory.created_at <= to_datetime)
 
     if request.sort_column and request.sort_direction:

@@ -8,6 +8,7 @@ from app.database import engine, Base, SessionLocal
 from app.mcp_server import setup_mcp_server
 from app.routers import memories_router, apps_router, stats_router, integrations_router, mcp_tools_router
 from app.routers.admin import router as admin_router
+from app.routers.test import router as test_router
 from fastapi_pagination import add_pagination
 from fastapi.middleware.cors import CORSMiddleware
 from app.models import User, App
@@ -108,7 +109,7 @@ async def root():
 async def health_check():
     """Health check endpoint for deployment services"""
     # Keep it simple for fast response
-    return {"status": "healthy", "timestamp": datetime.datetime.utcnow().isoformat()}
+    return {"status": "healthy", "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()}
 
 # Include routers - Now using get_current_supa_user from app.auth
 app.include_router(memories_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])
@@ -122,6 +123,7 @@ app.include_router(stats_router, prefix="/api/v1", dependencies=[Depends(get_cur
 app.include_router(integrations_router, dependencies=[Depends(get_current_supa_user)])
 app.include_router(mcp_tools_router, dependencies=[Depends(get_current_supa_user)])
 app.include_router(admin_router)  # Admin router has its own authentication
+app.include_router(test_router, prefix="/api/v1")  # Test router has no auth for demo purposes
 
 # Setup MCP server after routers but outside of lifespan to ensure it doesn't block health checks
 setup_mcp_server(app)
