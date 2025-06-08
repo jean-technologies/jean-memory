@@ -178,22 +178,22 @@ export default function TestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
+    <div className="h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 flex flex-col">
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      <div className="border-b border-zinc-800 bg-black/50 backdrop-blur-sm flex-shrink-0">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <Brain className="w-8 h-8 text-purple-400" />
-                <span className="text-xl font-bold text-white">Jean Memory</span>
+                <Brain className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
+                <span className="text-lg md:text-xl font-bold text-white">Jean Memory</span>
               </div>
               <div className="hidden sm:flex items-center space-x-4 text-sm text-zinc-400">
                 <span>{sessionStats.memoryCount} memories stored</span>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm" asChild>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" asChild className="hidden sm:flex">
                 <Link href="/">← Back to Home</Link>
               </Button>
               <Button size="sm" asChild className="bg-purple-600 hover:bg-purple-700">
@@ -204,144 +204,165 @@ export default function TestPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Suggestions Panel */}
-          <div className="lg:col-span-1">
-            <Card className="bg-zinc-900/50 border-zinc-700 sticky top-24">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-yellow-400" />
-                  <span>Quick Start</span>
-                </CardTitle>
-                <CardDescription>Click any suggestion to get started</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {suggestions.map((suggestion, index) => (
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full max-w-7xl mx-auto px-4 py-4 md:py-6">
+          <div className="h-full flex flex-col lg:flex-row gap-4 md:gap-6">
+            
+            {/* Suggestions Panel - Hidden on mobile, sidebar on desktop */}
+            <div className="hidden lg:flex lg:w-80 flex-col space-y-4 overflow-y-auto">
+              <Card className="bg-zinc-900/50 border-zinc-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center space-x-2">
+                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                    <span>Quick Start</span>
+                  </CardTitle>
+                  <CardDescription>Click any suggestion to get started</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {suggestions.map((suggestion, index) => (
+                    <motion.button
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="w-full p-3 text-left bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-600 rounded-lg transition-colors"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      disabled={isLoading || !sessionId}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="text-purple-400 mt-0.5">
+                          {suggestion.icon}
+                        </div>
+                        <div>
+                          <div className="text-white font-medium text-sm">{suggestion.title}</div>
+                          <div className="text-zinc-400 text-xs mt-1">{suggestion.description}</div>
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Privacy Notice */}
+              <Card className="bg-green-900/20 border-green-700/50">
+                <CardHeader>
+                  <CardTitle className="text-green-300 text-sm flex items-center space-x-2">
+                    <Shield className="w-4 h-4" />
+                    <span>Privacy Guaranteed</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-green-200">
+                  <div>• Your data is completely private</div>
+                  <div>• Never shared, sold, or given away</div>
+                  <div>• Automatically deleted after sessions</div>
+                  <div>• Enterprise-grade security</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Chat Interface - Full width on mobile, remaining space on desktop */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <Card className="bg-zinc-900/30 border-zinc-700/50 flex-1 flex flex-col">
+                <CardHeader className="flex-shrink-0 pb-3">
+                  <CardTitle className="text-white text-lg">Memory Assistant</CardTitle>
+                  <CardDescription className="text-sm text-zinc-400">
+                    {sessionId ? `Session: ${sessionId.split('_')[1]}` : 'Loading...'}
+                  </CardDescription>
+                </CardHeader>
+                
+                {/* Messages */}
+                <CardContent className="flex-1 overflow-hidden p-0">
+                  <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+                    <AnimatePresence>
+                      {messages.map((message) => (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[85%] p-3 rounded-xl ${
+                            message.type === 'user' 
+                              ? 'bg-purple-600 text-white ml-auto' 
+                              : message.type === 'system'
+                              ? 'bg-blue-500/10 border border-blue-500/20 text-blue-200'
+                              : 'bg-zinc-800/80 text-white'
+                          }`}>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</div>
+                            <div className="text-xs opacity-60 mt-2 flex justify-between items-center">
+                              <span>{message.timestamp.toLocaleTimeString()}</span>
+                              {message.action && (
+                                <span className="text-xs opacity-50">
+                                  {message.action.replace('_', ' ')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                    {isLoading && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-zinc-700 text-white p-3 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></div>
+                            <span className="text-sm">Processing...</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </CardContent>
+
+                {/* Input */}
+                <div className="border-t border-zinc-700/50 p-4 flex-shrink-0">
+                  <form onSubmit={handleSubmit} className="flex space-x-3">
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ask a question or add a memory..."
+                      className="flex-1 bg-zinc-800/50 border-zinc-600/50 text-white placeholder:text-zinc-400 focus:border-purple-500/50"
+                      disabled={isLoading}
+                    />
+                    <Button 
+                      type="submit" 
+                      disabled={isLoading || !input.trim() || !sessionId}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </form>
+                </div>
+              </Card>
+
+              {/* Mobile Suggestions - Show below chat on mobile */}
+              <div className="lg:hidden mt-4 grid grid-cols-2 gap-2">
+                {suggestions.slice(0, 4).map((suggestion, index) => (
                   <motion.button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full p-3 text-left bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-600 rounded-lg transition-colors"
+                    className="p-2 text-left bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-600 rounded-lg transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isLoading || !sessionId}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div className="text-purple-400 mt-0.5">
+                    <div className="flex items-center space-x-2">
+                      <div className="text-purple-400">
                         {suggestion.icon}
                       </div>
-                      <div>
-                        <div className="text-white font-medium text-sm">{suggestion.title}</div>
-                        <div className="text-zinc-400 text-xs mt-1">{suggestion.description}</div>
-                      </div>
+                      <div className="text-white font-medium text-xs">{suggestion.title}</div>
                     </div>
                   </motion.button>
                 ))}
-              </CardContent>
-            </Card>
-
-            {/* Privacy Notice */}
-            <Card className="bg-green-900/20 border-green-700/50 mt-6">
-              <CardHeader>
-                <CardTitle className="text-green-300 text-sm flex items-center space-x-2">
-                  <Shield className="w-4 h-4" />
-                  <span>Privacy Guaranteed</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-xs text-green-200">
-                <div>• Your data is completely private</div>
-                <div>• Never shared, sold, or given away</div>
-                <div>• Automatically deleted after sessions</div>
-                <div>• Enterprise-grade security</div>
-              </CardContent>
-            </Card>
-
-          </div>
-
-          {/* Chat Interface */}
-          <div className="lg:col-span-2">
-            <Card className="bg-zinc-900/30 border-zinc-700/50 h-[70vh] flex flex-col">
-              <CardHeader className="flex-shrink-0 pb-3">
-                <CardTitle className="text-white text-lg">Memory Assistant</CardTitle>
-                <CardDescription className="text-sm text-zinc-400">
-                  {sessionId ? `Session: ${sessionId.split('_')[1]}` : 'Loading...'}
-                </CardDescription>
-              </CardHeader>
-              
-              {/* Messages */}
-              <CardContent className="flex-1 overflow-hidden p-0">
-                <div className="h-full overflow-y-auto p-6 space-y-4">
-                  <AnimatePresence>
-                    {messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`max-w-[85%] p-3 rounded-xl ${
-                          message.type === 'user' 
-                            ? 'bg-purple-600 text-white ml-auto' 
-                            : message.type === 'system'
-                            ? 'bg-blue-500/10 border border-blue-500/20 text-blue-200'
-                            : 'bg-zinc-800/80 text-white'
-                        }`}>
-                          <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</div>
-                          <div className="text-xs opacity-60 mt-2 flex justify-between items-center">
-                            <span>{message.timestamp.toLocaleTimeString()}</span>
-                            {message.action && (
-                              <span className="text-xs opacity-50">
-                                {message.action.replace('_', ' ')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  {isLoading && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex justify-start"
-                    >
-                      <div className="bg-zinc-700 text-white p-3 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></div>
-                          <span className="text-sm">Processing...</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </CardContent>
-
-              {/* Input */}
-              <div className="border-t border-zinc-700/50 p-4">
-                <form onSubmit={handleSubmit} className="flex space-x-3">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask a question or add a memory..."
-                    className="flex-1 bg-zinc-800/50 border-zinc-600/50 text-white placeholder:text-zinc-400 focus:border-purple-500/50"
-                    disabled={isLoading}
-                  />
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading || !input.trim() || !sessionId}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
-
-
       </div>
     </div>
   );
