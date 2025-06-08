@@ -48,7 +48,7 @@ class BackgroundProcessor:
         try:
             # Find documents that need chunking AND have active memories
             documents = db.query(Document).filter(
-                Document.metadata_['needs_chunking'].astext == 'true'
+                Document.metadata_['needs_chunking']== 'true'
             ).filter(
                 # Only process documents that have at least one active memory
                 Document.id.in_(
@@ -83,7 +83,7 @@ class BackgroundProcessor:
                     # Create new metadata dict to ensure proper update
                     updated_metadata = dict(doc.metadata_) if doc.metadata_ else {}
                     updated_metadata["needs_chunking"] = False
-                    updated_metadata["chunked_at"] = datetime.utcnow().isoformat()
+                    updated_metadata["chunked_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                     updated_metadata["chunks_created"] = len(chunks_created)
                     
                     # Assign the updated metadata
@@ -118,7 +118,7 @@ class BackgroundProcessor:
         try:
             # Find documents that need chunking but have no active memories
             orphaned_docs = db.query(Document).filter(
-                Document.metadata_['needs_chunking'].astext == 'true'
+                Document.metadata_['needs_chunking']== 'true'
             ).filter(
                 ~Document.id.in_(
                     db.query(Document.id).join(
@@ -136,7 +136,7 @@ class BackgroundProcessor:
                     # Clear the chunking flag for orphaned documents
                     updated_metadata = dict(doc.metadata_) if doc.metadata_ else {}
                     updated_metadata["needs_chunking"] = False
-                    updated_metadata["orphaned_cleanup"] = datetime.utcnow().isoformat()
+                    updated_metadata["orphaned_cleanup"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                     updated_metadata["reason"] = "No active memories"
                     
                     doc.metadata_ = updated_metadata
@@ -156,7 +156,7 @@ class BackgroundProcessor:
         try:
             # Find documents that might be stuck AND have active memories
             stuck_docs = db.query(Document).filter(
-                Document.metadata_['needs_chunking'].astext == 'true'
+                Document.metadata_['needs_chunking']== 'true'
             ).filter(
                 # Only process documents that have at least one active memory
                 Document.id.in_(
@@ -178,7 +178,7 @@ class BackgroundProcessor:
                     # Document already has chunks, clear the flag
                     updated_metadata = dict(doc.metadata_) if doc.metadata_ else {}
                     updated_metadata["needs_chunking"] = False
-                    updated_metadata["chunks_cleared_at"] = datetime.utcnow().isoformat()
+                    updated_metadata["chunks_cleared_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                     updated_metadata["existing_chunks"] = existing_chunks
                     
                     doc.metadata_ = updated_metadata

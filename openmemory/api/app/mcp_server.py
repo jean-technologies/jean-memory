@@ -148,7 +148,7 @@ async def add_memories(text: str) -> str:
                         
                         if sql_memory_record:
                             sql_memory_record.state = MemoryState.deleted
-                            sql_memory_record.deleted_at = datetime.datetime.now(datetime.UTC)
+                            sql_memory_record.deleted_at = datetime.datetime.now(datetime.timezone.utc)
                             history = MemoryStatusHistory(
                                 memory_id=sql_memory_record.id,
                                 changed_by=user.id,
@@ -265,7 +265,7 @@ async def add_memories(text: str) -> str:
                         
                         if sql_memory_record:
                             sql_memory_record.state = MemoryState.deleted
-                            sql_memory_record.deleted_at = datetime.datetime.now(datetime.UTC)
+                            sql_memory_record.deleted_at = datetime.datetime.now(datetime.timezone.utc)
                             history = MemoryStatusHistory(
                                 memory_id=sql_memory_record.id,
                                 changed_by=user.id,
@@ -491,7 +491,7 @@ async def delete_all_memories() -> str:
             memory_client.delete_all(user_id=supa_uid)
 
             sql_memories_to_delete = db.query(Memory).filter(Memory.user_id == user.id).all()
-            now = datetime.datetime.now(datetime.UTC)
+            now = datetime.datetime.now(datetime.timezone.utc)
             for mem_record in sql_memories_to_delete:
                 if mem_record.state != MemoryState.deleted:
                     history = MemoryStatusHistory(
@@ -1002,7 +1002,7 @@ async def test_connection() -> str:
             status_report += f"📄 Available documents: {doc_count}\n"
             
             status_report += f"\n🎉 All systems operational! Connection is healthy."
-            status_report += f"\n⏰ Test completed at: {datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}"
+            status_report += f"\n⏰ Test completed at: {datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}"
             
             return status_report
             
@@ -1166,7 +1166,7 @@ async def mcp_health_check(client_name: str, user_id: str):
                     "status": "healthy", 
                     "user_id": user_id, 
                     "client_name": client_name,
-                    "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "memory_usage_mb": round(memory_usage_mb, 2),
                     "memory_percent": round(memory_percent, 2),
                     "warning": "high_memory_usage" if memory_percent > 80 else None
@@ -1187,7 +1187,7 @@ async def mcp_health_check(client_name: str, user_id: str):
                         "status": "healthy", 
                         "user_id": user_id, 
                         "client_name": client_name,
-                        "timestamp": datetime.datetime.now(datetime.UTC).isoformat()
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
                     }
                 else:
                     return {"status": "error", "message": "User not found"}
@@ -1306,7 +1306,7 @@ async def audit_memory_security_ADMIN_ONLY() -> str:
                 audit_report.append("  - Memory isolation working properly")
             
             audit_report.append("")
-            audit_report.append(f"⏰ Audit completed at: {datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+            audit_report.append(f"⏰ Audit completed at: {datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
             
             return "\n".join(audit_report)
             
@@ -1382,7 +1382,7 @@ async def cleanup_contaminated_memories_ADMIN_ONLY() -> str:
             
             # Delete contaminated SQL memories
             if contaminated_ids_to_delete:
-                now = datetime.datetime.now(datetime.UTC)
+                now = datetime.datetime.now(datetime.timezone.utc)
                 for mem_id in contaminated_ids_to_delete:
                     mem_record = db.query(Memory).filter(Memory.id == mem_id).first()
                     if mem_record:
@@ -1467,7 +1467,7 @@ async def cleanup_contaminated_memories_ADMIN_ONLY() -> str:
             cleanup_report.append(f"  - Vector Store: {vector_cleanup_count}")
             cleanup_report.append("")
             cleanup_report.append("✨ Your memory system should now be clean!")
-            cleanup_report.append(f"⏰ Cleanup completed at: {datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+            cleanup_report.append(f"⏰ Cleanup completed at: {datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
             
             return "\n".join(cleanup_report)
             

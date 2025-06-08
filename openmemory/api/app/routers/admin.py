@@ -43,7 +43,7 @@ async def cleanup_contaminated_memories_admin(
         
         cleanup_report = {
             "user_id": user_uuid,
-            "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "sql_cleaned": 0,
             "vector_cleaned": 0,
             "total_cleaned": 0,
@@ -73,7 +73,7 @@ async def cleanup_contaminated_memories_admin(
             if any(pattern in content_lower for pattern in contamination_patterns):
                 logger.info(f"Deleting SQL memory: {mem.content[:60]}...")
                 mem.state = MemoryState.deleted
-                mem.deleted_at = datetime.datetime.now(datetime.UTC)
+                mem.deleted_at = datetime.datetime.now(datetime.timezone.utc)
                 sql_cleanup_count += 1
         
         if sql_cleanup_count > 0:
@@ -154,7 +154,7 @@ async def audit_user_memories(
         audit_report = {
             "user_id": user_uuid,
             "user_email": user.email,
-            "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "sql_total": 0,
             "sql_contaminated": 0,
             "vector_total": 0,
@@ -241,7 +241,7 @@ async def investigate_contamination_scope(
         
         investigation_report = {
             "user_id": user_uuid,
-            "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "total_memories": 0,
             "contaminated_memories": 0,
             "legitimate_memories": 0,

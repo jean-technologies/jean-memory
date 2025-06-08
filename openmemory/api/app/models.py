@@ -13,7 +13,7 @@ from app.utils.categorization import get_categories_for_memory
 
 # Python 3.10 compatibility
 try:
-    UTC = datetime.UTC
+    UTC = datetime.timezone.utc
 except AttributeError:
     UTC = datetime.timezone.utc
 
@@ -37,6 +37,8 @@ class User(Base):
     name = Column(String, nullable=True, index=True)
     email = Column(String, unique=True, nullable=True, index=True)
     metadata_ = Column('metadata', JSON, default=dict)
+    is_anonymous = Column(Boolean, default=False, nullable=False, index=True)
+    last_seen_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=get_current_utc_time, index=True)
     updated_at = Column(DateTime,
                         default=get_current_utc_time,
