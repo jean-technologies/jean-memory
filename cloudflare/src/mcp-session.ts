@@ -140,6 +140,118 @@ export class McpSession implements DurableObject {
             const messageText = await request.text();
             const message = JSON.parse(messageText) as JSONRPCRequest;
 
+            // Handle ChatGPT tools/list requests directly in the worker
+            if (message.method === "tools/list" && this.clientName === "chatgpt") {
+                console.log("Handling ChatGPT tools/list request directly in worker");
+                const chatgptToolsResponse: JSONRPCResponse = {
+                    jsonrpc: "2.0",
+                    id: message.id,
+                    result: {
+                        tools: [
+                            {
+                                name: "search",
+                                description: "Searches for resources using the provided query string and returns matching results.",
+                                inputSchema: {
+                                    type: "object",
+                                    properties: {
+                                        query: { type: "string", description: "Search query." }
+                                    },
+                                    required: ["query"]
+                                }
+                            },
+                            {
+                                name: "fetch",
+                                description: "Retrieves detailed content for a specific resource identified by the given ID.",
+                                inputSchema: {
+                                    type: "object",
+                                    properties: {
+                                        id: { type: "string", description: "ID of the resource to fetch." }
+                                    },
+                                    required: ["id"]
+                                }
+                            }
+                        ]
+                    }
+                };
+                
+                this.sendSseResponse(chatgptToolsResponse, message.id);
+                return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
+            }
+
+            // Handle ChatGPT tools/call requests by mapping to backend tools
+            if (message.method === "tools/call" && this.clientName === "chatgpt") {
+                const toolName = message.params?.name;
+                const toolArgs = message.params?.arguments || {};
+                
+                if (toolName === "search") {
+                    console.log("Mapping ChatGPT search to ask_memory");
+                    // Map ChatGPT search to ask_memory for better results
+                    const mappedMessage = {
+                        ...message,
+                        params: {
+                            name: "ask_memory",
+                            arguments: {
+                                question: toolArgs.query
+                            }
+                        }
+                    };
+                    const mappedMessageText = JSON.stringify(mappedMessage);
+                    
+                    // Proxy to backend with mapped tool
+                    const backendResponse = await this.proxyToBackend(mappedMessageText, message.id);
+                    
+                    // Convert backend response to ChatGPT format
+                    if (backendResponse.result && backendResponse.result.content) {
+                        const content = backendResponse.result.content[0]?.text || "";
+                        // Parse the content to extract memories and format for ChatGPT
+                        const chatgptResponse = {
+                            jsonrpc: "2.0",
+                            id: message.id,
+                            result: {
+                                results: this.parseMemoriesForChatGPT(content, toolArgs.query)
+                            }
+                        };
+                        this.sendSseResponse(chatgptResponse, message.id);
+                    } else {
+                        this.sendSseResponse(backendResponse, message.id);
+                    }
+                    return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
+                }
+                
+                if (toolName === "fetch") {
+                    console.log("Mapping ChatGPT fetch to search_memory");
+                    // Map ChatGPT fetch to search_memory with the ID as query
+                    const mappedMessage = {
+                        ...message,
+                        params: {
+                            name: "search_memory",
+                            arguments: {
+                                query: toolArgs.id,
+                                limit: 1
+                            }
+                        }
+                    };
+                    const mappedMessageText = JSON.stringify(mappedMessage);
+                    
+                    // Proxy to backend with mapped tool
+                    const backendResponse = await this.proxyToBackend(mappedMessageText, message.id);
+                    
+                    // Convert backend response to ChatGPT fetch format
+                    if (backendResponse.result && backendResponse.result.content) {
+                        const content = backendResponse.result.content[0]?.text || "";
+                        const chatgptResponse = {
+                            jsonrpc: "2.0",
+                            id: message.id,
+                            result: this.parseMemoryForChatGPTFetch(content, toolArgs.id)
+                        };
+                        this.sendSseResponse(chatgptResponse, message.id);
+                    } else {
+                        this.sendSseResponse(backendResponse, message.id);
+                    }
+                    return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
+                }
+            }
+
             // Race the backend proxy against a 1-second timer.
             const proxyPromise = this.proxyToBackend(messageText, message.id);
             const timerPromise = new Promise(resolve => setTimeout(() => resolve("timeout"), 1000));
@@ -255,6 +367,61 @@ export class McpSession implements DurableObject {
         } finally {
             clearTimeout(timeoutId);
         }
+    }
+
+    // Helper method to parse memories for ChatGPT search format
+    parseMemoriesForChatGPT(content: string, query: string): any[] {
+        try {
+            // Try to parse as JSON first (in case it's structured data)
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed)) {
+                return parsed.slice(0, 10).map((item: any, index: number) => ({
+                    id: item.id || `mem_${index}`,
+                    title: (item.memory || item.content || item.text || "").substring(0, 100) + "...",
+                    text: item.memory || item.content || item.text || "",
+                    url: null
+                }));
+            }
+        } catch (e) {
+            // Content is not JSON, treat as plain text
+        }
+        
+        // Fallback: create a single result from the content
+        return [{
+            id: "mem_0",
+            title: `Memory about: ${query}`,
+            text: content,
+            url: null
+        }];
+    }
+
+    // Helper method to parse memory for ChatGPT fetch format
+    parseMemoryForChatGPTFetch(content: string, id: string): any {
+        try {
+            // Try to parse as JSON first
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                const item = parsed[0];
+                return {
+                    id: item.id || id,
+                    title: (item.memory || item.content || item.text || "").substring(0, 100) + "...",
+                    text: item.memory || item.content || item.text || "",
+                    url: null,
+                    metadata: item.metadata || {}
+                };
+            }
+        } catch (e) {
+            // Content is not JSON, treat as plain text
+        }
+        
+        // Fallback: create result from the content
+        return {
+            id: id,
+            title: `Memory ${id}`,
+            text: content,
+            url: null,
+            metadata: {}
+        };
     }
 }
 

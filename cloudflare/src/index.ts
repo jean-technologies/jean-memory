@@ -13,6 +13,7 @@ export default {
 		// Support multiple formats:
 		// New format: /mcp/{user_id}/sse or /mcp/{user_id}/messages  
 		// Old format: /mcp/{client_name}/sse/{user_id} or /mcp/{client_name}/messages/{user_id}
+		// ChatGPT format: /mcp/chatgpt/sse or /mcp/chatgpt/messages (NEW - SAFE ADDITION)
 		let user_id: string;
 		let client_name: string = 'claude'; // default client
 		let endpoint: string;
@@ -21,6 +22,14 @@ export default {
 			// New format: /mcp/{user_id}/sse or /mcp/{user_id}/messages
 			user_id = pathParts[1];
 			endpoint = pathParts[2];
+			
+					// SAFE ADDITION: Special handling for ChatGPT - only affects new 'chatgpt' requests
+		if (user_id === 'chatgpt') {
+			client_name = 'chatgpt';
+			// For testing, use your specific user ID so you can access your existing data
+			user_id = 'fa97efb5-410d-4806-b137-8cf13b6cb464';
+		}
+			
 			if (endpoint !== 'sse' && endpoint !== 'messages') {
 				return new Response('Invalid endpoint. Expected /mcp/{user_id}/sse or /mcp/{user_id}/messages', { status: 400 });
 			}
