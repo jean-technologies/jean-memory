@@ -108,7 +108,7 @@ IS_LOCAL_UNIFIED_MEMORY=true
 ### Service Ports
 
 - **Neo4j Browser**: http://localhost:7474
-- **Qdrant Web UI**: http://localhost:6334
+- **Qdrant Web UI**: http://localhost:6333/dashboard
 - **Neo4j Bolt**: bolt://localhost:7687
 - **Qdrant gRPC**: localhost:6333
 
@@ -172,7 +172,7 @@ Response includes both vector and graph results:
 1. **Start Services**: `./start-unified-memory.sh`
 2. **Check Service Health**:
    - Neo4j: Visit http://localhost:7474 (login: neo4j/fasho93fasho)
-   - Qdrant: Visit http://localhost:6334
+   - Qdrant: Visit http://localhost:6333/dashboard
 3. **Test API**: Use the curl examples above
 4. **Stop Services**: `./stop-unified-memory.sh`
 
