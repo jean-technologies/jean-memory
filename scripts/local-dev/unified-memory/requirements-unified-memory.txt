@@ -1,0 +1,22 @@
+# Unified Memory System Dependencies for Local Development
+# These are additional dependencies needed for the unified memory system
+
+# Graph and temporal memory libraries
+graphiti-core>=0.3.0
+neo4j>=5.0.0
+
+# Vector database client (already in main requirements as qdrant-client via mem0ai)
+qdrant-client>=1.7.0
+
+# Enhanced language processing
+langchain-neo4j>=0.0.5
+rank-bm25>=0.2.2
+
+# Async support (already available in Python 3.7+)
+asyncio
+
+# Environment management (already in main requirements)
+python-dotenv>=0.19.0
+
+# OpenAI (already available via mem0ai dependency)
+openai>=1.0.0 

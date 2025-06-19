@@ -11,7 +11,7 @@ from app.auth import get_current_supa_user
 from gotrue.types import User as SupabaseUser
 from app.utils.db import get_or_create_user, get_user_and_app
 from app.models import User, Document, DocumentChunk
-from app.utils.memory import get_memory_client
+from app.utils.memory import get_memory_client, should_use_unified_memory
 from app.services.chunking_service import ChunkingService
 from app.integrations.substack_service import SubstackService
 from app.config.memory_limits import MEMORY_LIMITS
@@ -289,4 +289,147 @@ async def sync_substack_http(
         
     except Exception as e:
         logger.error(f"Error in sync_substack_http: {e}")
-        return {"error": f"Substack sync failed: {str(e)}"} 
+        return {"error": f"Substack sync failed: {str(e)}"}
+
+
+# Unified Memory System Endpoints (Local Development)
+
+@router.post("/unified_search")
+async def unified_search_http(
+    request: Dict[str, Any],
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Advanced search using unified memory system (Mem0 + Graphiti)"""
+    try:
+        query = request.get("query", "")
+        limit = request.get("limit", MEMORY_LIMITS.search_default)
+        
+        if not query:
+            return {"error": "Query parameter is required"}
+        
+        # Check if unified memory is available
+        if not should_use_unified_memory():
+            return {"error": "Unified memory system not available. Enable with USE_UNIFIED_MEMORY=true in local development."}
+        
+        # Enforce configured limits
+        limit = min(max(1, limit), MEMORY_LIMITS.search_max)
+        
+        # Get user
+        user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
+        
+        # Use unified memory client
+        from app.utils.memory import get_enhanced_memory_client
+        unified_client = get_enhanced_memory_client()
+        
+        # Perform unified search
+        results = await unified_client.search_memory(
+            query=query, 
+            user_id=str(current_supa_user.id), 
+            limit=limit
+        )
+        
+        # 📊 Track unified search usage with PostHog
+        try:
+            posthog = get_posthog_client()
+            posthog.capture(
+                user_id=str(current_supa_user.id),
+                event='mcp_unified_search',
+                properties={
+                    'user_email': current_supa_user.email,
+                    'query_length': len(query),
+                    'mem0_results_count': len(results.get('mem0_results', [])),
+                    'graphiti_results_count': len(results.get('graphiti_results', [])),
+                    'limit_requested': limit,
+                    'tool_type': 'unified_memory'
+                }
+            )
+        except Exception as e:
+            logger.error(f"PostHog tracking failed for unified_search: {e}")
+        
+        return {
+            "status": "success",
+            "results": results,
+            "unified": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in unified_search_http: {e}")
+        return {"error": f"Unified search failed: {str(e)}"}
+
+
+@router.post("/unified_add_memory")
+async def unified_add_memory_http(
+    request: Dict[str, Any],
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Add memory using unified memory system (Mem0 + Graphiti)"""
+    try:
+        text = request.get("text", "")
+        timestamp_str = request.get("timestamp")  # Optional ISO timestamp
+        
+        if not text:
+            return {"error": "Text parameter is required"}
+        
+        # Check if unified memory is available
+        if not should_use_unified_memory():
+            return {"error": "Unified memory system not available. Enable with USE_UNIFIED_MEMORY=true in local development."}
+        
+        # Get user and app
+        user, app = get_user_and_app(db, str(current_supa_user.id), "claude", current_supa_user.email)
+        
+        if not app.is_active:
+            return {"error": f"App {app.name} is currently paused. Cannot create new memories."}
+        
+        # Parse timestamp if provided
+        timestamp = None
+        if timestamp_str:
+            try:
+                from datetime import datetime
+                timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            except ValueError:
+                return {"error": "Invalid timestamp format. Use ISO format (e.g., 2024-01-01T12:00:00Z)"}
+        
+        # Use unified memory client
+        from app.utils.memory import get_enhanced_memory_client
+        unified_client = get_enhanced_memory_client()
+        
+        # Add memory with unified system
+        results = await unified_client.add_memory(
+            content=text,
+            user_id=str(current_supa_user.id),
+            metadata={
+                "source_app": "openmemory_unified",
+                "mcp_client": "claude",
+                "app_db_id": str(app.id)
+            },
+            timestamp=timestamp
+        )
+        
+        # 📊 Track unified memory creation with PostHog
+        try:
+            posthog = get_posthog_client()
+            posthog.capture(
+                user_id=str(current_supa_user.id),
+                event='mcp_unified_add_memory',
+                properties={
+                    'user_email': current_supa_user.email,
+                    'memory_length': len(text),
+                    'app_name': app.name,
+                    'has_custom_timestamp': timestamp is not None,
+                    'tool_type': 'unified_memory'
+                }
+            )
+        except Exception as e:
+            logger.error(f"PostHog tracking failed for unified_add_memory: {e}")
+        
+        return {
+            "status": "success",
+            "results": results,
+            "unified": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in unified_add_memory_http: {e}")
+        return {"error": f"Unified add memory failed: {str(e)}"} 

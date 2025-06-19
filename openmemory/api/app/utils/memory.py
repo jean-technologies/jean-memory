@@ -76,3 +76,42 @@ def get_memory_client(custom_instructions: str = None):
         raise Exception(f"Could not initialize memory client: {e}")
             
     return memory_instance
+
+
+def get_enhanced_memory_client():
+    """
+    Get the appropriate memory client based on configuration.
+    
+    Returns:
+        - UnifiedMemorySystem if unified memory is enabled (local development)
+        - Standard Mem0 client otherwise (production)
+    """
+    # Check if unified memory should be used
+    use_unified = (
+        config.is_local_development and 
+        os.getenv("USE_UNIFIED_MEMORY", "false").lower() == "true"
+    )
+    
+    if use_unified:
+        try:
+            from app.utils.unified_memory import get_unified_memory_client
+            return get_unified_memory_client()
+        except ImportError as e:
+            print(f"WARNING: Unified memory not available: {e}")
+            print("Falling back to standard Mem0 client")
+            return get_memory_client()
+    else:
+        return get_memory_client()
+
+
+def should_use_unified_memory() -> bool:
+    """
+    Determine if unified memory features should be used.
+    
+    Returns:
+        True if unified memory should be used, False otherwise
+    """
+    return (
+        config.is_local_development and 
+        os.getenv("USE_UNIFIED_MEMORY", "false").lower() == "true"
+    )
