@@ -197,3 +197,35 @@ admin_contamination_*.sql
 *_contamination_*
 contamination_report_* 
 backups/
+scripts/memory_behavior.json
+.venv/
+*.json
+# Test Data Files - DO NOT COMMIT
+raw_memories*.json
+sample_*.json
+*_memories*.json
+*_preprocessed*.json
+user_engagement_analysis.csv
+memory_behavior.json
+environment_check_status.json
+
+# Database and temporary files
+*.db
+*.sqlite
+*.sqlite3
+
+# Large files and caches
+.venv/
+node_modules/
+*.log
+__pycache__/
+.pytest_cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
