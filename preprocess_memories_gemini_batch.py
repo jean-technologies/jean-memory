@@ -36,9 +36,9 @@ class BatchMemoryProcessor:
         
     def initialize_gemini_client(self):
         """Initialize Gemini client"""
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_FLASH_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables")
+            raise ValueError("GEMINI_API_KEY or GEMINI_FLASH_API_KEY not found in environment variables")
         
         self.client = genai.Client(api_key=api_key)
         return self.client
@@ -51,14 +51,31 @@ class BatchMemoryProcessor:
         """Create a batch prompt for multiple memories"""
         
         batch_prompt = """
-I will provide you with a batch of memories to process. For each memory, extract:
-1. Clean, well-formatted memory text
-2. Temporal context - when the memory/event likely occurred
-3. Temporal keywords found in the text
-4. Confidence level (high/medium/low)
-5. Brief reasoning for temporal inference
+I will provide you with a batch of memories to process. For each memory, extract temporal context with sophisticated analysis of language patterns and memory types.
 
-Please process ALL memories in this batch and return a JSON array with one object per memory.
+ENHANCED TEMPORAL ANALYSIS GUIDELINES:
+
+1. MEMORY TYPE RECOGNITION:
+   - ONGOING ACTIVITIES: "goes to", "does", "cooks", "uses", "tries", "owns", "considers" → These are current habits/states
+   - ONE-TIME EVENTS: "watched", "hiked", "developed", "pulled" → Specific past events  
+   - STARTING POINTS: "started", "first", "began", "new" → Mark beginnings of habits/activities
+   - ACHIEVEMENTS: "achievement", "completed", "finished" → Completed accomplishments
+
+2. CONFIDENCE SCORING RULES:
+   - HIGH confidence: Explicit dates/times ("July 4th", "June 7, 2025") OR strong temporal keywords
+   - MEDIUM confidence: Clear habit patterns, "first" events, logical temporal inference from context
+   - LOW confidence: Only when truly no temporal context can be inferred
+
+3. TEMPORAL CONTEXT FORMATTING:
+   - For ongoing activities: "Ongoing [activity type] as of [date]" 
+   - For specific events: "Occurred on/around [date]"
+   - For starting points: "Began around [date]"  
+   - For past habits: "Was doing this around [timeframe]"
+
+4. AVOID OVER-RELIANCE ON CREATION DATE:
+   - Only use creation date as fallback when memory truly lacks temporal cues
+   - For habits/routines, prefer "Ongoing activity as of [creation date]"
+   - For ownership statements, use "Current state as of [creation date]"
 
 MEMORIES TO PROCESS:
 """
@@ -74,21 +91,46 @@ Metadata: {json.dumps(memory.get('metadata', {}), indent=2)}
         
         batch_prompt += """
 
-IMPORTANT INSTRUCTIONS:
+PROCESSING INSTRUCTIONS:
 - Return ONLY a valid JSON array
 - Each array element should correspond to one memory in the same order
 - Use this exact schema for each memory object:
 {
   "memory_id": "string (the ID from input)",
   "memory_text": "string (cleaned memory content)",
-  "temporal_context": "string (when the event occurred)",
-  "temporal_keywords": ["array", "of", "keywords"],
+  "temporal_context": "string (descriptive context following guidelines above)",
+  "temporal_keywords": ["array", "of", "temporal", "keywords"],
   "confidence": "high|medium|low",
-  "reasoning": "string (brief explanation)"
+  "reasoning": "string (explain your temporal inference logic)"
 }
 
-Consider temporal keywords like: today, yesterday, last week, this morning, July, 2023, etc.
-If no temporal context can be inferred, use the creation date and mark confidence as "low".
+EXAMPLES OF ENHANCED PROCESSING:
+
+Input: "Goes to Barry's Bootcamp"
+Output: {
+  "temporal_context": "Ongoing fitness routine as of 2025-06-11",
+  "temporal_keywords": ["goes to", "routine"],
+  "confidence": "medium",
+  "reasoning": "'Goes to' indicates current ongoing activity, suggesting a regular fitness routine"
+}
+
+Input: "Started personal journaling habit"  
+Output: {
+  "temporal_context": "Began around 2025-06-17",
+  "temporal_keywords": ["started", "habit"],
+  "confidence": "medium", 
+  "reasoning": "'Started' indicates recent initiation of a new habit close to creation date"
+}
+
+Input: "Watched July 4th fireworks in San Francisco"
+Output: {
+  "temporal_context": "Occurred on July 4th, 2024 (prior year)",
+  "temporal_keywords": ["July 4th", "watched"],
+  "confidence": "high",
+  "reasoning": "Explicit date reference allows precise temporal placement"
+}
+
+Apply these enhanced guidelines to increase confidence levels and provide more descriptive temporal contexts.
 """
         
         return batch_prompt
@@ -123,18 +165,18 @@ If no temporal context can be inferred, use the creation date and mark confidenc
         generate_content_config = types.GenerateContentConfig(
             response_mime_type="application/json",
             system_instruction=[
-                types.Part.from_text(text="""You are an expert at analyzing memories and extracting temporal context in batches. 
+                types.Part.from_text(text="""You are an expert at analyzing memories and extracting sophisticated temporal context in batches. 
 
-Process each memory carefully and return a valid JSON array with exactly one object per input memory, in the same order.
+Process each memory carefully using enhanced pattern recognition and return a valid JSON array with exactly one object per input memory, in the same order.
 
-Focus on:
-1. Cleaning and formatting memory text
-2. Inferring when events actually occurred vs when they were recorded
-3. Finding temporal keywords and patterns
-4. Assessing confidence in your temporal inference
-5. Providing clear reasoning
+Key Focus Areas:
+1. Recognize memory types: ongoing activities vs one-time events vs starting points
+2. Use descriptive temporal contexts (e.g., "Ongoing routine as of [date]")
+3. Assign higher confidence to habit patterns and logical inferences
+4. Avoid over-relying on creation dates - only use as last resort
+5. Extract meaningful temporal keywords that explain your reasoning
 
-Be efficient but thorough in your batch analysis."""),
+Be thorough in pattern recognition and confident in logical temporal inferences."""),
             ],
         )
 
