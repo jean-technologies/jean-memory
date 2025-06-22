@@ -3,15 +3,23 @@
 R&D Development Pipeline for Unified Memory System
 
 This script provides a streamlined R&D environment for:
-1. Downloading real customer data from Supabase
+1. Creating reusable datasets from customer data
 2. Running unified memory ingestion locally
 3. Testing GraphRAG retrieval
 4. Interactive analysis and refinement
 
 Usage:
-    python rd_development_pipeline.py --user-id USER_ID [options]
-    python rd_development_pipeline.py --interactive  # Browse available users
-    python rd_development_pipeline.py --user-id USER_ID --sample-size 100 --analyze
+    # Create a new dataset
+    python rd_development_pipeline.py --create-dataset DATASET_NAME --user-id USER_ID --sample-size 100
+    
+    # Run pipeline with existing dataset
+    python rd_development_pipeline.py --dataset DATASET_NAME
+    
+    # List available datasets
+    python rd_development_pipeline.py --list-datasets
+    
+    # Interactive mode
+    python rd_development_pipeline.py --interactive
 """
 
 import os
@@ -44,6 +52,164 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+class DatasetManager:
+    """Manages R&D datasets for reusable testing"""
+    
+    def __init__(self, data_dir: Path):
+        self.data_dir = data_dir
+        self.datasets_dir = data_dir / "datasets"
+        self.datasets_dir.mkdir(exist_ok=True)
+        self.metadata_file = self.datasets_dir / "datasets_metadata.json"
+        
+        # Load existing metadata
+        self.metadata = self._load_metadata()
+    
+    def _load_metadata(self) -> Dict[str, Any]:
+        """Load datasets metadata"""
+        if self.metadata_file.exists():
+            with open(self.metadata_file, 'r') as f:
+                return json.load(f)
+        return {}
+    
+    def _save_metadata(self):
+        """Save datasets metadata"""
+        with open(self.metadata_file, 'w') as f:
+            json.dump(self.metadata, f, indent=2, default=str)
+    
+    def create_dataset(self, name: str, user_id: str, memories: List[Dict[str, Any]], 
+                      sample_size: Optional[int] = None, description: str = "") -> Dict[str, Any]:
+        """Create a new dataset"""
+        dataset_id = f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        dataset_dir = self.datasets_dir / dataset_id
+        dataset_dir.mkdir(exist_ok=True)
+        
+        # Save memories
+        memories_file = dataset_dir / "memories.json"
+        with open(memories_file, 'w') as f:
+            json.dump(memories, f, indent=2, default=str)
+        
+        # Create dataset metadata
+        dataset_info = {
+            "name": name,
+            "dataset_id": dataset_id,
+            "user_id": user_id,
+            "memory_count": len(memories),
+            "sample_size": sample_size,
+            "description": description,
+            "created_at": datetime.now().isoformat(),
+            "user_email": memories[0].get('user_email', 'N/A') if memories else 'N/A',
+            "date_range": self._get_date_range(memories),
+            "content_analysis": self._analyze_content_preview(memories)
+        }
+        
+        # Save dataset info
+        info_file = dataset_dir / "dataset_info.json"
+        with open(info_file, 'w') as f:
+            json.dump(dataset_info, f, indent=2, default=str)
+        
+        # Update global metadata
+        self.metadata[dataset_id] = dataset_info
+        self._save_metadata()
+        
+        logger.info(f"✅ Created dataset '{name}' with {len(memories)} memories")
+        logger.info(f"📁 Dataset ID: {dataset_id}")
+        
+        return dataset_info
+    
+    def load_dataset(self, name_or_id: str) -> Optional[Dict[str, Any]]:
+        """Load a dataset by name or ID"""
+        # Try to find by exact ID first
+        if name_or_id in self.metadata:
+            dataset_info = self.metadata[name_or_id]
+            dataset_dir = self.datasets_dir / name_or_id
+        else:
+            # Try to find by name (get most recent)
+            matching_datasets = [
+                (ds_id, ds_info) for ds_id, ds_info in self.metadata.items() 
+                if ds_info.get('name', '').lower() == name_or_id.lower()
+            ]
+            
+            if not matching_datasets:
+                logger.error(f"❌ Dataset '{name_or_id}' not found")
+                return None
+            
+            # Get most recent dataset with this name
+            dataset_id, dataset_info = max(matching_datasets, key=lambda x: x[1].get('created_at', ''))
+            dataset_dir = self.datasets_dir / dataset_id
+        
+        # Load memories
+        memories_file = dataset_dir / "memories.json"
+        if not memories_file.exists():
+            logger.error(f"❌ Memories file not found for dataset '{name_or_id}'")
+            return None
+        
+        with open(memories_file, 'r') as f:
+            memories = json.load(f)
+        
+        return {
+            "info": dataset_info,
+            "memories": memories,
+            "dataset_dir": dataset_dir
+        }
+    
+    def list_datasets(self) -> List[Dict[str, Any]]:
+        """List all available datasets"""
+        datasets = []
+        for ds_id, ds_info in self.metadata.items():
+            datasets.append({
+                "name": ds_info.get('name', 'Unknown'),
+                "dataset_id": ds_id,
+                "memory_count": ds_info.get('memory_count', 0),
+                "user_email": ds_info.get('user_email', 'N/A'),
+                "created_at": ds_info.get('created_at', 'N/A'),
+                "description": ds_info.get('description', '')
+            })
+        
+        # Sort by creation date (most recent first)
+        datasets.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        return datasets
+    
+    def _get_date_range(self, memories: List[Dict[str, Any]]) -> Dict[str, str]:
+        """Get date range of memories"""
+        if not memories:
+            return {"start": "N/A", "end": "N/A"}
+        
+        dates = [m.get('created_at') for m in memories if m.get('created_at')]
+        if not dates:
+            return {"start": "N/A", "end": "N/A"}
+        
+        return {
+            "start": min(dates),
+            "end": max(dates)
+        }
+    
+    def _analyze_content_preview(self, memories: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Analyze content for dataset preview"""
+        if not memories:
+            return {}
+        
+        # Sample some content for preview
+        sample_content = []
+        for memory in memories[:5]:
+            content = memory.get('content', '')[:100]
+            if content:
+                sample_content.append(content)
+        
+        # Basic content analysis
+        all_content = ' '.join([m.get('content', '') for m in memories]).lower()
+        
+        keywords = {}
+        common_words = ['work', 'family', 'travel', 'exercise', 'food', 'meeting', 'project', 'friend']
+        for word in common_words:
+            if word in all_content:
+                keywords[word] = all_content.count(word)
+        
+        return {
+            "sample_content": sample_content,
+            "keywords": keywords,
+            "avg_length": sum(len(m.get('content', '')) for m in memories) / len(memories)
+        }
+
 class RDPipeline:
     """R&D Pipeline for Unified Memory System Development"""
     
@@ -54,6 +220,9 @@ class RDPipeline:
         self.graphrag_pipeline = None
         self.data_dir = Path("rd_data")
         self.data_dir.mkdir(exist_ok=True)
+        
+        # Initialize dataset manager
+        self.dataset_manager = DatasetManager(self.data_dir)
         
         # Initialize connections
         self._init_supabase()
@@ -547,11 +716,12 @@ Please provide a helpful response based on these memories."""
         while True:
             print("\nOptions:")
             print("1. List available users")
-            print("2. Download user memories")
-            print("3. Ingest memories")
-            print("4. Test retrieval")
-            print("5. Analyze results")
-            print("6. Full pipeline run")
+            print("2. List available datasets")
+            print("3. Create new dataset")
+            print("4. Run pipeline with dataset")
+            print("5. Test retrieval with dataset")
+            print("6. Analyze dataset results")
+            print("7. Legacy: Download user memories")
             print("0. Exit")
             
             choice = input("\nSelect option: ").strip()
@@ -565,66 +735,40 @@ Please provide a helpful response based on these memories."""
                     print(f"   {user.get('user_id', 'N/A')} - {user.get('memory_count', 0)} memories")
             
             elif choice == "2":
-                user_id = input("Enter user ID: ").strip()
-                sample_size = input("Sample size (press Enter for all): ").strip()
-                sample_size = int(sample_size) if sample_size else None
-                
-                memories = self.download_user_memories(user_id, sample_size)
-                print(f"✅ Downloaded {len(memories)} memories")
+                datasets = self.dataset_manager.list_datasets()
+                print(f"\n📋 Available Datasets ({len(datasets)}):")
+                for dataset in datasets:
+                    print(f"   {dataset['name']} ({dataset['dataset_id'][:8]}...)")
+                    print(f"     - {dataset['memory_count']} memories from {dataset['user_email']}")
+                    print(f"     - Created: {dataset['created_at'][:10]}")
+                    if dataset.get('description'):
+                        print(f"     - {dataset['description']}")
+                    print()
             
             elif choice == "3":
-                user_id = input("Enter user ID: ").strip()
-                memory_file = self.data_dir / f"user_{user_id}_memories.json"
-                
-                if not memory_file.exists():
-                    print(f"❌ No memories file found for user {user_id}. Download first.")
-                    continue
-                
-                with open(memory_file, 'r') as f:
-                    memories = json.load(f)
-                
-                results = await self.ingest_memories(memories, user_id)
-                print(f"✅ Ingestion complete: {results}")
-            
-            elif choice == "4":
-                user_id = input("Enter user ID: ").strip()
-                queries = [
-                    "What exercises do I do?",
-                    "Where do I like to work out?",
-                    "What are my fitness goals?",
-                    "What projects am I working on?",
-                    "Who do I work with?"
-                ]
-                
-                results = await self.test_retrieval(user_id, queries)
-                print(f"✅ Tested {len(results)} queries")
-            
-            elif choice == "5":
-                user_id = input("Enter user ID: ").strip()
-                analysis = self.analyze_results(user_id)
-                
-                print(f"\n📊 Analysis Summary:")
-                print(f"   Memories: {analysis.get('memory_analysis', {}).get('total_memories', 0)}")
-                print(f"   Success Rate: {analysis.get('retrieval_analysis', {}).get('success_rate', 0):.2%}")
-                print(f"   Recommendations: {len(analysis.get('recommendations', []))}")
-            
-            elif choice == "6":
-                user_id = input("Enter user ID: ").strip()
+                # Create new dataset
+                dataset_name = input("Dataset name: ").strip()
+                user_id = input("User ID: ").strip()
                 sample_size = input("Sample size (press Enter for 50): ").strip()
                 sample_size = int(sample_size) if sample_size else 50
+                description = input("Description (optional): ").strip()
                 
-                print(f"\n🚀 Running full pipeline for user {user_id}...")
+                print(f"\n🚀 Creating dataset '{dataset_name}'...")
                 
-                # Download
+                # Download memories
                 memories = self.download_user_memories(user_id, sample_size)
                 if not memories:
                     print("❌ No memories to process")
                     continue
                 
-                # Ingest
+                # Create dataset
+                dataset_info = self.dataset_manager.create_dataset(
+                    dataset_name, user_id, memories, sample_size, description
+                )
+                
+                # Run full pipeline
                 await self.ingest_memories(memories, user_id)
                 
-                # Test retrieval
                 test_queries = [
                     "What exercises do I do?",
                     "Where do I like to work out?",
@@ -636,12 +780,102 @@ Please provide a helpful response based on these memories."""
                 ]
                 
                 await self.test_retrieval(user_id, test_queries)
-                
-                # Analyze
                 analysis = self.analyze_results(user_id)
                 
-                print(f"\n🎉 Pipeline complete! Check rd_data/ for results.")
+                print(f"\n🎉 Dataset '{dataset_name}' created and tested!")
                 print(f"📊 Success rate: {analysis.get('retrieval_analysis', {}).get('success_rate', 0):.2%}")
+            
+            elif choice == "4":
+                # Run pipeline with existing dataset
+                dataset_name = input("Dataset name or ID: ").strip()
+                
+                dataset_data = self.dataset_manager.load_dataset(dataset_name)
+                if not dataset_data:
+                    continue
+                
+                user_id = dataset_data["info"]["user_id"]
+                memories = dataset_data["memories"]
+                
+                print(f"\n🚀 Running pipeline with dataset '{dataset_data['info']['name']}'...")
+                print(f"   User: {dataset_data['info'].get('user_email', 'N/A')}")
+                print(f"   Memories: {len(memories)}")
+                
+                # Run pipeline
+                await self.ingest_memories(memories, user_id)
+                
+                test_queries = [
+                    "What exercises do I do?",
+                    "Where do I like to work out?",
+                    "What are my fitness goals?",
+                    "What projects am I working on?",
+                    "Who do I work with?",
+                    "What are my daily routines?",
+                    "What places do I visit frequently?"
+                ]
+                
+                await self.test_retrieval(user_id, test_queries)
+                analysis = self.analyze_results(user_id)
+                
+                print(f"\n🎉 Pipeline complete!")
+                print(f"📊 Success rate: {analysis.get('retrieval_analysis', {}).get('success_rate', 0):.2%}")
+            
+            elif choice == "5":
+                # Test retrieval with dataset
+                dataset_name = input("Dataset name or ID: ").strip()
+                
+                dataset_data = self.dataset_manager.load_dataset(dataset_name)
+                if not dataset_data:
+                    continue
+                
+                user_id = dataset_data["info"]["user_id"]
+                
+                # Custom queries
+                print("\nEnter test queries (one per line, empty line to finish):")
+                custom_queries = []
+                while True:
+                    query = input("Query: ").strip()
+                    if not query:
+                        break
+                    custom_queries.append(query)
+                
+                if not custom_queries:
+                    custom_queries = [
+                        "What exercises do I do?",
+                        "Where do I like to work out?",
+                        "What projects am I working on?",
+                        "Who do I work with?"
+                    ]
+                
+                results = await self.test_retrieval(user_id, custom_queries)
+                print(f"✅ Tested {len(results)} queries")
+            
+            elif choice == "6":
+                # Analyze dataset results
+                dataset_name = input("Dataset name or ID: ").strip()
+                
+                dataset_data = self.dataset_manager.load_dataset(dataset_name)
+                if not dataset_data:
+                    continue
+                
+                user_id = dataset_data["info"]["user_id"]
+                analysis = self.analyze_results(user_id)
+                
+                print(f"\n📊 Analysis for dataset '{dataset_data['info']['name']}':")
+                print(f"   Memories: {analysis.get('memory_analysis', {}).get('total_memories', 0)}")
+                print(f"   Success Rate: {analysis.get('retrieval_analysis', {}).get('success_rate', 0):.2%}")
+                print(f"   Recommendations: {len(analysis.get('recommendations', []))}")
+                
+                for rec in analysis.get('recommendations', [])[:3]:
+                    print(f"   • {rec}")
+            
+            elif choice == "7":
+                # Legacy: Download user memories
+                user_id = input("Enter user ID: ").strip()
+                sample_size = input("Sample size (press Enter for all): ").strip()
+                sample_size = int(sample_size) if sample_size else None
+                
+                memories = self.download_user_memories(user_id, sample_size)
+                print(f"✅ Downloaded {len(memories)} memories")
 
 async def main():
     parser = argparse.ArgumentParser(description="R&D Development Pipeline")
@@ -650,6 +884,9 @@ async def main():
     parser.add_argument("--interactive", action="store_true", help="Interactive mode")
     parser.add_argument("--analyze", action="store_true", help="Run analysis after processing")
     parser.add_argument("--list-users", action="store_true", help="List available users")
+    parser.add_argument("--create-dataset", help="Create a new dataset")
+    parser.add_argument("--dataset", help="Run pipeline with existing dataset")
+    parser.add_argument("--list-datasets", action="store_true", help="List available datasets")
     
     args = parser.parse_args()
     
@@ -662,24 +899,85 @@ async def main():
         print(f"\n📋 Available Users ({len(users)}):")
         for user in users:
             print(f"   {user.get('user_id', 'N/A')} - {user.get('memory_count', 0)} memories")
-    elif args.user_id:
-        # Run pipeline for specific user
-        memories = pipeline.download_user_memories(args.user_id, args.sample_size)
-        if memories:
-            await pipeline.ingest_memories(memories, args.user_id)
+    elif args.create_dataset:
+        # Create new dataset - require user_id
+        if not args.user_id:
+            print("❌ --user-id is required when creating a dataset")
+            return
             
-            test_queries = [
-                "What exercises do I do?",
-                "Where do I like to work out?",
-                "What are my fitness goals?",
-                "What projects am I working on?",
-                "Who do I work with?"
-            ]
-            
-            await pipeline.test_retrieval(args.user_id, test_queries)
-            
-            if args.analyze:
-                pipeline.analyze_results(args.user_id)
+        user_id = args.user_id
+        sample_size = args.sample_size
+        print(f"\n🚀 Running full pipeline for user {user_id}...")
+        
+        # Download
+        memories = pipeline.download_user_memories(user_id, sample_size)
+        if not memories:
+            print("❌ No memories to process")
+            return
+        
+        # Ingest
+        await pipeline.ingest_memories(memories, user_id)
+        
+        # Test retrieval
+        test_queries = [
+            "What exercises do I do?",
+            "Where do I like to work out?",
+            "What are my fitness goals?",
+            "What projects am I working on?",
+            "Who do I work with?",
+            "What are my daily routines?",
+            "What places do I visit frequently?"
+        ]
+        
+        await pipeline.test_retrieval(user_id, test_queries)
+        
+        # Analyze
+        analysis = pipeline.analyze_results(user_id)
+        
+        # Create dataset
+        dataset_name = args.create_dataset
+        dataset_info = pipeline.dataset_manager.create_dataset(dataset_name, user_id, memories, sample_size)
+        
+        print(f"\n🎉 Pipeline complete! Check rd_data/ for results.")
+        print(f"📊 Success rate: {analysis.get('retrieval_analysis', {}).get('success_rate', 0):.2%}")
+    elif args.dataset:
+        # Run pipeline with existing dataset
+        dataset_info = pipeline.dataset_manager.load_dataset(args.dataset)
+        if not dataset_info:
+            return
+        
+        user_id = dataset_info["info"]["user_id"]
+        memories = dataset_info["memories"]
+        sample_size = dataset_info["info"]["sample_size"]
+        
+        print(f"\n🚀 Running full pipeline for user {user_id}...")
+        
+        # Ingest
+        await pipeline.ingest_memories(memories, user_id)
+        
+        # Test retrieval
+        test_queries = [
+            "What exercises do I do?",
+            "Where do I like to work out?",
+            "What are my fitness goals?",
+            "What projects am I working on?",
+            "Who do I work with?",
+            "What are my daily routines?",
+            "What places do I visit frequently?"
+        ]
+        
+        await pipeline.test_retrieval(user_id, test_queries)
+        
+        # Analyze
+        analysis = pipeline.analyze_results(user_id)
+        
+        print(f"\n🎉 Pipeline complete! Check rd_data/ for results.")
+        print(f"📊 Success rate: {analysis.get('retrieval_analysis', {}).get('success_rate', 0):.2%}")
+    elif args.list_datasets:
+        datasets = pipeline.dataset_manager.list_datasets()
+        print(f"\n📋 Available Datasets ({len(datasets)}):")
+        for dataset in datasets:
+            print(f"   {dataset['name']} - {dataset['memory_count']} memories")
     else:
         parser.print_help()
 
