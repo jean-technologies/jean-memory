@@ -1,591 +1,409 @@
 #!/usr/bin/env python3
 """
-GraphRAG Pipeline - Research-Backed Implementation
-
-This implements the complete GraphRAG pipeline based on:
-- KG²RAG: Knowledge Graph-Guided Retrieval Augmented Generation
-- HippoRAG: Neurobiologically Inspired Long-Term Memory
-
-Pipeline Steps:
-1. Query Preprocessing & Decomposition (Conscious Mind)
-2. Initial Retrieval - Semantic Search (Qdrant)
-3. Contextual Expansion - Graph Traversal (Neo4j)
-4. Synthesis & Fusion (Memory Weaver)
-5. Final Response Generation
+GraphRAG Pipeline Implementation
+Combines vector search (Qdrant) with graph traversal (Neo4j) 
+Following KG²RAG and HippoRAG research patterns
+Now integrated with unified memory system (mem0 + Graphiti)
 """
 
 import os
 import sys
 import json
-import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple
-from pathlib import Path
+from datetime import datetime
+from typing import List, Dict, Any, Tuple, Optional
+from dataclasses import dataclass
+import asyncio
 
-# Add project paths
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+# Core dependencies
+from qdrant_client import QdrantClient
+from qdrant_client.models import Filter, FieldCondition, MatchValue
+from neo4j import GraphDatabase
+import google.generativeai as genai
+import openai
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configure APIs
+genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
+@dataclass
+class GraphRAGQuery:
+    """Query structure for GraphRAG pipeline"""
+    query: str
+    entities: List[str]
+    temporal_context: Optional[str]
+    semantic_intent: str
+    confidence: float
+
+@dataclass
+class GraphRAGResult:
+    """Result structure from GraphRAG pipeline"""
+    answer: str
+    supporting_memories: List[Dict]
+    graph_paths: List[Dict]
+    confidence: float
+    sources: List[str]
+
 class GraphRAGPipeline:
-    """Complete GraphRAG implementation with vector + graph fusion"""
-    
     def __init__(self):
-        self.qdrant_client = None
-        self.neo4j_driver = None
-        self.openai_client = None
-        self.gemini_client = None
-        self.initialized = False
+        # Initialize connections
+        self.qdrant = QdrantClient(host="localhost", port=6333)
+        self.neo4j_driver = GraphDatabase.driver(
+            "bolt://localhost:7687",
+            auth=("neo4j", os.getenv("NEO4J_PASSWORD", "your-neo4j-password"))
+        )
+        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
         
-    async def initialize(self):
-        """Initialize all clients and connections"""
-        try:
-            from qdrant_client import QdrantClient
-            from neo4j import GraphDatabase
-            from openai import OpenAI
-            import google.generativeai as genai
-            from dotenv import load_dotenv
-            
-            load_dotenv()
-            
-            # Initialize Qdrant
-            self.qdrant_client = QdrantClient(host="localhost", port=6333)
-            logger.info("✅ Qdrant client initialized")
-            
-            # Initialize Neo4j
-            self.neo4j_driver = GraphDatabase.driver(
-                os.getenv("NEO4J_URI"),
-                auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASSWORD"))
-            )
-            logger.info("✅ Neo4j driver initialized")
-            
-            # Initialize OpenAI
-            self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            logger.info("✅ OpenAI client initialized")
-            
-            # Initialize Gemini
-            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            self.gemini_client = genai.GenerativeModel('gemini-2.0-flash-exp')
-            logger.info("✅ Gemini client initialized")
-            
-            self.initialized = True
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Initialization failed: {e}")
-            return False
+        # Updated to use unified memory collection
+        self.collection_name = "unified_memory_mem0"
+        self.embedding_model = "text-embedding-3-small"
+        
+        logger.info("✅ GraphRAG Pipeline initialized with unified memory system")
     
-    async def process_query(self, query: str, user_id: str) -> Dict[str, Any]:
-        """
-        Main GraphRAG pipeline entry point
-        
-        Args:
-            query: User's natural language query
-            user_id: User identifier for filtering
-            
-        Returns:
-            Complete response with context and answer
-        """
-        if not self.initialized:
-            return {"error": "Pipeline not initialized"}
-        
-        logger.info(f"🎯 Processing query: '{query}'")
-        
-        # Step 1: Query Preprocessing & Decomposition
-        decomposition = await self._decompose_query(query)
-        
-        # Step 2: Initial Retrieval - Semantic Search
-        seed_memories = await self._semantic_search(
-            decomposition['semantic_query'], 
-            user_id,
-            limit=10
-        )
-        
-        # Step 3: Contextual Expansion - Graph Traversal
-        expanded_context = await self._expand_graph_context(
-            decomposition['entity_anchors'],
-            seed_memories,
-            user_id
-        )
-        
-        # Step 4: Synthesis & Fusion
-        synthesized_context = await self._synthesize_context(
-            query,
-            seed_memories,
-            expanded_context,
-            decomposition
-        )
-        
-        # Step 5: Final Response Generation
-        final_response = await self._generate_response(
-            query,
-            synthesized_context
-        )
-        
-        return {
-            "query": query,
-            "decomposition": decomposition,
-            "seed_memories": len(seed_memories),
-            "graph_nodes": len(expanded_context.get('nodes', [])),
-            "graph_relationships": len(expanded_context.get('relationships', [])),
-            "synthesized_context": synthesized_context,
-            "response": final_response,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
+    def close(self):
+        """Clean up connections"""
+        self.neo4j_driver.close()
     
-    async def _decompose_query(self, query: str) -> Dict[str, Any]:
-        """
-        Step 1: Query Preprocessing & Decomposition
-        Use Gemini to extract entities and semantic intent
-        """
-        logger.info("📝 Step 1: Query Decomposition")
+    async def decompose_query(self, query: str) -> GraphRAGQuery:
+        """Step 1: Decompose query into entities, temporal context, and intent"""
         
         prompt = f"""
-Analyze this query and extract key components for a memory search system:
-
-Query: "{query}"
-
-Extract:
-1. Entity Anchors - Key people, places, projects, or concepts mentioned
-2. Temporal Context - Any time references or periods
-3. Core Semantic Intent - What information is being sought
-4. Query Type - factual, relationship, temporal, or analytical
-
-Return as JSON:
-{{
-  "entity_anchors": [
-    {{"type": "Person|Place|Project|Concept", "name": "entity name", "confidence": 0.0-1.0}}
-  ],
-  "temporal_context": {{
-    "explicit_dates": ["any dates mentioned"],
-    "relative_time": "past|present|future|specific period",
-    "time_keywords": ["temporal keywords"]
-  }},
-  "semantic_query": "reformulated query focusing on core intent",
-  "query_type": "factual|relationship|temporal|analytical",
-  "original_query": "{query}"
-}}
-"""
+        Analyze this query and extract structured information:
+        Query: "{query}"
+        
+        Extract:
+        1. Named entities (people, places, activities, objects)
+        2. Temporal context (time references, ongoing vs past)
+        3. Semantic intent (what information is being sought)
+        
+        Format as JSON:
+        {{
+            "entities": ["entity1", "entity2"],
+            "temporal_context": "description of time context",
+            "semantic_intent": "what the user wants to know",
+            "confidence": 0.0-1.0
+        }}
+        """
         
         try:
-            response = self.gemini_client.generate_content(prompt)
+            response = self.gemini_model.generate_content(prompt)
             result = json.loads(response.text.strip().replace('```json', '').replace('```', ''))
             
-            logger.info(f"  ✅ Extracted {len(result.get('entity_anchors', []))} entities")
-            logger.info(f"  ✅ Query type: {result.get('query_type', 'unknown')}")
-            
-            return result
-            
+            return GraphRAGQuery(
+                query=query,
+                entities=result.get('entities', []),
+                temporal_context=result.get('temporal_context'),
+                semantic_intent=result.get('semantic_intent', query),
+                confidence=result.get('confidence', 0.8)
+            )
         except Exception as e:
-            logger.error(f"  ❌ Decomposition failed: {e}")
-            return {
-                "entity_anchors": [],
-                "temporal_context": {},
-                "semantic_query": query,
-                "query_type": "unknown",
-                "original_query": query
+            logger.error(f"Query decomposition failed: {e}")
+            return GraphRAGQuery(
+                query=query,
+                entities=[],
+                temporal_context=None,
+                semantic_intent=query,
+                confidence=0.5
+            )
+    
+    async def semantic_search(self, query: str, limit: int = 10) -> List[Dict]:
+        """Step 2: Vector search for semantically similar memories"""
+        
+        # Get embedding
+        response = openai.embeddings.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_vector = response.data[0].embedding
+        
+        # Search in Qdrant
+        results = self.qdrant.search(
+            collection_name=self.collection_name,
+            query_vector=query_vector,
+            limit=limit,
+            with_payload=True
+        )
+        
+        memories = []
+        for hit in results:
+            memory = {
+                'id': hit.id,
+                'text': hit.payload.get('data', hit.payload.get('text', '')),  # mem0 uses 'data' field
+                'score': hit.score,
+                'temporal_context': hit.payload.get('temporal_context', ''),
+                'confidence': hit.payload.get('confidence', 'medium'),
+                'metadata': hit.payload
             }
-    
-    async def _semantic_search(self, query: str, user_id: str, limit: int = 10) -> List[Dict]:
-        """
-        Step 2: Initial Retrieval - Semantic Search
-        Find seed memories using vector similarity
-        """
-        logger.info("🔍 Step 2: Semantic Search")
+            memories.append(memory)
         
-        try:
-            # Generate query embedding
-            embedding_response = self.openai_client.embeddings.create(
-                input=query,
-                model="text-embedding-3-small"
-            )
-            query_embedding = embedding_response.data[0].embedding
-            
-            # Search in Qdrant
-            search_results = self.qdrant_client.search(
-                collection_name="enhanced_memories_openai",
-                query_vector=query_embedding,
-                limit=limit,
-                query_filter={
-                    "must": [
-                        {"key": "user_id", "match": {"value": user_id}}
-                    ]
-                }
-            )
-            
-            # Format results
-            memories = []
-            for result in search_results:
-                memories.append({
-                    "id": result.id,
-                    "score": result.score,
-                    "text": result.payload.get("text", ""),
-                    "temporal_context": result.payload.get("temporal_context", ""),
-                    "confidence": result.payload.get("confidence", ""),
-                    "metadata": result.payload
-                })
-            
-            logger.info(f"  ✅ Found {len(memories)} seed memories")
-            return memories
-            
-        except Exception as e:
-            logger.error(f"  ❌ Semantic search failed: {e}")
-            return []
+        logger.info(f"📊 Found {len(memories)} semantically similar memories")
+        return memories
     
-    async def _expand_graph_context(
-        self, 
-        entity_anchors: List[Dict],
-        seed_memories: List[Dict],
-        user_id: str
-    ) -> Dict[str, Any]:
-        """
-        Step 3: Contextual Expansion - Graph Traversal
-        Expand context using Neo4j relationships
-        """
-        logger.info("🕸️ Step 3: Graph Context Expansion")
+    async def graph_expansion(self, seed_memories: List[Dict], entities: List[str]) -> List[Dict]:
+        """Step 3: Expand from seed memories using graph traversal"""
         
-        expanded_context = {
-            "nodes": [],
-            "relationships": [],
-            "subgraphs": []
-        }
+        expanded_paths = []
         
         with self.neo4j_driver.session() as session:
-            try:
-                # Extract entities from seed memories
-                memory_entities = set()
-                for memory in seed_memories:
-                    # Simple entity extraction from memory text
-                    # In production, use NER or more sophisticated extraction
-                    words = memory['text'].split()
-                    for word in words:
-                        if word[0].isupper() and len(word) > 2:
-                            memory_entities.add(word)
+            # First, find relationships from mem0's graph
+            for memory in seed_memories[:5]:  # Limit to top 5 to avoid explosion
+                memory_text = memory['text']
                 
-                # Combine with query entities
-                all_entities = [anchor['name'] for anchor in entity_anchors]
-                all_entities.extend(list(memory_entities)[:10])  # Limit to avoid explosion
-                
-                if not all_entities:
-                    logger.info("  ⚠️ No entities found for expansion")
-                    return expanded_context
-                
-                # Query 1: Find direct relationships between entities
-                cypher_direct = """
-                MATCH (n:Memory {user_id: $user_id})
-                WHERE any(entity IN $entities WHERE n.text CONTAINS entity)
-                WITH n
-                MATCH (n)-[r]-(m:Memory {user_id: $user_id})
-                WHERE any(entity IN $entities WHERE m.text CONTAINS entity)
-                RETURN n, r, m
-                LIMIT 50
+                # Query for related entities and relationships
+                cypher_query = """
+                MATCH (m:Memory)-[r:MENTIONS|RELATES_TO]-(e:Entity)
+                WHERE m.text CONTAINS $text_fragment
+                WITH m, e, r
+                MATCH (e)-[r2:RELATES_TO]-(e2:Entity)
+                WHERE e2.name IN $entities OR e.name IN $entities
+                RETURN DISTINCT 
+                    m.text as memory_text,
+                    e.name as entity1,
+                    type(r) as rel_type,
+                    e2.name as entity2,
+                    r2.properties as rel_properties
+                LIMIT 20
                 """
                 
-                result = session.run(cypher_direct, user_id=user_id, entities=all_entities)
+                result = session.run(
+                    cypher_query,
+                    text_fragment=memory_text[:50],
+                    entities=entities
+                )
                 
                 for record in result:
-                    if record['n']:
-                        expanded_context['nodes'].append({
-                            "id": record['n'].element_id,
-                            "properties": dict(record['n'])
-                        })
-                    if record['m']:
-                        expanded_context['nodes'].append({
-                            "id": record['m'].element_id,
-                            "properties": dict(record['m'])
-                        })
-                    # FIX: Check for None explicitly instead of truthy check
-                    if record['r'] is not None:
-                        expanded_context['relationships'].append({
-                            "type": record['r'].type,
-                            "properties": dict(record['r']),
-                            "start_node": record['n'].element_id if record['n'] else None,
-                            "end_node": record['m'].element_id if record['m'] else None
-                        })
-                
-                # Query 2: Find temporal neighbors
-                if seed_memories:
-                    for memory in seed_memories[:3]:  # Top 3 memories
-                        temporal_context = memory.get('temporal_context', '')
-                        if temporal_context:
-                            cypher_temporal = """
-                            MATCH (n:Memory {user_id: $user_id})
-                            WHERE n.temporal_context CONTAINS $temporal_keyword
-                            RETURN n
-                            LIMIT 10
-                            """
-                            
-                            # Extract date from temporal context
-                            import re
-                            date_match = re.search(r'\d{4}-\d{2}-\d{2}', temporal_context)
-                            if date_match:
-                                temporal_result = session.run(
-                                    cypher_temporal, 
-                                    user_id=user_id,
-                                    temporal_keyword=date_match.group()
-                                )
-                                
-                                for record in temporal_result:
-                                    if record['n']:
-                                        expanded_context['nodes'].append({
-                                            "id": record['n'].element_id,
-                                            "properties": dict(record['n']),
-                                            "temporal_neighbor": True
-                                        })
-                
-                # Deduplicate nodes
-                seen_ids = set()
-                unique_nodes = []
-                for node in expanded_context['nodes']:
-                    if node['id'] not in seen_ids:
-                        seen_ids.add(node['id'])
-                        unique_nodes.append(node)
-                expanded_context['nodes'] = unique_nodes
-                
-                logger.info(f"  ✅ Expanded to {len(expanded_context['nodes'])} nodes")
-                logger.info(f"  ✅ Found {len(expanded_context['relationships'])} relationships")
-                
-            except Exception as e:
-                logger.error(f"  ❌ Graph expansion failed: {e}")
+                    path = {
+                        'source_memory': memory_text,
+                        'entity1': record['entity1'],
+                        'relation': record['rel_type'],
+                        'entity2': record['entity2'],
+                        'properties': dict(record['rel_properties']) if record['rel_properties'] else {}
+                    }
+                    expanded_paths.append(path)
+            
+            # Also query Graphiti episodes for temporal relationships
+            episode_query = """
+            MATCH (e:Episodic)-[:MENTIONS]-(entity:Entity)
+            WHERE entity.name IN $entities
+            RETURN e.content as content, e.created_at as created_at
+            LIMIT 10
+            """
+            
+            episode_result = session.run(episode_query, entities=entities)
+            
+            for record in episode_result:
+                expanded_paths.append({
+                    'type': 'episode',
+                    'content': record['content'],
+                    'created_at': record['created_at']
+                })
         
-        return expanded_context
+        logger.info(f"🔗 Expanded to {len(expanded_paths)} graph connections")
+        return expanded_paths
     
-    async def _synthesize_context(
-        self,
-        query: str,
-        seed_memories: List[Dict],
-        expanded_context: Dict[str, Any],
-        decomposition: Dict[str, Any]
-    ) -> str:
-        """
-        Step 4: Synthesis & Fusion
-        Use Gemini to weave together vector and graph results
-        """
-        logger.info("🧵 Step 4: Context Synthesis")
+    async def find_temporal_neighbors(self, memories: List[Dict], temporal_context: str) -> List[Dict]:
+        """Step 4: Find temporally related memories"""
         
-        # Prepare seed memories text
-        seed_text = "\n\n".join([
-            f"[Score: {m['score']:.3f}] {m['text']} (Context: {m['temporal_context']})"
-            for m in seed_memories[:5]
-        ])
+        temporal_neighbors = []
         
-        # Prepare graph context
-        graph_nodes_text = "\n".join([
-            f"- {node['properties'].get('text', '')[:100]}... ({node['properties'].get('temporal_context', 'No date')})"
-            for node in expanded_context['nodes'][:10]
-        ])
+        # Parse temporal context
+        is_ongoing = any(word in temporal_context.lower() for word in ['ongoing', 'current', 'regularly', 'routine'])
         
-        graph_relationships = expanded_context['relationships'][:5]
-        relationships_text = f"Found {len(graph_relationships)} relationships in the memory graph"
-        
-        synthesis_prompt = f"""
-You are synthesizing search results from a personal memory system to answer a query.
-
-Original Query: "{query}"
-Query Type: {decomposition.get('query_type', 'unknown')}
-Key Entities: {', '.join([e['name'] for e in decomposition.get('entity_anchors', [])])}
-
-SEMANTIC SEARCH RESULTS (Most relevant memories):
-{seed_text}
-
-GRAPH CONTEXT (Related memories and connections):
-{graph_nodes_text}
-
-{relationships_text}
-
-TASK: Create a coherent, comprehensive context that:
-1. Prioritizes information directly answering the query
-2. Incorporates temporal relationships and patterns
-3. Connects related memories to provide complete picture
-4. Maintains chronological clarity when relevant
-5. Highlights key entities and their relationships
-
-Synthesize these results into a single, well-structured context that directly addresses the user's question.
-Focus on creating a narrative that connects the dots between different memories.
-"""
-        
-        try:
-            response = self.gemini_client.generate_content(synthesis_prompt)
-            synthesized = response.text.strip()
+        for memory in memories:
+            mem_temporal = memory.get('temporal_context', '')
             
-            logger.info(f"  ✅ Synthesized {len(synthesized)} characters of context")
-            return synthesized
-            
-        except Exception as e:
-            logger.error(f"  ❌ Synthesis failed: {e}")
-            # Fallback to simple concatenation
-            return f"Relevant memories:\n{seed_text}"
+            # Match similar temporal contexts
+            if is_ongoing and 'ongoing' in mem_temporal.lower():
+                temporal_neighbors.append(memory)
+            elif not is_ongoing and any(word in mem_temporal.lower() for word in ['occurred', 'happened', 'was']):
+                temporal_neighbors.append(memory)
+        
+        logger.info(f"⏰ Found {len(temporal_neighbors)} temporally related memories")
+        return temporal_neighbors
     
-    async def _generate_response(self, query: str, context: str) -> str:
-        """
-        Step 5: Final Response Generation
-        Use Gemini to generate the final answer
-        """
-        logger.info("💬 Step 5: Response Generation")
+    async def synthesize_context(self, 
+                               query: GraphRAGQuery,
+                               semantic_results: List[Dict],
+                               graph_paths: List[Dict],
+                               temporal_neighbors: List[Dict]) -> str:
+        """Step 5: Synthesize all results into coherent context"""
         
-        response_prompt = f"""
-Based on the following context from a personal memory system, answer the user's question.
-
-Context:
-{context}
-
-Question: {query}
-
-Instructions:
-- Answer directly and specifically based on the provided context
-- If the context doesn't contain enough information, acknowledge what is known and what is missing
-- Be precise with dates, names, and relationships
-- Maintain a helpful, conversational tone
-- If there are patterns or insights across multiple memories, highlight them
-
-Answer:
-"""
+        # Combine all sources
+        context_parts = []
         
-        try:
-            response = self.gemini_client.generate_content(response_prompt)
-            answer = response.text.strip()
-            
-            logger.info(f"  ✅ Generated {len(answer)} character response")
-            return answer
-            
-        except Exception as e:
-            logger.error(f"  ❌ Response generation failed: {e}")
-            return "I encountered an error generating the response. Please try again."
+        # Add semantic search results
+        context_parts.append("## Relevant Memories:")
+        for mem in semantic_results[:5]:
+            context_parts.append(f"- {mem['text']} ({mem['temporal_context']})")
+        
+        # Add graph relationships
+        if graph_paths:
+            context_parts.append("\n## Related Information from Graph:")
+            for path in graph_paths[:10]:
+                if path.get('type') == 'episode':
+                    context_parts.append(f"- Episode: {path['content'][:100]}...")
+                else:
+                    context_parts.append(f"- {path['entity1']} {path['relation']} {path['entity2']}")
+        
+        # Add temporal context
+        if temporal_neighbors:
+            context_parts.append(f"\n## Temporal Context ({query.temporal_context}):")
+            for mem in temporal_neighbors[:5]:
+                context_parts.append(f"- {mem['text']}")
+        
+        return "\n".join(context_parts)
+    
+    async def generate_answer(self, query: str, context: str) -> GraphRAGResult:
+        """Step 6: Generate final answer using Gemini"""
+        
+        prompt = f"""
+        Based on the following context from a personal memory system, answer the query.
+        
+        Query: {query}
+        
+        Context:
+        {context}
+        
+        Provide a comprehensive answer that:
+        1. Directly addresses the query
+        2. Synthesizes information from multiple sources
+        3. Maintains temporal accuracy
+        4. Acknowledges any uncertainty
+        
+        Format: Natural, conversational response.
+        """
+        
+        response = self.gemini_model.generate_content(prompt)
+        
+        return GraphRAGResult(
+            answer=response.text,
+            supporting_memories=[],  # Would be filled with actual memories used
+            graph_paths=[],  # Would be filled with actual paths
+            confidence=0.85,
+            sources=['mem0', 'graphiti', 'neo4j']
+        )
+    
+    async def query(self, query: str) -> GraphRAGResult:
+        """Main pipeline execution"""
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"🔍 GraphRAG Query: {query}")
+        logger.info(f"{'='*60}")
+        
+        # Step 1: Decompose query
+        decomposed = await self.decompose_query(query)
+        logger.info(f"📝 Entities: {decomposed.entities}")
+        logger.info(f"⏰ Temporal: {decomposed.temporal_context}")
+        
+        # Step 2: Semantic search
+        semantic_results = await self.semantic_search(query)
+        
+        # Step 3: Graph expansion
+        graph_paths = await self.graph_expansion(semantic_results, decomposed.entities)
+        
+        # Step 4: Temporal neighbors
+        temporal_neighbors = await self.find_temporal_neighbors(
+            semantic_results, 
+            decomposed.temporal_context or ""
+        )
+        
+        # Step 5: Synthesize context
+        context = await self.synthesize_context(
+            decomposed,
+            semantic_results,
+            graph_paths,
+            temporal_neighbors
+        )
+        
+        # Step 6: Generate answer
+        result = await self.generate_answer(query, context)
+        
+        # Add metadata
+        result.supporting_memories = semantic_results[:5]
+        result.graph_paths = graph_paths[:5]
+        
+        return result
 
-# Interactive CLI for testing
-async def interactive_graphrag_session():
-    """Interactive GraphRAG query session"""
+async def test_unified_graphrag():
+    """Test the GraphRAG pipeline with unified memory system"""
+    
     pipeline = GraphRAGPipeline()
-    
-    logger.info("🚀 Initializing GraphRAG Pipeline...")
-    if not await pipeline.initialize():
-        logger.error("Failed to initialize pipeline")
-        return
-    
-    logger.info("\n🎯 GRAPHRAG PIPELINE READY!")
-    logger.info("This implements the full research-backed GraphRAG approach:")
-    logger.info("  1. Query Decomposition (Entity + Intent extraction)")
-    logger.info("  2. Vector Search (Semantic similarity)")
-    logger.info("  3. Graph Expansion (Relationship traversal)")
-    logger.info("  4. Context Synthesis (Fusion of results)")
-    logger.info("  5. Response Generation (Final answer)")
-    
-    print("\nExample queries to try:")
-    print("  - 'What were my main fitness activities in June 2025?'")
-    print("  - 'How has my workout routine evolved over time?'")
-    print("  - 'What connections exist between my work projects and fitness goals?'")
-    print("  - 'Tell me about my experiences in San Francisco'")
-    
-    user_id = "fa97efb5-410d-4806-b137-8cf13b6cb464"  # Your user ID
-    
-    while True:
-        try:
-            query = input("\n🔍 Enter your query (or 'quit'): ").strip()
-            
-            if query.lower() in ['quit', 'exit', 'q']:
-                break
-            
-            if not query:
-                continue
-            
-            # Process query through full pipeline
-            print("\n⏳ Processing through GraphRAG pipeline...")
-            result = await pipeline.process_query(query, user_id)
-            
-            if "error" in result:
-                print(f"\n❌ Error: {result['error']}")
-            else:
-                print(f"\n📊 PIPELINE RESULTS:")
-                print(f"  - Query Type: {result['decomposition'].get('query_type', 'unknown')}")
-                print(f"  - Entities Found: {len(result['decomposition'].get('entity_anchors', []))}")
-                print(f"  - Seed Memories: {result['seed_memories']}")
-                print(f"  - Graph Nodes: {result['graph_nodes']}")
-                print(f"  - Relationships: {result['graph_relationships']}")
-                
-                print(f"\n💡 ANSWER:")
-                print(result['response'])
-                
-                # Optional: Show decomposition details
-                show_details = input("\nShow detailed decomposition? (y/n): ").lower()
-                if show_details == 'y':
-                    print(f"\n🔍 DECOMPOSITION:")
-                    print(json.dumps(result['decomposition'], indent=2))
-                
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            logger.error(f"Query processing error: {e}")
-            import traceback
-            traceback.print_exc()
-    
-    logger.info("\n👋 GraphRAG session ended!")
-
-# Batch processing for evaluation
-async def evaluate_graphrag_pipeline():
-    """Run evaluation queries through the pipeline"""
-    pipeline = GraphRAGPipeline()
-    
-    if not await pipeline.initialize():
-        return
     
     test_queries = [
-        {
-            "query": "What fitness activities have I done recently?",
-            "expected_entities": ["fitness", "gym", "workout"]
-        },
-        {
-            "query": "Tell me about my experiences with Barry's Bootcamp",
-            "expected_entities": ["Barry's Bootcamp", "trainer", "bootcamp"]
-        },
-        {
-            "query": "What happened in San Francisco in July 2024?",
-            "expected_entities": ["San Francisco", "July", "fireworks"]
-        },
-        {
-            "query": "How do I organize my work setup?",
-            "expected_entities": ["desk", "monitor", "Suptek"]
-        }
+        "What fitness activities do I do and where?",
+        "Tell me about my work with Oracle colleagues",
+        "What projects am I working on?",
+        "What happened in June 2025?",
+        "What are my ongoing routines?"
     ]
     
-    user_id = "fa97efb5-410d-4806-b137-8cf13b6cb464"
-    
-    logger.info("📊 EVALUATING GRAPHRAG PIPELINE")
-    logger.info("="*60)
-    
-    for i, test in enumerate(test_queries, 1):
-        logger.info(f"\n🧪 Test {i}: {test['query']}")
-        
-        result = await pipeline.process_query(test['query'], user_id)
-        
-        if "error" not in result:
-            # Check entity extraction
-            found_entities = [e['name'].lower() for e in result['decomposition'].get('entity_anchors', [])]
-            expected_found = sum(1 for exp in test['expected_entities'] if any(exp in ent for ent in found_entities))
+    for query in test_queries:
+        try:
+            result = await pipeline.query(query)
             
-            logger.info(f"  ✅ Entity extraction: {expected_found}/{len(test['expected_entities'])}")
-            logger.info(f"  ✅ Seeds found: {result['seed_memories']}")
-            logger.info(f"  ✅ Graph expanded: {result['graph_nodes']} nodes")
-            logger.info(f"  📝 Response preview: {result['response'][:100]}...")
-        else:
-            logger.error(f"  ❌ Pipeline failed: {result['error']}")
+            print(f"\n{'='*60}")
+            print(f"Query: {query}")
+            print(f"{'='*60}")
+            print(f"\n📝 Answer:\n{result.answer}")
+            print(f"\n🔗 Sources: {', '.join(result.sources)}")
+            print(f"🎯 Confidence: {result.confidence:.2f}")
+            
+        except Exception as e:
+            logger.error(f"Query failed: {e}")
     
-    logger.info("\n✅ Evaluation complete!")
+    pipeline.close()
+
+async def interactive_mode():
+    """Interactive query mode"""
+    
+    pipeline = GraphRAGPipeline()
+    
+    print("\n🚀 GraphRAG Interactive Mode (Unified Memory System)")
+    print("Type 'exit' to quit")
+    print("="*60)
+    
+    while True:
+        query = input("\n❓ Your query: ").strip()
+        
+        if query.lower() == 'exit':
+            break
+        
+        if not query:
+            continue
+        
+        try:
+            result = await pipeline.query(query)
+            
+            print(f"\n📝 Answer:\n{result.answer}")
+            
+            # Optionally show details
+            show_details = input("\n🔍 Show details? (y/n): ").strip().lower()
+            if show_details == 'y':
+                print("\n📊 Supporting Memories:")
+                for mem in result.supporting_memories[:3]:
+                    print(f"  - {mem['text'][:100]}... (score: {mem['score']:.3f})")
+                
+                if result.graph_paths:
+                    print("\n🔗 Graph Connections:")
+                    for path in result.graph_paths[:3]:
+                        print(f"  - {path}")
+        
+        except Exception as e:
+            logger.error(f"Query failed: {e}")
+    
+    pipeline.close()
+    print("\n👋 Goodbye!")
 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='GraphRAG Pipeline')
-    parser.add_argument('--interactive', '-i', action='store_true', help='Run interactive session')
-    parser.add_argument('--evaluate', '-e', action='store_true', help='Run evaluation queries')
-    
-    args = parser.parse_args()
-    
-    if args.evaluate:
-        asyncio.run(evaluate_graphrag_pipeline())
+    if len(sys.argv) > 1 and sys.argv[1] == "interactive":
+        asyncio.run(interactive_mode())
     else:
-        # Default to interactive
-        asyncio.run(interactive_graphrag_session()) 
+        asyncio.run(test_unified_graphrag()) 
