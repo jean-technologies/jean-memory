@@ -411,19 +411,123 @@ class RDPipeline:
             # Create temporal episodes with Graphiti (simplified for R&D)
             try:
                 from unified_memory_ingestion import create_temporal_episode
+                from datetime import datetime, timedelta
+                from collections import defaultdict
                 
-                # Group memories by time periods for episodes
-                if len(memories) >= 5:
-                    episode_memories = memories[:5]  # Take first 5 for episode
+                logger.info(f"🎬 Creating temporal episodes from {len(memories)} memories...")
+                
+                # Strategy 1: Temporal clustering (group by day)
+                temporal_clusters = defaultdict(list)
+                
+                for memory in memories:
+                    # Extract date from memory
+                    created_at = memory.get('created_at', '')
+                    if created_at:
+                        try:
+                            # Parse ISO format date
+                            if 'T' in created_at:
+                                date_obj = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                            else:
+                                date_obj = datetime.now()
+                            
+                            # Group by date (day)
+                            date_key = date_obj.strftime('%Y-%m-%d')
+                            temporal_clusters[date_key].append(memory)
+                        except:
+                            # Fallback to current date if parsing fails
+                            date_key = datetime.now().strftime('%Y-%m-%d')
+                            temporal_clusters[date_key].append(memory)
+                    else:
+                        # No date, add to today's cluster
+                        date_key = datetime.now().strftime('%Y-%m-%d')
+                        temporal_clusters[date_key].append(memory)
+                
+                logger.info(f"   Created {len(temporal_clusters)} temporal clusters")
+                
+                # Strategy 2: Semantic clustering (group by keywords/topics)
+                semantic_clusters = defaultdict(list)
+                
+                # Define topic keywords
+                topic_keywords = {
+                    'fitness': ['gym', 'workout', 'exercise', 'fitness', 'training', 'deadlift', 'squat', 'run'],
+                    'work': ['work', 'project', 'meeting', 'code', 'development', 'task', 'deadline'],
+                    'food': ['eat', 'food', 'restaurant', 'cook', 'meal', 'breakfast', 'lunch', 'dinner'],
+                    'travel': ['travel', 'trip', 'flight', 'hotel', 'visit', 'vacation'],
+                    'social': ['friend', 'family', 'meet', 'party', 'event', 'birthday']
+                }
+                
+                for memory in memories:
+                    content = memory.get('content', '').lower()
+                    assigned = False
+                    
+                    # Check each topic
+                    for topic, keywords in topic_keywords.items():
+                        if any(keyword in content for keyword in keywords):
+                            semantic_clusters[topic].append(memory)
+                            assigned = True
+                            break
+                    
+                    # If no topic matched, add to general cluster
+                    if not assigned:
+                        semantic_clusters['general'].append(memory)
+                
+                logger.info(f"   Created {len(semantic_clusters)} semantic clusters")
+                
+                # Create episodes for temporal clusters
+                episode_count = 0
+                
+                for date_key, date_memories in temporal_clusters.items():
+                    if len(date_memories) >= 1:  # Allow single memory episodes
+                        episode_name = f"User_{user_id}_Daily_{date_key}"
+                        episode_desc = f"Daily activities for {user_id} on {date_key}"
+                        
+                        episode_result = await create_temporal_episode(
+                            self.graphiti_client,
+                            date_memories,
+                            episode_name,
+                            episode_desc
+                        )
+                        
+                        if episode_result:
+                            episode_count += 1
+                
+                # Create episodes for semantic clusters (only if they have multiple memories)
+                for topic, topic_memories in semantic_clusters.items():
+                    if len(topic_memories) >= 2:  # Semantic episodes need at least 2 memories
+                        episode_name = f"User_{user_id}_Topic_{topic}_{datetime.now().strftime('%Y%m%d')}"
+                        episode_desc = f"{topic.capitalize()} related memories for {user_id}"
+                        
+                        episode_result = await create_temporal_episode(
+                            self.graphiti_client,
+                            topic_memories[:10],  # Limit to 10 memories per topic episode
+                            episode_name,
+                            episode_desc
+                        )
+                        
+                        if episode_result:
+                            episode_count += 1
+                
+                # Create a weekly summary episode if we have enough memories
+                if len(memories) >= 7:
+                    # Sort memories by date
+                    sorted_memories = sorted(memories, key=lambda m: m.get('created_at', ''), reverse=True)
+                    weekly_memories = sorted_memories[:7]
+                    
+                    episode_name = f"User_{user_id}_Weekly_{datetime.now().strftime('%Y_W%U')}"
+                    episode_desc = f"Weekly summary for {user_id}"
+                    
                     episode_result = await create_temporal_episode(
                         self.graphiti_client,
-                        episode_memories,
-                        f"User_{user_id}_Episode_{datetime.now().strftime('%Y%m%d_%H%M')}",
-                        f"Memory episode for user {user_id}"
+                        weekly_memories,
+                        episode_name,
+                        episode_desc
                     )
-                    results["graphiti_episodes"] = 1
-                else:
-                    results["graphiti_episodes"] = 0
+                    
+                    if episode_result:
+                        episode_count += 1
+                
+                results["graphiti_episodes"] = episode_count
+                logger.info(f"   ✅ Created {episode_count} episodes")
                     
             except Exception as e:
                 error_msg = f"Graphiti ingestion error: {str(e)}"

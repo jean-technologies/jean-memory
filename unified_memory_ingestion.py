@@ -164,17 +164,23 @@ async def add_memory_with_graph(memory, text: str, user_id: str, metadata: Dict[
     return result
 
 async def create_temporal_episode(graphiti, memories: List[Dict], episode_name: str, description: str):
-    """Create temporal episode using Graphiti"""
+    """Create temporal episode using Graphiti according to official docs"""
     from graphiti_core.nodes import EpisodeType
     
-    # Combine memories into episode content - handle both 'content' and 'text' fields
-    episode_parts = []
-    for m in memories[:5]:
-        content = m.get('content', '') or m.get('text', '')
-        if content:
-            episode_parts.append(content[:100])
+    logger.info(f"🎬 Starting episode creation: {episode_name}")
+    logger.info(f"   Number of memories: {len(memories)}")
     
-    episode_content = " | ".join(episode_parts)
+    # Combine memories into episode content - format as conversational text
+    episode_parts = []
+    for i, m in enumerate(memories):
+        content = m.get('content', '') or m.get('text', '') or m.get('memory', '')
+        if content:
+            # Format as "Memory {i}: {content}" to create a structured narrative
+            episode_parts.append(f"Memory {i+1}: {content}")
+            logger.info(f"   Memory {i+1}: {content[:50]}...")
+    
+    # Join with newlines for better readability
+    episode_content = "\n".join(episode_parts)
     
     # Ensure we have content
     if not episode_content.strip():
@@ -190,23 +196,64 @@ async def create_temporal_episode(graphiti, memories: List[Dict], episode_name: 
     
     logger.info(f"🎬 Creating episode: {episode_name}")
     logger.info(f"   Episode content length: {len(episode_content)} characters")
+    logger.info(f"   Episode content preview: {episode_content[:200]}...")
     
     try:
-        # Add episode with custom entity types
+        # Add episode with proper parameters according to docs
         result = await graphiti.add_episode(
             name=episode_name,
             episode_body=episode_content,
-            source=EpisodeType.text,
+            source=EpisodeType.text,  # Using text type for general memories
             source_description=description,
             reference_time=datetime.now(timezone.utc),
             entity_types=entity_types
         )
         
-        logger.info(f"✅ Episode created: {episode_name}")
+        logger.info(f"✅ Episode created successfully: {episode_name}")
+        logger.info(f"   Result: {result}")
+        
+        # Verify episode was created in Neo4j by checking Episodic nodes
+        from neo4j import AsyncGraphDatabase
+        import os
+        
+        neo4j_uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+        neo4j_user = os.getenv("NEO4J_USER", "neo4j")
+        neo4j_password = os.getenv("NEO4J_PASSWORD", "your-neo4j-password")
+        
+        driver = AsyncGraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+        
+        async with driver.session() as session:
+            # Check for Episodic nodes (Graphiti uses "Episodic" not "Episode")
+            result = await session.run(
+                "MATCH (e:Episodic) WHERE e.name = $name RETURN e",
+                name=episode_name
+            )
+            records = [record async for record in result]
+            
+            if records:
+                logger.info(f"✅ Episode verified in Neo4j as Episodic node: {episode_name}")
+            else:
+                logger.warning(f"⚠️ Episode NOT found in Neo4j as Episodic node: {episode_name}")
+                
+                # Check all Episodic nodes
+                all_episodes_result = await session.run("MATCH (e:Episodic) RETURN count(e) as count, collect(e.name)[..5] as names")
+                all_episodes = [record async for record in all_episodes_result]
+                if all_episodes:
+                    count = all_episodes[0]['count']
+                    names = all_episodes[0]['names']
+                    logger.info(f"   Total Episodic nodes in Neo4j: {count}")
+                    logger.info(f"   Sample Episodic names: {names}")
+        
+        await driver.close()
+        
         return result
         
     except Exception as e:
         logger.error(f"❌ Failed to create episode {episode_name}: {e}")
+        logger.error(f"   Error type: {type(e).__name__}")
+        logger.error(f"   Error details: {str(e)}")
+        import traceback
+        logger.error(f"   Traceback: {traceback.format_exc()}")
         return None
 
 async def search_unified_memory(memory, graphiti, query: str, user_id: str):

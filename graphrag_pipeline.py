@@ -57,8 +57,8 @@ class GraphRAGPipeline:
         # Initialize connections
         self.qdrant = QdrantClient(host="localhost", port=6333)
         self.neo4j_driver = GraphDatabase.driver(
-            "bolt://localhost:7687",
-            auth=("neo4j", os.getenv("NEO4J_PASSWORD", "your-neo4j-password"))
+            os.getenv("NEO4J_URI", "bolt://localhost:7687"),
+            auth=(os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "your-neo4j-password"))
         )
         self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
         

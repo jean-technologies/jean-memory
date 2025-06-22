@@ -169,41 +169,64 @@ class UnifiedMemorySystemCheck:
             
             graphiti = Graphiti(neo4j_uri, neo4j_user, neo4j_password)
             
-            # Check for episodes
+            # Check for Episodic nodes (Graphiti uses "Episodic" not "Episode")
             from neo4j import GraphDatabase
             driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
             
             with driver.session() as session:
-                # Check episode nodes
-                episode_result = session.run("""
-                    MATCH (e:Episode)
+                # Check for Episodic nodes (Graphiti uses "Episodic" not "Episode")
+                episode_result = session.run(
+                    """
+                    MATCH (e:Episodic)
                     RETURN count(e) as count, 
                            collect(DISTINCT e.name)[..5] as sample_names
                 """)
                 episode_data = episode_result.single()
                 
-                result["details"]["episode_count"] = episode_data["count"]
-                result["details"]["sample_episodes"] = episode_data["sample_names"]
+                episode_count = episode_data['count'] if episode_data else 0
+                sample_names = episode_data['sample_names'] if episode_data else []
                 
-                # Check entity nodes
-                entity_result = session.run("""
-                    MATCH (n)
-                    WHERE n:Person OR n:Activity OR n:Project
-                    RETURN labels(n)[0] as type, count(n) as count
-                """)
+                # Also check for MENTIONS relationships which connect episodes to entities
+                mentions_result = session.run(
+                    """
+                    MATCH ()-[m:MENTIONS]->()
+                    RETURN count(m) as count
+                    """
+                )
+                mentions_data = mentions_result.single()
+                mentions_count = mentions_data['count'] if mentions_data else 0
+                
+                # Get entity count from Graphiti
+                entity_result = session.run(
+                    """
+                    MATCH (n:Entity)
+                    RETURN labels(n) as labels, count(n) as count
+                    ORDER BY count DESC
+                    """
+                )
                 
                 entity_counts = {}
                 for record in entity_result:
-                    entity_counts[record["type"]] = record["count"]
+                    labels = record['labels']
+                    count = record['count']
+                    entity_counts[str(labels)] = count
                 
-                result["details"]["entity_counts"] = entity_counts
+                graphiti_status = {
+                    'status': 'healthy' if episode_count > 0 else 'warning',
+                    'episodes': episode_count,
+                    'sample_episode_names': sample_names,
+                    'mentions_relationships': mentions_count,
+                    'entities': entity_counts
+                }
                 
-                if episode_data["count"] > 0:
-                    result["status"] = "healthy"
+                if episode_count == 0:
+                    graphiti_status['message'] = "No episodes found in Graphiti"
                 else:
-                    result["issues"].append("No episodes found in Graphiti")
-                    result["status"] = "warning"
-            
+                    graphiti_status['message'] = f"Found {episode_count} episodes with {mentions_count} mentions"
+                
+                result["details"] = graphiti_status
+                result["status"] = graphiti_status['status']
+                
             driver.close()
             await graphiti.close()
             
@@ -215,7 +238,7 @@ class UnifiedMemorySystemCheck:
     
     async def check_postgresql_metadata(self) -> Dict[str, Any]:
         """Check PostgreSQL metadata connections"""
-        logger.info("�� Checking PostgreSQL Metadata...")
+        logger.info("🔍 Checking PostgreSQL Metadata...")
         
         result = {
             "status": "unknown",
@@ -224,64 +247,78 @@ class UnifiedMemorySystemCheck:
         }
         
         try:
-            import psycopg2
-            from psycopg2.extras import RealDictCursor
+            import asyncpg
             
-            # Connect to production database
-            conn = psycopg2.connect(
-                host='db.masapxpxcwvsjpuymbmd.supabase.co',
-                port=5432,
-                database='postgres',
-                user='postgres',
-                password='jeanmemorytypefasho'
+            # Connect to PostgreSQL
+            conn = await asyncpg.connect(
+                host=os.getenv('PG_HOST', 'localhost'),
+                port=int(os.getenv('PG_PORT', 5432)),
+                user=os.getenv('PG_USER'),
+                password=os.getenv('PG_PASSWORD'),
+                database=os.getenv('PG_DBNAME', 'mem0_test')
             )
             
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            # Check if memories table exists
+            table_exists = await conn.fetchval(
+                """
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'memories'
+                )
+                """
+            )
             
-            # Check memories table
-            cursor.execute("""
-                SELECT COUNT(*) as total_memories,
-                       COUNT(DISTINCT user_id) as unique_users,
-                       MIN(created_at) as earliest_memory,
-                       MAX(created_at) as latest_memory
-                FROM memories
-                WHERE deleted_at IS NULL
-            """)
-            memory_stats = cursor.fetchone()
-            result["details"]["memory_stats"] = dict(memory_stats)
+            if not table_exists:
+                result["issues"].append("memories table not found")
+                result["status"] = "error"
+                await conn.close()
+                return result
             
-            # Check metadata structure
-            cursor.execute("""
+            # Get table info
+            columns = await conn.fetch(
+                """
                 SELECT column_name, data_type 
                 FROM information_schema.columns 
-                WHERE table_name = 'memories'
-                ORDER BY ordinal_position
-            """)
-            columns = cursor.fetchall()
-            result["details"]["memory_columns"] = [col['column_name'] for col in columns]
+                WHERE table_schema = 'public' 
+                AND table_name = 'memories'
+                """
+            )
             
-            # Check if metadata column exists
-            has_metadata = any(col['column_name'] == 'metadata' for col in columns)
-            if has_metadata:
-                # Sample metadata
-                cursor.execute("""
-                    SELECT metadata 
-                    FROM memories 
-                    WHERE metadata IS NOT NULL 
-                    AND metadata != '{}'::jsonb
-                    LIMIT 5
-                """)
-                sample_metadata = cursor.fetchall()
-                result["details"]["sample_metadata_count"] = len(sample_metadata)
+            result["details"]["memory_columns"] = [
+                {"name": col['column_name'], "type": col['data_type']} 
+                for col in columns
+            ]
             
-            cursor.close()
-            conn.close()
+            # Check metadata column type
+            metadata_col = next((col for col in columns if col['column_name'] == 'metadata'), None)
+            if metadata_col:
+                result["details"]["metadata_type"] = metadata_col['data_type']
+                
+                # Count non-empty metadata
+                metadata_count = await conn.fetchval(
+                    """
+                    SELECT count(*) 
+                    FROM memories
+                    WHERE metadata IS NOT NULL
+                    AND metadata::text != '{}'
+                    AND metadata::text != 'null'
+                    """
+                )
+                result["details"]["metadata_count"] = metadata_count
+            
+            # Get total memory count
+            total_count = await conn.fetchval("SELECT count(*) FROM memories")
+            result["details"]["total_memories"] = total_count
             
             result["status"] = "healthy"
+            
+            await conn.close()
             
         except Exception as e:
             result["status"] = "error"
             result["issues"].append(f"PostgreSQL error: {str(e)}")
+            logger.error(f"PostgreSQL check error: {e}")
         
         return result
     
@@ -324,7 +361,7 @@ class UnifiedMemorySystemCheck:
                 check_result = session.run("""
                     MATCH (m:Memory)
                     WITH count(m) as memory_count
-                    MATCH (e:Episode)
+                    MATCH (e:Episodic)
                     RETURN memory_count, count(e) as episode_count
                 """)
                 
@@ -431,9 +468,10 @@ class UnifiedMemorySystemCheck:
                 print(f"   - Vector size: {uc.get('vector_size', 0)}")
             elif component == "mem0_graph" and "node_counts" in details:
                 print(f"   - Nodes: {details['node_counts']}")
-            elif component == "graphiti" and "episode_count" in details:
-                print(f"   - Episodes: {details['episode_count']}")
-                print(f"   - Entities: {details.get('entity_counts', {})}")
+            elif component == "graphiti" and "episodes" in details:
+                print(f"   - Episodes: {details['episodes']}")
+                print(f"   - Mentions: {details['mentions_relationships']}")
+                print(f"   - Entities: {details['entities']}")
         
         print("\n🔗 INTEGRATION STATUS:")
         print("-" * 40)

@@ -16,6 +16,9 @@ services:
       - POSTGRES_DB=jean_memory_db
       - QDRANT_HOST=qdrant_db
       - QDRANT_PORT=6333
+      - NEO4J_URI=bolt://neo4j_db:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=fasho93fasho
     env_file:
       - ./api/.env
     volumes:
@@ -27,6 +30,8 @@ services:
       postgres_db:
         condition: service_healthy
       qdrant_db:
+        condition: service_healthy
+      neo4j_db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
@@ -73,9 +78,35 @@ services:
       timeout: 10s
       retries: 3
 
+  # Neo4j Graph Database - For unified memory system
+  neo4j_db:
+    image: neo4j:5
+    container_name: openmemory_neo4j_service
+    restart: always
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/fasho93fasho
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - memory_network
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p fasho93fasho 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+
 volumes:
   postgres_data:
   qdrant_data:
+  neo4j_data:
 
 networks:
   memory_network:
