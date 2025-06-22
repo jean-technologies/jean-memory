@@ -298,10 +298,13 @@ Return as JSON:
                             "id": record['m'].element_id,
                             "properties": dict(record['m'])
                         })
-                    if record['r']:
+                    # FIX: Check for None explicitly instead of truthy check
+                    if record['r'] is not None:
                         expanded_context['relationships'].append({
                             "type": record['r'].type,
-                            "properties": dict(record['r'])
+                            "properties": dict(record['r']),
+                            "start_node": record['n'].element_id if record['n'] else None,
+                            "end_node": record['m'].element_id if record['m'] else None
                         })
                 
                 # Query 2: Find temporal neighbors
