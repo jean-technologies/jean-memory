@@ -7,6 +7,7 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 import pathlib
+import re
 
 # Determine the correct environment file path
 # Priority: .env.local > api/.env > .env
@@ -54,7 +55,18 @@ class Config:
         
         # Qdrant configuration
         self.QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
-        self.QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
+        
+        qdrant_port_str = os.getenv("QDRANT_PORT", "6333")
+        if not str(qdrant_port_str).isdigit():
+            # This is a fallback for a potentially malformed .env file where
+            # variables might be concatenated. We'll try to parse the numeric part.
+            match = re.search(r'^\d+', str(qdrant_port_str))
+            if match:
+                qdrant_port_str = match.group(0)
+            else:
+                qdrant_port_str = "6333" # fallback to default
+
+        self.QDRANT_PORT = int(qdrant_port_str)
         self.QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
         
         # Collection name based on environment
