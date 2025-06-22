@@ -270,7 +270,7 @@ class RDPipeline:
             raise
     
     async def test_retrieval(self, user_id: str, test_queries: List[str]) -> Dict[str, Any]:
-        """Test unified memory retrieval with various queries"""
+        """Test unified memory retrieval with proper RAG responses"""
         try:
             logger.info(f"🔍 Testing retrieval with {len(test_queries)} queries...")
             
@@ -305,33 +305,24 @@ class RDPipeline:
                         memories = []
                         relations = []
                     
-                    # Create response from top memories
+                    # Generate proper RAG response using LLM
                     if memories:
-                        response_parts = []
-                        for mem in memories[:3]:  # Top 3 memories
-                            if isinstance(mem, dict):
-                                content = mem.get('memory', mem.get('text', mem.get('content', '')))
-                                if content:
-                                    response_parts.append(content)
-                        
-                        response = " | ".join(response_parts) if response_parts else "No relevant memories found"
-                        
-                        # Add relation information if available
-                        if relations:
-                            relation_info = f" [Relations: {len(relations)} found]"
-                            response += relation_info
+                        rag_response = await self._generate_rag_response(query, memories, relations)
+                        confidence = min(1.0, len(memories) / 5.0)  # Higher confidence with more sources
                     else:
-                        response = "No memories found"
+                        rag_response = "I don't have any relevant memories to answer that question."
+                        confidence = 0.0
                     
                     results[query] = {
-                        "response": response,
+                        "response": rag_response,
                         "sources": memories,
-                        "confidence": 1.0 if memories else 0.0,
+                        "relations": relations,
+                        "confidence": confidence,
                         "processing_time": processing_time,
                         "memory_count": len(memories)
                     }
                     
-                    logger.info(f"     ✅ Response length: {len(response)}")
+                    logger.info(f"     ✅ Response length: {len(rag_response)}")
                     logger.info(f"     📊 Sources: {len(memories)}")
                     
                 except Exception as e:
@@ -349,6 +340,83 @@ class RDPipeline:
         except Exception as e:
             logger.error(f"❌ Failed to test retrieval: {e}")
             raise
+    
+    async def _generate_rag_response(self, query: str, memories: List[Dict], relations: List[Dict] = None) -> str:
+        """Generate a proper RAG response using LLM with retrieved memories"""
+        try:
+            from openai import AsyncOpenAI
+            import os
+            
+            # Initialize OpenAI client
+            client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            
+            # Prepare context from memories
+            context_parts = []
+            for i, mem in enumerate(memories[:5], 1):  # Use top 5 memories
+                if isinstance(mem, dict):
+                    memory_text = mem.get('memory', mem.get('text', mem.get('content', '')))
+                    if memory_text:
+                        context_parts.append(f"{i}. {memory_text}")
+            
+            # Add relationship context if available
+            relationship_context = ""
+            if relations:
+                rel_parts = []
+                for rel in relations[:3]:  # Top 3 relationships
+                    if isinstance(rel, dict):
+                        source = rel.get('source', '')
+                        relationship = rel.get('relationship', '')
+                        destination = rel.get('destination', '')
+                        if source and relationship and destination:
+                            rel_parts.append(f"{source} {relationship} {destination}")
+                
+                if rel_parts:
+                    relationship_context = f"\n\nRelated connections:\n" + "\n".join(f"• {rel}" for rel in rel_parts)
+            
+            context = "\n".join(context_parts) + relationship_context
+            
+            # Create RAG prompt
+            system_prompt = """You are a personal memory assistant. Based on the retrieved memories and relationships, provide a helpful, accurate, and contextual response to the user's question.
+
+Guidelines:
+- Use the provided memories as your primary source of information
+- Synthesize information across multiple memories when relevant
+- Be specific and mention concrete details from the memories
+- If the memories don't fully answer the question, acknowledge what you can and cannot determine
+- Keep responses conversational but informative
+- Don't make up information not present in the memories"""
+
+            user_prompt = f"""Question: {query}
+
+Retrieved memories:
+{context}
+
+Please provide a helpful response based on these memories."""
+
+            # Generate response
+            response = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=500
+            )
+            
+            return response.choices[0].message.content.strip()
+            
+        except Exception as e:
+            logger.error(f"Failed to generate RAG response: {e}")
+            # Fallback to simple concatenation if LLM fails
+            fallback_parts = []
+            for mem in memories[:3]:
+                if isinstance(mem, dict):
+                    content = mem.get('memory', mem.get('text', mem.get('content', '')))
+                    if content:
+                        fallback_parts.append(content)
+            
+            return " | ".join(fallback_parts) if fallback_parts else "Unable to generate response"
     
     def analyze_results(self, user_id: str) -> Dict[str, Any]:
         """Analyze ingestion and retrieval results"""

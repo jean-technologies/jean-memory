@@ -51,8 +51,8 @@ async def initialize_mem0():
         "graph_store": {
             "provider": "neo4j",
             "config": {
-                "url": "bolt://localhost:7687",
-                "username": "neo4j",
+                "url": os.getenv("NEO4J_URI", "bolt://localhost:7687"),
+                "username": os.getenv("NEO4J_USER", "neo4j"),
                 "password": os.getenv("NEO4J_PASSWORD", "your-neo4j-password")
             }
         },
@@ -127,8 +127,8 @@ async def initialize_graphiti():
     load_dotenv()
     
     # Neo4j connection parameters
-    neo4j_uri = "bolt://localhost:7687"
-    neo4j_user = "neo4j"
+    neo4j_uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+    neo4j_user = os.getenv("NEO4J_USER", "neo4j")
     neo4j_password = os.getenv("NEO4J_PASSWORD", "your-neo4j-password")
     
     # Initialize Graphiti
@@ -163,8 +163,19 @@ async def create_temporal_episode(graphiti, memories: List[Dict], episode_name: 
     """Create temporal episode using Graphiti"""
     from graphiti_core.nodes import EpisodeType
     
-    # Combine memories into episode content
-    episode_content = " | ".join([m.get('text', '')[:100] for m in memories[:5]])
+    # Combine memories into episode content - handle both 'content' and 'text' fields
+    episode_parts = []
+    for m in memories[:5]:
+        content = m.get('content', '') or m.get('text', '')
+        if content:
+            episode_parts.append(content[:100])
+    
+    episode_content = " | ".join(episode_parts)
+    
+    # Ensure we have content
+    if not episode_content.strip():
+        logger.warning(f"⚠️ No content found for episode {episode_name}")
+        return None
     
     # Define entity types for this episode
     entity_types = {
@@ -174,20 +185,25 @@ async def create_temporal_episode(graphiti, memories: List[Dict], episode_name: 
     }
     
     logger.info(f"🎬 Creating episode: {episode_name}")
+    logger.info(f"   Episode content length: {len(episode_content)} characters")
     
-    # Add episode with custom entity types
-    result = await graphiti.add_episode(
-        name=episode_name,
-        episode_body=episode_content,
-        source=EpisodeType.text,
-        source_description=description,
-        reference_time=datetime.now(timezone.utc),
-        entity_types=entity_types
-    )
-    
-    logger.info(f"✅ Episode created: {episode_name}")
-    
-    return result
+    try:
+        # Add episode with custom entity types
+        result = await graphiti.add_episode(
+            name=episode_name,
+            episode_body=episode_content,
+            source=EpisodeType.text,
+            source_description=description,
+            reference_time=datetime.now(timezone.utc),
+            entity_types=entity_types
+        )
+        
+        logger.info(f"✅ Episode created: {episode_name}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to create episode {episode_name}: {e}")
+        return None
 
 async def search_unified_memory(memory, graphiti, query: str, user_id: str):
     """Search across both mem0 and Graphiti"""
