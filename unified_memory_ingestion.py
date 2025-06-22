@@ -57,10 +57,13 @@ async def initialize_mem0():
             }
         },
         "vector_store": {
-            "provider": "qdrant",
+            "provider": "pgvector",
             "config": {
-                "host": "localhost",
-                "port": 6333,
+                "user": os.getenv("PG_USER"),
+                "password": os.getenv("PG_PASSWORD", ""),
+                "host": os.getenv("PG_HOST"),
+                "port": os.getenv("PG_PORT"),
+                "dbname": os.getenv("PG_DBNAME", "mem0_test"),
                 "collection_name": "unified_memory_mem0"
             }
         },
@@ -78,7 +81,8 @@ async def initialize_mem0():
                 "api_key": os.getenv("OPENAI_API_KEY")
             }
         },
-        "version": "v1.1"
+        "version": "v1.1",
+        "history_db_path": "unified_memory_history.db"
     }
     
     # Handle SQLite history database issues
