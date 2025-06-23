@@ -462,4 +462,722 @@ def get_unified_memory_client_sync() -> UnifiedMemorySystem:
             return future.result()
     except RuntimeError:
         # No running loop, can use asyncio.run directly
-        return asyncio.run(get_unified_memory_client()) 
+        return asyncio.run(get_unified_memory_client())
+
+
+"""
+Unified Memory Client - Compatibility layer for migrating from Qdrant to Multi-layer RAG
+"""
+
+import os
+import asyncio
+import json
+import logging
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timezone
+from collections import defaultdict
+
+from mem0 import Memory
+from graphiti_core import Graphiti
+from graphiti_core.nodes import EpisodeType
+from neo4j import AsyncGraphDatabase
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+try:
+    from app.settings import config
+    from app.utils.memory import get_memory_client as get_qdrant_memory_client
+except ImportError:
+    # Fallback for script execution
+    try:
+        import sys
+        from pathlib import Path
+        sys.path.append(str(Path(__file__).parent.parent))
+        from settings import config
+        from utils.memory import get_memory_client as get_qdrant_memory_client
+    except ImportError:
+        # Create a mock config for testing
+        class MockConfig:
+            def __init__(self):
+                self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+                self.OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                self.EMBEDDER_MODEL = os.getenv("EMBEDDER_MODEL", "text-embedding-3-small")
+                self.NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+                self.NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+                self.NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+                self.PG_HOST = os.getenv("PG_HOST", "localhost")
+                self.PG_PORT = int(os.getenv("PG_PORT", "5432"))
+                self.PG_USER = os.getenv("PG_USER", "postgres")
+                self.PG_PASSWORD = os.getenv("PG_PASSWORD")
+                self.PG_DBNAME = os.getenv("PG_DBNAME", "mem0_unified")
+        
+        config = MockConfig()
+        
+        def get_qdrant_memory_client():
+            # Mock function for testing
+            return None
+
+logger = logging.getLogger(__name__)
+
+
+class UnifiedMemoryClient:
+    """
+    Compatibility layer supporting both old (Qdrant) and new (pgvector + Neo4j) systems
+    Enables gradual migration with zero downtime
+    """
+    
+    def __init__(self, use_new_system: bool = False, user_id: Optional[str] = None):
+        self.use_new_system = use_new_system
+        self.user_id = user_id
+        
+        if use_new_system:
+            # Initialize new multi-layer system
+            self.mem0_client = self._init_mem0_pgvector()
+            self.graphiti_client = None  # Initialize later if needed
+            self.neo4j_driver = self._init_neo4j()
+            self.pg_connection = self._init_postgres()
+            self._setup_postgres_tables()
+            logger.info("✅ Initialized unified memory system (pgvector + Neo4j)")
+        else:
+            # Use existing Qdrant system
+            self.mem0_client = get_qdrant_memory_client()
+            self.graphiti_client = None
+            self.neo4j_driver = None
+            self.pg_connection = None
+            logger.info("✅ Using existing Qdrant memory system")
+    
+    def _init_mem0_pgvector(self) -> Memory:
+        """Initialize mem0 with pgvector backend"""
+        # Check if this is the test user and use test infrastructure
+        enable_test_user = os.getenv("ENABLE_UNIFIED_MEMORY_TEST_USER", "false").lower() == "true"
+        test_user_id = os.getenv("UNIFIED_MEMORY_TEST_USER_ID", "")
+        is_test_user = enable_test_user and test_user_id and self.user_id == test_user_id
+        
+        if is_test_user:
+            # Use test infrastructure
+            neo4j_uri = os.getenv("TEST_NEO4J_URI", "bolt://localhost:7688")
+            pg_config = {
+                "user": os.getenv("TEST_PG_USER", "postgres"),
+                "password": os.getenv("TEST_PG_PASSWORD", "secure_postgres_test_2024"),
+                "host": os.getenv("TEST_PG_HOST", "localhost"),
+                "port": os.getenv("TEST_PG_PORT", "5433"),
+                "dbname": os.getenv("TEST_PG_DBNAME", "mem0_unified"),
+                "collection_name": "test_user_memories"
+            }
+            neo4j_config = {
+                "url": neo4j_uri,
+                "username": os.getenv("TEST_NEO4J_USER", "neo4j"),
+                "password": os.getenv("TEST_NEO4J_PASSWORD", "secure_neo4j_test_2024")
+            }
+            logger.info(f"🧪 Using TEST infrastructure for user {self.user_id}")
+        else:
+            # Use production infrastructure
+            neo4j_config = {
+                "url": config.NEO4J_URI,
+                "username": config.NEO4J_USER,
+                "password": config.NEO4J_PASSWORD
+            }
+            pg_config = {
+                "user": config.PG_USER,
+                "password": config.PG_PASSWORD,
+                "host": config.PG_HOST,
+                "port": config.PG_PORT,
+                "dbname": config.PG_DBNAME,
+                "collection_name": "unified_memory_mem0"
+            }
+            logger.info(f"🏭 Using PRODUCTION infrastructure for user {self.user_id}")
+        
+        mem0_config = {
+            "graph_store": {
+                "provider": "neo4j",
+                "config": neo4j_config
+            },
+            "vector_store": {
+                "provider": "pgvector",
+                "config": pg_config
+            },
+            "llm": {
+                "provider": "openai",
+                "config": {
+                    "model": config.OPENAI_MODEL,
+                    "api_key": config.OPENAI_API_KEY
+                }
+            },
+            "embedder": {
+                "provider": "openai",
+                "config": {
+                    "model": config.EMBEDDER_MODEL,
+                    "api_key": config.OPENAI_API_KEY
+                }
+            },
+            "version": "v1.1"
+        }
+        
+        return Memory.from_config(config_dict=mem0_config)
+    
+    async def _init_graphiti(self) -> Graphiti:
+        """Initialize Graphiti for episodic memory"""
+        # Check if this is the test user and use test infrastructure
+        enable_test_user = os.getenv("ENABLE_UNIFIED_MEMORY_TEST_USER", "false").lower() == "true"
+        test_user_id = os.getenv("UNIFIED_MEMORY_TEST_USER_ID", "")
+        is_test_user = enable_test_user and test_user_id and self.user_id == test_user_id
+        
+        if is_test_user:
+            # Use test Neo4j
+            neo4j_uri = os.getenv("TEST_NEO4J_URI", "bolt://localhost:7688")
+            neo4j_user = os.getenv("TEST_NEO4J_USER", "neo4j")
+            neo4j_password = os.getenv("TEST_NEO4J_PASSWORD", "secure_neo4j_test_2024")
+        else:
+            # Use production Neo4j
+            neo4j_uri = config.NEO4J_URI
+            neo4j_user = config.NEO4J_USER
+            neo4j_password = config.NEO4J_PASSWORD
+        
+        graphiti = Graphiti(neo4j_uri, neo4j_user, neo4j_password)
+        
+        # Build indices and constraints
+        await graphiti.build_indices_and_constraints()
+        
+        return graphiti
+    
+    def _init_neo4j(self) -> AsyncGraphDatabase.driver:
+        """Initialize direct Neo4j driver for advanced queries"""
+        # Check if this is the test user and use test infrastructure
+        enable_test_user = os.getenv("ENABLE_UNIFIED_MEMORY_TEST_USER", "false").lower() == "true"
+        test_user_id = os.getenv("UNIFIED_MEMORY_TEST_USER_ID", "")
+        is_test_user = enable_test_user and test_user_id and self.user_id == test_user_id
+        
+        if is_test_user:
+            # Use test Neo4j
+            neo4j_uri = os.getenv("TEST_NEO4J_URI", "bolt://localhost:7688")
+            neo4j_user = os.getenv("TEST_NEO4J_USER", "neo4j")
+            neo4j_password = os.getenv("TEST_NEO4J_PASSWORD", "secure_neo4j_test_2024")
+        else:
+            # Use production Neo4j
+            neo4j_uri = config.NEO4J_URI
+            neo4j_user = config.NEO4J_USER
+            neo4j_password = config.NEO4J_PASSWORD
+        
+        return AsyncGraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+    
+    def _init_postgres(self):
+        """Initialize PostgreSQL connection for direct queries"""
+        # Check if this is the test user and use test infrastructure
+        enable_test_user = os.getenv("ENABLE_UNIFIED_MEMORY_TEST_USER", "false").lower() == "true"
+        test_user_id = os.getenv("UNIFIED_MEMORY_TEST_USER_ID", "")
+        is_test_user = enable_test_user and test_user_id and self.user_id == test_user_id
+        
+        if is_test_user:
+            # Use test PostgreSQL
+            return psycopg2.connect(
+                host=os.getenv("TEST_PG_HOST", "localhost"),
+                port=int(os.getenv("TEST_PG_PORT", "5433")),
+                database=os.getenv("TEST_PG_DBNAME", "mem0_unified"),
+                user=os.getenv("TEST_PG_USER", "postgres"),
+                password=os.getenv("TEST_PG_PASSWORD", "secure_postgres_test_2024")
+            )
+        else:
+            # Use production PostgreSQL
+            return psycopg2.connect(
+                host=config.PG_HOST,
+                port=config.PG_PORT,
+                database=config.PG_DBNAME,
+                user=config.PG_USER,
+                password=config.PG_PASSWORD
+            )
+    
+    def _setup_postgres_tables(self):
+        """Create necessary PostgreSQL tables"""
+        if not self.pg_connection:
+            return
+        
+        cursor = self.pg_connection.cursor()
+        try:
+            # Create unified_memories table for episode tracking
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS unified_memories (
+                    id SERIAL PRIMARY KEY,
+                    user_id VARCHAR(255) NOT NULL,
+                    content TEXT NOT NULL,
+                    metadata JSONB,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                );
+            """)
+            
+            # Create index on user_id for fast queries
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_unified_memories_user_id 
+                ON unified_memories(user_id);
+            """)
+            
+            # Create index on created_at for temporal queries
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_unified_memories_created_at 
+                ON unified_memories(created_at);
+            """)
+            
+            self.pg_connection.commit()
+            logger.info("✅ PostgreSQL tables setup complete")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to setup PostgreSQL tables: {e}")
+            self.pg_connection.rollback()
+        finally:
+            cursor.close()
+    
+    async def add(self, text: str, user_id: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Add memory to the appropriate system"""
+        if self.use_new_system:
+            # Add to pgvector + create graph relationships
+            result = await self._add_to_unified_system(text, user_id, metadata)
+            
+            # Create episodic memories asynchronously
+            asyncio.create_task(self._create_episodes(user_id))
+            
+            return result
+        else:
+            # Use existing mem0/Qdrant
+            return self.mem0_client.add(text, user_id=user_id, metadata=metadata)
+    
+    async def _add_to_unified_system(self, text: str, user_id: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Add memory to unified system with graph relationships"""
+        try:
+            # Add to mem0 (which handles pgvector + Neo4j graph)
+            result = self.mem0_client.add(
+                text,
+                user_id=user_id,
+                metadata=metadata or {}
+            )
+            
+            # Track in PostgreSQL for episode generation
+            if self.pg_connection:
+                cursor = self.pg_connection.cursor()
+                cursor.execute("""
+                    INSERT INTO unified_memories (user_id, content, metadata, created_at)
+                    VALUES (%s, %s, %s, %s)
+                """, (user_id, text, json.dumps(metadata or {}), datetime.now(timezone.utc)))
+                self.pg_connection.commit()
+                cursor.close()
+            
+            logger.info(f"✅ Added memory to unified system: {result.get('id', 'N/A')}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to add to unified system: {e}")
+            raise
+    
+    async def search(self, query: str, user_id: str, limit: int = 10, **kwargs) -> List[Dict[str, Any]]:
+        """Search memories from the appropriate system"""
+        if self.use_new_system:
+            # Multi-layer search
+            return await self._unified_search(query, user_id, limit, **kwargs)
+        else:
+            # Existing Qdrant search
+            return self.mem0_client.search(query=query, user_id=user_id, limit=limit)
+    
+    async def _unified_search(self, query: str, user_id: str, limit: int = 10, **kwargs) -> List[Dict[str, Any]]:
+        """Perform multi-layer search across all memory systems"""
+        results = []
+        
+        # 1. Semantic search via mem0 (pgvector)
+        semantic_results = self.mem0_client.search(query=query, user_id=user_id, limit=limit)
+        for result in semantic_results:
+            result['source'] = 'semantic'
+            results.append(result)
+        
+        # 2. Graph search for relationships
+        if self.neo4j_driver:
+            graph_results = await self._search_graph_relationships(query, user_id, limit)
+            results.extend(graph_results)
+        
+        # 3. Episode search via Graphiti
+        if self.graphiti_client:
+            episode_results = await self._search_episodes(query, user_id, limit)
+            results.extend(episode_results)
+        
+        # Deduplicate and sort by relevance
+        seen_ids = set()
+        unique_results = []
+        for result in results:
+            result_id = result.get('id', result.get('memory', ''))
+            if result_id not in seen_ids:
+                seen_ids.add(result_id)
+                unique_results.append(result)
+        
+        # Sort by score/confidence
+        unique_results.sort(key=lambda x: x.get('score', x.get('confidence', 0)), reverse=True)
+        
+        return unique_results[:limit]
+    
+    async def _search_graph_relationships(self, query: str, user_id: str, limit: int) -> List[Dict[str, Any]]:
+        """Search Neo4j graph for entity relationships"""
+        results = []
+        
+        async with self.neo4j_driver.session() as session:
+            # Search for entities mentioned in the query
+            cypher_query = """
+            MATCH (m:Memory {user_id: $user_id})-[:MENTIONS]->(e:Entity)
+            WHERE toLower(e.name) CONTAINS toLower($query) 
+               OR toLower(m.content) CONTAINS toLower($query)
+            OPTIONAL MATCH (e)-[r:RELATES_TO]-(e2:Entity)
+            RETURN DISTINCT m.content as memory, m.id as id, 
+                   collect(DISTINCT e.name) as entities,
+                   collect(DISTINCT {from: e.name, to: e2.name, type: type(r)}) as relationships
+            LIMIT $limit
+            """
+            
+            result = await session.run(
+                cypher_query,
+                user_id=user_id,
+                query=query,
+                limit=limit
+            )
+            
+            async for record in result:
+                results.append({
+                    'id': record['id'],
+                    'memory': record['memory'],
+                    'source': 'graph',
+                    'entities': record['entities'],
+                    'relationships': [r for r in record['relationships'] if r['to'] is not None],
+                    'score': 0.9  # High confidence for graph matches
+                })
+        
+        return results
+    
+    async def _search_episodes(self, query: str, user_id: str, limit: int) -> List[Dict[str, Any]]:
+        """Search Graphiti episodes"""
+        results = []
+        
+        try:
+            # Search episodes via Graphiti
+            episode_results = await self.graphiti_client.search(query)
+            
+            for episode in episode_results[:limit]:
+                results.append({
+                    'id': f"episode_{episode.uuid}",
+                    'memory': episode.fact if hasattr(episode, 'fact') else str(episode),
+                    'source': 'episodic',
+                    'episode_name': getattr(episode, 'name', 'Unknown'),
+                    'score': getattr(episode, 'score', 0.8)
+                })
+                
+        except Exception as e:
+            logger.error(f"Episode search error: {e}")
+        
+        return results
+    
+    async def search_multilayer(self, query: str, user_id: str, limit: int = 10, 
+                               search_types: List[str] = None, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        """Advanced multi-layer search with fine control"""
+        if not self.use_new_system:
+            # Fallback to regular search for old system
+            return await self.search(query, user_id, limit)
+        
+        search_types = search_types or ["semantic", "graph", "episodic"]
+        all_results = []
+        
+        if "semantic" in search_types:
+            semantic_results = self.mem0_client.search(query=query, user_id=user_id, limit=limit)
+            for r in semantic_results:
+                r['source'] = 'semantic'
+                all_results.append(r)
+        
+        if "graph" in search_types:
+            graph_results = await self._search_graph_relationships(query, user_id, limit)
+            all_results.extend(graph_results)
+        
+        if "episodic" in search_types:
+            episode_results = await self._search_episodes(query, user_id, limit)
+            all_results.extend(episode_results)
+        
+        # Apply filters if provided
+        if filters:
+            all_results = self._apply_filters(all_results, filters)
+        
+        # Sort and limit
+        all_results.sort(key=lambda x: x.get('score', 0), reverse=True)
+        return all_results[:limit]
+    
+    def _apply_filters(self, results: List[Dict[str, Any]], filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Apply filters to search results"""
+        filtered = []
+        
+        for result in results:
+            include = True
+            
+            # Tag filter
+            if 'tags' in filters and filters['tags']:
+                result_tags = result.get('metadata', {}).get('tags', [])
+                if not all(tag in result_tags for tag in filters['tags']):
+                    include = False
+            
+            # Date range filter
+            if 'date_from' in filters:
+                created_at = result.get('created_at', '')
+                if created_at and created_at < filters['date_from']:
+                    include = False
+            
+            if 'date_to' in filters:
+                created_at = result.get('created_at', '')
+                if created_at and created_at > filters['date_to']:
+                    include = False
+            
+            if include:
+                filtered.append(result)
+        
+        return filtered
+    
+    async def _create_episodes(self, user_id: str):
+        """Background task to create episodes from recent memories"""
+        if not self.graphiti_client:
+            return
+        
+        try:
+            # Get recent memories for the user
+            cursor = self.pg_connection.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("""
+                SELECT * FROM unified_memories 
+                WHERE user_id = %s 
+                AND created_at > NOW() - INTERVAL '1 day'
+                ORDER BY created_at DESC
+                LIMIT 50
+            """, (user_id,))
+            
+            recent_memories = cursor.fetchall()
+            cursor.close()
+            
+            if len(recent_memories) < 3:
+                return  # Not enough memories for episodes
+            
+            # Group by temporal proximity (within same day)
+            temporal_groups = defaultdict(list)
+            for memory in recent_memories:
+                date_key = memory['created_at'].strftime('%Y-%m-%d')
+                temporal_groups[date_key].append(memory)
+            
+            # Create episodes for each group
+            for date_key, memories in temporal_groups.items():
+                if len(memories) >= 3:
+                    episode_name = f"user_{user_id}_daily_{date_key}"
+                    episode_content = "\n".join([
+                        f"Memory {i+1}: {m['content']}" 
+                        for i, m in enumerate(memories)
+                    ])
+                    
+                    await self.graphiti_client.add_episode(
+                        name=episode_name,
+                        episode_body=episode_content,
+                        source=EpisodeType.text,
+                        source_description=f"Daily activities for {date_key}",
+                        reference_time=datetime.now(timezone.utc)
+                    )
+                    
+                    logger.info(f"✅ Created episode: {episode_name}")
+                    
+        except Exception as e:
+            logger.error(f"❌ Episode creation failed: {e}")
+    
+    async def get_all(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get all memories for a user"""
+        if self.use_new_system:
+            # Get from pgvector via mem0
+            return self.mem0_client.get_all(user_id=user_id, limit=limit)
+        else:
+            # Get from Qdrant
+            return self.mem0_client.get_all(user_id=user_id, limit=limit)
+    
+    async def add_with_vector(self, text: str, user_id: str, metadata: Dict[str, Any], 
+                             vector: List[float]) -> Dict[str, Any]:
+        """Add memory with pre-computed vector (for migration)"""
+        if not self.use_new_system:
+            raise NotImplementedError("Vector migration only supported for new system")
+        
+        # Direct insert to pgvector
+        cursor = self.pg_connection.cursor()
+        cursor.execute("""
+            INSERT INTO memories (user_id, content, embedding, metadata, created_at)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
+        """, (
+            user_id, 
+            text, 
+            vector, 
+            json.dumps(metadata),
+            metadata.get('created_at', datetime.now(timezone.utc))
+        ))
+        
+        memory_id = cursor.fetchone()[0]
+        self.pg_connection.commit()
+        cursor.close()
+        
+        # Also add to Neo4j graph
+        async with self.neo4j_driver.session() as session:
+            await session.run("""
+                CREATE (m:Memory {
+                    id: $id,
+                    user_id: $user_id,
+                    content: $content,
+                    created_at: $created_at
+                })
+            """, id=str(memory_id), user_id=user_id, content=text, 
+                created_at=metadata.get('created_at', datetime.now(timezone.utc).isoformat()))
+        
+        return {"id": str(memory_id), "status": "migrated"}
+    
+    async def generate_user_episodes(self, user_id: str):
+        """Generate all episodes for a user (used after migration)"""
+        if not self.graphiti_client:
+            return
+        
+        # Get all user memories
+        cursor = self.pg_connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("""
+            SELECT * FROM unified_memories 
+            WHERE user_id = %s 
+            ORDER BY created_at DESC
+        """, (user_id,))
+        
+        all_memories = cursor.fetchall()
+        cursor.close()
+        
+        # Create temporal episodes
+        await self._create_temporal_episodes(user_id, all_memories)
+        
+        # Create semantic episodes
+        await self._create_semantic_episodes(user_id, all_memories)
+    
+    async def _create_temporal_episodes(self, user_id: str, memories: List[Dict[str, Any]]):
+        """Create episodes based on temporal clustering"""
+        # Group by week
+        weekly_groups = defaultdict(list)
+        
+        for memory in memories:
+            week_key = memory['created_at'].strftime('%Y-W%U')
+            weekly_groups[week_key].append(memory)
+        
+        for week_key, week_memories in weekly_groups.items():
+            if len(week_memories) >= 5:
+                episode_name = f"user_{user_id}_weekly_{week_key}"
+                episode_content = "\n".join([
+                    f"Memory {i+1}: {m['content']}" 
+                    for i, m in enumerate(week_memories[:20])  # Limit to 20 memories per episode
+                ])
+                
+                await self.graphiti_client.add_episode(
+                    name=episode_name,
+                    episode_body=episode_content,
+                    source=EpisodeType.text,
+                    source_description=f"Weekly summary for {week_key}",
+                    reference_time=week_memories[0]['created_at']
+                )
+    
+    async def _create_semantic_episodes(self, user_id: str, memories: List[Dict[str, Any]]):
+        """Create episodes based on semantic clustering"""
+        # Define topic keywords
+        topic_keywords = {
+            'fitness': ['gym', 'workout', 'exercise', 'fitness', 'training', 'run', 'lift'],
+            'work': ['work', 'project', 'meeting', 'code', 'development', 'task'],
+            'social': ['friend', 'family', 'meet', 'party', 'event', 'dinner'],
+            'travel': ['travel', 'trip', 'flight', 'hotel', 'visit', 'vacation']
+        }
+        
+        topic_groups = defaultdict(list)
+        
+        for memory in memories:
+            content_lower = memory['content'].lower()
+            for topic, keywords in topic_keywords.items():
+                if any(keyword in content_lower for keyword in keywords):
+                    topic_groups[topic].append(memory)
+                    break
+        
+        for topic, topic_memories in topic_groups.items():
+            if len(topic_memories) >= 5:
+                episode_name = f"user_{user_id}_topic_{topic}"
+                episode_content = "\n".join([
+                    f"Memory {i+1}: {m['content']}" 
+                    for i, m in enumerate(topic_memories[:30])  # Limit to 30 memories per topic
+                ])
+                
+                await self.graphiti_client.add_episode(
+                    name=episode_name,
+                    episode_body=episode_content,
+                    source=EpisodeType.text,
+                    source_description=f"{topic.capitalize()} related memories",
+                    reference_time=datetime.now(timezone.utc)
+                )
+    
+    async def close(self):
+        """Clean up connections"""
+        if self.neo4j_driver:
+            await self.neo4j_driver.close()
+        
+        if self.pg_connection:
+            self.pg_connection.close()
+        
+        if self.graphiti_client:
+            await self.graphiti_client.close()
+
+
+# Utility function to determine if a user should use the new system
+def should_use_unified_memory(user_id: str) -> bool:
+    """
+    Determine if user should use new unified memory system.
+    
+    This function safely routes users based on environment variables
+    without exposing sensitive data in the codebase.
+    """
+    
+    # PRODUCTION TESTING: Check if test user routing is enabled
+    enable_test_user = os.getenv("ENABLE_UNIFIED_MEMORY_TEST_USER", "false").lower() == "true"
+    test_user_id = os.getenv("UNIFIED_MEMORY_TEST_USER_ID", "")
+    
+    # Only route test user if both conditions are met:
+    # 1. Test user routing is explicitly enabled
+    # 2. Test user ID is configured
+    # 3. Current user matches test user ID
+    if enable_test_user and test_user_id and user_id == test_user_id:
+        logger.info(f"🧪 Routing test user to NEW unified memory system (production test)")
+        return True
+    
+    # Check environment override for development
+    if os.getenv("FORCE_UNIFIED_MEMORY", "false").lower() == "true":
+        logger.info(f"🔧 Force routing user {user_id[:8]}... to NEW system (dev override)")
+        return True
+    
+    # Option 1: Percentage rollout (for future gradual rollout)
+    rollout_percentage = os.getenv("UNIFIED_MEMORY_ROLLOUT_PERCENTAGE")
+    if rollout_percentage:
+        try:
+            percentage = int(rollout_percentage)
+            import hashlib
+            user_hash = int(hashlib.md5(user_id.encode()).hexdigest(), 16)
+            if (user_hash % 100) < percentage:
+                logger.info(f"📊 Routing user {user_id[:8]}... to NEW system (rollout: {percentage}%)")
+                return True
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid rollout percentage: {rollout_percentage}")
+    
+    # Option 2: Explicit user allowlist (for future targeted testing)
+    allowlist_users = os.getenv("UNIFIED_MEMORY_USER_ALLOWLIST", "")
+    if allowlist_users and user_id in allowlist_users.split(','):
+        logger.info(f"✅ Routing allowlisted user {user_id[:8]}... to NEW system")
+        return True
+    
+    # Default to old system for all other users
+    # No logging of user ID for privacy in production
+    return False
+
+
+# Factory function to get appropriate memory client
+def get_unified_memory_client(user_id: Optional[str] = None) -> UnifiedMemoryClient:
+    """Get memory client based on user configuration"""
+    use_new_system = False
+    
+    if user_id:
+        use_new_system = should_use_unified_memory(user_id)
+    elif config.USE_UNIFIED_MEMORY:
+        use_new_system = True
+    
+    return UnifiedMemoryClient(use_new_system=use_new_system, user_id=user_id) 

@@ -89,7 +89,7 @@ async def add_memories(text: str, tags: Optional[list[str]] = None) -> str:
     Optionally, add a list of string tags for later filtering.
     """
     # Lazy import
-    from app.utils.memory import get_memory_client
+    from app.utils.memory import get_memory_client_for_user
     import time
     start_time = time.time()
     
@@ -104,7 +104,8 @@ async def add_memories(text: str, tags: Optional[list[str]] = None) -> str:
     logger.error(f"🔍 ADD_MEMORIES DEBUG - Memory content preview: {text[:100]}...")
 
     
-    memory_client = get_memory_client()
+    # Use user-specific memory client routing (supports test user routing)
+    memory_client = get_memory_client_for_user(supa_uid)
 
     if not supa_uid:
         return "Error: Supabase user_id not available in context"
@@ -294,8 +295,9 @@ async def search_memory(query: str, limit: int = None, tags_filter: Optional[lis
 
 async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: str, limit: int = 10, tags_filter: Optional[list[str]] = None) -> str:
     """Unified implementation that supports both basic search and tag filtering"""
-    from app.utils.memory import get_memory_client
-    memory_client = get_memory_client()
+    from app.utils.memory import get_memory_client_for_user
+    # Use user-specific memory client routing (supports test user routing)
+    memory_client = get_memory_client_for_user(supa_uid)
     db = SessionLocal()
     
     try:
@@ -397,8 +399,9 @@ async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[
 
 async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str, limit: int = 10, tags_filter: Optional[list[str]] = None) -> str:
     """Implementation of V2 search memory with post-fetch filtering."""
-    from app.utils.memory import get_memory_client
-    memory_client = get_memory_client()
+    from app.utils.memory import get_memory_client_for_user
+    # Use user-specific memory client routing (supports test user routing)
+    memory_client = get_memory_client_for_user(supa_uid)
     
     # We fetch a larger pool of results to filter from if a filter is applied
     fetch_limit = limit * 5 if tags_filter else limit
@@ -471,14 +474,15 @@ async def list_memories(limit: int = None) -> str:
 
 async def _list_memories_impl(supa_uid: str, client_name: str, limit: int = 20) -> str:
     """Implementation of list_memories with timeout protection"""
-    from app.utils.memory import get_memory_client
+    from app.utils.memory import get_memory_client_for_user
     import time
     import asyncio
     import functools
     start_time = time.time()
     logger.info(f"list_memories: Starting for user {supa_uid}")
 
-    memory_client = get_memory_client()
+    # Use user-specific memory client routing (supports test user routing)
+    memory_client = get_memory_client_for_user(supa_uid)
     db = SessionLocal()
     try:
         # Get user (but don't filter by specific app - show ALL memories)
@@ -549,11 +553,12 @@ async def delete_all_memories() -> str:
     Requires confirmation by being called explicitly.
     """
     # Lazy import
-    from app.utils.memory import get_memory_client
+    from app.utils.memory import get_memory_client_for_user
     
     supa_uid = user_id_var.get(None)
     client_name = client_name_var.get(None)
-    memory_client = get_memory_client() # Initialize client when tool is called
+    # Use user-specific memory client routing (supports test user routing)
+    memory_client = get_memory_client_for_user(supa_uid)
     if not supa_uid:
         return "Error: Supabase user_id not available in context"
     if not client_name:
@@ -627,7 +632,7 @@ async def get_memory_details(memory_id: str) -> str:
 
 async def _get_memory_details_impl(memory_id: str, supa_uid: str, client_name: str) -> str:
     """Optimized implementation of get_memory_details"""
-    from app.utils.memory import get_memory_client
+    from app.utils.memory import get_memory_client_for_user
     
     db = SessionLocal()
     try:
@@ -656,7 +661,8 @@ async def _get_memory_details_impl(memory_id: str, supa_uid: str, client_name: s
             return json.dumps(memory_details, indent=2)
         
         # Try mem0 with direct search instead of getting all memories
-        memory_client = get_memory_client()
+        # Use user-specific memory client routing (supports test user routing)
+        memory_client = get_memory_client_for_user(supa_uid)
         
         # Use search with the exact ID as query - much faster than get_all()
         search_result = memory_client.search(query=memory_id, user_id=supa_uid, limit=20)
@@ -759,7 +765,7 @@ async def deep_memory_query(search_query: str, memory_limit: int = None, chunk_l
 async def _deep_memory_query_impl(search_query: str, supa_uid: str, client_name: str, memory_limit: int = None, chunk_limit: int = None, include_full_docs: bool = True) -> str:
     """Optimized implementation of deep_memory_query"""
     # Lazy imports
-    from app.utils.memory import get_memory_client
+    from app.utils.memory import get_memory_client_for_user
     from app.utils.gemini import GeminiService
     from app.services.chunking_service import ChunkingService
     import google.generativeai as genai
@@ -785,7 +791,8 @@ async def _deep_memory_query_impl(search_query: str, supa_uid: str, client_name:
                 return "Error: User or app not found"
             
             # Initialize services
-            memory_client = get_memory_client()
+            # Use user-specific memory client routing (supports test user routing)
+            memory_client = get_memory_client_for_user(supa_uid)
             gemini_service = GeminiService()
             chunking_service = ChunkingService()
             
@@ -1036,7 +1043,7 @@ async def ask_memory(question: str) -> str:
 
 async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name: str) -> str:
     """Lightweight ask_memory implementation for quick answers"""
-    from app.utils.memory import get_memory_client
+    from app.utils.memory import get_memory_client_for_user
     from mem0.llms.openai import OpenAILLM
     from mem0.configs.llms.base import BaseLlmConfig
     
@@ -1058,7 +1065,8 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
                 return f"Error: User ID validation failed. Security issue detected."
 
             # Initialize services
-            memory_client = get_memory_client()
+            # Use user-specific memory client routing (supports test user routing)
+            memory_client = get_memory_client_for_user(supa_uid)
             llm = OpenAILLM(config=BaseLlmConfig(model="gpt-4o-mini"))
             
             # 1. Quick memory search (limit to 10 for speed)
@@ -1273,8 +1281,9 @@ async def test_connection() -> str:
             if not user or not app:
                 return f"❌ Database connection failed: User or app not found for {supa_uid}/{client_name}"
             
-            # Test memory client
-            memory_client = get_memory_client()
+            # Test memory client - use user-specific routing
+            from app.utils.memory import get_memory_client_for_user
+            memory_client = get_memory_client_for_user(supa_uid)
             test_memories = memory_client.get_all(user_id=supa_uid, limit=1)
             
             # Test Gemini service
@@ -2189,8 +2198,9 @@ async def _chatgpt_fetch_memory_by_id(user_id: str, memory_id: str):
     It reliably finds a memory by its vector ID using a get_all fallback,
     ensuring it does not interfere with other tool functionalities.
     """
-    from app.utils.memory import get_memory_client
-    memory_client = get_memory_client()
+    from app.utils.memory import get_memory_client_for_user
+    # Use user-specific memory client routing (supports test user routing)
+    memory_client = get_memory_client_for_user(user_id)
 
     # Use get_all() and iterate in Python, as search(query=<id>) is unreliable.
     all_memories_result = memory_client.get_all(user_id=user_id, limit=2000) # High limit for thoroughness

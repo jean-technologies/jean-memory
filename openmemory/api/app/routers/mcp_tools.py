@@ -11,7 +11,7 @@ from app.auth import get_current_supa_user
 from gotrue.types import User as SupabaseUser
 from app.utils.db import get_or_create_user, get_user_and_app
 from app.models import User, Document, DocumentChunk
-from app.utils.memory import get_memory_client, should_use_unified_memory
+from app.utils.memory import get_memory_client, get_memory_client_for_user, should_use_unified_memory
 from app.services.chunking_service import ChunkingService
 from app.integrations.substack_service import SubstackService
 from app.config.memory_limits import MEMORY_LIMITS
@@ -44,8 +44,9 @@ async def search_memory_http(
         # Get user
         user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
         
-        # Search memories with limit
-        memory_client = get_memory_client()
+        # Search memories with limit - use user-specific routing
+        from app.utils.memory import get_memory_client_for_user
+        memory_client = get_memory_client_for_user(str(current_supa_user.id))
         results = memory_client.search(query=query, user_id=str(current_supa_user.id), limit=limit)
         
         # Process results
@@ -100,8 +101,9 @@ async def list_memories_http(
         # Get user
         user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
         
-        # Get memories with limit
-        memory_client = get_memory_client()
+        # Get memories with limit - use user-specific routing
+        from app.utils.memory import get_memory_client_for_user
+        memory_client = get_memory_client_for_user(str(current_supa_user.id))
         results = memory_client.get_all(user_id=str(current_supa_user.id), limit=limit)
         
         # Process results
@@ -157,8 +159,8 @@ async def add_memories_http(
         if not app.is_active:
             return {"error": f"App {app.name} is currently paused. Cannot create new memories."}
         
-        # Add memory
-        memory_client = get_memory_client()
+        # Add memory - use user-specific routing
+        memory_client = get_memory_client_for_user(str(current_supa_user.id))
         response = memory_client.add(
             messages=text,
             user_id=str(current_supa_user.id),

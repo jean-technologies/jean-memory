@@ -1,12 +1,19 @@
 import os
 from mem0 import Memory
 from app.settings import config  # Import the application config
+from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_memory_client(custom_instructions: str = None):
     """
     Initializes and returns a Mem0 client configured for the correct environment.
     This function now uses the centralized 'config' object from settings.py.
+    
+    NOTE: This function does not support user-specific routing.
+    For user-specific routing (including test user routing), use get_memory_client_for_user().
     """
     collection_name = None  # Initialize for robust error logging
     try:
@@ -47,6 +54,7 @@ def get_memory_client(custom_instructions: str = None):
             "version": "v1.1"
         }
         
+        # Legacy unified memory check (for backward compatibility)
         if should_use_unified_memory():
             neo4j_uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
             neo4j_user = os.getenv("NEO4J_USER", "neo4j")
@@ -72,10 +80,48 @@ def get_memory_client(custom_instructions: str = None):
     return memory_instance
 
 
+def get_memory_client_for_user(user_id: str, custom_instructions: str = None):
+    """
+    Get the appropriate memory client for a specific user.
+    This function handles user-specific routing including test user routing.
+    
+    Args:
+        user_id: The user ID to determine routing for
+        custom_instructions: Optional custom instructions (not used currently)
+    
+    Returns:
+        Memory client (either old Qdrant system or new unified system)
+    """
+    try:
+        # Import here to avoid circular imports
+        from app.utils.unified_memory import should_use_unified_memory, get_unified_memory_client
+        
+        # Check if this user should use the new unified memory system
+        if should_use_unified_memory(user_id):
+            logger.info(f"🧪 Routing user {user_id[:8]}... to NEW unified memory system")
+            # Return the unified memory client configured for new system
+            return get_unified_memory_client(user_id)
+        else:
+            # Use the old Qdrant-based system
+            logger.debug(f"📦 Routing user {user_id[:8]}... to OLD Qdrant system")
+            return get_memory_client(custom_instructions)
+            
+    except ImportError as e:
+        logger.warning(f"Unified memory system not available: {e}. Falling back to standard client.")
+        return get_memory_client(custom_instructions)
+    except Exception as e:
+        logger.error(f"Error in user-specific memory client routing: {e}")
+        # Fallback to standard client for safety
+        return get_memory_client(custom_instructions)
+
+
 async def get_enhanced_memory_client():
     """
     Get the appropriate memory client based on configuration.
     This function is now async to properly initialize the unified client.
+    
+    NOTE: This function does not support user-specific routing.
+    For user-specific routing, use get_memory_client_for_user().
     
     Returns:
         - UnifiedMemorySystem if unified memory is enabled
@@ -97,7 +143,10 @@ async def get_enhanced_memory_client():
 
 def should_use_unified_memory() -> bool:
     """
-    Determine if unified memory features should be used.
+    Determine if unified memory features should be used (legacy function).
+    
+    NOTE: This function does not support user-specific routing.
+    For user-specific routing, use should_use_unified_memory(user_id) from unified_memory.py.
     
     Returns:
         True if unified memory should be used, False otherwise
