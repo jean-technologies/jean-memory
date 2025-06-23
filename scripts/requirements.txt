@@ -1,0 +1,6 @@
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+plotly   # (Optional, only needed if you want to add interactive plots)

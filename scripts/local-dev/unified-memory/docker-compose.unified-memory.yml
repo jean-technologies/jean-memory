@@ -1,0 +1,39 @@
+services:
+  neo4j_unified:
+    image: neo4j:5
+    container_name: neo4j_unified_memory
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
+    volumes:
+      - neo4j_unified_data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/fasho93fasho # Default credentials for local dev
+      - NEO4J_PLUGINS=["apoc"]
+    networks:
+      - unified_memory_network
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p fasho93fasho 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+
+  qdrant_unified:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_unified_memory
+    ports:
+      - "6333:6333" # gRPC
+      - "6334:6334" # HTTP
+    volumes:
+      - qdrant_unified_data:/qdrant/storage
+    networks:
+      - unified_memory_network
+
+volumes:
+  neo4j_unified_data:
+  qdrant_unified_data:
+
+networks:
+  unified_memory_network:
+    driver: bridge

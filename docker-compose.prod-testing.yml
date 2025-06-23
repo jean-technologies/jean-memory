@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  postgres-pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: mem0_pgvector_test
+    environment:
+      POSTGRES_DB: mem0_unified
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - pgvector_test_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    networks:
+      - memory_test_network
+
+  neo4j:
+    image: neo4j:5.15.0
+    container_name: mem0_neo4j_test
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1G
+    volumes:
+      - neo4j_test_data:/data
+    ports:
+      - "7475:7474"  # HTTP (different port)
+      - "7688:7687"  # Bolt (different port)
+    networks:
+      - memory_test_network
+
+networks:
+  memory_test_network:
+    driver: bridge
+
+volumes:
+  pgvector_test_data:
+  neo4j_test_data: 
