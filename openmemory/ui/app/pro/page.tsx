@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Check, Star, ArrowRight, BrainCircuit, Key, Tags, Zap } from "lucide-react";
+import { Check, Star, ArrowRight, BrainCircuit, Key, Tags, Zap, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,6 +11,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
 const proFeatures = [
+  {
+    icon: <MessageSquare className="w-5 h-5 text-purple-400" />,
+    title: "Text Your Memory Assistant Anywhere",
+    description: "Access your memories via SMS from any phone. Add, search, and retrieve memories through simple text messages, even when you're offline.",
+  },
   {
     icon: <Key className="w-5 h-5 text-purple-400" />,
     title: "Unlock Your Memory with API Access",
