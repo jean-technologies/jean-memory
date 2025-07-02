@@ -14,6 +14,7 @@ import apiClient from '@/lib/apiClient';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface InstallModalProps {
   app: App | null;
@@ -174,6 +175,9 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
     } else if (app.id === 'claude') {
       // Use HTTP v2 transport for Claude (50% faster)
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api.onrender.com/mcp/v2/claude/{user_id}`;
+    } else if (app.id === 'vscode') {
+      // VS Code can connect directly via MCP support in settings.json
+      rawInstallCommand = `code --add-mcp "{\\"name\\":\\"jean-memory\\",\\"type\\":\\"sse\\",\\"url\\":\\"${MCP_URL}/mcp/vscode/sse/{user_id}\\"}"`;
     } else {
       rawInstallCommand = `npx install-mcp ${MCP_URL}/mcp/${app.id}/sse/{user_id} --client ${app.id}`;
     }
@@ -493,6 +497,98 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 </div>
               </li>
             </ol>
+          </div>
+        ) : app.id === 'vscode' ? (
+          <div className="space-y-4 py-2">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-md p-3">
+              <p className="text-blue-800 dark:text-blue-300 text-sm font-medium mb-1">✨ VS Code Native MCP Support</p>
+              <p className="text-blue-700 dark:text-blue-200/80 text-xs">
+                VS Code has built-in MCP support. Choose your preferred installation method below.
+              </p>
+            </div>
+            
+            <Tabs defaultValue="cli" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="cli">Command Line</TabsTrigger>
+                <TabsTrigger value="settings">Settings JSON</TabsTrigger>
+                <TabsTrigger value="workspace">Workspace File</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="cli" className="space-y-3">
+                <p className="text-sm text-muted-foreground">Run this command to add Jean Memory to VS Code:</p>
+                <div className="relative bg-background border rounded-md p-3 font-mono text-xs break-all">
+                  <div className="pr-12">{installCommand}</div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2" 
+                    onClick={() => handleCopy(installCommand)}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="settings" className="space-y-3">
+                <p className="text-sm text-muted-foreground">Add this to your VS Code user settings.json:</p>
+                <div className="relative bg-background border rounded-md p-3 font-mono text-xs">
+                  <pre>{`"mcp": {
+  "servers": {
+    "jean-memory": {
+      "type": "sse",
+      "url": "${MCP_URL}/mcp/vscode/sse/${user?.id}"
+    }
+  }
+}`}</pre>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="absolute right-1 top-2" 
+                    onClick={() => handleCopy(`"mcp": {
+  "servers": {
+    "jean-memory": {
+      "type": "sse",
+      "url": "${MCP_URL}/mcp/vscode/sse/${user?.id}"
+    }
+  }
+}`)}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Press Cmd/Ctrl+Shift+P and search for "Open User Settings (JSON)"</p>
+              </TabsContent>
+              
+              <TabsContent value="workspace" className="space-y-3">
+                <p className="text-sm text-muted-foreground">Create .vscode/mcp.json in your workspace:</p>
+                <div className="relative bg-background border rounded-md p-3 font-mono text-xs">
+                  <pre>{`{
+  "servers": {
+    "jean-memory": {
+      "type": "sse",
+      "url": "${MCP_URL}/mcp/vscode/sse/${user?.id}"
+    }
+  }
+}`}</pre>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="absolute right-1 top-2" 
+                    onClick={() => handleCopy(`{
+  "servers": {
+    "jean-memory": {
+      "type": "sse",
+      "url": "${MCP_URL}/mcp/vscode/sse/${user?.id}"
+    }
+  }
+}`)}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">This adds Jean Memory to the current workspace only</p>
+              </TabsContent>
+            </Tabs>
           </div>
         ) : (
             <div className="space-y-6 py-2">

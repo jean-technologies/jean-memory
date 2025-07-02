@@ -1,0 +1,181 @@
+---
+title: VS Code
+description: Use Jean Memory as an MCP server in VS Code with GitHub Copilot
+---
+
+<Snippet file="paper-release.mdx" />
+
+## Integrating Jean Memory with VS Code
+
+[Jean Memory](https://github.com/mem0ai/mem0) enhances your VS Code experience by providing persistent memory for GitHub Copilot and other AI assistants. This guide walks you through setting up Jean Memory as an MCP (Model Context Protocol) server in Visual Studio Code.
+
+## Prerequisites
+
+Before proceeding, ensure you have:
+- Visual Studio Code (latest version)
+- GitHub Copilot extension installed
+- A Jean Memory account (sign up at [jeanmemory.com](https://jeanmemory.com))
+
+## Quick Setup
+
+The fastest way to add Jean Memory to VS Code is using the command line:
+
+```bash
+code --add-mcp "{\"name\":\"jean-memory\",\"type\":\"sse\",\"url\":\"https://api.jeanmemory.com/mcp/vscode/sse/<YOUR_USER_ID>\"}"
+```
+
+Replace `<YOUR_USER_ID>` with your actual Jean Memory user ID from the dashboard.
+
+## Manual Configuration Options
+
+### Option 1: User Settings (Global)
+
+To enable Jean Memory across all your VS Code workspaces:
+
+1. Press `Cmd/Ctrl + Shift + P` to open the Command Palette
+2. Search for "Open User Settings (JSON)"
+3. Add the following configuration:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "jean-memory": {
+        "type": "sse",
+        "url": "https://api.jeanmemory.com/mcp/vscode/sse/<YOUR_USER_ID>"
+      }
+    }
+  }
+}
+```
+
+### Option 2: Workspace Settings
+
+To enable Jean Memory for a specific project only:
+
+1. Create a `.vscode` folder in your project root (if it doesn't exist)
+2. Create a file named `mcp.json` with the following content:
+
+```json
+{
+  "servers": {
+    "jean-memory": {
+      "type": "sse",
+      "url": "https://api.jeanmemory.com/mcp/vscode/sse/<YOUR_USER_ID>"
+    }
+  }
+}
+```
+
+## Using Jean Memory in VS Code
+
+Once configured, Jean Memory integrates seamlessly with GitHub Copilot in Agent Mode:
+
+### 1. Enable Agent Mode
+- Open the Copilot Chat view
+- Select "Agent" from the mode dropdown
+
+### 2. Available Tools
+Jean Memory provides the following tools:
+- **add_memories**: Store important context and preferences
+- **search_memory**: Retrieve relevant memories based on your queries
+- **list_memories**: View all stored memories
+- **delete_all_memories**: Clear your memory store
+
+### 3. Example Usage
+
+```
+@agent Can you search my memory for React best practices?
+```
+
+```
+@agent Please remember that I prefer using TypeScript with strict mode enabled in all my projects
+```
+
+## Advanced Configuration
+
+### Using HTTP Transport
+
+For improved performance, you can use HTTP transport instead of SSE:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "jean-memory": {
+        "type": "http",
+        "url": "https://jean-memory-api.onrender.com/mcp/v2/vscode/<YOUR_USER_ID>"
+      }
+    }
+  }
+}
+```
+
+### Environment Variables
+
+Store your user ID in an environment variable for easier configuration:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "jean-memory": {
+        "type": "sse",
+        "url": "https://api.jeanmemory.com/mcp/vscode/sse/${env:JEAN_MEMORY_USER_ID}"
+      }
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### MCP Server Not Connecting
+
+1. Verify your user ID is correct
+2. Check VS Code is up to date
+3. Ensure the MCP feature is enabled: `chat.mcp.enabled` setting
+4. Check the Output panel for MCP server logs
+
+### Tools Not Appearing
+
+1. Make sure you're in Agent Mode
+2. Click the tools button (🔧) to refresh available tools
+3. Try restarting VS Code
+
+### Connection Errors
+
+If you see connection errors:
+1. Check your internet connection
+2. Verify the Jean Memory service is accessible
+3. Try switching between SSE and HTTP transport
+
+## Benefits of Using Jean Memory in VS Code
+
+- **Persistent Context**: Retain coding preferences and project context across sessions
+- **Cross-Project Memory**: Access memories from other projects when needed
+- **Team Knowledge Sharing**: Share memories with team members (Pro feature)
+- **Enhanced Copilot**: Give GitHub Copilot better context for more accurate suggestions
+
+## Security and Privacy
+
+- All memories are encrypted in transit
+- Memories are stored securely on Jean Memory servers
+- You maintain full control over your data
+- Delete memories at any time
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" title="VS Code Jean Memory Setup" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+## Next Steps
+
+- Explore [memory management best practices](/features/memory-management)
+- Learn about [team collaboration features](/features/team-collaboration)
+- Check out other [MCP integrations](/integrations)
+
+## Related Resources
+
+- [VS Code MCP Documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
+- [Model Context Protocol Specification](https://modelcontextprotocol.io)
+- [Jean Memory API Reference](/api-reference)
