@@ -76,7 +76,7 @@ async def add_memories(text: str, tags: Optional[List[str]] = None, priority: bo
 async def _add_memories_background_claude(text: str, tags: Optional[List[str]], 
                                         supa_uid: str, client_name: str, priority: bool = False):
     """Background implementation for adding memories"""
-    from app.utils.memory import get_async_memory_client_v2_optimized
+    from app.utils.memory import get_async_memory_client
     
     db = SessionLocal()
     try:
@@ -103,7 +103,7 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
         user, app = get_user_and_app(db, supa_uid, client_name)
         
         # Add to memory client
-        memory_client = await get_async_memory_client_v2_optimized()
+        memory_client = await get_async_memory_client()
         
         # Prepare metadata
         metadata = {

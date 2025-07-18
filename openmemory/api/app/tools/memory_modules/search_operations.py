@@ -175,11 +175,11 @@ async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[
 async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str,
                                limit: int = 10, tags_filter: Optional[List[str]] = None) -> str:
     """Enhanced search implementation with better ranking"""
-    from app.utils.memory import get_async_memory_client_v2_optimized
+    from app.utils.memory import get_async_memory_client
     
     try:
         # Use the optimized V2 client
-        memory_client = await get_async_memory_client_v2_optimized()
+        memory_client = await get_async_memory_client()
         
         # Perform enhanced search
         search_results = await memory_client.search(
@@ -237,10 +237,10 @@ async def ask_memory(question: str) -> str:
 
 async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name: str) -> str:
     """Lightweight implementation for asking questions about memories"""
-    from app.utils.memory import get_async_memory_client_v2_optimized
+    from app.utils.memory import get_async_memory_client
     
     try:
-        memory_client = await get_async_memory_client_v2_optimized()
+        memory_client = await get_async_memory_client()
         
         # Use the client's ask/chat functionality
         response = await memory_client.chat(
