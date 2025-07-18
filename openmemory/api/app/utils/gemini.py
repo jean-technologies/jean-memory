@@ -201,26 +201,18 @@ Return only the insights, one per line, without numbering or bullet points."""
         Specifically designed for background batch processing where quality > speed.
         """
         try:
-            # Only use name if it actually exists and is not empty
-            has_name = user_full_name and user_full_name.strip()
-            person_reference = user_full_name if has_name else "this person"
-            name_context = f"The person's name is {user_full_name}. " if has_name else ""
-            third_person_instruction = f"using {person_reference}'s name throughout" if has_name else "using third person perspective"
-            
-            prompt = f"""{name_context}Create a rich life update narrative that helps {person_reference} reflect on how their recent experiences align with their overall life values and personality.
+            prompt = f"""You are providing context for a conversation with this user. Analyze their memories and create a rich, synthesized understanding.
 
-USER'S CONTEXT (includes short-form memories and long-form documents):
+USER'S MEMORIES:
 {memories_text}
 
-Write a thoughtful life reflection {third_person_instruction} that shows how recent experiences connect to broader personality and values. Requirements:
+Create a comprehensive but concise 'life narrative' for this person to be used as a primer for new conversations. Focus on:
+1. Who they are (personality, background, values)
+2. What they're working on (projects, goals, interests)  
+3. How to best interact with them (preferences, communication style)
+4. Key themes or recurring patterns in their life.
 
-1. Start directly with the narrative content. Do not use titles, headers, or introductory phrases.
-2. Begin immediately with substantive insights about how recent experiences reflect core values.
-3. Weave a narrative that explains who they are and what they are working on leading up to this moment.
-4. Focus on patterns between recent actions and core values, drawing from all available context.
-5. Write as a thoughtful, paragraph-based reflection that aids personal introspection.
-
-Use sophisticated reasoning to connect recent memories and documents to deeper life themes. The narrative should be comprehensive, insightful, and capture the essence of the user at this moment in time."""
+Provide a well-written, paragraph-based narrative that captures the essence of the user. Use sophisticated reasoning to identify deeper patterns and insights."""
             
             # Use Pro model for maximum quality in background processing
             response = await self.model_pro.generate_content_async(
