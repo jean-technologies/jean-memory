@@ -95,58 +95,30 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
         if not search_results:
             return format_memory_response([], 0, query)
         
-        # Extract memory IDs from search results
-        memory_ids = []
+        # Format Jean Memory V2 results directly without SQL lookup
+        formatted_memories = []
         for result in search_results:
-            if isinstance(result, dict) and result.get('id'):
-                memory_ids.append(result.get('id'))
+            if isinstance(result, dict):
+                # Extract content from different possible fields
+                content = result.get('memory', result.get('content', result.get('text', '')))
+                
+                # Apply tag filtering if specified
+                if tags_filter:
+                    result_tags = result.get('categories', [])
+                    if not all(tag.lower() in [t.lower() for t in result_tags] for tag in tags_filter):
+                        continue
+                
+                formatted_memories.append({
+                    'id': str(result.get('id', '')),
+                    'content': content,
+                    'created_at': result.get('created_at', result.get('timestamp', '')),
+                    'categories': result.get('categories', []),
+                    'metadata': result.get('metadata', {}),
+                    'score': result.get('score', 0.0)
+                })
             else:
                 logger.warning(f"Unexpected result format in search: {type(result)}")
                 continue
-        
-        if not memory_ids:
-            return format_memory_response([], 0, query)
-        
-        # Build SQL query to get memories with metadata
-        placeholders = ','.join([f':id_{i}' for i in range(len(memory_ids))])
-        params = {f'id_{i}': memory_id for i, memory_id in enumerate(memory_ids)}
-        params['user_id'] = user.id
-        
-        sql_query = text(f"""
-            SELECT m.id, m.content, m.created_at, m.metadata, 
-                   array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) as categories
-            FROM memories m
-            LEFT JOIN memory_categories mc ON m.id = mc.memory_id
-            LEFT JOIN categories c ON mc.category_id = c.id
-            WHERE m.id IN ({placeholders}) 
-            AND m.user_id = :user_id 
-            AND m.state = 'active'
-            GROUP BY m.id, m.content, m.created_at, m.metadata::text
-            ORDER BY m.created_at DESC
-        """)
-        
-        result = db.execute(sql_query, params)
-        db_memories = result.fetchall()
-        
-        # Apply tag filtering if specified
-        if tags_filter:
-            filtered_memories = []
-            for memory in db_memories:
-                memory_tags = memory.categories or []
-                if all(tag.lower() in [t.lower() for t in memory_tags] for tag in tags_filter):
-                    filtered_memories.append(memory)
-            db_memories = filtered_memories
-        
-        # Format response
-        formatted_memories = []
-        for memory in db_memories:
-            formatted_memories.append({
-                'id': str(memory.id),
-                'content': memory.content,
-                'created_at': memory.created_at.isoformat(),
-                'categories': memory.categories or [],
-                'metadata': memory.metadata_ or {}
-            })
         
         return format_memory_response(formatted_memories, len(formatted_memories), query)
         
@@ -343,7 +315,7 @@ Provide a helpful and conversational answer based on the memories above. If the 
 No relevant memories were found. Provide a helpful response indicating that no relevant information was found in their memory."""
             
             synthesis_start_time = time.time()
-            response = llm.generate_response(prompt)
+            response = llm.generate_response([{"role": "user", "content": prompt}])
             synthesis_duration = time.time() - synthesis_start_time
             
             total_duration = time.time() - start_time
