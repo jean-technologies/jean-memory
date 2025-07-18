@@ -208,7 +208,7 @@ async def _list_memories_impl(supa_uid: str, client_name: str, limit: int = 20) 
             LEFT JOIN categories c ON mc.category_id = c.id
             WHERE m.user_id = :user_id 
             AND m.state = 'active'
-            GROUP BY m.id, m.content, m.created_at, m.metadata
+            GROUP BY m.id, m.content, m.created_at, m.metadata::text
             ORDER BY m.created_at DESC
             LIMIT :limit
         """)

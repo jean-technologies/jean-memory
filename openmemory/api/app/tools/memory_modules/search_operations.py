@@ -121,7 +121,7 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
             WHERE m.id IN ({placeholders}) 
             AND m.user_id = :user_id 
             AND m.state = 'active'
-            GROUP BY m.id, m.content, m.created_at, m.metadata
+            GROUP BY m.id, m.content, m.created_at, m.metadata::text
             ORDER BY m.created_at DESC
         """)
         
@@ -273,7 +273,7 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
     from mem0.llms.openai import OpenAILLM
     from mem0.configs.llms.base import BaseLlmConfig
     from app.database import SessionLocal
-    from app.tools.memory_modules.utils import get_or_create_user
+    from app.utils.db import get_or_create_user
     
     import time
     start_time = time.time()
