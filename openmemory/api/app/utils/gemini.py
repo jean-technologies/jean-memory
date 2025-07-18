@@ -201,25 +201,29 @@ Return only the insights, one per line, without numbering or bullet points."""
         Specifically designed for background batch processing where quality > speed.
         """
         try:
-            prompt = f"""You are providing context for a conversation with this user. Analyze their memories and create a rich, synthesized understanding.
+            prompt = f"""You are providing context for a conversation with this user. Analyze their memories and documents to create a rich, synthesized understanding that captures their fundamental essence.
 
-USER'S MEMORIES:
+USER'S MEMORIES AND CONTEXT:
 {memories_text}
 
-Create a comprehensive but concise 'life narrative' for this person to be used as a primer for new conversations. Focus on:
-1. Who they are (personality, background, values)
-2. What they're working on (projects, goals, interests)  
-3. How to best interact with them (preferences, communication style)
-4. Key themes or recurring patterns in their life.
+Create a comprehensive 'life narrative' structured to provide deep insight into who this person truly is. Write 3-4 substantial paragraphs covering:
 
-Provide a well-written, paragraph-based narrative that captures the essence of the user. Use sophisticated reasoning to identify deeper patterns and insights."""
+**Core Identity & Philosophy**: Who they fundamentally are at their deepest level - their core values, philosophical framework, intellectual approach, and the driving forces that shape their worldview. What makes them uniquely themselves?
+
+**Current Work & Trajectory**: What they're actively building, creating, or pursuing right now. How do their current projects and goals connect to their broader life mission? What patterns emerge in their professional and personal development?
+
+**Communication & Interaction Style**: How they prefer to engage, think, and communicate. What energizes them in conversations? How do they process information and make decisions? What should others understand about working with or talking to them?
+
+**Life Patterns & Evolution**: Recurring themes, growth trajectories, and key insights that define their journey. How do their experiences connect to reveal deeper truths about their character and direction?
+
+Write with sophisticated psychological insight, connecting surface activities to deeper motivations and values. This narrative will prime AI conversations, so include nuanced understanding of their thinking patterns, decision-making style, and what truly matters to them."""
             
             # Use Pro model for maximum quality in background processing
             response = await self.model_pro.generate_content_async(
                 prompt,
                 generation_config=genai.GenerationConfig(
                     temperature=0.7,  # Balanced creativity
-                    max_output_tokens=2048,  # Allow longer narratives
+                    max_output_tokens=4096,  # Allow longer, more comprehensive narratives
                 )
             )
             
