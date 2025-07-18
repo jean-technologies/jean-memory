@@ -79,13 +79,30 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
         user, app = get_user_and_app(db, supa_uid, client_name)
         
         # Search using the memory client
-        search_results = await memory_client.search(query, user_id=supa_uid, limit=limit)
+        search_result = await memory_client.search(query, user_id=supa_uid, limit=limit)
+        
+        # Process results - handle different return formats from mem0/graphiti
+        search_results = []
+        if isinstance(search_result, dict) and 'results' in search_result:
+            search_results = search_result['results']
+        elif isinstance(search_result, list):
+            search_results = search_result
+        elif search_result:
+            # Handle other formats
+            logger.warning(f"Unexpected search result format: {type(search_result)}")
+            search_results = []
         
         if not search_results:
             return format_memory_response([], 0, query)
         
         # Extract memory IDs from search results
-        memory_ids = [result.get('id') for result in search_results if result.get('id')]
+        memory_ids = []
+        for result in search_results:
+            if isinstance(result, dict) and result.get('id'):
+                memory_ids.append(result.get('id'))
+            else:
+                logger.warning(f"Unexpected result format in search: {type(result)}")
+                continue
         
         if not memory_ids:
             return format_memory_response([], 0, query)
@@ -96,7 +113,7 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
         params['user_id'] = user.id
         
         sql_query = text(f"""
-            SELECT m.id, m.content, m.created_at, m.metadata_, 
+            SELECT m.id, m.content, m.created_at, m.metadata, 
                    array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) as categories
             FROM memories m
             LEFT JOIN memory_categories mc ON m.id = mc.memory_id
@@ -104,7 +121,7 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
             WHERE m.id IN ({placeholders}) 
             AND m.user_id = :user_id 
             AND m.state = 'active'
-            GROUP BY m.id, m.content, m.created_at, m.metadata_
+            GROUP BY m.id, m.content, m.created_at, m.metadata
             ORDER BY m.created_at DESC
         """)
         
@@ -182,12 +199,23 @@ async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str,
         memory_client = await get_async_memory_client()
         
         # Perform enhanced search
-        search_results = await memory_client.search(
+        search_result = await memory_client.search(
             query=query,
             user_id=supa_uid,
             limit=limit,
             filters={"tags": tags_filter} if tags_filter else None
         )
+        
+        # Process results - handle different return formats from mem0/graphiti
+        search_results = []
+        if isinstance(search_result, dict) and 'results' in search_result:
+            search_results = search_result['results']
+        elif isinstance(search_result, list):
+            search_results = search_result
+        elif search_result:
+            # Handle other formats
+            logger.warning(f"Unexpected search result format: {type(search_result)}")
+            search_results = []
         
         if not search_results:
             return format_memory_response([], 0, query)
@@ -195,14 +223,18 @@ async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str,
         # Format and return results
         formatted_results = []
         for result in search_results:
-            formatted_results.append({
-                'id': result.get('id'),
-                'content': result.get('memory', result.get('content', '')),
-                'score': result.get('score', 0.0),
-                'categories': result.get('categories', []),
-                'created_at': result.get('created_at', ''),
-                'metadata': result.get('metadata', {})
-            })
+            if isinstance(result, dict):
+                formatted_results.append({
+                    'id': result.get('id'),
+                    'content': result.get('memory', result.get('content', '')),
+                    'score': result.get('score', 0.0),
+                    'categories': result.get('categories', []),
+                    'created_at': result.get('created_at', ''),
+                    'metadata': result.get('metadata', {})
+                })
+            else:
+                logger.warning(f"Unexpected result format in search: {type(result)}")
+                continue
         
         return format_memory_response(formatted_results, len(formatted_results), query)
         
@@ -236,25 +268,99 @@ async def ask_memory(question: str) -> str:
 
 
 async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name: str) -> str:
-    """Lightweight implementation for asking questions about memories"""
+    """Lightweight ask_memory implementation for quick answers using mem0 + graphiti search"""
     from app.utils.memory import get_async_memory_client
+    from mem0.llms.openai import OpenAILLM
+    from mem0.configs.llms.base import BaseLlmConfig
+    from app.database import SessionLocal
+    from app.tools.memory_modules.utils import get_or_create_user
+    
+    import time
+    start_time = time.time()
+    logger.info(f"ask_memory: Starting for user {supa_uid}")
     
     try:
-        memory_client = await get_async_memory_client()
-        
-        # Use the client's ask/chat functionality
-        response = await memory_client.chat(
-            message=question,
-            user_id=supa_uid,
-            history=[]  # Could be extended to include conversation history
-        )
-        
-        return safe_json_dumps({
-            "status": "success",
-            "question": question,
-            "answer": response,
-            "timestamp": "now"  # Could use actual timestamp
-        })
+        db = SessionLocal()
+        try:
+            # Get user quickly
+            user = get_or_create_user(db, supa_uid, None)
+            
+            # SECURITY CHECK: Verify user ID matches
+            if user.user_id != supa_uid:
+                logger.error(f"🚨 USER ID MISMATCH: Expected {supa_uid}, got {user.user_id}")
+                return format_error_response("User ID validation failed. Security issue detected.", "ask_memory")
+
+            # Initialize services
+            memory_client = await get_async_memory_client()
+            llm = OpenAILLM(config=BaseLlmConfig(model="gpt-4o-mini"))
+            
+            # 1. Quick memory search using mem0 + graphiti (limit to 10 for speed)
+            search_start_time = time.time()
+            logger.info(f"ask_memory: Starting memory search for user {supa_uid}")
+            
+            # Call async memory client directly - this uses Jean Memory V2 mem0 + graphiti search
+            search_result = await memory_client.search(query=question, user_id=supa_uid, limit=10)
+
+            search_duration = time.time() - search_start_time
+            
+            # Process results
+            memories = []
+            if isinstance(search_result, dict) and 'results' in search_result:
+                memories = search_result['results'][:10]
+            elif isinstance(search_result, list):
+                memories = search_result[:10]
+            
+            logger.info(f"ask_memory: Memory search for user {supa_uid} took {search_duration:.2f}s. Found {len(memories)} results.")
+            
+            # Filter out contaminated memories and limit token usage
+            clean_memories = []
+            total_chars = 0
+            max_chars = 8000  # Conservative limit to avoid token issues
+            
+            for idx, mem in enumerate(memories):
+                memory_text = mem.get('memory', mem.get('content', ''))
+                memory_line = f"Memory {idx+1}: {memory_text}"
+                
+                # Stop adding memories if we're approaching token limits
+                if total_chars + len(memory_line) > max_chars:
+                    break
+                    
+                clean_memories.append(memory_line)
+                total_chars += len(memory_line)
+            
+            # 2. Generate conversational response using LLM
+            if clean_memories:
+                memory_context = "\n".join(clean_memories)
+                prompt = f"""Based on the following memories, answer the question: "{question}"
+
+Relevant memories:
+{memory_context}
+
+Provide a helpful and conversational answer based on the memories above. If the memories don't contain enough information to answer the question, say so."""
+            else:
+                prompt = f"""The user asked: "{question}"
+
+No relevant memories were found. Provide a helpful response indicating that no relevant information was found in their memory."""
+            
+            synthesis_start_time = time.time()
+            response = llm.generate_response(prompt)
+            synthesis_duration = time.time() - synthesis_start_time
+            
+            total_duration = time.time() - start_time
+            
+            logger.info(f"ask_memory: Completed for user {supa_uid} in {total_duration:.2f}s (search: {search_duration:.2f}s, synthesis: {synthesis_duration:.2f}s)")
+            
+            return safe_json_dumps({
+                "status": "success",
+                "question": question,
+                "answer": response,
+                "memories_found": len(memories),
+                "search_duration": round(search_duration, 2),
+                "total_duration": round(total_duration, 2)
+            })
+            
+        finally:
+            db.close()
         
     except Exception as e:
         logger.error(f"Error in ask memory implementation: {e}", exc_info=True)

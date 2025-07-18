@@ -201,14 +201,14 @@ async def _list_memories_impl(supa_uid: str, client_name: str, limit: int = 20) 
         
         # Query recent memories
         sql_query = text("""
-            SELECT m.id, m.content, m.created_at, m.metadata_,
+            SELECT m.id, m.content, m.created_at, m.metadata,
                    array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) as categories
             FROM memories m
             LEFT JOIN memory_categories mc ON m.id = mc.memory_id
             LEFT JOIN categories c ON mc.category_id = c.id
             WHERE m.user_id = :user_id 
             AND m.state = 'active'
-            GROUP BY m.id, m.content, m.created_at, m.metadata_
+            GROUP BY m.id, m.content, m.created_at, m.metadata
             ORDER BY m.created_at DESC
             LIMIT :limit
         """)

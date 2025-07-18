@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,9 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles } from "lucide-react";
-import { useMemoriesApi } from '@/hooks/useMemoriesApi';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@supabase/supabase-js';
 
 export function DeepQueryDialog() {
@@ -23,14 +21,7 @@ export function DeepQueryDialog() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState('');
-  const { memories, fetchMemories } = useMemoriesApi();
-  const { user } = useAuth();
 
-  useEffect(() => {
-    if (open) {
-      fetchMemories();
-    }
-  }, [open, fetchMemories]);
 
   const handleQuery = async () => {
     if (!query.trim()) return;
@@ -50,43 +41,31 @@ export function DeepQueryDialog() {
       
       const accessToken = session.access_token;
       
-      const memoryContext = memories.map(m => 
-        `Memory from ${m.app_name || 'unknown app'} on ${new Date(m.created_at).toLocaleDateString()}: "${m.memory}"`
-      ).join('\n');
-
-      const prompt = `You are a deep reflection AI assistant. Your task is to analyze the user's memories in-depth to answer a profound question about their life. Go beyond surface-level answers and identify underlying themes, patterns, personal growth, and contradictions.
-
-Here are all the user's memories:
-${memoryContext}
-
-The user's question is: "${query}"
-
-Provide a thoughtful, multi-paragraph response that synthesizes information from across the memories to provide a comprehensive insight. Be insightful and empathetic in your analysis.`;
-
-      const response = await fetch('/api/chat/gemini', {
+      // Use the enhanced Jean Memory V2 deep life query endpoint
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jean-memory-api-virginia.onrender.com';
+      const response = await fetch(`${apiUrl}/api/v1/memories/deep-life-query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
-          prompt,
-          memories: memories,
+          query: query
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get response from Gemini');
+        throw new Error(errorData.error || 'Failed to get enhanced deep life query response');
       }
 
       const data = await response.json();
-      setResult(data.response);
+      setResult(data.result || data.response || data.answer);
       toast.success("Query completed!");
 
     } catch (error: any) {
-      console.error("Deep query failed:", error);
-      toast.error(error.message || "Failed to perform deep query.");
+      console.error("Enhanced deep query failed:", error);
+      toast.error(error.message || "Failed to perform enhanced deep query.");
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +89,7 @@ Provide a thoughtful, multi-paragraph response that synthesizes information from
         <DialogHeader>
           <DialogTitle>Ask a Deep Life Query</DialogTitle>
           <DialogDescription>
-            Ask a complex question about your life. The AI will analyze all your memories to find patterns and insights.
+            Ask a complex question about your life. Jean Memory V2 will analyze your comprehensive memory archive using advanced semantic search and ontology-guided insights.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
