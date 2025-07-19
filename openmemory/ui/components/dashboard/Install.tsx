@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Check, ChevronDown, Link2 } from "lucide-react";
+import { Copy, Check, ChevronDown, Link2, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubstackIntegration } from "./SubstackIntegration";
@@ -84,6 +84,24 @@ export const Install = () => {
     } catch (error) {
       console.error("Failed to copy text:", error);
     }
+  };
+
+  // Generate Cursor deep link for one-click installation
+  const generateCursorDeepLink = () => {
+    const mcpConfig = {
+      "jean-memory": {
+        "command": "npx",
+        "args": [
+          "-y", 
+          "supergateway", 
+          "--sse", 
+          `${MCP_URL}/mcp/cursor/sse/${userId}`
+        ]
+      }
+    };
+    
+    const encodedConfig = btoa(JSON.stringify(mcpConfig));
+    return `cursor://anysphere.cursor-deeplink/mcp/install?name=jean-memory&config=${encodedConfig}`;
   };
 
   const renderInstallCard = (appKey: string, title: string, isMcp: boolean = false) => (
