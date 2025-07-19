@@ -98,10 +98,10 @@ export const Install = () => {
     const mcpConfig = {
       "command": "npx",
       "args": [
-        "install-mcp", 
-        `${MCP_URL}/mcp/cursor/sse/${userId}`,
-        "--client",
-        "cursor"
+        "-y", 
+        "supergateway", 
+        "--sse", 
+        `${MCP_URL}/mcp/cursor/sse/${userId}`
       ]
     };
     

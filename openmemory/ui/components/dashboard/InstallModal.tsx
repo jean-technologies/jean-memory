@@ -317,10 +317,10 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         const mcpConfig = {
                             "command": "npx",
                             "args": [
-                                "install-mcp",
-                                `https://api.jeanmemory.com/mcp/cursor/sse/${user?.id}`,
-                                "--client",
-                                "cursor"
+                                "-y",
+                                "supergateway",
+                                "--sse",
+                                `https://api.jeanmemory.com/mcp/cursor/sse/${user?.id}`
                             ]
                         };
                         const encodedConfig = btoa(JSON.stringify(mcpConfig));
