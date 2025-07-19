@@ -306,6 +306,65 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </ol>
                 </div>
             </div>
+        ) : app.id === 'cursor' ? (
+            <div className="py-2 space-y-6">
+                {/* One-Click Install Button */}
+                <Button 
+                    onClick={() => {
+                        const mcpConfig = {
+                            "jean-memory": {
+                                "command": "npx",
+                                "args": [
+                                    "-y", 
+                                    "supergateway", 
+                                    "--sse", 
+                                    `${MCP_URL}/mcp/cursor/sse/${user?.id}`
+                                ]
+                            }
+                        };
+                        const encodedConfig = btoa(JSON.stringify(mcpConfig));
+                        const deepLink = `cursor://anysphere.cursor-deeplink/mcp/install?name=jean-memory&config=${encodedConfig}`;
+                        window.open(deepLink, '_blank');
+                        
+                        toast({
+                            title: "Opening Cursor", 
+                            description: "Cursor should now prompt you to install Jean Memory. If it doesn't open, try the manual install below.",
+                        });
+                    }}
+                    className="w-full"
+                    variant="default"
+                >
+                    <Download className="mr-2 h-4 w-4" />
+                    Add Jean Memory to Cursor
+                </Button>
+                
+                <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-2">
+                        One-click install using Cursor's native MCP integration
+                    </p>
+                </div>
+                
+                {/* Manual Setup Option */}
+                <details className="group">
+                    <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
+                        Need manual terminal setup instead?
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                        <div className="relative bg-background border rounded-md p-3 font-mono text-xs break-all">
+                            <div className="pr-12">{installCommand}</div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                onClick={() => handleCopy(installCommand)}
+                            >
+                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Run this command in terminal, then restart Cursor.</p>
+                    </div>
+                </details>
+            </div>
         ) : app.id === 'claude' ? (
             <div className="py-2 space-y-6">
                 {/* Download Button */}

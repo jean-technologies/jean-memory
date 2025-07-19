@@ -8,10 +8,22 @@ Automatic dependency checking, installation, and environment setup utilities.
 import subprocess
 import sys
 import importlib
-import pkg_resources
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import os
+
+# Use modern importlib.metadata instead of deprecated pkg_resources
+try:
+    from importlib.metadata import version, PackageNotFoundError
+    from packaging.requirements import Requirement
+    from packaging.specifiers import SpecifierSet
+except ImportError:
+    # Fallback for older Python versions
+    import pkg_resources
+    version = lambda name: pkg_resources.get_distribution(name).version
+    PackageNotFoundError = pkg_resources.DistributionNotFound
+    Requirement = pkg_resources.Requirement
+    SpecifierSet = None
 
 class DependencyManager:
     """Manages automatic dependency installation and verification"""
@@ -83,20 +95,20 @@ class DependencyManager:
             
             # Check if package is installed
             try:
-                installed_version = pkg_resources.get_distribution(package_name).version
+                installed_version = version(package_name)
                 
                 # If no version requirement, just check if installed
                 if required_version is None:
                     return True, installed_version, None
                 
-                # Check version compatibility using pkg_resources
-                requirement = pkg_resources.Requirement.parse(package_spec.replace('[graph]', ''))
-                installed_dist = pkg_resources.get_distribution(package_name)
+                # Check version compatibility using modern packaging
+                requirement = Requirement(package_spec.replace('[graph]', ''))
                 
+                # Use specifier to check version compatibility
                 is_satisfied = requirement.specifier.contains(installed_version)
                 return is_satisfied, installed_version, required_version.strip()
                 
-            except pkg_resources.DistributionNotFound:
+            except PackageNotFoundError:
                 return False, None, required_version.strip() if required_version else None
                 
         except Exception as e:
