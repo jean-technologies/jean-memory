@@ -15,12 +15,18 @@ from app.utils.db import get_user_and_app
 from app.config.memory_limits import MEMORY_LIMITS
 from app.utils.decorators import retry_on_exception
 from .utils import safe_json_dumps, track_tool_usage, format_memory_response, format_error_response
+from .chunk_search import (
+    search_document_chunks, 
+    extract_document_ids_from_results,
+    merge_search_results,
+    should_trigger_deep_search
+)
 
 logger = logging.getLogger(__name__)
 
 
 @retry_on_exception(retries=3, delay=1, backoff=2, exceptions=(ConnectionError,))
-async def search_memory(query: str, limit: int = None, tags_filter: Optional[List[str]] = None) -> str:
+async def search_memory(query: str, limit: int = None, tags_filter: Optional[List[str]] = None, deep_search: bool = False) -> str:
     """
     Search the user's memory for memories that match the query.
     Returns memories that are semantically similar to the query.
@@ -30,6 +36,7 @@ async def search_memory(query: str, limit: int = None, tags_filter: Optional[Lis
         limit: Maximum number of results to return (default: 10, max: 50) 
         tags_filter: Optional list of tags to filter results (e.g., ["work", "project-alpha"])
                     Only memories containing ALL specified tags will be returned.
+        deep_search: Enable deep search through document chunks (useful for Substack content)
     
     Returns:
         JSON string containing list of matching memories with their content and metadata
@@ -52,13 +59,14 @@ async def search_memory(query: str, limit: int = None, tags_filter: Optional[Lis
         track_tool_usage('search_memory', {
             'query_length': len(query),
             'limit': limit,
-            'has_tags_filter': bool(tags_filter)
+            'has_tags_filter': bool(tags_filter),
+            'deep_search': deep_search
         })
         
         # Add timeout to prevent hanging
         return await asyncio.wait_for(
-            _search_memory_unified_impl(query, supa_uid, client_name, limit, tags_filter), 
-            timeout=30.0
+            _search_memory_unified_impl(query, supa_uid, client_name, limit, tags_filter, deep_search), 
+            timeout=30.0 if not deep_search else 45.0  # More time for deep search
         )
     except asyncio.TimeoutError:
         return format_error_response("Search timed out. Please try a simpler query.", "search_memory")
@@ -68,8 +76,9 @@ async def search_memory(query: str, limit: int = None, tags_filter: Optional[Lis
 
 
 async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: str, 
-                                    limit: int = 10, tags_filter: Optional[List[str]] = None) -> str:
-    """Unified implementation that supports both basic search and tag filtering"""
+                                    limit: int = 10, tags_filter: Optional[List[str]] = None,
+                                    deep_search: bool = False) -> str:
+    """Unified implementation that supports both basic search, tag filtering, and deep search"""
     from app.utils.memory import get_async_memory_client
     
     memory_client = await get_async_memory_client()
@@ -120,6 +129,41 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
                 logger.warning(f"Unexpected result format in search: {type(result)}")
                 continue
         
+        # Handle deep search if requested or triggered automatically
+        if deep_search or await should_trigger_deep_search(query, formatted_memories):
+            logger.info(f"Deep search activated for query: {query}")
+            
+            # Extract document IDs from vector results
+            document_ids = extract_document_ids_from_results(formatted_memories)
+            
+            if document_ids:
+                logger.info(f"Searching chunks for {len(document_ids)} documents")
+                
+                # Search through document chunks
+                chunk_results = await search_document_chunks(
+                    query=query,
+                    user_id=supa_uid,
+                    document_ids=list(document_ids),
+                    limit_per_doc=3,
+                    total_limit=15
+                )
+                
+                if chunk_results:
+                    logger.info(f"Found {len(chunk_results)} relevant chunks")
+                    
+                    # Merge vector and chunk results
+                    formatted_memories = merge_search_results(
+                        vector_results=formatted_memories,
+                        chunk_results=chunk_results,
+                        query=query,
+                        max_results=limit
+                    )
+                    
+                    # Add deep search metadata to response
+                    for memory in formatted_memories:
+                        if memory.get('source_type') == 'chunk':
+                            memory['metadata']['deep_search'] = True
+        
         return format_memory_response(formatted_memories, len(formatted_memories), query)
         
     except Exception as e:
@@ -129,9 +173,10 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
         db.close()
 
 
-async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[List[str]] = None) -> str:
+async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[List[str]] = None, deep_search: bool = False) -> str:
     """
     Enhanced memory search with improved ranking and filtering.
+    Now includes deep search capability for document chunks.
     """
     supa_uid = user_id_var.get(None)
     client_name = client_name_var.get(None)
@@ -147,12 +192,13 @@ async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[
         track_tool_usage('search_memory_v2', {
             'query_length': len(query),
             'limit': limit,
-            'has_tags_filter': bool(tags_filter)
+            'has_tags_filter': bool(tags_filter),
+            'deep_search': deep_search
         })
         
         return await asyncio.wait_for(
-            _search_memory_v2_impl(query, supa_uid, client_name, limit, tags_filter),
-            timeout=30.0
+            _search_memory_v2_impl(query, supa_uid, client_name, limit, tags_filter, deep_search),
+            timeout=30.0 if not deep_search else 45.0
         )
     except asyncio.TimeoutError:
         return format_error_response("Search timed out", "search_memory_v2")
@@ -162,7 +208,8 @@ async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[
 
 
 async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str,
-                               limit: int = 10, tags_filter: Optional[List[str]] = None) -> str:
+                               limit: int = 10, tags_filter: Optional[List[str]] = None,
+                               deep_search: bool = False) -> str:
     """Enhanced search implementation with better ranking"""
     from app.utils.memory import get_async_memory_client
     
@@ -207,6 +254,41 @@ async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str,
             else:
                 logger.warning(f"Unexpected result format in search: {type(result)}")
                 continue
+        
+        # Handle deep search if requested
+        if deep_search or await should_trigger_deep_search(query, formatted_results):
+            logger.info(f"Deep search activated for v2 query: {query}")
+            
+            # Extract document IDs from vector results
+            document_ids = extract_document_ids_from_results(formatted_results)
+            
+            if document_ids:
+                logger.info(f"Searching chunks for {len(document_ids)} documents")
+                
+                # Search through document chunks
+                chunk_results = await search_document_chunks(
+                    query=query,
+                    user_id=supa_uid,
+                    document_ids=list(document_ids),
+                    limit_per_doc=3,
+                    total_limit=15
+                )
+                
+                if chunk_results:
+                    logger.info(f"Found {len(chunk_results)} relevant chunks")
+                    
+                    # Merge vector and chunk results
+                    formatted_results = merge_search_results(
+                        vector_results=formatted_results,
+                        chunk_results=chunk_results,
+                        query=query,
+                        max_results=limit
+                    )
+                    
+                    # Add deep search metadata
+                    for result in formatted_results:
+                        if result.get('source_type') == 'chunk':
+                            result['metadata']['deep_search'] = True
         
         return format_memory_response(formatted_results, len(formatted_results), query)
         
@@ -266,12 +348,59 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             memory_client = await get_async_memory_client()
             llm = OpenAILLM(config=BaseLlmConfig(model="gpt-4o-mini"))
             
-            # 1. Quick memory search using mem0 + graphiti (limit to 10 for speed)
+            # 1. Initial vector search
             search_start_time = time.time()
             logger.info(f"ask_memory: Starting memory search for user {supa_uid}")
             
             # Call async memory client directly - this uses Jean Memory V2 mem0 + graphiti search
             search_result = await memory_client.search(query=question, user_id=supa_uid, limit=10)
+            
+            # Process initial results
+            initial_memories = []
+            if isinstance(search_result, dict) and 'results' in search_result:
+                initial_memories = search_result['results']
+            elif isinstance(search_result, list):
+                initial_memories = search_result
+            
+            # Check if we should do deep search (for questions about detailed content)
+            has_substack = any(
+                m.get('metadata', {}).get('source_app') == 'substack' 
+                for m in initial_memories
+            )
+            
+            # Trigger deep search for questions that need detailed content
+            should_deep_search = (
+                has_substack and (
+                    'detail' in question.lower() or
+                    'specific' in question.lower() or
+                    'exactly' in question.lower() or
+                    'full' in question.lower() or
+                    len(initial_memories) < 3
+                )
+            )
+            
+            if should_deep_search:
+                logger.info("ask_memory: Triggering deep search for detailed content")
+                
+                # Extract document IDs
+                document_ids = extract_document_ids_from_results(initial_memories)
+                
+                if document_ids:
+                    # Search chunks for more detailed content
+                    chunk_results = await search_document_chunks(
+                        query=question,
+                        user_id=supa_uid,
+                        document_ids=list(document_ids),
+                        limit_per_doc=3,
+                        total_limit=10
+                    )
+                    
+                    # Combine results for LLM context
+                    if chunk_results:
+                        # Add chunks to the search results
+                        search_result = {
+                            'results': initial_memories + chunk_results
+                        }
 
             search_duration = time.time() - search_start_time
             

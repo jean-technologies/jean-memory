@@ -5,6 +5,8 @@ Provides a clean API for memory operations by importing from modularized compone
 
 import logging
 from typing import Optional, List
+from app.mcp_instance import mcp
+from app.utils.decorators import retry_on_exception
 
 # Import from modularized components
 from .memory_modules.utils import safe_json_dumps, track_tool_usage
@@ -17,6 +19,17 @@ from .memory_modules.crud_operations import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Apply MCP decorators to imported functions
+search_memory = mcp.tool(description="Search the user's memory for memories that match the query. Optionally filter by tags. NEW: Use deep_search=true for detailed document content.")(search_memory)
+search_memory_v2 = mcp.tool(description="Enhanced memory search with improved ranking and filtering. Supports tag filtering and deep search for document chunks.")(search_memory_v2)
+add_memories = mcp.tool(description="Add new memories to the user's memory")(add_memories)
+add_observation = mcp.tool(description="Add an observation or factual statement to memory")(add_observation)
+list_memories = mcp.tool(description="List all memories for the user")(list_memories)
+delete_all_memories = mcp.tool(description="Delete all memories for the user (requires confirmation)")(delete_all_memories)
+get_memory_details = mcp.tool(description="Get detailed information about specific memories by their IDs")(get_memory_details)
+ask_memory = mcp.tool(description="Ask a question about the user's memories and get an AI-generated response. Automatically uses deep search for detailed content when needed.")(ask_memory)
+smart_memory_query = mcp.tool(description="Intelligent memory query that combines search and Q&A capabilities")(smart_memory_query)
 
 # Re-export all functions for backward compatibility
 __all__ = [
