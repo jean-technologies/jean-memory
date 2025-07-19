@@ -1,5 +1,5 @@
 export type Category = "personal" | "work" | "health" | "finance" | "travel" | "education" | "preferences" | "relationships"
-export type Client = "chrome" | "chatgpt" | "cursor" | "windsurf" | "terminal" | "api"
+export type Client = "chrome" | "chatgpt" | "cursor" | "windsurf" | "terminal" | "api" | "stm"
 
 export interface Memory {
   id: string

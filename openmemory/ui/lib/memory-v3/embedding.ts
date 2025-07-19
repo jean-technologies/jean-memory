@@ -8,7 +8,8 @@
  * - Similarity computation
  */
 
-import { pipeline, Pipeline, env } from '@xenova/transformers';
+import { pipeline, env } from '@xenova/transformers';
+import type { FeatureExtractionPipeline } from '@xenova/transformers';
 import { EmbeddingService } from './types';
 
 // Configure Transformers.js for browser usage
@@ -16,7 +17,7 @@ env.allowRemoteModels = true;
 env.allowLocalModels = false;
 
 export class STMEmbeddingService implements EmbeddingService {
-  private pipeline: Pipeline | null = null;
+  private pipeline: FeatureExtractionPipeline | null = null;
   private isInitializing = false;
   private initializationPromise: Promise<void> | null = null;
   

@@ -12,6 +12,7 @@ import { useMemoriesApi } from "@/hooks/useMemoriesApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { STMToggle } from "@/components/memory-v3/STMToggle";
 
 export default function MemoriesPage() {
   const router = useRouter();
@@ -84,7 +85,10 @@ export default function MemoriesPage() {
       <main className="flex-1 py-6">
         <div className="container">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-1 pb-4 animate-fade-slide-down">
-            <MemoryFilters onFilterChange={loadMemories} />
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <MemoryFilters onFilterChange={loadMemories} />
+              <STMToggle />
+            </div>
             <DeepQueryDialog />
           </div>
           <div className="animate-fade-slide-down delay-1">
