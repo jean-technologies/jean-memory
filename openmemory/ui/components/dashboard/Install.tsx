@@ -89,15 +89,13 @@ export const Install = () => {
   // Generate Cursor deep link for one-click installation
   const generateCursorDeepLink = () => {
     const mcpConfig = {
-      "jean-memory": {
-        "command": "npx",
-        "args": [
-          "-y", 
-          "supergateway", 
-          "--sse", 
-          `${MCP_URL}/mcp/cursor/sse/${userId}`
-        ]
-      }
+      "command": "npx",
+      "args": [
+        "-y", 
+        "supergateway", 
+        "--stdio", 
+        `${MCP_URL}/mcp/v2/cursor/${userId}`
+      ]
     };
     
     const encodedConfig = btoa(JSON.stringify(mcpConfig));
