@@ -21,21 +21,21 @@ def upgrade() -> None:
     # Create GIN index for full-text search on document chunks
     # This significantly improves performance for text searches
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_document_chunks_content_fts 
+        CREATE INDEX IF NOT EXISTS idx_document_chunks_content_fts 
         ON document_chunks 
         USING gin(to_tsvector('english', content))
     """)
     
     # Also add a regular B-tree index on content length for filtering
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_document_chunks_content_length
+        CREATE INDEX IF NOT EXISTS idx_document_chunks_content_length
         ON document_chunks
         (length(content))
     """)
     
     # Add index on document_id + chunk_index for ordered retrieval
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_document_chunks_doc_chunk
+        CREATE INDEX IF NOT EXISTS idx_document_chunks_doc_chunk
         ON document_chunks
         (document_id, chunk_index)
     """)
