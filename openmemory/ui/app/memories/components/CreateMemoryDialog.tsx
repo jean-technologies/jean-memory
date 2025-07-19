@@ -15,18 +15,30 @@ import { useState, useRef } from "react";
 import { GoPlus } from "react-icons/go";
 import { Loader2 } from "lucide-react";
 import { useMemoriesApi } from "@/hooks/useMemoriesApi";
+import { useMemoriesApiV3 } from "@/hooks/useMemoriesApiV3";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Zap } from "lucide-react";
 
 export function CreateMemoryDialog() {
   const { createMemory, isLoading, fetchMemories } = useMemoriesApi();
+  const { isSTMEnabled, isSTMReady, createMemory: createMemoryV3 } = useMemoriesApiV3();
   const [open, setOpen] = useState(false);
+  const [useSTM, setUseSTM] = useState(isSTMEnabled && isSTMReady);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
   const handleCreateMemory = async (text: string) => {
     try {
-      await createMemory(text);
-      toast.success("Memory created successfully");
+      if (useSTM && isSTMEnabled && isSTMReady) {
+        await createMemoryV3(text, true); // Use STM mode
+        toast.success("Memory created instantly with Smart Memory");
+      } else {
+        await createMemory(text);
+        toast.success("Memory created successfully");
+      }
+      
       // clear the textarea
       if (textRef.current) {
         textRef.current.value = "";
@@ -66,6 +78,36 @@ export function CreateMemoryDialog() {
               className="min-h-[150px]"
             />
           </div>
+          
+          {/* STM Mode Toggle */}
+          {isSTMEnabled && (
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border">
+              <div className="flex items-center space-x-2">
+                <Zap className="h-4 w-4 text-blue-600" />
+                <div>
+                  <Label htmlFor="stm-mode" className="text-sm font-medium">
+                    Smart Memory Mode
+                  </Label>
+                  <p className="text-xs text-gray-600">
+                    Instant creation and local search
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {isSTMReady && (
+                  <Badge variant="secondary" className="text-xs">
+                    Ready
+                  </Badge>
+                )}
+                <Switch
+                  id="stm-mode"
+                  checked={useSTM}
+                  onCheckedChange={setUseSTM}
+                  disabled={!isSTMReady}
+                />
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
