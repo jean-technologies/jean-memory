@@ -1,0 +1,34 @@
+# Jean Memory V3 Local Service Dependencies
+
+# Core Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.3
+python-multipart==0.0.20
+
+# Memory Frameworks
+mem0ai==0.1.30
+faiss-cpu==1.9.0
+
+# Graph Database
+py2neo==2024.1.1
+neo4j==5.28.0
+
+# AI/ML
+sentence-transformers==3.3.1
+openai==1.58.1
+transformers==4.47.1
+torch>=2.0.0
+
+# Utilities
+httpx==0.28.1
+python-dotenv==1.0.1
+asyncio-mqtt==0.17.2
+aiofiles==24.1.0
+python-jose[cryptography]==3.3.0
+
+# Development
+pytest==8.3.4
+pytest-asyncio==0.25.0
+black==24.10.0
+isort==5.13.2
