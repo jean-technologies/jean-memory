@@ -174,7 +174,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
     } else if (app.id === 'cursor') {
       // Use original working SSE transport for Cursor
-      rawInstallCommand = `npx install-mcp https://jean-memory-api-virginia.onrender.com/mcp/cursor/sse/{user_id} --client cursor`;
+      rawInstallCommand = `npx install-mcp https://api.jeanmemory.com/mcp/cursor/sse/{user_id} --client cursor`;
     } else {
       rawInstallCommand = `npx install-mcp ${MCP_URL}/mcp/${app.id}/sse/{user_id} --client ${app.id}`;
     }
@@ -318,7 +318,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                             "command": "npx",
                             "args": [
                                 "install-mcp",
-                                `${MCP_URL}/mcp/cursor/sse/${user?.id}`,
+                                `https://api.jeanmemory.com/mcp/cursor/sse/${user?.id}`,
                                 "--client",
                                 "cursor"
                             ]

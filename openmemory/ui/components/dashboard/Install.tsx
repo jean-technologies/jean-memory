@@ -94,12 +94,12 @@ export const Install = () => {
 
   // Generate Cursor deep link for one-click installation
   const generateCursorDeepLink = () => {
-    const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
+    const MCP_URL = "https://api.jeanmemory.com";
     const mcpConfig = {
       "command": "npx",
       "args": [
         "install-mcp", 
-        `${cursorMcpUrl}/mcp/cursor/sse/${userId}`,
+        `${MCP_URL}/mcp/cursor/sse/${userId}`,
         "--client",
         "cursor"
       ]
@@ -112,8 +112,8 @@ export const Install = () => {
   const renderInstallCard = (appKey: string, title: string, isMcp: boolean = false) => {
     let manualCommand;
     if (appKey === 'cursor') {
-      const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
-      manualCommand = `npx install-mcp ${cursorMcpUrl}/mcp/cursor/sse/${userId} --client cursor`;
+      const MCP_URL = "https://api.jeanmemory.com";
+      manualCommand = `npx install-mcp ${MCP_URL}/mcp/cursor/sse/${userId} --client cursor`;
     } else {
       const MCP_URL = "https://api.jeanmemory.com";
       manualCommand = isMcp 
