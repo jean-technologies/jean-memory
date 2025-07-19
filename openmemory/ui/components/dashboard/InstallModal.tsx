@@ -313,7 +313,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     onClick={() => {
                         const mcpConfig = {
                             "jean-memory": {
-                                "url": `${MCP_URL}/mcp/cursor/sse/${user?.id}`
+                                "url": `${MCP_URL}/mcp/v2/cursor/${user?.id}`
                             }
                         };
                         const encodedConfig = btoa(JSON.stringify(mcpConfig));
@@ -334,7 +334,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 
                 <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-2">
-                        One-click install using Cursor's native MCP integration
+                        One-click install using HTTP transport (50% faster, bypasses Cloudflare)
                     </p>
                 </div>
                 
