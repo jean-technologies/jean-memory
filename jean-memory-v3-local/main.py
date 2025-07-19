@@ -120,20 +120,27 @@ class JeanMemoryV3App:
             data_paths = get_data_paths()
             logger.info(f"📁 Data directory: {self.config.data_dir}")
             
-            # Initialize Docker manager
-            logger.info("🐳 Initializing Docker manager...")
-            self.docker_manager = DockerManager()
-            
-            # Start Neo4j if not running
-            if not await self.docker_manager.is_neo4j_running():
-                logger.info("🔧 Starting local Neo4j...")
-                await self.docker_manager.start_neo4j()
+            # Initialize Docker manager only if enabled
+            if self.config.enable_docker:
+                logger.info("🐳 Initializing Docker manager...")
+                self.docker_manager = DockerManager()
                 
-                # Wait for Neo4j to be ready
-                await self.docker_manager.wait_for_neo4j()
-                logger.info("✅ Neo4j is ready")
+                # Start Neo4j if not running
+                if not await self.docker_manager.is_neo4j_running():
+                    logger.info("🔧 Starting local Neo4j...")
+                    await self.docker_manager.start_neo4j()
+                    
+                    # Wait for Neo4j to be ready
+                    await self.docker_manager.wait_for_neo4j()
+                    logger.info("✅ Neo4j is ready")
+                else:
+                    logger.info("✅ Neo4j is already running")
             else:
-                logger.info("✅ Neo4j is already running")
+                logger.info("⚠️  Docker disabled - skipping Neo4j container setup")
+                if self.config.enable_neo4j:
+                    logger.info("🔍 Assuming external Neo4j instance is available")
+                else:
+                    logger.info("⚠️  Neo4j disabled - running in FAISS-only mode")
             
             # Initialize memory service
             logger.info("🧠 Initializing memory service...")

@@ -4,7 +4,8 @@ Jean Memory V3 Local Service Configuration
 
 import os
 from pathlib import Path
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from typing import Optional
 
 class JeanMemoryV3Config(BaseSettings):
@@ -30,6 +31,10 @@ class JeanMemoryV3Config(BaseSettings):
     neo4j_user: str = Field(default="neo4j", description="Neo4j username")
     neo4j_password: str = Field(default="local_password", description="Neo4j password")
     neo4j_database: str = Field(default="neo4j", description="Neo4j database name")
+    
+    # Docker Configuration
+    enable_docker: bool = Field(default=False, description="Enable Docker for Neo4j (requires Docker installed)")
+    enable_neo4j: bool = Field(default=False, description="Enable Neo4j features (requires running Neo4j instance)")
     
     # Cloud Sync Configuration (Optional)
     cloud_api_url: Optional[str] = Field(default=None, description="Jean Memory V2 Cloud API URL")
@@ -76,7 +81,7 @@ def get_data_paths() -> dict:
     
     return paths
 
-def get_mem0_config(user_id: str) -> dict:
+def get_mem0_config() -> dict:
     """Get mem0 configuration for FAISS backend"""
     paths = get_data_paths()
     
@@ -84,8 +89,8 @@ def get_mem0_config(user_id: str) -> dict:
         "vector_store": {
             "provider": "faiss",
             "config": {
-                "collection_name": f"v3_local_{user_id}",
-                "path": str(paths["faiss"] / user_id),
+                "collection_name": "jean_memory_v3_local",
+                "path": str(paths["faiss"]),
                 "distance_strategy": config.faiss_distance_strategy,
                 "normalize_L2": True
             }

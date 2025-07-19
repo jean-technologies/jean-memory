@@ -8,10 +8,10 @@ python-multipart==0.0.20
 
 # Memory Frameworks
 mem0ai==0.1.30
-faiss-cpu==1.9.0
+faiss-cpu>=1.7.0
 
 # Graph Database
-py2neo==2024.1.1
+py2neo==2021.2.4
 neo4j==5.28.0
 
 # AI/ML
@@ -23,7 +23,7 @@ torch>=2.0.0
 # Utilities
 httpx==0.28.1
 python-dotenv==1.0.1
-asyncio-mqtt==0.17.2
+asyncio-mqtt==0.16.2
 aiofiles==24.1.0
 python-jose[cryptography]==3.3.0
 
