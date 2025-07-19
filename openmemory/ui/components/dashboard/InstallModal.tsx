@@ -173,8 +173,8 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
       // Use HTTP v2 transport for Claude (50% faster)
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
     } else if (app.id === 'cursor') {
-      // Use HTTP v2 transport for Cursor (50% faster)
-      rawInstallCommand = `npx -y supergateway --streamableHttp https://jean-memory-api-virginia.onrender.com/mcp/v2/cursor/{user_id}`;
+      // Use original working SSE transport for Cursor
+      rawInstallCommand = `npx install-mcp https://jean-memory-api-virginia.onrender.com/mcp/cursor/sse/{user_id} --client cursor`;
     } else {
       rawInstallCommand = `npx install-mcp ${MCP_URL}/mcp/${app.id}/sse/{user_id} --client ${app.id}`;
     }
@@ -317,10 +317,10 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         const mcpConfig = {
                             "command": "npx",
                             "args": [
-                                "-y",
-                                "supergateway",
-                                "--streamableHttp",
-                                `${MCP_URL}/mcp/v2/cursor/${user?.id}`
+                                "install-mcp",
+                                `${MCP_URL}/mcp/cursor/sse/${user?.id}`,
+                                "--client",
+                                "cursor"
                             ]
                         };
                         const encodedConfig = btoa(JSON.stringify(mcpConfig));
