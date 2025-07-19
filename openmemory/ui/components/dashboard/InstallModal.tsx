@@ -161,8 +161,8 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
 
   const appConfig = constants[app.id as keyof typeof constants] || constants.default;
   
-  // Use direct backend URL for Chorus, Worker URL for others
-  const MCP_URL = app.id === 'chorus' ? "https://jean-memory-api-virginia.onrender.com" : "https://api.jeanmemory.com";
+  // Use direct backend URL for Chorus and Cursor, Worker URL for others
+  const MCP_URL = (app.id === 'chorus' || app.id === 'cursor') ? "https://jean-memory-api-virginia.onrender.com" : "https://api.jeanmemory.com";
 
   // Define a base command that can be used as a fallback, fixing the regression.
   let rawInstallCommand = app.installCommand;
