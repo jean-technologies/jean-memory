@@ -100,7 +100,7 @@ export const Install = () => {
       "args": [
         "-y", 
         "supergateway", 
-        "--stdio", 
+        "--streamableHttp", 
         `${cursorMcpUrl}/mcp/v2/cursor/${userId}`
       ]
     };
@@ -113,7 +113,7 @@ export const Install = () => {
     let manualCommand;
     if (appKey === 'cursor') {
       const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
-      manualCommand = `npx -y supergateway --stdio ${cursorMcpUrl}/mcp/v2/cursor/${userId}`;
+      manualCommand = `npx -y supergateway --streamableHttp ${cursorMcpUrl}/mcp/v2/cursor/${userId}`;
     } else {
       const MCP_URL = "https://api.jeanmemory.com";
       manualCommand = isMcp 
