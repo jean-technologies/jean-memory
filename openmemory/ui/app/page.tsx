@@ -2,28 +2,16 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, Zap, Globe, Key, Github, Star } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
-import MouseFollowArrow from "@/components/landing/MouseFollowArrow";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LandingPage() {
   const buttonRef = useRef<HTMLAnchorElement>(null);
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [stars, setStars] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetch("https://api.github.com/repos/jonathan-politzki/your-memory")
-      .then((res) => res.json())
-      .then((data) => {
-        setStars(data.stargazers_count);
-      })
-      .catch((e) => console.error("Failed to fetch stars", e));
-  }, []);
 
   // Redirect authenticated users to dashboard immediately
   // COMMENTED OUT: Allow authenticated users to view landing page
@@ -80,18 +68,11 @@ export default function LandingPage() {
 
   // Show landing page for unauthenticated users
   return (
-    <div className="relative min-h-screen bg-black text-white overflow-hidden">
+    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <ParticleNetwork id="landing-particles" />
       </div>
-
-      {/* Mouse Follow Arrow */}
-      <MouseFollowArrow targetRef={buttonRef} />
-
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-950/60 via-transparent to-slate-950/60" />
-      <div className="absolute inset-0 bg-gradient-radial from-transparent via-black/80 to-black" />
 
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
@@ -101,9 +82,9 @@ export default function LandingPage() {
           transition={{ duration: 0.8 }}
           className="text-center max-w-4xl mx-auto w-full"
         >
-          {/* Logo/Title */}
+          {/* Title */}
           <motion.h1
-            className="text-6xl sm:text-7xl md:text-8xl font-semibold mb-6 text-gray-200 tracking-tight"
+            className="text-6xl sm:text-7xl md:text-8xl font-semibold mb-8 text-gray-900 tracking-tight"
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -113,99 +94,46 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <motion.p
-            className="text-lg sm:text-xl text-gray-400 mb-10 max-w-xl mx-auto"
+            className="text-xl sm:text-2xl text-gray-700 mb-2 max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            Your secure memory across AI applications
+            AI that actually knows you
           </motion.p>
 
-          <div className="my-12 sm:my-16 flex flex-col items-center justify-center gap-6">
-            {/* CTA Button */}
+          <motion.p
+            className="text-lg text-gray-600 mb-12 max-w-xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            Share your memory across your AI apps
+          </motion.p>
+
+          <div className="my-16 flex flex-col items-center justify-center gap-8">
+            {/* CTA Buttons */}
             <motion.div
+              className="flex flex-col sm:flex-row gap-4"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{
                 type: "spring",
                 stiffness: 260,
                 damping: 20,
-                delay: 0.7
+                delay: 0.8
               }}
             >
               <Link
                 ref={buttonRef}
                 href={user ? "/dashboard" : "/auth?animate=true"}
-                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 text-xl font-bold rounded-md bg-black text-white border border-gray-600 hover:bg-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-slate-500/10 hover:scale-105"
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-medium rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200"
               >
-                <Key className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
                 <span>{user ? "Go to Dashboard" : "Sign in with Jean"}</span>
               </Link>
             </motion.div>
-
-            {/* GitHub Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <a
-                href="https://github.com/jonathan-politzki/your-memory"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                <span className="font-medium">Trusted by Open Source</span>
-                <div className="w-px h-4 bg-gray-600" />
-                <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400" />
-                    <span className="font-medium text-white h-4">
-                      {stars ? stars : '...'}
-                    </span>
-                </div>
-              </a>
-            </motion.div>
           </div>
 
-          {/* Features */}
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 my-6 sm:my-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.9 }}
-          >
-            <div className="flex flex-col items-center text-center p-1 sm:p-3">
-              <div className="flex items-center gap-2 sm:flex-col sm:gap-0 mb-1 sm:mb-3">
-                <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-blue-400 shrink-0" />
-                <h3 className="text-sm sm:text-base font-semibold">Secure & Private</h3>
-              </div>
-              <p className="text-xs text-gray-400 max-w-xs">You own your data—forever</p>
-            </div>
-            <div className="flex flex-col items-center text-center p-1 sm:p-3">
-              <div className="flex items-center gap-2 sm:flex-col sm:gap-0 mb-1 sm:mb-3">
-                <Zap className="w-5 h-5 sm:w-7 sm:h-7 text-blue-400 shrink-0" />
-                <h3 className="text-sm sm:text-base font-semibold">Lightning Fast</h3>
-              </div>
-              <p className="text-xs text-gray-400 max-w-xs">Instant access to your context across all AI tools.</p>
-            </div>
-            <div className="flex flex-col items-center text-center p-1 sm:p-3">
-              <div className="flex items-center gap-2 sm:flex-col sm:gap-0 mb-1 sm:mb-3">
-                <Globe className="w-5 h-5 sm:w-7 sm:h-7 text-blue-400 shrink-0" />
-                <h3 className="text-sm sm:text-base font-semibold">Universal</h3>
-              </div>
-              <p className="text-xs text-gray-400 max-w-xs">Claude, Cursor, ChatGPT (soon), etc.</p>
-            </div>
-          </motion.div>
-
-          {/* Additional Info */}
-          <motion.p
-            className="text-xs sm:text-sm text-gray-500"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 1.1 }}
-          >
-            No credit card required • Free forever for personal use • <a href="https://jonathan-politzki.github.io/jean-privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Privacy Policy</a>
-          </motion.p>
         </motion.div>
       </div>
     </div>

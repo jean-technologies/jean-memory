@@ -79,9 +79,9 @@ export default function ParticleNetwork({
           quantity: 2,
         },
         grab: {
-          distance: 200,
+          distance: 120,
           links: {
-            opacity: 0.5,
+            opacity: 0.3,
           },
         },
       },
@@ -94,9 +94,9 @@ export default function ParticleNetwork({
       },
               links: {
           color: linkColor,
-          distance: 150,
+          distance: 100,
           enable: true,
-          opacity: isMobile ? 0.7 : 0.4, // Even higher opacity on mobile for visibility
+          opacity: isMobile ? 0.4 : 0.2, // Much more subtle
           width: 1,
         },
       move: {
@@ -106,14 +106,14 @@ export default function ParticleNetwork({
           default: "bounce",
         },
         random: true,
-        speed: isMobile ? 0.8 : 1, // Slightly slower on mobile for battery
+        speed: isMobile ? 0.5 : 0.6, // Much slower and more subtle
         straight: false,
       },
       number: {
-        value: isMobile ? 50 : particleCount, // Fewer particles on mobile
+        value: isMobile ? 30 : 80, // Significantly fewer particles
       },
               opacity: {
-          value: isMobile ? 0.9 : 0.6, // Even higher opacity on mobile
+          value: isMobile ? 0.5 : 0.3, // Much more subtle
         },
       shape: {
         type: "circle",
