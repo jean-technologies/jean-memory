@@ -315,15 +315,13 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 <Button 
                     onClick={() => {
                         const mcpConfig = {
-                            "jean-memory": {
-                                "command": "npx",
-                                "args": [
-                                    "-y",
-                                    "supergateway",
-                                    "--stdio",
-                                    `${MCP_URL}/mcp/v2/cursor/${user?.id}`
-                                ]
-                            }
+                            "command": "npx",
+                            "args": [
+                                "-y",
+                                "supergateway",
+                                "--stdio",
+                                `${MCP_URL}/mcp/v2/cursor/${user?.id}`
+                            ]
                         };
                         const encodedConfig = btoa(JSON.stringify(mcpConfig));
                         const deepLink = `cursor://anysphere.cursor-deeplink/mcp/install?name=jean-memory&config=${encodedConfig}`;
