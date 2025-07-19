@@ -96,13 +96,15 @@ export const Install = () => {
   const generateCursorDeepLink = () => {
     const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
     const mcpConfig = {
-      "command": "npx",
-      "args": [
-        "-y", 
-        "supergateway", 
-        "--stdio", 
-        `${cursorMcpUrl}/mcp/v2/cursor/${userId}`
-      ]
+      "jean-memory": {
+        "command": "npx",
+        "args": [
+          "-y", 
+          "supergateway", 
+          "--stdio", 
+          `${cursorMcpUrl}/mcp/v2/cursor/${userId}`
+        ]
+      }
     };
     
     const encodedConfig = btoa(JSON.stringify(mcpConfig));
