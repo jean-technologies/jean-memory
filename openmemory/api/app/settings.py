@@ -7,6 +7,11 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 import pathlib
+import logging
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Determine the correct environment file path
 # Priority: .env.local > api/.env > .env

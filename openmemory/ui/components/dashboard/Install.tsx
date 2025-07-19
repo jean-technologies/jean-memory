@@ -112,6 +112,21 @@ export const Install = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {appKey === "cursor" && (
+          <div className="mb-4">
+            <a
+              href={generateCursorDeepLink()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Add Jean Memory to Cursor
+            </a>
+            <p className="text-xs text-zinc-500 mt-2">
+              One-click install using Cursor's native MCP integration
+            </p>
+          </div>
+        )}
+        
         <div className="relative group">
           <pre className="bg-zinc-950/50 border border-zinc-800 px-4 py-3 rounded-lg overflow-x-auto text-sm font-mono">
             <code className="text-zinc-300">
@@ -133,6 +148,13 @@ export const Install = () => {
             )}
           </button>
         </div>
+        
+        {appKey === "cursor" && (
+          <p className="text-xs text-zinc-500 mt-3">
+            Or copy the command above to install manually via terminal
+          </p>
+        )}
+        
         {isMcp && (
           <p className="text-xs text-zinc-500 mt-3">
             Use this URL to connect Jean Memory to any MCP-compatible application
