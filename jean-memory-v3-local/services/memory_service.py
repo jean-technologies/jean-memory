@@ -20,6 +20,7 @@ except ImportError as e:
     raise
 
 from config import get_config, get_data_paths, get_mem0_config
+from .graph_service import GraphService
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class MemoryService:
         
         # Core components
         self.memory_client: Optional[Memory] = None
+        self.graph_service = GraphService()
         self.memories: Dict[str, LocalMemory] = {}
         
         # State
@@ -73,11 +75,14 @@ class MemoryService:
             # Initialize mem0 with FAISS configuration
             await self._initialize_mem0_client()
             
+            # Initialize graph service
+            await self.graph_service.initialize()
+            
             # Load existing memories
             await self._load_existing_memories()
             
             self.is_initialized = True
-            logger.info(f"✅ Memory service initialized with mem0 + FAISS backend")
+            logger.info(f"✅ Memory service initialized with mem0 + FAISS backend + Neo4j graph")
             
         except Exception as e:
             logger.error(f"❌ Memory service initialization failed: {e}")
@@ -144,6 +149,13 @@ class MemoryService:
             
             # Store in our local cache
             self.memories[memory_id] = memory
+            
+            # Add to graph service
+            await self.graph_service.add_memory_to_graph(
+                memory_id=memory_id,
+                content=content,
+                user_id=user_id
+            )
             
             logger.info(f"✅ Added memory via mem0: {memory_id[:20]}...")
             return memory
@@ -217,6 +229,9 @@ class MemoryService:
             if memory_id in self.memories:
                 del self.memories[memory_id]
             
+            # Remove from graph service
+            await self.graph_service.delete_memory_from_graph(memory_id)
+            
             logger.info(f"✅ Deleted memory via mem0: {memory_id[:20]}...")
             return True
             
@@ -276,6 +291,9 @@ class MemoryService:
         
         # Clear local cache
         self.memories.clear()
+        
+        # Cleanup graph service
+        await self.graph_service.cleanup()
         
         # mem0 handles its own cleanup
         self.memory_client = None

@@ -204,6 +204,73 @@ async def get_stats(
         logger.error(f"Failed to get stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/graph/search", response_model=SearchResponse)
+async def search_graph_memories(
+    query: str = Query(..., description="Search query"),
+    user_id: str = Query(..., description="User ID"),
+    limit: int = Query(default=10, ge=1, le=100, description="Maximum results"),
+    service = Depends(get_memory_service)
+):
+    """Search memories using graph context"""
+    try:
+        start_time = datetime.now()
+        
+        results = await service.graph_service.search_graph_context(
+            query=query,
+            user_id=user_id,
+            limit=limit
+        )
+        
+        execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+        
+        return SearchResponse(
+            memories=results,
+            total=len(results),
+            query=query,
+            execution_time_ms=execution_time
+        )
+        
+    except Exception as e:
+        logger.error(f"Graph search failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/graph/memories/{user_id}")
+async def get_graph_memories(
+    user_id: str,
+    limit: int = Query(default=50, ge=1, le=100, description="Maximum results"),
+    service = Depends(get_memory_service)
+):
+    """Get all memories for a user from graph"""
+    try:
+        memories = await service.graph_service.get_user_memories(
+            user_id=user_id,
+            limit=limit
+        )
+        
+        return {
+            "memories": memories,
+            "total": len(memories),
+            "user_id": user_id
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get graph memories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/graph/stats")
+async def get_graph_stats(
+    user_id: Optional[str] = Query(None, description="User ID for user-specific stats"),
+    service = Depends(get_memory_service)
+):
+    """Get graph service statistics"""
+    try:
+        stats = await service.graph_service.get_graph_stats(user_id=user_id)
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Failed to get graph stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/sync")
 async def sync_to_cloud(
     user_id: str = Query(..., description="User ID"),
