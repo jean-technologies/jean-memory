@@ -57,13 +57,19 @@ export const Install = () => {
   const { user } = useAuth();
   
   const userId = user?.id || "user";
-  const MCP_URL = "https://api.jeanmemory.com"; // Always use the correct public URL for installs
 
   const handleCopy = async (tab: string, isMcp: boolean = false) => {
-    const textToCopy =
-      tab === 'openmemory'
-        ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
-        : `npx install-mcp ${MCP_URL}/mcp/${tab}/sse/${userId} --client ${tab}`;
+    let textToCopy;
+    if (tab === 'cursor') {
+      const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
+      textToCopy = `npx -y supergateway --stdio ${cursorMcpUrl}/mcp/v2/cursor/${userId}`;
+    } else {
+      const MCP_URL = "https://api.jeanmemory.com";
+      textToCopy =
+        isMcp
+          ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
+          : `npx install-mcp ${MCP_URL}/mcp/${tab}/sse/${userId} --client ${tab}`;
+    }
 
     try {
       if (navigator?.clipboard?.writeText) {
@@ -88,13 +94,14 @@ export const Install = () => {
 
   // Generate Cursor deep link for one-click installation
   const generateCursorDeepLink = () => {
+    const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
     const mcpConfig = {
       "command": "npx",
       "args": [
         "-y", 
         "supergateway", 
         "--stdio", 
-        `${MCP_URL}/mcp/v2/cursor/${userId}`
+        `${cursorMcpUrl}/mcp/v2/cursor/${userId}`
       ]
     };
     
@@ -102,65 +109,75 @@ export const Install = () => {
     return `cursor://anysphere.cursor-deeplink/mcp/install?name=jean-memory&config=${encodedConfig}`;
   };
 
-  const renderInstallCard = (appKey: string, title: string, isMcp: boolean = false) => (
-    <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium text-zinc-100">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {appKey === "cursor" && (
-          <div className="mb-4">
-            <a
-              href={generateCursorDeepLink()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+  const renderInstallCard = (appKey: string, title: string, isMcp: boolean = false) => {
+    let manualCommand;
+    if (appKey === 'cursor') {
+      const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
+      manualCommand = `npx -y supergateway --stdio ${cursorMcpUrl}/mcp/v2/cursor/${userId}`;
+    } else {
+      const MCP_URL = "https://api.jeanmemory.com";
+      manualCommand = isMcp 
+        ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
+        : `npx install-mcp ${MCP_URL}/mcp/${appKey}/sse/${userId} --client ${appKey}`;
+    }
+
+    return (
+      <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-medium text-zinc-100">
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {appKey === "cursor" && (
+            <div className="mb-4">
+              <a
+                href={generateCursorDeepLink()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Add Jean Memory to Cursor
+              </a>
+              <p className="text-xs text-zinc-500 mt-2">
+                One-click install using Cursor's native MCP integration
+              </p>
+            </div>
+          )}
+          
+          <div className="relative group">
+            <pre className="bg-zinc-950/50 border border-zinc-800 px-4 py-3 rounded-lg overflow-x-auto text-sm font-mono">
+              <code className="text-zinc-300">
+                {manualCommand}
+              </code>
+            </pre>
+            <button
+              className="absolute top-2 right-2 p-2 rounded-md bg-zinc-800 hover:bg-zinc-700 transition-colors opacity-0 group-hover:opacity-100"
+              aria-label="Copy to clipboard"
+              onClick={() => handleCopy(appKey, isMcp)}
             >
-              <ExternalLink className="h-4 w-4" />
-              Add Jean Memory to Cursor
-            </a>
-            <p className="text-xs text-zinc-500 mt-2">
-              One-click install using Cursor's native MCP integration
-            </p>
+              {copiedTab === appKey ? (
+                <Check className="h-4 w-4 text-green-400" />
+              ) : (
+                <Copy className="h-4 w-4 text-zinc-400" />
+              )}
+            </button>
           </div>
-        )}
-        
-        <div className="relative group">
-          <pre className="bg-zinc-950/50 border border-zinc-800 px-4 py-3 rounded-lg overflow-x-auto text-sm font-mono">
-            <code className="text-zinc-300">
-              {isMcp 
-                ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
-                : `npx install-mcp ${MCP_URL}/mcp/${appKey}/sse/${userId} --client ${appKey}`
-              }
-            </code>
-          </pre>
-          <button
-            className="absolute top-2 right-2 p-2 rounded-md bg-zinc-800 hover:bg-zinc-700 transition-colors opacity-0 group-hover:opacity-100"
-            aria-label="Copy to clipboard"
-            onClick={() => handleCopy(appKey, isMcp)}
-          >
-            {copiedTab === appKey ? (
-              <Check className="h-4 w-4 text-green-400" />
-            ) : (
-              <Copy className="h-4 w-4 text-zinc-400" />
-            )}
-          </button>
-        </div>
-        
-        {appKey === "cursor" && (
-          <p className="text-xs text-zinc-500 mt-3">
-            Or copy the command above to install manually via terminal
-          </p>
-        )}
-        
-        {isMcp && (
-          <p className="text-xs text-zinc-500 mt-3">
-            Use this URL to connect Jean Memory to any MCP-compatible application
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
+          
+          {appKey === "cursor" && (
+            <p className="text-xs text-zinc-500 mt-3">
+              Or copy the command above to install manually via terminal
+            </p>
+          )}
+          
+          {isMcp && (
+            <p className="text-xs text-zinc-500 mt-3">
+              Use this URL to connect Jean Memory to any MCP-compatible application
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
