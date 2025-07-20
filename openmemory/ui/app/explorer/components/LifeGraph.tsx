@@ -28,6 +28,8 @@ interface GraphNode {
   period?: string;
   themes?: string[];
   score?: number;
+  is_expansion?: boolean;
+  parent_node?: string;
 }
 
 interface GraphEdge {
@@ -86,6 +88,9 @@ function GraphNode3D({
   });
 
   const getNodeColor = (node: GraphNode) => {
+    // Expansion nodes get a lighter/dimmer color
+    const isExpansion = node.is_expansion;
+    
     if (node.type === 'entity') {
       // Enhanced entity colors based on extraction method and type
       const baseColors = {
@@ -100,7 +105,7 @@ function GraphNode3D({
       
       // Return solid colors for THREE.js compatibility
       if (node.extraction_method === 'graphiti_graph') {
-        return baseColor; // Full color for graph entities
+        return isExpansion ? '#93c5fd' : baseColor; // Dimmed for expansions
       } else if (node.extraction_method === 'ai_synthesis') {
         // Use slightly different but valid hex colors for AI-extracted
         const aiColors = {
@@ -110,7 +115,8 @@ function GraphNode3D({
           organization: '#a78bfa', // Lighter purple
           unknown: '#c4b5fd' // Lighter light purple
         };
-        return aiColors[node.entity_type as keyof typeof aiColors] || aiColors.unknown;
+        const color = aiColors[node.entity_type as keyof typeof aiColors] || aiColors.unknown;
+        return isExpansion ? '#d1d5db' : color; // Gray for expansion
       } else {
         // Use even lighter colors for other methods
         const lightColors = {
@@ -120,12 +126,13 @@ function GraphNode3D({
           organization: '#e0e7ff', // Very light purple
           unknown: '#f3f4f6' // Very light gray
         };
-        return lightColors[node.entity_type as keyof typeof lightColors] || lightColors.unknown;
+        const color = lightColors[node.entity_type as keyof typeof lightColors] || lightColors.unknown;
+        return isExpansion ? '#f9fafb' : color; // Even lighter for expansion
       }
     }
     
     if (node.type === 'temporal_pattern') {
-      return '#ef4444'; // Red for temporal patterns
+      return isExpansion ? '#fca5a5' : '#ef4444'; // Lighter red for expansion
     }
     
     // Memory nodes - color by source
@@ -141,7 +148,8 @@ function GraphNode3D({
       'graphiti': '#8b5cf6'
     };
     
-    return sourceColors[node.source?.toLowerCase() || ''] || '#64748b';
+    const color = sourceColors[node.source?.toLowerCase() || ''] || '#64748b';
+    return isExpansion ? '#9ca3af' : color; // Gray for expansion memory nodes
   };
 
   // Enhanced node size calculation
@@ -460,27 +468,47 @@ const processMemoriesLocally = (memories: any[], focusQuery?: string): LifeGraph
     }
   });
 
-  // Simple force-directed layout adjustment
-  for (let iteration = 0; iteration < 50; iteration++) {
+  // Improved layout to prevent grid clustering
+  // Separate connected and disconnected nodes
+  const connectedNodeIds = new Set<string>();
+  edges.forEach(edge => {
+    connectedNodeIds.add(edge.source);
+    connectedNodeIds.add(edge.target);
+  });
+
+  const connectedNodes = nodes.filter(n => connectedNodeIds.has(n.id));
+  const disconnectedNodes = nodes.filter(n => !connectedNodeIds.has(n.id));
+
+  // Position disconnected nodes in a ring around the connected component
+  disconnectedNodes.forEach((node, index) => {
+    const angle = (index / disconnectedNodes.length) * 2 * Math.PI;
+    const radius = 15 + Math.random() * 5; // Outer ring with variation
+    node.position.x = Math.cos(angle) * radius;
+    node.position.y = Math.sin(angle) * radius;
+    node.position.z = (Math.random() - 0.5) * 4;
+  });
+
+  // Apply force-directed layout only to connected nodes
+  for (let iteration = 0; iteration < 30; iteration++) {
     const forces: { [id: string]: { x: number; y: number; z: number } } = {};
     
-    // Initialize forces
-    nodes.forEach(node => {
+    // Initialize forces for connected nodes only
+    connectedNodes.forEach(node => {
       forces[node.id] = { x: 0, y: 0, z: 0 };
     });
 
-    // Repulsive forces
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const node1 = nodes[i];
-        const node2 = nodes[j];
+    // Repulsive forces among connected nodes
+    for (let i = 0; i < connectedNodes.length; i++) {
+      for (let j = i + 1; j < connectedNodes.length; j++) {
+        const node1 = connectedNodes[i];
+        const node2 = connectedNodes[j];
         
         const dx = node1.position.x - node2.position.x;
         const dy = node1.position.y - node2.position.y;
         const dz = node1.position.z - node2.position.z;
         
         const distance = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.01;
-        const force = 3.0 / (distance * distance);
+        const force = 2.0 / (distance * distance);
         
         forces[node1.id].x += (dx / distance) * force;
         forces[node1.id].y += (dy / distance) * force;
@@ -494,8 +522,8 @@ const processMemoriesLocally = (memories: any[], focusQuery?: string): LifeGraph
 
     // Attractive forces for connected nodes
     edges.forEach(edge => {
-      const source = nodes.find(n => n.id === edge.source);
-      const target = nodes.find(n => n.id === edge.target);
+      const source = connectedNodes.find(n => n.id === edge.source);
+      const target = connectedNodes.find(n => n.id === edge.target);
       
       if (source && target) {
         const dx = target.position.x - source.position.x;
@@ -503,7 +531,7 @@ const processMemoriesLocally = (memories: any[], focusQuery?: string): LifeGraph
         const dz = target.position.z - source.position.z;
         
         const distance = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.01;
-        const force = distance * 0.03 * edge.strength;
+        const force = distance * 0.05 * edge.strength;
         
         forces[source.id].x += (dx / distance) * force;
         forces[source.id].y += (dy / distance) * force;
@@ -515,12 +543,14 @@ const processMemoriesLocally = (memories: any[], focusQuery?: string): LifeGraph
       }
     });
 
-    // Apply forces with damping
-    const damping = 0.1;
-    nodes.forEach(node => {
-      node.position.x += forces[node.id].x * damping;
-      node.position.y += forces[node.id].y * damping;
-      node.position.z += forces[node.id].z * damping;
+    // Apply forces with damping to connected nodes only
+    const damping = 0.15;
+    connectedNodes.forEach(node => {
+      if (forces[node.id]) {
+        node.position.x += forces[node.id].x * damping;
+        node.position.y += forces[node.id].y * damping;
+        node.position.z += forces[node.id].z * damping;
+      }
     });
   }
 
@@ -554,6 +584,60 @@ export function LifeGraph({ memories, deepQueryButton }: { memories: any[]; deep
   const [focusQuery, setFocusQuery] = useState("");
   const [cachedData, setCachedData] = useState<{ [key: string]: LifeGraphData }>({});
   const [useEnhancedSearch, setUseEnhancedSearch] = useState(true);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [isExpanding, setIsExpanding] = useState(false);
+
+  // Expand node function
+  const expandNode = async (nodeId: string) => {
+    if (!accessToken || expandedNodes.has(nodeId) || isExpanding) {
+      return;
+    }
+
+    setIsExpanding(true);
+    try {
+      const apiUrl = 'http://localhost:8765';
+      const url = `${apiUrl}/api/v1/memories/life-graph-expand/${nodeId}?limit=15`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const expansionData = await response.json();
+        
+        if (expansionData.expansion_nodes && expansionData.expansion_edges) {
+          // Add expansion nodes and edges to current graph data
+          setGraphData(prevData => {
+            if (!prevData) return null;
+            
+            const newNodes = [...prevData.nodes, ...expansionData.expansion_nodes];
+            const newEdges = [...prevData.edges, ...expansionData.expansion_edges];
+            
+            return {
+              ...prevData,
+              nodes: newNodes,
+              edges: newEdges,
+              metadata: {
+                ...prevData.metadata,
+                total_nodes: newNodes.length,
+                total_edges: newEdges.length
+              }
+            };
+          });
+          
+          // Mark node as expanded
+          setExpandedNodes(prev => new Set(prev).add(nodeId));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to expand node:', error);
+    } finally {
+      setIsExpanding(false);
+    }
+  };
 
   // Enhanced processing using Jean Memory V2 API
   const processGraphDataEnhanced = async (query?: string) => {
@@ -705,6 +789,11 @@ export function LifeGraph({ memories, deepQueryButton }: { memories: any[]; deep
   const handleNodeClick = (node: GraphNode) => {
     setSelectedNode(node);
     console.log('Selected node:', node);
+    
+    // Expand node if not already expanded and not an expansion node
+    if (!expandedNodes.has(node.id) && !(node as any).is_expansion) {
+      expandNode(node.id);
+    }
   };
 
   const handleNodeHover = (node: GraphNode | null) => {
@@ -766,11 +855,13 @@ export function LifeGraph({ memories, deepQueryButton }: { memories: any[]; deep
   return (
     <div className="relative w-full h-full bg-background overflow-hidden">
       {/* Loading overlay */}
-      {isLoading && (
+      {(isLoading || isExpanding) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Generating your life graph...</p>
+            <p className="text-muted-foreground">
+              {isExpanding ? 'Expanding node connections...' : 'Generating your life graph...'}
+            </p>
           </div>
         </div>
       )}
@@ -1000,9 +1091,15 @@ export function LifeGraph({ memories, deepQueryButton }: { memories: any[]; deep
                   </p>
                 )}
                 
-                <p className="text-xs text-muted-foreground">
-                  Click to explore related memories and connections
-                </p>
+                {!expandedNodes.has(selectedNode.id) ? (
+                  <p className="text-xs text-primary">
+                    🔗 Click to expand and show related memories
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600">
+                    ✓ Expanded - showing related connections
+                  </p>
+                )}
               </div>
             ) : selectedNode.type === 'temporal_pattern' ? (
               <div className="space-y-2">
@@ -1023,9 +1120,15 @@ export function LifeGraph({ memories, deepQueryButton }: { memories: any[]; deep
                   </div>
                 )}
                 
-                <p className="text-xs text-muted-foreground">
-                  Click to explore memories from this time period
-                </p>
+                {!expandedNodes.has(selectedNode.id) ? (
+                  <p className="text-xs text-primary">
+                    🔗 Click to expand and show memories from this period
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600">
+                    ✓ Expanded - showing related memories
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -1041,6 +1144,20 @@ export function LifeGraph({ memories, deepQueryButton }: { memories: any[]; deep
                     <span>Relevance: {(selectedNode.score * 100).toFixed(0)}%</span>
                   )}
                 </div>
+                
+                {!selectedNode.is_expansion && !expandedNodes.has(selectedNode.id) ? (
+                  <p className="text-xs text-primary">
+                    🔗 Click to expand and find related memories
+                  </p>
+                ) : selectedNode.is_expansion ? (
+                  <p className="text-xs text-gray-500">
+                    Expansion memory from {selectedNode.parent_node}
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600">
+                    ✓ Expanded - showing related connections
+                  </p>
+                )}
               </div>
             )}
           </motion.div>

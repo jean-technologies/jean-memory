@@ -517,11 +517,12 @@ async def create_memory(
 @router.get("/life-graph-data")
 async def get_life_graph_data(
     current_supa_user: SupabaseUser = Depends(get_current_supa_user),
-    limit: int = Query(500, description="Maximum number of memories to analyze"),
+    limit: int = Query(50, description="Maximum number of core memories to analyze initially"),
     focus_query: Optional[str] = Query(None, description="Optional query to focus the graph on specific topics"),
     use_cache: bool = Query(True, description="Whether to use cached data"),
     include_entities: bool = Query(True, description="Whether to extract entities from memories"),
     include_temporal_clusters: bool = Query(True, description="Whether to create temporal clusters"),
+    progressive: bool = Query(True, description="Use progressive loading for better performance"),
     db: Session = Depends(get_db)
 ):
     """
@@ -1984,6 +1985,82 @@ ENHANCEMENT: Ontology-guided entity extraction active"""
 # These are now handled by the specialized function in Jean Memory V2
 # Life graph data endpoint has been moved to appear before /{memory_id} route
 
+
+
+# Progressive node expansion endpoint
+@router.get("/life-graph-expand/{node_id}")
+async def expand_graph_node(
+    node_id: str,
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    limit: int = Query(20, description="Maximum number of related memories to return"),
+    db: Session = Depends(get_db)
+):
+    """
+    Expand a specific node to show related memories and entities.
+    Returns additional nodes and edges connected to the specified node.
+    """
+    supabase_user_id_str = str(current_supa_user.id)
+    
+    try:
+        # Get memory client
+        from app.utils.memory import get_async_memory_client
+        memory_client = await get_async_memory_client()
+        
+        # Search for memories related to this node
+        # Use node content as search query to find similar memories
+        search_query = f"related to {node_id} similar memories"
+        
+        memory_results = await memory_client.search(
+            query=search_query,
+            user_id=supabase_user_id_str,
+            limit=limit
+        )
+        
+        # Process results similar to main endpoint but focused on expansion
+        memories = []
+        if isinstance(memory_results, dict) and 'results' in memory_results:
+            memories = memory_results['results']
+        elif isinstance(memory_results, list):
+            memories = memory_results
+        
+        # Create expansion nodes
+        expansion_nodes = []
+        expansion_edges = []
+        
+        for i, mem in enumerate(memories):
+            content = mem.get('memory', mem.get('content', ''))
+            if not content or len(content.strip()) < 5:
+                continue
+                
+            expansion_node_id = f"exp_{node_id}_{i}"
+            expansion_nodes.append({
+                'id': expansion_node_id,
+                'type': 'memory',
+                'content': content.strip(),
+                'source': mem.get('metadata', {}).get('app_name', 'Jean Memory V2'),
+                'size': 0.8,  # Smaller than core nodes
+                'is_expansion': True,
+                'parent_node': node_id
+            })
+            
+            # Create edge to parent node
+            expansion_edges.append({
+                'source': node_id,
+                'target': expansion_node_id,
+                'type': 'expansion',
+                'strength': 0.7
+            })
+        
+        return {
+            "expansion_nodes": expansion_nodes,
+            "expansion_edges": expansion_edges,
+            "parent_node": node_id,
+            "total_expansions": len(expansion_nodes)
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error expanding node {node_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to expand node: {str(e)}")
 
 # Simple fallback endpoint for life graph data (SQL memories only)
 @router.get("/life-graph-data-simple")
