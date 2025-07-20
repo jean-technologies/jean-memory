@@ -66,6 +66,7 @@ const availableApps: AvailableApp[] = [
     hasDesktopExtension: true
   },
   { id: 'cursor', name: 'Cursor', description: 'AI-powered code editor', priority: 10, category: 'Development', trustScore: 98 },
+  { id: 'claude code', name: 'Claude Code', description: 'MCP integration for Claude Code CLI', priority: 9.5, category: 'Development', trustScore: 98 },
   { id: 'vscode', name: 'VS Code', description: 'Code editor with deep memory integration', priority: 9, category: 'Development', trustScore: 98 },
   { id: 'substack', name: 'Substack', description: 'For writers for substack', priority: 9, category: 'Content', trustScore: 95 },
   { id: 'twitter', name: 'X', description: 'Social media', priority: 8, category: 'Social', trustScore: 93 },

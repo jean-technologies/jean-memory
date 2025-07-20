@@ -275,6 +275,54 @@ async def update_app_details(
         
     return {"status": "success", "message": "Updated app details successfully", "app_id": app.id, "is_active": app.is_active}
 
+# Initialize default apps for user
+@router.post("/initialize-defaults")
+async def initialize_default_apps(
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Create default app entries for common integrations like Claude Code, Cursor, etc."""
+    supabase_user_id_str = str(current_supa_user.id)
+    user = get_or_create_user(db, supabase_user_id_str, current_supa_user.email)
+    
+    # List of default apps to create
+    default_apps = [
+        {"name": "claude code", "description": "Claude Code MCP integration"},
+        {"name": "cursor", "description": "Cursor IDE integration"},
+        {"name": "vscode", "description": "VS Code integration"},
+        {"name": "claude", "description": "Claude Desktop integration"},
+        {"name": "chatgpt", "description": "ChatGPT integration"}
+    ]
+    
+    created_apps = []
+    for app_config in default_apps:
+        # Check if app already exists
+        existing_app = db.query(App).filter(
+            App.owner_id == user.id, 
+            App.name == app_config["name"]
+        ).first()
+        
+        if not existing_app:
+            new_app = App(
+                owner_id=user.id,
+                name=app_config["name"], 
+                description=app_config["description"],
+                is_active=True
+            )
+            db.add(new_app)
+            created_apps.append(app_config["name"])
+    
+    try:
+        db.commit()
+        return {
+            "status": "success", 
+            "message": f"Initialized {len(created_apps)} default apps",
+            "created_apps": created_apps
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
 # Note: App creation endpoint is currently missing from this router.
 # It seems to be handled implicitly in memories_router.create_memory.
 # If a dedicated app creation endpoint is needed, it should also use:
