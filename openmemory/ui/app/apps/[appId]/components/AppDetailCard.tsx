@@ -203,6 +203,73 @@ const AppDetailCard = ({
             </div>
           ) : null}
 
+          {currentApp?.name?.toLowerCase() === 'claude code' ? (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">MCP Server Setup</p>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-1">Step 1: Add MCP Server</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Run this command in your terminal:
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={`claude mcp add jean-memory ${process.env.NODE_ENV === 'development' ? 'http://localhost:8765' : 'https://jean-memory-api-virginia.onrender.com'}/mcp/v2/claude/${user?.user_id || '{user_id}'} --scope local`}
+                      readOnly
+                      className="text-xs font-mono"
+                    />
+                    <Button
+                      onClick={() => handleCopy(`claude mcp add jean-memory ${process.env.NODE_ENV === 'development' ? 'http://localhost:8765' : 'https://jean-memory-api-virginia.onrender.com'}/mcp/v2/claude/${user?.user_id || '{user_id}'} --scope local`)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-1">Step 2: Verify Connection</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Check that the server is active:
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value="claude mcp list"
+                      readOnly
+                      className="text-xs font-mono"
+                    />
+                    <Button
+                      onClick={() => handleCopy("claude mcp list")}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-muted/50 rounded-md p-3">
+                  <p className="text-xs font-semibold text-foreground mb-1">Available Tools:</p>
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    <li>• search_memory - Search your memories</li>
+                    <li>• add_memories - Store new information</li>
+                    <li>• ask_memory - AI-powered Q&A</li>
+                    <li>• list_memories - Browse memories</li>
+                    <li>• get_memory_details - Get specific memory info</li>
+                  </ul>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    💡 <strong>Tip:</strong> Once connected, use @ mentions to access your memories directly in Claude Code conversations.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex gap-2 justify-end">
             <Button
               onClick={handlePauseAccess}

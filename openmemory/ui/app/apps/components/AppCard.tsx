@@ -50,7 +50,9 @@ export function AppCard({ app }: AppCardProps) {
       'witsy': 'witsy',
       'enconvo': 'enconvo',
       'notion': 'notion',
-      'obsidian': 'obsidian'
+      'obsidian': 'obsidian',
+      'claude code': 'claude code',
+      'claudecode': 'claude code'
     };
     
     // Try normalized name first, then normalized id

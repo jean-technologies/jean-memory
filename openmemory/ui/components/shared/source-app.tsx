@@ -97,6 +97,11 @@ export const constants = {
     icon: <Icon source="/images/obsidian.svg" />,
     iconImage: "/images/obsidian.svg",
   },
+  "claude code": {
+    name: "Claude Code",
+    icon: <Icon source="/images/claude.webp" />,
+    iconImage: "/images/claude.webp",
+  },
   default: {
     name: "Default",
     icon: <BiEdit size={18} className="ml-1" />,
@@ -132,7 +137,9 @@ const SourceApp = ({ source }: { source: string }) => {
     'witsy': 'witsy',
     'enconvo': 'enconvo',
     'notion': 'notion',
-    'obsidian': 'obsidian'
+    'obsidian': 'obsidian',
+    'claude code': 'claude code',
+    'claudecode': 'claude code'
   };
   
   // Find the correct constant key
