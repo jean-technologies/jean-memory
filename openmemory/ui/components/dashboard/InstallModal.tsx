@@ -650,10 +650,10 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
 
                 <div className="bg-muted rounded-md p-3">
                     <p className="text-foreground text-xs font-medium mb-2">Continuous Memory Mode</p>
-                    <p className="text-muted-foreground text-xs mb-2">
-                        To automatically save everything from your Claude Code sessions, start conversations with:
+                    <p className="text-muted-foreground text-xs mb-3">
+                        For automatic memory saving, start each Claude Code conversation by pasting this prompt:
                     </p>
-                    <div className="relative bg-background border rounded-md mt-2">
+                    <div className="relative bg-background border rounded-md">
                         <div className="overflow-x-auto p-2 pr-10 font-mono text-xs text-foreground">
                             <code className="whitespace-pre-wrap break-words">ALWAYS use the @add_memories tool FIRST for every single message I send to save our conversation, then provide your response.</code>
                         </div>
@@ -666,6 +666,9 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                             <Copy className="h-3 w-3" />
                         </Button>
                     </div>
+                    <p className="text-muted-foreground text-xs mt-2">
+                        <strong>Note:</strong> Copy and paste this at the start of each new conversation. Claude Code doesn't currently support persistent system prompts.
+                    </p>
                 </div>
 
                 <div className="bg-muted border rounded-md p-3 mt-4">
