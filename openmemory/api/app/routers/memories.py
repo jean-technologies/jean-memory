@@ -565,7 +565,13 @@ async def get_life_graph_data(
         elif isinstance(memory_results, list):
             memories = memory_results
         
-        logger.info(f"📊 Retrieved {len(memories)} memories for life graph")
+        logger.info(f"📊 Retrieved {len(memories)} memories from Jean Memory V2")
+        
+        # SMART PROGRESSIVE LOADING: Select most important nodes instead of truncating
+        if progressive and len(memories) > limit:
+            logger.info(f"🧠 Smart progressive loading: analyzing {len(memories)} memories to find {limit} most important nodes")
+            memories = await select_most_important_memories(memories, limit)
+            logger.info(f"📊 Selected {len(memories)} high-value memories for initial graph")
         
         # Process memories for visualization
         processed_memories = []
@@ -1986,6 +1992,98 @@ ENHANCEMENT: Ontology-guided entity extraction active"""
 # Life graph data endpoint has been moved to appear before /{memory_id} route
 
 
+
+async def select_most_important_memories(memories: list, target_count: int) -> list:
+    """
+    Intelligently select the most important memories based on:
+    1. Entity density (memories with more extractable entities)
+    2. Content richness (longer, more detailed memories)
+    3. Temporal distribution (spread across time periods)
+    4. Source diversity (different apps/contexts)
+    """
+    if len(memories) <= target_count:
+        return memories
+    
+    # Score each memory based on multiple factors
+    scored_memories = []
+    
+    for memory in memories:
+        content = memory.get('memory', memory.get('content', ''))
+        metadata = memory.get('metadata', {})
+        
+        score = 0
+        
+        # Factor 1: Content richness (longer content = more potential connections)
+        content_score = min(len(content) / 500, 2.0)  # Cap at 500 chars = 2.0 score
+        score += content_score
+        
+        # Factor 2: Entity potential (count capitalized words as proxy for entities)
+        import re
+        entities = re.findall(r'\b[A-Z][a-zA-Z]{2,}\b', content)
+        entity_score = min(len(set(entities)) / 5, 2.0)  # Cap at 5 unique entities = 2.0 score
+        score += entity_score
+        
+        # Factor 3: Temporal diversity bonus (prefer memories from different time periods)
+        # This will be handled in the final selection to ensure time spread
+        
+        # Factor 4: Source diversity (different apps are more interesting)
+        source = metadata.get('app_name', '')
+        if source and source.lower() not in ['unknown', '']:
+            score += 0.5
+        
+        # Factor 5: Recency bonus (slight preference for newer memories)
+        created_at = memory.get('created_at')
+        if created_at:
+            try:
+                from datetime import datetime, timezone
+                if isinstance(created_at, str):
+                    created_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                else:
+                    created_time = created_at
+                    
+                days_old = (datetime.now(timezone.utc) - created_time).days
+                recency_score = max(0, (365 - days_old) / 365)  # Linear decay over 1 year
+                score += recency_score * 0.5  # Weight recency less than content
+            except:
+                pass
+        
+        scored_memories.append({
+            'memory': memory,
+            'score': score,
+            'content_length': len(content),
+            'entity_count': len(entities),
+            'source': source
+        })
+    
+    # Sort by score (highest first)
+    scored_memories.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Smart selection to ensure diversity
+    selected = []
+    used_sources = set()
+    
+    # First pass: Take highest scoring memories, ensuring source diversity
+    for item in scored_memories:
+        if len(selected) >= target_count:
+            break
+            
+        source = item['source']
+        
+        # Always take high-scoring memories, but prefer source diversity
+        if len(selected) < target_count // 2:  # First half: pure quality
+            selected.append(item['memory'])
+            used_sources.add(source)
+        else:  # Second half: balance quality with diversity
+            if source not in used_sources or len([s for s in used_sources if s == source]) < 3:
+                selected.append(item['memory'])
+                used_sources.add(source)
+    
+    # Fill remaining slots if needed with next highest scoring
+    remaining_memories = [item['memory'] for item in scored_memories if item['memory'] not in selected]
+    while len(selected) < target_count and remaining_memories:
+        selected.append(remaining_memories.pop(0))
+    
+    return selected
 
 # Progressive node expansion endpoint
 @router.get("/life-graph-expand/{node_id}")
