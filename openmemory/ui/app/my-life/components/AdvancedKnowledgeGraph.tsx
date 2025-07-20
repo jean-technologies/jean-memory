@@ -215,6 +215,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
   });
   const [zoomLevel, setZoomLevel] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [isExpanding, setIsExpanding] = useState(false);
   
   const userId = useSelector((state: RootState) => state.profile.userId);
 
@@ -327,7 +329,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     // Event handlers
     cyInstance.current.on('tap', 'node', (evt) => {
       const node = evt.target;
-      setSelectedNode(node.data());
+      const nodeData = node.data();
+      setSelectedNode(nodeData);
       
       // Highlight connected nodes
       cyInstance.current?.elements().removeClass('highlighted faded');
@@ -335,8 +338,13 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       node.neighborhood().addClass('highlighted');
       cyInstance.current?.elements().not(node.neighborhood().union(node)).addClass('faded');
       
-      if (node.data('nodeType') === 'memory' && onMemorySelect) {
-        onMemorySelect(node.data('id'));
+      if (nodeData.nodeType === 'memory' && onMemorySelect) {
+        onMemorySelect(nodeData.id);
+      }
+      
+      // Expand node if not already expanded and not an expansion node
+      if (!expandedNodes.has(nodeData.id) && !nodeData.isExpansion) {
+        expandNode(nodeData.id);
       }
     });
 
@@ -378,10 +386,11 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     try {
       const response = await apiClient.get('/api/v1/memories/life-graph-data', {
         params: {
-          limit: 500,
+          limit: 50,  // Progressive loading: start with 50 core nodes
           include_entities: true,
           include_temporal_clusters: viewMode.id === 'temporal',
-          focus_query: searchQuery || undefined
+          focus_query: searchQuery || undefined,
+          progressive: true  // Enable progressive loading mode
         }
       });
 
@@ -431,6 +440,62 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       setIsLoading(false);
     }
   }, [userId, viewMode, searchQuery, isInitialized]);
+
+  // Node expansion function
+  const expandNode = useCallback(async (nodeId: string) => {
+    if (!userId || expandedNodes.has(nodeId) || isExpanding) {
+      return;
+    }
+
+    setIsExpanding(true);
+    try {
+      const response = await apiClient.get(`/api/v1/memories/life-graph-expand/${nodeId}`, {
+        params: { limit: 15 }
+      });
+
+      const { expansion_nodes, expansion_edges } = response.data;
+      
+      if (expansion_nodes && expansion_edges) {
+        // Convert expansion nodes to Cytoscape format
+        const cyExpansionNodes = expansion_nodes.map((node: any) => ({
+          data: {
+            id: node.id,
+            label: node.content?.substring(0, 50) || node.name || 'Unknown',
+            content: node.content,
+            nodeType: node.type,
+            source: node.source,
+            isExpansion: true,
+            parentNode: nodeId
+          },
+          classes: 'expansion-node'
+        }));
+
+        const cyExpansionEdges = expansion_edges.map((edge: any) => ({
+          data: {
+            id: `${edge.source}-${edge.target}`,
+            source: edge.source,
+            target: edge.target,
+            edgeType: edge.type,
+            strength: edge.strength
+          },
+          classes: 'expansion-edge'
+        }));
+
+        // Add expansion nodes and edges to graph
+        cyInstance.current?.add([...cyExpansionNodes, ...cyExpansionEdges]);
+        
+        // Re-apply layout to incorporate new nodes
+        cyInstance.current?.layout(viewMode.layoutConfig).run();
+        
+        // Mark node as expanded
+        setExpandedNodes(prev => new Set(prev).add(nodeId));
+      }
+    } catch (error) {
+      console.error('Failed to expand node:', error);
+    } finally {
+      setIsExpanding(false);
+    }
+  }, [userId, expandedNodes, isExpanding, viewMode]);
 
   useEffect(() => {
     loadGraphData();
@@ -483,7 +548,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     <div className="relative w-full h-full bg-background">
       {/* Loading State */}
       <AnimatePresence>
-        {isLoading && (
+        {(isLoading || isExpanding) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -493,7 +558,9 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
             <Card className="p-6">
               <div className="flex flex-col items-center gap-3">
                 <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading your knowledge graph...</p>
+                <p className="text-sm text-muted-foreground">
+                  {isExpanding ? 'Expanding node connections...' : 'Loading your knowledge graph...'}
+                </p>
               </div>
             </Card>
           </motion.div>
