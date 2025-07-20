@@ -266,6 +266,53 @@ const AppDetailCard = ({
                     💡 <strong>Tip:</strong> Once connected, use @ mentions to access your memories directly in Claude Code conversations.
                   </p>
                 </div>
+
+                <div className="space-y-3 mt-4">
+                  <details className="group">
+                    <summary className="text-xs font-semibold text-foreground cursor-pointer hover:text-primary transition-colors flex items-center">
+                      <span className="mr-2 transform group-open:rotate-90 transition-transform">▶</span>
+                      Advanced: Continuous Memory Mode
+                    </summary>
+                    <div className="mt-3 space-y-3 pl-4">
+                      <p className="text-xs text-muted-foreground">
+                        To make Jean Memory automatically save everything from your Claude Code sessions, add this system prompt:
+                      </p>
+                      
+                      <div className="bg-background border rounded-md p-2">
+                        <div className="flex gap-2">
+                          <Input
+                            value="ALWAYS use the @add_memories tool FIRST for every single message I send to save our conversation, then provide your response."
+                            readOnly
+                            className="text-xs font-mono"
+                          />
+                          <Button
+                            onClick={() => handleCopy("ALWAYS use the @add_memories tool FIRST for every single message I send to save our conversation, then provide your response.")}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="bg-muted rounded-md p-2">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>How to set:</strong> In Claude Code, start your conversation with this prompt, or add it to your default system instructions if supported.
+                        </p>
+                      </div>
+
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p><strong>Benefits:</strong></p>
+                        <ul className="space-y-0.5 ml-3">
+                          <li>• Automatically saves all code discussions</li>
+                          <li>• Remembers your project context across sessions</li>
+                          <li>• Builds persistent knowledge of your codebase</li>
+                          <li>• Learns your coding patterns and preferences</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </details>
+                </div>
               </div>
             </div>
           ) : null}

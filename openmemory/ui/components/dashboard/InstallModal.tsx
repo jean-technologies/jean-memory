@@ -604,6 +604,85 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 )}
               </div>
             </div>
+        ) : app.id === 'claude code' ? (
+            <div className="py-2 space-y-4 text-left">
+                <p className="text-muted-foreground text-sm mb-4">
+                    Add Jean Memory as an MCP server to Claude Code for persistent memory across all your coding sessions.
+                </p>
+                
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="font-medium text-foreground mb-2">1. Add MCP Server</h3>
+                        <p className="text-xs text-muted-foreground mb-2">Run this command in your terminal:</p>
+                        <div className="relative bg-background border rounded-md">
+                            <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                <code className="whitespace-pre-wrap break-words">{installCommand}</code>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                onClick={() => handleCopy(installCommand)}
+                            >
+                                {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="font-medium text-foreground mb-2">2. Verify Installation</h3>
+                        <p className="text-xs text-muted-foreground mb-2">Check that the server is active:</p>
+                        <div className="relative bg-background border rounded-md">
+                            <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                <code>claude mcp list</code>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                onClick={() => handleCopy("claude mcp list")}
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-muted rounded-md p-3">
+                    <p className="text-foreground text-xs font-medium mb-2">Continuous Memory Mode</p>
+                    <p className="text-muted-foreground text-xs mb-2">
+                        To automatically save everything from your Claude Code sessions, start conversations with:
+                    </p>
+                    <div className="relative bg-background border rounded-md mt-2">
+                        <div className="overflow-x-auto p-2 pr-10 font-mono text-xs text-foreground">
+                            <code className="whitespace-pre-wrap break-words">ALWAYS use the @add_memories tool FIRST for every single message I send to save our conversation, then provide your response.</code>
+                        </div>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2" 
+                            onClick={() => handleCopy("ALWAYS use the @add_memories tool FIRST for every single message I send to save our conversation, then provide your response.")}
+                        >
+                            <Copy className="h-3 w-3" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="bg-muted border rounded-md p-3 mt-4">
+                    <div className="flex items-start">
+                        <Info className="h-4 w-4 text-muted-foreground mt-0.5 mr-2 flex-shrink-0"/>
+                        <div>
+                            <p className="font-medium text-foreground mb-2">Available Tools</p>
+                            <ul className="text-muted-foreground text-xs space-y-1">
+                                <li>• @jean_memory - Smart context with auto-save</li>
+                                <li>• @search_memory - Find past conversations</li>
+                                <li>• @ask_memory - Query your knowledge</li>
+                                <li>• @store_document - Save large files</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         ) : app.id === 'chorus' ? (
           <div className="space-y-4 py-2">
             <ol className="list-decimal list-inside space-y-3 text-muted-foreground text-sm">
