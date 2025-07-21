@@ -88,7 +88,7 @@ const availableApps: AvailableApp[] = [
     description: 'Chorus gives access to multiple AI models',
     modalTitle: 'Connect to Chorus',
     modalContent: 'In Chorus, go to Connections > Add New Connection > New Local MCP.',
-    installCommand: '-y mcp-remote https://jean-memory-api-virginia.onrender.com/mcp/chorus/sse/{USER_ID}',
+    installCommand: '-y mcp-remote https://jean-memory-api-virginia.onrender.com/mcp/chorus/sse/{USER_ID} --header "x-user-id:{USER_ID}" --header "x-client-name:chorus"',
     category: 'Assistant',
     isComingSoon: false,
     priority: -1,
