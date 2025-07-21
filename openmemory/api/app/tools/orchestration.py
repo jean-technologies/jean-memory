@@ -57,8 +57,23 @@ async def jean_memory(user_message: str, is_new_conversation: bool) -> str:
             background_tasks = BackgroundTasks()
             background_tasks_var.set(background_tasks)
         
+        # Try Python 3.11+ asyncio.timeout first, fall back to wait_for for older versions
         try:
-            # Use asyncio.wait_for for Python < 3.11 compatibility  
+            # Python 3.11+ approach (working version)
+            async with asyncio.timeout(25): # Increased to 25 seconds for Fast Deep Analysis
+                # Get enhanced orchestrator and process
+                orchestrator = get_smart_orchestrator()
+                enhanced_context = await orchestrator.orchestrate_smart_context(
+                    user_message=user_message,
+                    user_id=supa_uid,
+                    client_name=client_name,
+                    is_new_conversation=is_new_conversation,
+                    background_tasks=background_tasks
+                )
+                return enhanced_context
+        except AttributeError:
+            # Python < 3.11 fallback
+            logger.info("Using asyncio.wait_for fallback for Python < 3.11")
             async def _orchestrate():
                 orchestrator = get_smart_orchestrator()
                 return await orchestrator.orchestrate_smart_context(
@@ -71,15 +86,16 @@ async def jean_memory(user_message: str, is_new_conversation: bool) -> str:
             
             result = await asyncio.wait_for(_orchestrate(), timeout=25.0)
             return result
-        except asyncio.TimeoutError:
-            logger.warning(f"Jean Memory context timed out for user {supa_uid}. Falling back to simple search.")
-            try:
-                # Fallback to a simple, reliable search
-                fallback_result = await search_memory(query=user_message, limit=5)
-                return f"I had trouble with my advanced context analysis, but here are some relevant memories I found:\n{fallback_result}"
-            except Exception as fallback_e:
-                logger.error(f"Error in jean_memory fallback search: {fallback_e}", exc_info=True)
-                return "My apologies, I had trouble processing your request and the fallback search also failed."
+
+    except asyncio.TimeoutError:
+        logger.warning(f"Jean Memory context timed out for user {supa_uid}. Falling back to simple search.")
+        try:
+            # Fallback to a simple, reliable search
+            fallback_result = await search_memory(query=user_message, limit=5)
+            return f"I had trouble with my advanced context analysis, but here are some relevant memories I found:\n{fallback_result}"
+        except Exception as fallback_e:
+            logger.error(f"Error in jean_memory fallback search: {fallback_e}", exc_info=True)
+            return "My apologies, I had trouble processing your request and the fallback search also failed."
 
     except Exception as e:
         logger.error(f"Error in jean_memory: {e}", exc_info=True)
