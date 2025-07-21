@@ -154,26 +154,41 @@ const VIEW_MODES: ViewMode[] = [
   },
   {
     id: 'semantic',
-    name: 'Semantic',
-    icon: Brain,
-    description: 'Memories clustered by meaning and topics',
+    name: 'By Source',
+    icon: Layers,
+    description: 'Memories organized by source app in concentric rings',
     layoutConfig: {
-      name: 'fcose',
-      quality: 'default',
-      randomize: false,
+      name: 'concentric',
       animate: true,
       animationDuration: 1000,
-      nodeRepulsion: 2000,
-      idealEdgeLength: 50,
-      edgeElasticity: 0.45,
-      nestingFactor: 0.3,
-      gravity: 0.8,
-      numIter: 1500,
-      tile: true,
-      tilingPaddingVertical: 10,
-      tilingPaddingHorizontal: 10,
       fit: true,
-      padding: 20
+      padding: 30,
+      startAngle: 0,
+      sweep: Math.PI * 2,
+      clockwise: true,
+      equidistant: false,
+      minNodeSpacing: 60,
+      boundingBox: undefined,
+      avoidOverlap: true,
+      height: undefined,
+      width: undefined,
+      spacingFactor: undefined,
+      concentric: (node: any) => {
+        const nodeType = node.data('nodeType');
+        const source = node.data('source')?.toLowerCase() || '';
+        const importance = node.data('importance') || 1;
+        
+        // Create semantic rings: source apps in outer rings, general memories in inner rings
+        if (source === 'claude' || source === 'cursor') return 4; // Outermost ring for development tools
+        if (source === 'twitter' || source === 'windsurf') return 3; // Social/creative tools
+        if (source === 'chatgpt' || source === 'jean memory') return 2; // AI tools
+        if (nodeType === 'entity') return 1; // Entities in center
+        return Math.max(1, 5 - importance); // Other memories by importance
+      },
+      levelWidth: (nodes: any) => {
+        // Wider rings for more nodes
+        return Math.max(2, Math.ceil(nodes.length / 6));
+      }
     }
   },
   {
@@ -497,11 +512,11 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         stop: () => {
           setTimeout(() => {
             if (viewMode.id === 'semantic') {
-              // For semantic view, fit but with minimum zoom to keep nodes readable
+              // For semantic concentric view, fit and zoom to show all rings clearly
               cyInstance.current?.fit();
               const currentZoom = cyInstance.current?.zoom() || 1;
-              if (currentZoom < 0.5) {
-                cyInstance.current?.zoom(0.5);
+              if (currentZoom < 0.6) {
+                cyInstance.current?.zoom(0.6); // Slightly higher zoom for concentric rings
               }
             } else {
               // For other views, center with reasonable zoom
@@ -701,7 +716,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         <div className="w-full h-full flex flex-col items-center justify-center p-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-foreground mb-2">Memory Timeline</h2>
-            <p className="text-muted-foreground">Chronological view of your memories over the past year</p>
+            <p className="text-muted-foreground">Chronological view of your memories</p>
+            <p className="text-xs text-muted-foreground mt-1">Note: Only showing memories with dates (from July 2024 onwards)</p>
           </div>
           
           {/* Timeline Visualization */}
