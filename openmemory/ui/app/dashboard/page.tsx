@@ -369,10 +369,10 @@ export default function Dashboard() {
         {/* Profile Completion Banner */}
         <ProfileCompletionBanner />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-[600px]">
           {/* Left Side */}
-          <div className="lg:col-span-2 h-full flex flex-col">
-            <motion.div 
+          <div className="lg:col-span-2 h-full flex flex-col min-h-[600px]">
+            {/* <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -384,7 +384,7 @@ export default function Dashboard() {
               <p className="mt-3 text-lg text-muted-foreground">
                 A single, unified memory layer for all your AI applications.
               </p>
-            </motion.div>
+            </motion.div> */}
 
             {/* Connection Status */}
             <motion.div 
@@ -412,7 +412,7 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Header with Add Integration button */}
-            <div className="flex items-center justify-end gap-4 mb-8">
+            <div className="flex items-center justify-start gap-4 mb-8">
               <Button
                 onClick={() => setIsSyncModalOpen(true)}
                 variant="outline"
@@ -425,7 +425,7 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable App Grid Container */}
-            <div className="flex-1 overflow-y-auto pr-2 pb-8">
+            <div className="flex-1 overflow-y-auto pr-2 pb-8 max-h-[400px]">
               {/* App Grid */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -468,7 +468,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Side */}
-          <div className="lg:col-span-1 h-full">
+          <div className="lg:col-span-1 h-full min-h-[600px]">
             <AnalysisPanel />
           </div>
         </div>
