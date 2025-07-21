@@ -199,16 +199,12 @@ async def _list_memories_impl(supa_uid: str, client_name: str, limit: int = 20) 
     try:
         user, app = get_user_and_app(db, supa_uid, client_name)
         
-        # Query recent memories
+        # Query recent memories (simplified without categories join)
         sql_query = text("""
-            SELECT m.id, m.content, m.created_at, m.metadata,
-                   array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) as categories
+            SELECT m.id, m.content, m.created_at, m.metadata
             FROM memories m
-            LEFT JOIN memory_categories mc ON m.id = mc.memory_id
-            LEFT JOIN categories c ON mc.category_id = c.id
             WHERE m.user_id = :user_id 
             AND m.state = 'active'
-            GROUP BY m.id, m.content, m.created_at, m.metadata::text
             ORDER BY m.created_at DESC
             LIMIT :limit
         """)
@@ -223,8 +219,8 @@ async def _list_memories_impl(supa_uid: str, client_name: str, limit: int = 20) 
                 'id': str(memory.id),
                 'content': memory.content,
                 'created_at': memory.created_at.isoformat(),
-                'categories': memory.categories or [],
-                'metadata': memory.metadata_ or {}
+                'categories': [],  # Simplified: no categories for now
+                'metadata': memory.metadata or {}
             })
         
         return format_memory_response(formatted_memories, len(formatted_memories))
