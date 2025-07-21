@@ -75,7 +75,7 @@ async def create_memory(
             metadata=request.metadata
         )
         
-        return MemoryResponse(**memory.to_dict())
+        return MemoryResponse(**memory)
         
     except Exception as e:
         logger.error(f"Failed to create memory: {e}")
@@ -103,8 +103,8 @@ async def search_memories(
         execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
         
         return SearchResponse(
-            memories=results,
-            total=len(results),
+            memories=results.get("memories", []),
+            total=results.get("total", 0),
             query=query,
             execution_time_ms=execution_time
         )
@@ -132,8 +132,8 @@ async def search_memories_post(
         execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
         
         return SearchResponse(
-            memories=results,
-            total=len(results),
+            memories=results.get("memories", []),
+            total=results.get("total", 0),
             query=request.query,
             execution_time_ms=execution_time
         )
@@ -145,16 +145,17 @@ async def search_memories_post(
 @router.get("/memories/{memory_id}", response_model=MemoryResponse)
 async def get_memory(
     memory_id: str,
+    user_id: str = Query(..., description="User ID"),
     service = Depends(get_memory_service)
 ):
     """Get a specific memory by ID"""
     try:
-        memory = await service.get_memory(memory_id)
+        memory = await service.get_memory(memory_id, user_id)
         
         if not memory:
             raise HTTPException(status_code=404, detail="Memory not found")
         
-        return MemoryResponse(**memory.to_dict())
+        return MemoryResponse(**memory)
         
     except HTTPException:
         raise
@@ -165,11 +166,12 @@ async def get_memory(
 @router.delete("/memories/{memory_id}")
 async def delete_memory(
     memory_id: str,
+    user_id: str = Query(..., description="User ID"),
     service = Depends(get_memory_service)
 ):
     """Delete a memory"""
     try:
-        success = await service.delete_memory(memory_id)
+        success = await service.delete_memory(memory_id, user_id)
         
         if not success:
             raise HTTPException(status_code=404, detail="Memory not found")
@@ -317,7 +319,7 @@ async def get_user_memories(
                 limit=limit,
                 source=source
             )
-            return result.to_dict()
+            return result
         else:
             # Fallback to search for all memories
             result = await service.search_memories("", user_id, limit)

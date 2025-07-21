@@ -10,11 +10,11 @@ from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
 from config import get_config
-from .stm_service import STMService
-from .ltm_service import LTMService
-from .memory_shuttle import MemoryShuttle
-from ..adk.session_service import InMemorySessionService, CloudSessionService
-from ..adk.memory_service import create_memory_service, BaseMemoryService
+from services.stm_service import STMService
+from services.ltm_service import LTMService
+from services.memory_shuttle import MemoryShuttle
+from adk.session_service import InMemorySessionService, CloudSessionService
+from adk.memory_service import create_memory_service, BaseMemoryService
 
 logger = logging.getLogger(__name__)
 

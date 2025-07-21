@@ -39,6 +39,7 @@ class GraphService:
         try:
             if not self.config.enable_neo4j:
                 logger.info("⚠️  Neo4j disabled - skipping graph service initialization")
+                self.is_initialized = True  # Mark as initialized but without graph
                 return
                 
             logger.info("🕸️  Initializing Neo4j graph service...")
@@ -53,7 +54,9 @@ class GraphService:
             logger.info("✅ Graph service initialized with Neo4j")
             
         except Exception as e:
-            logger.error(f"❌ Graph service initialization failed: {e}")
+            logger.warning(f"⚠️  Graph service initialization failed: {e}")
+            logger.info("🔄 Continuing without graph features - memory service will still function")
+            self.is_initialized = True  # Mark as initialized but without graph features
             # Don't raise - allow service to continue without graph features
             
     async def _initialize_neo4j_graph(self):

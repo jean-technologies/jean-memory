@@ -9,9 +9,9 @@ from typing import Dict, Any, Optional, List, Union
 from datetime import datetime
 from abc import ABC, abstractmethod
 
-from ..services.stm_service import STMService
-from ..services.ltm_service import LTMService
-from ..services.memory_shuttle import MemoryShuttle
+from services.stm_service import STMService
+from services.ltm_service import LTMService
+from services.memory_shuttle import MemoryShuttle
 
 logger = logging.getLogger(__name__)
 

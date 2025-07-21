@@ -14,16 +14,13 @@ from pathlib import Path
 # Core dependencies
 try:
     from mem0 import Memory
-    from mem0.configs.base import MemoryConfig
-    from mem0.configs.vector_store import VectorStoreConfig, FaissConfig
-    from mem0.configs.embedder import EmbedderConfig
     import numpy as np
 except ImportError as e:
     logging.error(f"mem0 not installed: {e}")
     raise
 
-from config import get_config, get_data_paths
-from .graph_service import GraphService
+from config import get_config, get_data_paths, get_mem0_config
+from services.graph_service import GraphService
 
 logger = logging.getLogger(__name__)
 
@@ -138,50 +135,52 @@ class STMService:
             raise
     
     async def _initialize_stm_memory_client(self):
-        """Initialize mem0 with RAM-optimized configuration"""
+        """Initialize mem0 with fallback handling"""
         try:
-            # Create FAISS in-memory configuration
+            # Create STM-specific FAISS path
             stm_faiss_path = self.data_paths["faiss"] / "stm"
             stm_faiss_path.mkdir(exist_ok=True)
             
-            vector_store_config = VectorStoreConfig(
-                provider="faiss",
-                config=FaissConfig(
-                    collection_name="jean_memory_v3_stm",
-                    path=str(stm_faiss_path),
-                    # RAM optimizations
-                    memory_budget_gb=0.5,  # 512MB budget
-                    nlist=100,  # Smaller index for faster access
-                    nprobe=10
+            # Try to initialize mem0 with configuration
+            if self.config.openai_api_key:
+                # Use full mem0 with OpenAI
+                mem0_config = get_mem0_config()
+                mem0_config["vector_store"]["config"]["collection_name"] = "jean_memory_v3_stm"
+                mem0_config["vector_store"]["config"]["path"] = str(stm_faiss_path)
+                
+                loop = asyncio.get_event_loop()
+                self.memory_client = await loop.run_in_executor(
+                    None,
+                    Memory,
+                    mem0_config
                 )
-            )
-            
-            embedder_config = EmbedderConfig(
-                provider="sentence_transformers",
-                config={
-                    "model": self.config.embedding_model,
-                    "embedding_dim": self.config.embedding_dim
-                }
-            )
-            
-            memory_config = MemoryConfig(
-                vector_store=vector_store_config,
-                embedder=embedder_config
-            )
-            
-            # Initialize in thread pool
-            loop = asyncio.get_event_loop()
-            self.memory_client = await loop.run_in_executor(
-                None,
-                Memory,
-                memory_config
-            )
-            
-            logger.info("✅ STM mem0 client initialized with RAM-optimized FAISS")
+                logger.info("✅ STM mem0 client initialized with full configuration")
+            else:
+                # Fallback: Use mem0 with default/minimal config
+                logger.warning("⚠️  No OpenAI API key - using minimal mem0 configuration")
+                import os
+                # Set a dummy key temporarily to bypass mem0's requirement check during init
+                original_key = os.environ.get("OPENAI_API_KEY")
+                os.environ["OPENAI_API_KEY"] = "sk-dummy-key-for-init"
+                
+                try:
+                    loop = asyncio.get_event_loop()
+                    self.memory_client = await loop.run_in_executor(
+                        None,
+                        Memory
+                    )
+                    logger.info("✅ STM mem0 client initialized with default configuration (limited functionality)")
+                finally:
+                    # Restore original key
+                    if original_key:
+                        os.environ["OPENAI_API_KEY"] = original_key
+                    else:
+                        os.environ.pop("OPENAI_API_KEY", None)
             
         except Exception as e:
             logger.error(f"❌ Failed to initialize STM memory client: {e}")
-            raise
+            logger.info("🔄 STM will continue without mem0 integration - using in-memory storage only")
+            self.memory_client = None  # Mark as disabled
     
     async def _setup_resource_governor(self):
         """Setup resource monitoring and management"""
@@ -215,19 +214,25 @@ class STMService:
                 "created_at": datetime.now().isoformat()
             }
             
-            # Add to mem0 vector store
-            loop = asyncio.get_event_loop()
-            
-            # Set OMP_NUM_THREADS to avoid threading issues
-            os.environ['OMP_NUM_THREADS'] = '1'
-            
-            mem0_result = await loop.run_in_executor(
-                None,
-                self.memory_client.add,
-                content,
-                user_id,
-                stm_metadata
-            )
+            # Add to mem0 vector store if available
+            mem0_result = None
+            if self.memory_client:
+                try:
+                    loop = asyncio.get_event_loop()
+                    
+                    # Set OMP_NUM_THREADS to avoid threading issues
+                    os.environ['OMP_NUM_THREADS'] = '1'
+                    
+                    mem0_result = await loop.run_in_executor(
+                        None,
+                        self.memory_client.add,
+                        content,
+                        user_id,
+                        stm_metadata
+                    )
+                except Exception as e:
+                    logger.warning(f"⚠️  mem0 add failed, using fallback: {e}")
+                    mem0_result = None
             
             # Create STM memory object
             stm_memory = STMMemory(

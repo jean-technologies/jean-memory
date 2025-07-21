@@ -11,15 +11,19 @@ from datetime import datetime
 import httpx
 import json
 
+from config import get_config
+
 logger = logging.getLogger(__name__)
 
 class LTMService:
     """Long-Term Memory service integrating with V2 production system"""
     
     def __init__(self):
+        self.config = get_config()
+        
         # V2 Production API configuration
-        self.base_url = os.getenv("JEAN_MEMORY_V2_API_URL", "https://api.jeanmemory.com")
-        self.api_key = os.getenv("JEAN_MEMORY_V2_API_KEY")
+        self.base_url = self.config.jean_memory_v2_api_url or "https://api.jeanmemory.com"
+        self.api_key = self.config.jean_memory_v2_api_key
         
         # HTTP client for V2 API calls
         self.client: Optional[httpx.AsyncClient] = None
