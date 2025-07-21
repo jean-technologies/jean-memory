@@ -106,8 +106,8 @@ const VIEW_MODES: ViewMode[] = [
       randomize: false,
       animate: true,
       animationDuration: 1000,
-      nodeRepulsion: 12000,
-      idealEdgeLength: 120,
+      nodeRepulsion: 8000,
+      idealEdgeLength: 100,
       edgeElasticity: 0.45,
       nestingFactor: 0.1,
       gravity: 0.25,
@@ -123,17 +123,16 @@ const VIEW_MODES: ViewMode[] = [
     icon: Clock,
     description: 'Chronological view of memories and events',
     layoutConfig: {
-      name: 'grid',
-      rows: 10,
-      cols: 20,
-      position: (node: any) => {
-        const date = new Date(node.data('created_at') || Date.now());
-        const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24));
-        return {
-          row: Math.floor(Math.random() * 10),
-          col: daysSinceEpoch % 20
-        };
-      }
+      name: 'breadthfirst',
+      directed: true,
+      roots: '[created_at]',
+      padding: 30,
+      spacingFactor: 1.5,
+      animate: true,
+      animationDuration: 800,
+      fit: true,
+      avoidOverlap: true,
+      nodeDimensionsIncludeLabels: true
     }
   },
   {
@@ -147,9 +146,9 @@ const VIEW_MODES: ViewMode[] = [
       maxSimulationTime: 4000,
       ungrabifyWhileSimulating: true,
       fit: true,
-      padding: 40,
-      nodeSpacing: 80,
-      edgeLength: 160,
+      padding: 20,
+      nodeSpacing: 60,
+      edgeLength: 120,
       randomize: false
     }
   },
@@ -162,11 +161,20 @@ const VIEW_MODES: ViewMode[] = [
       name: 'concentric',
       animate: true,
       animationDuration: 1000,
-      levelWidth: () => 2,
+      fit: true,
+      padding: 40,
+      startAngle: 0,
+      sweep: Math.PI * 2,
+      clockwise: true,
+      equidistant: false,
+      minNodeSpacing: 40,
+      levelWidth: () => 3,
       concentric: (node: any) => {
-        if (node.data('nodeType') === 'entity') return 3;
-        if (node.data('nodeType') === 'memory') return 1;
-        return 2;
+        const nodeType = node.data('nodeType');
+        // Put memories in center, entities in outer ring
+        if (nodeType === 'memory') return 2;
+        if (nodeType === 'entity') return 1; 
+        return 1;
       }
     }
   }
@@ -408,8 +416,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     try {
       const response = await apiClient.get('/api/v1/memories/life-graph-data', {
         params: {
-          limit: 50,  // Progressive loading: start with 50 core nodes
-          include_entities: true,
+          limit: 25,  // Reduced for better performance: 25 core nodes
+          include_entities: viewMode.id === 'entities',  // Only include entities in entity view
           include_temporal_clusters: viewMode.id === 'temporal',
           focus_query: searchQuery || undefined,
           progressive: true  // Enable progressive loading mode
@@ -444,8 +452,17 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       cyInstance.current?.elements().remove();
       cyInstance.current?.add([...cyNodes, ...cyEdges]);
       
-      // Apply layout
-      cyInstance.current?.layout(viewMode.layoutConfig).run();
+      // Apply layout with auto-fit for better visibility
+      const layout = cyInstance.current?.layout({
+        ...viewMode.layoutConfig,
+        stop: () => {
+          // Fit and center the graph after layout completes
+          setTimeout(() => {
+            cyInstance.current?.fit(undefined, 30);
+          }, 100);
+        }
+      });
+      layout?.run();
       
       // Update stats
       setGraphStats({
@@ -472,7 +489,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     setIsExpanding(true);
     try {
       const response = await apiClient.get(`/api/v1/memories/life-graph-expand/${nodeId}`, {
-        params: { limit: 15 }
+        params: { limit: 8 }  // Reduced expansion size for better performance
       });
 
       const { expansion_nodes, expansion_edges } = response.data;
@@ -486,7 +503,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         const cyExpansionNodes = expansion_nodes.map((node: any, index: number) => {
           // Position new nodes in a circle around the parent
           const angle = (index / expansion_nodes.length) * 2 * Math.PI;
-          const radius = 180; // Distance from parent node
+          const radius = 120; // Closer distance for better readability
           const x = parentPos.x + Math.cos(angle) * radius;
           const y = parentPos.y + Math.sin(angle) * radius;
           
