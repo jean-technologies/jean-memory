@@ -168,7 +168,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
   let rawInstallCommand = app.installCommand;
   if (!rawInstallCommand) {
     if (app.id === 'chorus') {
-      rawInstallCommand = `-y mcp-remote ${MCP_URL}/mcp/${app.id}/sse/{user_id}`;
+      rawInstallCommand = `-y mcp-remote ${MCP_URL}/mcp/${app.id}/sse/{user_id} --header "x-user-id:{user_id}" --header "x-client-name:chorus"`;
     } else if (app.id === 'claude') {
       // Use HTTP v2 transport for Claude (50% faster)
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
