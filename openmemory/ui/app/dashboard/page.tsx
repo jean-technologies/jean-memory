@@ -355,14 +355,14 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="relative h-screen bg-background text-foreground overflow-hidden">
+      <div className="relative h-[calc(100vh-4rem)] bg-background text-foreground overflow-hidden">
       {/* Background Animation */}
       <div className="absolute inset-0 z-0 h-full w-full">
         <ParticleNetwork id="dashboard-particles" className="h-full w-full" interactive={false} particleCount={80} />
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 container mx-auto px-4 max-w-7xl py-8 h-full flex flex-col">
+      <div className="relative z-10 container mx-auto px-4 max-w-7xl py-6 h-full flex flex-col">
         {/* Migration Banner */}
         <MigrationBanner />
         
