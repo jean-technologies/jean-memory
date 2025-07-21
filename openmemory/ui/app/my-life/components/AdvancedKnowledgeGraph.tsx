@@ -184,14 +184,14 @@ const ENTITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 const ENTITY_COLORS: Record<string, string> = {
-  'person': '#3B82F6',      // Blue
-  'place': '#10B981',       // Green
-  'event': '#F59E0B',       // Amber
-  'topic': '#8B5CF6',       // Purple
-  'object': '#EF4444',      // Red
-  'emotion': '#EC4899',     // Pink
-  'memory': '#6B7280',      // Gray
-  'cluster': '#1F2937'      // Dark Gray
+  'person': '#8B5CF6',      // Jean Memory Purple
+  'place': '#3B82F6',       // Jean Memory Blue
+  'event': '#06B6D4',       // Jean Memory Cyan
+  'topic': '#10B981',       // Jean Memory Green
+  'object': '#F59E0B',      // Jean Memory Amber
+  'emotion': '#EC4899',     // Jean Memory Pink
+  'memory': '#6366F1',      // Jean Memory Indigo
+  'cluster': '#8B5CF6'      // Jean Memory Purple
 };
 
 interface AdvancedKnowledgeGraphProps {
@@ -220,6 +220,26 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
   
   const userId = useSelector((state: RootState) => state.profile.userId);
 
+  // Jean Memory brand colors and styling functions
+  const getBrandColorForNode = (node: any) => {
+    // Use Jean Memory's app-specific colors for different node types
+    if (node.type === 'memory') {
+      const appColors: { [key: string]: string } = {
+        'claude': '#8B5CF6',
+        'cursor': '#F59E0B',
+        'twitter': '#3B82F6',
+        'windsurf': '#EC4899',
+        'chatgpt': '#10B981',
+        'jean memory': '#6366F1',
+        'default': '#6366F1'
+      };
+      return appColors[node.source?.toLowerCase()] || appColors.default;
+    }
+    
+    // Entity colors using Jean Memory's system
+    return ENTITY_COLORS[node.entity_type] || ENTITY_COLORS[node.type] || '#6366F1';
+  };
+
   // Initialize Cytoscape
   useEffect(() => {
     const initGraph = async () => {
@@ -235,7 +255,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         {
           selector: 'node',
           style: {
-            'background-color': (ele: any) => ENTITY_COLORS[ele.data('nodeType')] || '#6B7280',
+            'background-color': (ele: any) => getBrandColorForNode(ele.data()) || '#6366F1',
             'label': 'data(label)',
             'text-valign': 'center',
             'text-halign': 'center',
@@ -266,7 +286,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           style: {
             'border-width': 3,
             'border-color': '#ffffff',
-            'background-color': (ele: any) => ENTITY_COLORS[ele.data('nodeType')] || '#6B7280',
+            'background-color': (ele: any) => getBrandColorForNode(ele.data()) || '#6366F1',
             'width': (ele: any) => {
               const type = ele.data('nodeType');
               if (type === 'cluster') return 90;
@@ -402,7 +422,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const cyNodes = nodes.map((node: any) => ({
         data: {
           id: node.id,
-          label: node.title || (node.content ? node.content.substring(0, 40).trim() + (node.content.length > 40 ? '...' : '') : '') || node.name || 'Memory',
+          label: node.title || node.content?.substring(0, 40) || node.name || 'Memory',
           nodeType: node.type,
           created_at: node.created_at,
           ...node
@@ -458,19 +478,32 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const { expansion_nodes, expansion_edges } = response.data;
       
       if (expansion_nodes && expansion_edges) {
-        // Convert expansion nodes to Cytoscape format
-        const cyExpansionNodes = expansion_nodes.map((node: any) => ({
-          data: {
-            id: node.id,
-            label: node.content ? node.content.substring(0, 35).trim() + (node.content.length > 35 ? '...' : '') : (node.name || 'Expanded'),
-            content: node.content,
-            nodeType: node.type,
-            source: node.source,
-            isExpansion: true,
-            parentNode: nodeId
-          },
-          classes: 'expansion-node'
-        }));
+        // Get the parent node position for smart positioning
+        const parentNode = cyInstance.current?.getElementById(nodeId);
+        const parentPos = parentNode?.position() || { x: 0, y: 0 };
+        
+        // Convert expansion nodes to Cytoscape format with circular positioning
+        const cyExpansionNodes = expansion_nodes.map((node: any, index: number) => {
+          // Position new nodes in a circle around the parent
+          const angle = (index / expansion_nodes.length) * 2 * Math.PI;
+          const radius = 180; // Distance from parent node
+          const x = parentPos.x + Math.cos(angle) * radius;
+          const y = parentPos.y + Math.sin(angle) * radius;
+          
+          return {
+            data: {
+              id: node.id,
+              label: node.content?.substring(0, 35) || node.name || 'Expanded',
+              content: node.content,
+              nodeType: node.type,
+              source: node.source,
+              isExpansion: true,
+              parentNode: nodeId
+            },
+            position: { x, y }, // Set explicit position around parent
+            classes: 'expansion-node'
+          };
+        });
 
         const cyExpansionEdges = expansion_edges.map((edge: any) => ({
           data: {
