@@ -66,13 +66,19 @@ export default function MemoriesPage() {
       />
       <main className="flex-1 py-6">
         <div className="container">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-1 pb-4 animate-fade-slide-down">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <MemoryFilters onFilterChange={loadMemories} />
-              {/* <STMToggle /> */}
+          {/* Sticky Header with Search, Filters, and Deep Query */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 pb-4 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-1 pt-4 animate-fade-slide-down">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+                <MemoryFilters onFilterChange={loadMemories} />
+                {/* <STMToggle /> */}
+              </div>
+              <div className="flex items-center">
+                <DeepQueryDialog />
+              </div>
             </div>
-            <DeepQueryDialog />
           </div>
+          {/* Scrollable Content */}
           <div className="animate-fade-slide-down delay-1">
             <MemoriesSection
               memories={memories}

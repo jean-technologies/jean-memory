@@ -80,7 +80,7 @@ export function DeepQueryDialog() {
       }
     }}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="h-10">
           <Sparkles className="mr-2 h-4 w-4" />
           Deep Life Query
         </Button>
