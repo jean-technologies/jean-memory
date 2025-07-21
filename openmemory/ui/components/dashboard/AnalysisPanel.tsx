@@ -108,11 +108,10 @@ export function AnalysisPanel() {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-card/20 backdrop-blur-sm border border-border rounded-xl flex flex-col"
-      style={{ height: 'calc(100vh - 4rem)' }}
+      className="bg-card/20 backdrop-blur-sm border border-border rounded-xl flex flex-col h-full"
     >
       {/* Sticky Header */}
-      <div className="px-6 pt-6 pb-4 border-b border-border/50" style={{ height: '90px' }}>
+      <div className="px-6 pt-6 pb-4 border-b border-border/50 flex-shrink-0">
         <h2 className="text-xl font-bold text-foreground">Your Life's Narrative</h2>
          <p className="text-sm text-muted-foreground">
           A summary of your life based on your memories.
@@ -120,10 +119,7 @@ export function AnalysisPanel() {
       </div>
       
       {/* Scrollable Content */}
-      <div 
-        className="px-6 py-4 overflow-y-auto" 
-        style={{ height: narrative ? 'calc(100% - 150px)' : 'calc(100% - 90px)' }}
-      >
+      <div className="px-6 py-4 overflow-y-auto flex-1">
         {isLoading || isGenerating ? (
           <div className="flex items-center justify-center min-h-[200px]">
             <div className="text-center">
@@ -164,7 +160,7 @@ export function AnalysisPanel() {
       
       {/* Sticky Footer - Always show when narrative exists */}
       {narrative && (
-        <div className="px-6 pb-8 pt-4 border-t border-border/50" style={{ height: '60px' }}>
+        <div className="px-6 pb-4 pt-4 border-t border-border/50 flex-shrink-0">
           <div className="flex justify-end">
             <Button 
               onClick={handleGenerateNarrative} 
