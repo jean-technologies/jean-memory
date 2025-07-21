@@ -10,6 +10,9 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 import uuid
 import json
+import time
+
+from services.google_memory_service import GoogleADKMemoryService
 
 logger = logging.getLogger(__name__)
 
@@ -340,4 +343,303 @@ class CloudSessionService(BaseSessionService):
             "service_type": "cloud",
             "ltm_connected": self.ltm.is_ready(),
             "cache_ttl_minutes": self.cache_ttl_minutes
+        }
+
+class GoogleADKSessionService(BaseSessionService):
+    """Google ADK Session management with state persistence"""
+    
+    def __init__(self, google_service: GoogleADKMemoryService):
+        self.google_service = google_service
+        self.sessions: Dict[str, SessionData] = {}
+        self.session_analytics: Dict[str, Dict[str, Any]] = {}
+        self.max_sessions_per_user = 100
+        self.session_memory_limit = 1000  # memories per session
+        
+    async def create_google_session(self, user_id: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+        """Create Google ADK session with state management"""
+        session_id = f"google_adk_session_{uuid.uuid4().hex[:12]}"
+        
+        session_data = SessionData(session_id, user_id)
+        session_data.metadata.update({
+            "provider": "google_adk",
+            "tier": "tier_1",
+            **(metadata or {})
+        })
+        
+        # Store session
+        self.sessions[session_id] = session_data
+        
+        # Initialize analytics
+        self.session_analytics[session_id] = {
+            "created_at": time.time(),
+            "memory_count": 0,
+            "search_count": 0,
+            "total_duration_ms": 0,
+            "avg_memory_size": 0
+        }
+        
+        # Store session context in Google Memory Bank
+        if self.google_service.initialized:
+            try:
+                session_context = f"Session {session_id} created for user {user_id}"
+                await self.google_service.add_memory_to_google_adk(
+                    content=session_context,
+                    user_id=user_id,
+                    metadata={
+                        "type": "session_context",
+                        "session_id": session_id,
+                        "action": "session_created"
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to store session context in Google ADK: {e}")
+        
+        logger.info(f"🔗 Created Google ADK session: {session_id}", extra={
+            "session_id": session_id,
+            "user_id": user_id,
+            "provider": "google_adk"
+        })
+        
+        return session_id
+    
+    async def create_session(self, user_id: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+        """Create session (BaseSessionService interface)"""
+        return await self.create_google_session(user_id, metadata)
+    
+    async def add_session_to_memory(self, session_id: str, content: str, 
+                                   metadata: Optional[Dict[str, Any]] = None) -> bool:
+        """Add session context to Google Memory Bank"""
+        session = self.sessions.get(session_id)
+        if not session:
+            logger.error(f"Session {session_id} not found")
+            return False
+        
+        if not self.google_service.initialized:
+            logger.warning("Google ADK service not initialized")
+            return False
+        
+        try:
+            # Prepare session-specific metadata
+            session_metadata = {
+                "session_id": session_id,
+                "user_id": session.user_id,
+                "type": "session_memory",
+                "timestamp": datetime.now().isoformat(),
+                **(metadata or {})
+            }
+            
+            # Add memory to Google ADK
+            result = await self.google_service.add_memory_to_google_adk(
+                content=content,
+                user_id=session.user_id,
+                metadata=session_metadata
+            )
+            
+            if result:
+                # Update session context
+                await self.add_context(session_id, {
+                    "type": "memory_added",
+                    "content_preview": content[:100] + "..." if len(content) > 100 else content,
+                    "memory_id": result.get("id"),
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                # Update analytics
+                analytics = self.session_analytics.get(session_id, {})
+                analytics["memory_count"] = analytics.get("memory_count", 0) + 1
+                analytics["avg_memory_size"] = (
+                    (analytics.get("avg_memory_size", 0) * (analytics["memory_count"] - 1) + len(content)) 
+                    / analytics["memory_count"]
+                )
+                
+                logger.info(f"🔗 Added session memory to Google ADK", extra={
+                    "session_id": session_id,
+                    "user_id": session.user_id,
+                    "memory_id": result.get("id"),
+                    "content_size": len(content)
+                })
+                
+                return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add session memory to Google ADK: {e}")
+        
+        return False
+    
+    async def search_session_memories(self, session_id: str, query: str, 
+                                     limit: int = 10) -> List[Dict[str, Any]]:
+        """Search memories specific to this session"""
+        session = self.sessions.get(session_id)
+        if not session:
+            return []
+        
+        if not self.google_service.initialized:
+            return []
+        
+        try:
+            # Search with session filter
+            results = await self.google_service.search_google_memories(
+                query=query,
+                user_id=session.user_id,
+                limit=limit
+            )
+            
+            # Filter by session ID
+            session_results = []
+            for memory in results:
+                memory_metadata = memory.get("metadata", {})
+                if memory_metadata.get("session_id") == session_id:
+                    session_results.append(memory)
+            
+            # Update analytics
+            analytics = self.session_analytics.get(session_id, {})
+            analytics["search_count"] = analytics.get("search_count", 0) + 1
+            
+            return session_results
+            
+        except Exception as e:
+            logger.error(f"Failed to search session memories: {e}")
+            return []
+    
+    async def get_session(self, session_id: str) -> Optional[SessionData]:
+        """Get session data"""
+        session = self.sessions.get(session_id)
+        if session:
+            session.update_access()
+        return session
+    
+    async def update_session_state(self, session_id: str, key: str, value: Any) -> bool:
+        """Update session state"""
+        session = self.sessions.get(session_id)
+        if session:
+            session.state[key] = value
+            session.update_access()
+            
+            # Store state change in Google Memory Bank
+            if self.google_service.initialized:
+                try:
+                    state_content = f"Session state updated: {key} = {value}"
+                    await self.google_service.add_memory_to_google_adk(
+                        content=state_content,
+                        user_id=session.user_id,
+                        metadata={
+                            "type": "session_state_change",
+                            "session_id": session_id,
+                            "state_key": key,
+                            "action": "state_updated"
+                        }
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to store state change in Google ADK: {e}")
+            
+            return True
+        return False
+    
+    async def add_context(self, session_id: str, context: Dict[str, Any]) -> bool:
+        """Add context to session"""
+        session = self.sessions.get(session_id)
+        if session:
+            context_with_timestamp = {
+                **context,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            session.context.append(context_with_timestamp)
+            session.update_access()
+            
+            # Enforce context length limit
+            max_context = 200  # Larger limit for Google ADK sessions
+            if len(session.context) > max_context:
+                session.context = session.context[-max_context:]
+            
+            return True
+        return False
+    
+    async def delete_session(self, session_id: str) -> bool:
+        """Delete Google ADK session"""
+        session = self.sessions.get(session_id)
+        if not session:
+            return False
+        
+        # Store session end in Google Memory Bank
+        if self.google_service.initialized:
+            try:
+                end_content = f"Session {session_id} ended"
+                await self.google_service.add_memory_to_google_adk(
+                    content=end_content,
+                    user_id=session.user_id,
+                    metadata={
+                        "type": "session_context",
+                        "session_id": session_id,
+                        "action": "session_ended",
+                        "duration_minutes": (datetime.now() - session.created_at).total_seconds() / 60
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to store session end in Google ADK: {e}")
+        
+        # Remove session and analytics
+        del self.sessions[session_id]
+        if session_id in self.session_analytics:
+            del self.session_analytics[session_id]
+        
+        logger.info(f"🗑️ Deleted Google ADK session: {session_id}")
+        return True
+    
+    async def get_session_analytics(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Get session analytics and monitoring data"""
+        session = self.sessions.get(session_id)
+        analytics = self.session_analytics.get(session_id)
+        
+        if not session or not analytics:
+            return None
+        
+        current_time = time.time()
+        duration_ms = (current_time - analytics["created_at"]) * 1000
+        
+        return {
+            "session_id": session_id,
+            "user_id": session.user_id,
+            "created_at": datetime.fromtimestamp(analytics["created_at"]).isoformat(),
+            "duration_ms": duration_ms,
+            "memory_count": analytics.get("memory_count", 0),
+            "search_count": analytics.get("search_count", 0),
+            "avg_memory_size": analytics.get("avg_memory_size", 0),
+            "context_length": len(session.context),
+            "state_keys": list(session.state.keys()),
+            "metadata": session.metadata
+        }
+    
+    async def get_user_sessions(self, user_id: str, limit: int = 10) -> List[SessionData]:
+        """Get user's Google ADK sessions"""
+        user_sessions = []
+        
+        for session in self.sessions.values():
+            if session.user_id == user_id:
+                user_sessions.append(session)
+        
+        # Sort by most recent first
+        user_sessions.sort(key=lambda s: s.last_accessed, reverse=True)
+        return user_sessions[:limit]
+    
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get Google ADK session service statistics"""
+        total_memory_count = sum(
+            analytics.get("memory_count", 0) 
+            for analytics in self.session_analytics.values()
+        )
+        
+        total_search_count = sum(
+            analytics.get("search_count", 0) 
+            for analytics in self.session_analytics.values()
+        )
+        
+        return {
+            "service_type": "google_adk",
+            "total_sessions": len(self.sessions),
+            "total_memory_count": total_memory_count,
+            "total_search_count": total_search_count,
+            "google_adk_enabled": self.google_service.initialized,
+            "max_sessions_per_user": self.max_sessions_per_user,
+            "session_memory_limit": self.session_memory_limit
         }

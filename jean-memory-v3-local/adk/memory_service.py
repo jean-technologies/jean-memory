@@ -421,6 +421,15 @@ class GoogleADKService(BaseMemoryService):
     async def delete_memory(self, memory_id: str, user_id: str) -> bool:
         """Delete memory from Google ADK"""
         return await self.google.delete_memory(memory_id, user_id)
+    
+    async def get_stats(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get Google ADK service statistics"""
+        performance_stats = await self.google.get_performance_stats()
+        return {
+            "service_type": "google_adk",
+            "tier": 1,
+            "google_adk_stats": performance_stats
+        }
 
 # Factory function for creating appropriate memory service
 def create_memory_service(stm_service: STMService, 
