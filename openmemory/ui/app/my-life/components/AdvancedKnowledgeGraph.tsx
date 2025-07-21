@@ -106,8 +106,8 @@ const VIEW_MODES: ViewMode[] = [
       randomize: false,
       animate: true,
       animationDuration: 1000,
-      nodeRepulsion: 8000,
-      idealEdgeLength: 100,
+      nodeRepulsion: 6000,
+      idealEdgeLength: 80,
       edgeElasticity: 0.45,
       nestingFactor: 0.1,
       gravity: 0.25,
@@ -123,33 +123,33 @@ const VIEW_MODES: ViewMode[] = [
     icon: Clock,
     description: 'Chronological view of memories and events',
     layoutConfig: {
-      name: 'breadthfirst',
-      directed: true,
-      roots: '[created_at]',
-      padding: 30,
-      spacingFactor: 1.5,
+      name: 'preset',
+      positions: (node: any) => {
+        // Simple timeline: all nodes on a horizontal line positioned by date
+        const createdAt = node.data('created_at');
+        if (!createdAt) {
+          return { x: 100, y: 300 };
+        }
+        
+        const nodeDate = new Date(createdAt);
+        const now = new Date();
+        const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        
+        // Simple timeline calculation
+        const totalTimeSpan = now.getTime() - oneYearAgo.getTime();
+        const nodeTimeFromStart = Math.max(0, nodeDate.getTime() - oneYearAgo.getTime());
+        const timelineProgress = nodeTimeFromStart / totalTimeSpan;
+        
+        // Timeline positioning: all on same horizontal line
+        const xPosition = 50 + (timelineProgress * 900); // 900px timeline width
+        const yPosition = 300 + (Math.random() - 0.5) * 60; // Small vertical jitter to prevent exact overlap
+        
+        return { x: xPosition, y: yPosition };
+      },
       animate: true,
       animationDuration: 800,
       fit: true,
-      avoidOverlap: true,
-      nodeDimensionsIncludeLabels: true
-    }
-  },
-  {
-    id: 'semantic',
-    name: 'Semantic',
-    icon: Brain,
-    description: 'Memories clustered by meaning and topics',
-    layoutConfig: {
-      name: 'cola',
-      animate: true,
-      maxSimulationTime: 4000,
-      ungrabifyWhileSimulating: true,
-      fit: true,
-      padding: 20,
-      nodeSpacing: 60,
-      edgeLength: 120,
-      randomize: false
+      padding: 60
     }
   },
   {
@@ -191,15 +191,24 @@ const ENTITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   'cluster': Network
 };
 
+// Elegant blue gradient color scheme for clean, cohesive look
+const BLUE_GRADIENT_COLORS = {
+  'primary': '#0EA5E9',     // Sky blue (primary nodes)
+  'secondary': '#0284C7',   // Deeper blue (important nodes)
+  'accent': '#0369A1',      // Dark blue (clusters)
+  'light': '#38BDF8',       // Light blue (secondary)
+  'subtle': '#7DD3FC'       // Very light blue (background)
+};
+
 const ENTITY_COLORS: Record<string, string> = {
-  'person': '#8B5CF6',      // Jean Memory Purple
-  'place': '#3B82F6',       // Jean Memory Blue
-  'event': '#06B6D4',       // Jean Memory Cyan
-  'topic': '#10B981',       // Jean Memory Green
-  'object': '#F59E0B',      // Jean Memory Amber
-  'emotion': '#EC4899',     // Jean Memory Pink
-  'memory': '#6366F1',      // Jean Memory Indigo
-  'cluster': '#8B5CF6'      // Jean Memory Purple
+  'person': BLUE_GRADIENT_COLORS.primary,
+  'place': BLUE_GRADIENT_COLORS.secondary,
+  'event': BLUE_GRADIENT_COLORS.accent,
+  'topic': BLUE_GRADIENT_COLORS.light,
+  'object': BLUE_GRADIENT_COLORS.primary,
+  'emotion': BLUE_GRADIENT_COLORS.subtle,
+  'memory': BLUE_GRADIENT_COLORS.primary,
+  'cluster': BLUE_GRADIENT_COLORS.accent
 };
 
 interface AdvancedKnowledgeGraphProps {
@@ -230,22 +239,30 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
 
   // Jean Memory brand colors and styling functions
   const getBrandColorForNode = (node: any) => {
-    // Use Jean Memory's app-specific colors for different node types
-    if (node.type === 'memory') {
+    // Beautiful Jean Memory color palette with gradients
+    const importance = node.strength || 1;
+    const nodeType = node.type || 'memory';
+    
+    // App-specific colors for memories with Jean Memory aesthetic
+    if (nodeType === 'memory') {
       const appColors: { [key: string]: string } = {
-        'claude': '#8B5CF6',
-        'cursor': '#F59E0B',
-        'twitter': '#3B82F6',
-        'windsurf': '#EC4899',
-        'chatgpt': '#10B981',
-        'jean memory': '#6366F1',
-        'default': '#6366F1'
+        'claude': '#8B5CF6',     // Purple
+        'cursor': '#F59E0B',     // Amber
+        'twitter': '#06B6D4',    // Cyan
+        'windsurf': '#EC4899',   // Pink
+        'chatgpt': '#10B981',    // Emerald
+        'jean memory': '#6366F1', // Indigo
+        'default': importance > 2 ? '#6366F1' : '#8B5CF6' // Dynamic based on importance
       };
       return appColors[node.source?.toLowerCase()] || appColors.default;
     }
     
-    // Entity colors using Jean Memory's system
-    return ENTITY_COLORS[node.entity_type] || ENTITY_COLORS[node.type] || '#6366F1';
+    // Entity colors with visual hierarchy
+    if (nodeType === 'cluster') return '#4338CA'; // Deep indigo for clusters
+    if (importance > 3) return '#6366F1';  // Important entities in brand indigo
+    if (importance > 1.5) return '#8B5CF6'; // Medium importance in purple
+    
+    return ENTITY_COLORS[node.entity_type] || ENTITY_COLORS[nodeType] || '#A855F7'; // Light purple default
   };
 
   // Initialize Cytoscape
@@ -264,28 +281,34 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           selector: 'node',
           style: {
             'background-color': (ele: any) => getBrandColorForNode(ele.data()) || '#6366F1',
-            'label': 'data(label)',
+            'label': 'data(label)', // Keep labels visible for readability
             'text-valign': 'center',
             'text-halign': 'center',
-            'font-size': '11px',
+            'font-size': '10px',
             'color': '#ffffff',
             'text-outline-width': 2,
             'text-outline-color': '#000000',
-            'text-wrap': 'wrap',
-            'text-max-width': '80px',
+            'text-wrap': 'none',
+            'text-max-width': 'none',
             'width': (ele: any) => {
+              const importance = ele.data('importance') || 1;
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 80;
-              if (type === 'entity') return 50;
-              return 30;
+              let baseSize = type === 'cluster' ? 50 : (type === 'entity' ? 40 : 35); // Larger, readable sizes
+              return Math.min(baseSize + (importance - 1) * 5, baseSize * 1.3);
             },
             'height': (ele: any) => {
+              const importance = ele.data('importance') || 1;
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 80;
-              if (type === 'entity') return 50;
-              return 30;
+              let baseSize = type === 'cluster' ? 50 : (type === 'entity' ? 40 : 35); // Larger, readable sizes
+              return Math.min(baseSize + (importance - 1) * 5, baseSize * 1.3);
             },
-            'overlay-padding': 6,
+            'box-shadow': '0 0 20px rgba(99, 102, 241, 0.4)', // Subtle Jean Memory glow
+            'border-width': 1,
+            'border-color': 'rgba(255, 255, 255, 0.2)',
+            'border-opacity': 0.8,
+            'transition-property': 'box-shadow, width, height',
+            'transition-duration': '0.3s',
+            'overlay-padding': 4,
             'z-index': 10
           }
         },
@@ -295,31 +318,23 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
             'border-width': 3,
             'border-color': '#ffffff',
             'background-color': (ele: any) => getBrandColorForNode(ele.data()) || '#6366F1',
-            'width': (ele: any) => {
-              const type = ele.data('nodeType');
-              if (type === 'cluster') return 90;
-              if (type === 'entity') return 60;
-              return 40;
-            },
-            'height': (ele: any) => {
-              const type = ele.data('nodeType');
-              if (type === 'cluster') return 90;
-              if (type === 'entity') return 60;
-              return 40;
-            },
+            'box-shadow': '0 0 20px rgba(99, 102, 241, 0.8)', // Beautiful glow on selection
+            'font-size': '11px', // Slightly larger text when selected
             'z-index': 999
           }
         },
         {
           selector: 'edge',
           style: {
-            'width': (ele: any) => Math.max(1, ele.data('weight') || 1),
-            'line-color': '#4B5563',
-            'target-arrow-color': '#4B5563',
+            'width': 1, // Consistent thin lines for elegance
+            'line-color': 'rgba(156, 163, 175, 0.4)', // Subtle gray with transparency
+            'target-arrow-color': 'rgba(156, 163, 175, 0.4)',
             'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'opacity': 0.6,
-            'z-index': 5
+            'target-arrow-size': 6,
+            'curve-style': 'haystack', // Cleaner straight lines
+            'haystack-radius': 0,
+            'opacity': 0.4,
+            'z-index': 1
           }
         },
         {
@@ -417,7 +432,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const response = await apiClient.get('/api/v1/memories/life-graph-data', {
         params: {
           limit: 25,  // Reduced for better performance: 25 core nodes
-          include_entities: viewMode.id === 'entities',  // Only include entities in entity view
+          include_entities: true,  // Always include entities for proper connections
           include_temporal_clusters: viewMode.id === 'temporal',
           focus_query: searchQuery || undefined,
           progressive: true  // Enable progressive loading mode
@@ -430,7 +445,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const cyNodes = nodes.map((node: any) => ({
         data: {
           id: node.id,
-          label: node.title || node.content?.substring(0, 40) || node.name || 'Memory',
+          label: node.title || (node.content ? node.content.substring(0, 25) : '') || node.name || 'Memory',
           nodeType: node.type,
           created_at: node.created_at,
           ...node
@@ -452,13 +467,23 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       cyInstance.current?.elements().remove();
       cyInstance.current?.add([...cyNodes, ...cyEdges]);
       
-      // Apply layout with auto-fit for better visibility
+      // Apply layout with better zoom handling
       const layout = cyInstance.current?.layout({
         ...viewMode.layoutConfig,
         stop: () => {
-          // Fit and center the graph after layout completes
           setTimeout(() => {
-            cyInstance.current?.fit(undefined, 30);
+            if (viewMode.id === 'semantic') {
+              // For semantic concentric view, fit and zoom to show all rings clearly
+              cyInstance.current?.fit();
+              const currentZoom = cyInstance.current?.zoom() || 1;
+              if (currentZoom < 0.6) {
+                cyInstance.current?.zoom(0.6); // Slightly higher zoom for concentric rings
+              }
+            } else {
+              // For other views, center with reasonable zoom
+              cyInstance.current?.center();
+              cyInstance.current?.zoom(0.8);
+            }
           }, 100);
         }
       });
@@ -510,7 +535,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           return {
             data: {
               id: node.id,
-              label: node.content?.substring(0, 35) || node.name || 'Expanded',
+              label: node.content ? node.content.substring(0, 20) : (node.name || 'Expanded'),
               content: node.content,
               nodeType: node.type,
               source: node.source,
@@ -595,6 +620,277 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
   const handleFit = useCallback(() => {
     cyInstance.current?.fit();
   }, []);
+
+  // Get timeline memories for plotting
+  const getTimelineMemories = () => {
+    if (!cyInstance.current) return [];
+    
+    const memories = cyInstance.current.nodes().filter(node => node.data('nodeType') === 'memory');
+    return memories.map(node => ({
+      id: node.data('id'),
+      label: node.data('label'),
+      content: node.data('content'),
+      created_at: node.data('created_at'),
+      source: node.data('source')
+    }));
+  };
+
+  // Calculate position on timeline based on date
+  const getTimelinePosition = (createdAt: string) => {
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const memoryDate = new Date(createdAt);
+    
+    const totalTimeSpan = now.getTime() - oneYearAgo.getTime();
+    const memoryTimeFromStart = Math.max(0, memoryDate.getTime() - oneYearAgo.getTime());
+    const timelineProgress = Math.min(1, memoryTimeFromStart / totalTimeSpan);
+    
+    return timelineProgress * 100; // Return percentage position
+  };
+
+  // Custom timeline view for temporal visualization
+  if (viewMode.id === 'temporal') {
+    const timelineMemories = getTimelineMemories();
+    
+    return (
+      <div className="relative w-full h-full bg-background">
+        {/* Loading State */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            >
+              <Card className="p-6">
+                <div className="flex flex-col items-center gap-3">
+                  <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Loading timeline...</p>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Timeline Container */}
+        <div className="w-full h-full flex flex-col items-center justify-center p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Memory Timeline</h2>
+            <p className="text-muted-foreground">Chronological view of your memories</p>
+            <p className="text-xs text-muted-foreground mt-1">Note: Only showing memories with dates (from July 2024 onwards)</p>
+          </div>
+          
+          {/* Timeline Visualization */}
+          <div className="relative w-full max-w-6xl h-80">
+            {/* Main timeline axis */}
+            <div className="absolute bottom-16 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500/20 via-blue-500/60 to-blue-500/20"></div>
+            
+            {/* Month markers */}
+            {Array.from({ length: 12 }, (_, i) => {
+              const monthDate = new Date();
+              monthDate.setMonth(monthDate.getMonth() - (11 - i));
+              const monthName = monthDate.toLocaleDateString('en', { month: 'short' });
+              const position = (i / 11) * 100;
+              
+              return (
+                <div key={i} className="absolute bottom-16" style={{ left: `${position}%` }}>
+                  <div className="w-px h-6 bg-border -translate-x-0.5"></div>
+                  <div className="text-xs text-muted-foreground mt-2 -translate-x-1/2 whitespace-nowrap">
+                    {monthName}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Memory plot points */}
+            {timelineMemories.map((memory, index) => {
+              if (!memory.created_at) return null;
+              
+              const position = getTimelinePosition(memory.created_at);
+              const verticalOffset = (index % 5) * 40 + 20; // Stack memories vertically to avoid overlap
+              const memoryDate = new Date(memory.created_at);
+              
+              // Color based on source app
+              const getMemoryColor = () => {
+                const source = memory.source?.toLowerCase() || 'default';
+                const colors: { [key: string]: string } = {
+                  'claude': '#8B5CF6',
+                  'cursor': '#F59E0B', 
+                  'twitter': '#06B6D4',
+                  'windsurf': '#EC4899',
+                  'chatgpt': '#10B981',
+                  'jean memory': '#6366F1',
+                  'default': '#6366F1'
+                };
+                return colors[source] || colors.default;
+              };
+              
+              return (
+                <motion.div
+                  key={memory.id}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="absolute cursor-pointer group"
+                  style={{ 
+                    left: `${position}%`,
+                    bottom: `${80 + verticalOffset}px`,
+                    transform: 'translateX(-50%)'
+                  }}
+                  onClick={() => {
+                    setSelectedNode({
+                      ...memory,
+                      nodeType: 'memory',
+                      label: memory.label || memory.content?.substring(0, 30) + '...'
+                    });
+                  }}
+                >
+                  {/* Memory dot */}
+                  <div
+                    className="w-4 h-4 rounded-full border-2 border-white shadow-lg transition-all duration-200 group-hover:scale-125 group-hover:shadow-xl"
+                    style={{ backgroundColor: getMemoryColor() }}
+                  />
+                  
+                  {/* Connection line to timeline */}
+                  <div 
+                    className="absolute w-px bg-gray-300 opacity-30 group-hover:opacity-60 transition-opacity"
+                    style={{
+                      left: '50%',
+                      top: '16px',
+                      height: `${verticalOffset + 16}px`,
+                      transform: 'translateX(-50%)'
+                    }}
+                  />
+                  
+                  {/* Hover tooltip */}
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg p-3 shadow-xl border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 min-w-64 max-w-80">
+                    <div className="text-sm font-medium mb-1">{memory.label || 'Memory'}</div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      {memoryDate.toLocaleDateString('en', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      {memory.source && ` • ${memory.source}`}
+                    </div>
+                    {memory.content && (
+                      <div className="text-xs text-muted-foreground">
+                        {memory.content.length > 100 
+                          ? memory.content.substring(0, 100) + '...'
+                          : memory.content
+                        }
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+            
+            {/* Timeline labels */}
+            <div className="absolute bottom-8 left-0 text-xs text-muted-foreground">
+              1 Year Ago
+            </div>
+            <div className="absolute bottom-8 right-0 text-xs text-muted-foreground">
+              Today
+            </div>
+          </div>
+          
+          <div className="mt-8 text-sm text-muted-foreground text-center">
+            Showing {timelineMemories.length} memories over the past year
+          </div>
+        </div>
+
+        {/* Control Panel */}
+        <div className="absolute top-4 left-4 z-40">
+          <Card className="bg-card/90 backdrop-blur-sm p-4">
+            <div className="flex gap-2">
+              {VIEW_MODES.map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <Button
+                    key={mode.id}
+                    variant={viewMode.id === mode.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode(mode)}
+                  >
+                    <Icon className="w-4 h-4 mr-1" />
+                    {mode.name}
+                  </Button>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+
+        {/* Selected Memory Details */}
+        <AnimatePresence>
+          {selectedNode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-4 left-4 right-4 z-40 max-w-2xl mx-auto"
+            >
+              <Card className="bg-card/95 backdrop-blur-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="p-2 rounded-full"
+                        style={{ backgroundColor: '#6366F1' }}
+                      >
+                        <Brain className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{selectedNode.label}</CardTitle>
+                        <CardDescription>
+                          {selectedNode.created_at ? 
+                            new Date(selectedNode.created_at).toLocaleDateString('en', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            }) : 
+                            'No date'
+                          }
+                          {selectedNode.source && ` • ${selectedNode.source}`}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setSelectedNode(null)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {selectedNode.content && (
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {selectedNode.content}
+                    </p>
+                  )}
+                  <Button 
+                    size="sm" 
+                    className="mt-3"
+                    onClick={() => {
+                      window.location.href = `/memory/${selectedNode.id}`;
+                    }}
+                  >
+                    View Memory Details
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full bg-background">

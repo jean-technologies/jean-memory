@@ -48,7 +48,7 @@ try:
     from app.tool_registry import tool_registry
     from app.database import SessionLocal
     from app.utils.db import get_or_create_user
-    from app.mcp_server import user_id_var, client_name_var, background_tasks_var
+    from app.context import user_id_var, client_name_var, background_tasks_var
     from fastapi import BackgroundTasks
     logger.info("Successfully imported MCP components")
 except ImportError as e:
@@ -122,8 +122,9 @@ async def main():
     
     # Test database connection
     try:
+        from sqlalchemy import text
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         logger.info("Database connection successful")
     except Exception as e:
