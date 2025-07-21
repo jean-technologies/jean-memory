@@ -355,23 +355,23 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="relative min-h-screen bg-background text-foreground">
+      <div className="relative h-screen bg-background text-foreground overflow-hidden">
       {/* Background Animation */}
       <div className="absolute inset-0 z-0 h-full w-full">
         <ParticleNetwork id="dashboard-particles" className="h-full w-full" interactive={false} particleCount={80} />
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 container mx-auto px-4 max-w-7xl py-8">
+      <div className="relative z-10 container mx-auto px-4 max-w-7xl py-8 h-full flex flex-col">
         {/* Migration Banner */}
         <MigrationBanner />
         
         {/* Profile Completion Banner */}
         <ProfileCompletionBanner />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 overflow-hidden">
           {/* Left Side */}
-          <div className="lg:col-span-2 h-full flex flex-col min-h-[600px]">
+          <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
             {/* <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -425,7 +425,7 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable App Grid Container */}
-            <div className="flex-1 overflow-y-auto pr-2 pb-8 max-h-[400px]">
+            <div className="flex-1 overflow-y-auto pr-2">
               {/* App Grid */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -468,7 +468,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Side */}
-          <div className="lg:col-span-1 h-full min-h-[600px]">
+          <div className="lg:col-span-1 h-full overflow-hidden">
             <AnalysisPanel />
           </div>
         </div>
