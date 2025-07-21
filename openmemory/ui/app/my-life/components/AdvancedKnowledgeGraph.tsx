@@ -386,8 +386,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     try {
       const response = await apiClient.get('/api/v1/memories/life-graph-data', {
         params: {
-          limit: 50,  // Progressive loading: start with 50 core nodes
-          include_entities: true,
+          limit: 8,  // Minimal initial load: start with only 8 core memories
+          include_entities: false,  // No entities initially - cleaner view
           include_temporal_clusters: viewMode.id === 'temporal',
           focus_query: searchQuery || undefined,
           progressive: true  // Enable progressive loading mode
@@ -456,19 +456,32 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const { expansion_nodes, expansion_edges } = response.data;
       
       if (expansion_nodes && expansion_edges) {
-        // Convert expansion nodes to Cytoscape format
-        const cyExpansionNodes = expansion_nodes.map((node: any) => ({
-          data: {
-            id: node.id,
-            label: node.content?.substring(0, 50) || node.name || 'Unknown',
-            content: node.content,
-            nodeType: node.type,
-            source: node.source,
-            isExpansion: true,
-            parentNode: nodeId
-          },
-          classes: 'expansion-node'
-        }));
+        // Get the parent node position for smart positioning
+        const parentNode = cyInstance.current?.getElementById(nodeId);
+        const parentPos = parentNode?.position() || { x: 0, y: 0 };
+        
+        // Convert expansion nodes to Cytoscape format with smart positioning
+        const cyExpansionNodes = expansion_nodes.map((node: any, index: number) => {
+          // Position new nodes in a circle around the parent
+          const angle = (index / expansion_nodes.length) * 2 * Math.PI;
+          const radius = 150; // Distance from parent node
+          const x = parentPos.x + Math.cos(angle) * radius;
+          const y = parentPos.y + Math.sin(angle) * radius;
+          
+          return {
+            data: {
+              id: node.id,
+              label: node.content?.substring(0, 50) || node.name || 'Unknown',
+              content: node.content,
+              nodeType: node.type,
+              source: node.source,
+              isExpansion: true,
+              parentNode: nodeId
+            },
+            position: { x, y }, // Set explicit position
+            classes: 'expansion-node'
+          };
+        });
 
         const cyExpansionEdges = expansion_edges.map((edge: any) => ({
           data: {
