@@ -125,42 +125,31 @@ const VIEW_MODES: ViewMode[] = [
     layoutConfig: {
       name: 'preset',
       positions: (node: any) => {
-        // Position nodes on actual timeline from oldest (left) to newest (right)
+        // Simple timeline: all nodes on a horizontal line positioned by date
         const createdAt = node.data('created_at');
         if (!createdAt) {
-          return { x: 100, y: 300 }; // Default position for nodes without dates
+          return { x: 100, y: 300 };
         }
         
         const nodeDate = new Date(createdAt);
-        
-        // Get the date range of all memories to create timeline scale
-        // This will be calculated dynamically when we have all nodes
         const now = new Date();
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(now.getMonth() - 6);
+        const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
         
-        // Timeline spans 1000px from left to right
-        const timelineWidth = 1000;
-        const timelineStart = 100; // Left margin
+        // Simple timeline calculation
+        const totalTimeSpan = now.getTime() - oneYearAgo.getTime();
+        const nodeTimeFromStart = Math.max(0, nodeDate.getTime() - oneYearAgo.getTime());
+        const timelineProgress = nodeTimeFromStart / totalTimeSpan;
         
-        // Calculate position: older memories on left, newer on right
-        const totalTimeSpan = now.getTime() - sixMonthsAgo.getTime();
-        const nodeTimeFromStart = nodeDate.getTime() - sixMonthsAgo.getTime();
-        
-        // Clamp to timeline bounds
-        const timelineProgress = Math.max(0, Math.min(1, nodeTimeFromStart / totalTimeSpan));
-        const xPosition = timelineStart + (timelineProgress * timelineWidth);
-        
-        // Y position with vertical spread to avoid overlap, grouped by month
-        const monthGroup = nodeDate.getMonth() % 4; // Group into 4 horizontal lanes
-        const yPosition = 200 + (monthGroup * 80) + (Math.random() - 0.5) * 40;
+        // Timeline positioning: all on same horizontal line
+        const xPosition = 50 + (timelineProgress * 900); // 900px timeline width
+        const yPosition = 300 + (Math.random() - 0.5) * 60; // Small vertical jitter to prevent exact overlap
         
         return { x: xPosition, y: yPosition };
       },
       animate: true,
-      animationDuration: 1200,
+      animationDuration: 800,
       fit: true,
-      padding: 80
+      padding: 60
     }
   },
   {
@@ -640,6 +629,97 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
   const handleFit = useCallback(() => {
     cyInstance.current?.fit();
   }, []);
+
+  // Custom timeline view for temporal visualization
+  if (viewMode.id === 'temporal') {
+    return (
+      <div className="relative w-full h-full bg-background">
+        {/* Loading State */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            >
+              <Card className="p-6">
+                <div className="flex flex-col items-center gap-3">
+                  <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Loading timeline...</p>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Simple Timeline Container */}
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Memory Timeline</h2>
+            <p className="text-muted-foreground">Chronological view of your memories</p>
+          </div>
+          
+          {/* Timeline Axis */}
+          <div className="relative w-full max-w-6xl h-64 border-b border-border">
+            <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+            
+            {/* Month markers */}
+            {Array.from({ length: 12 }, (_, i) => {
+              const monthDate = new Date();
+              monthDate.setMonth(monthDate.getMonth() - (11 - i));
+              const monthName = monthDate.toLocaleDateString('en', { month: 'short' });
+              const position = (i / 11) * 100;
+              
+              return (
+                <div key={i} className="absolute bottom-0" style={{ left: `${position}%` }}>
+                  <div className="w-px h-4 bg-border"></div>
+                  <div className="text-xs text-muted-foreground mt-1 -translate-x-1/2">
+                    {monthName}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Memory dots positioned on timeline */}
+            {graphStats.memories > 0 && (
+              <div className="absolute bottom-4 w-full h-8">
+                <div className="text-sm text-center text-muted-foreground">
+                  Timeline visualization coming soon...
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-8 text-sm text-muted-foreground text-center">
+            Showing {graphStats.memories} memories over the past year
+          </div>
+        </div>
+
+        {/* Control Panel */}
+        <div className="absolute top-4 left-4 z-40">
+          <Card className="bg-card/90 backdrop-blur-sm p-4">
+            <div className="flex gap-2">
+              {VIEW_MODES.map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <Button
+                    key={mode.id}
+                    variant={viewMode.id === mode.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode(mode)}
+                  >
+                    <Icon className="w-4 h-4 mr-1" />
+                    {mode.name}
+                  </Button>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full bg-background">
