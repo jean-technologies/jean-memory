@@ -311,7 +311,7 @@ export default function Dashboard() {
     return null;
   }
   
-  const displayedApps = showAllApps ? sortedApps : sortedApps.slice(0, 9);
+  const displayedApps = sortedApps;
 
   const handleConnectApp = (app: DashboardApp) => {
     if (app.is_connected || app.isComingSoon) return;
@@ -416,23 +416,10 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Header with stats and buttons */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                  Dashboard
-                </h1>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {connectedCount > 0 
-                      ? `${connectedCount} connected integration${connectedCount !== 1 ? 's' : ''}`
-                      : 'Connect your first integration to get started'
-                    }
-                  </p>
-                  {/* Refresh Status on the left */}
-                  <RefreshStatus />
-                </div>
-              </div>
+            {/* Header with refresh status and buttons */}
+            <div className="flex items-center justify-between gap-4 mb-8">
+              {/* Refresh Status */}
+              <RefreshStatus />
               
               <div className="flex items-center gap-3">
                 {/* Refresh All Button (without status) */}
@@ -452,7 +439,7 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable App Grid Container */}
-            <div className="flex-1 overflow-y-auto pr-2">
+            <div className="flex-1 overflow-y-auto pr-2 pb-8">
               {/* App Grid */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -492,20 +479,6 @@ export default function Dashboard() {
               </motion.div>
             </div>
             
-            {/* Show More Apps Button - Aligned with Life's Narrative bottom */}
-            {!showAllApps && sortedApps.length > 9 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="text-center pb-8 pt-4"
-                style={{ height: '60px' }}
-              >
-                <Button variant="ghost" onClick={() => setShowAllApps(true)}>
-                  Show {sortedApps.length - 9} more apps <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </motion.div>
-            )}
           </div>
 
           {/* Right Side */}
