@@ -184,12 +184,23 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
   if (app.id === 'chorus' && rawInstallCommand && rawInstallCommand.includes('#')) {
     const parts = rawInstallCommand.split('#');
     // Extract the args part for Chorus
-    rawInstallCommand = parts[1].replace('{USER_ID}', user?.id || '');
+    const currentUserId = user?.id || '';
+    rawInstallCommand = currentUserId ? parts[1].replace(/\{USER_ID\}/g, currentUserId) : parts[1];
   }
   
-  const installCommand = rawInstallCommand
-    .replace('{user_id}', user?.id || '')
-    .replace('{USER_ID}', user?.id || '');
+  // Ensure we have a valid user ID before replacing
+  const currentUserId = user?.id || '';
+  
+  // Debug logging to help troubleshoot
+  console.log('InstallModal Debug:', { 
+    userId: currentUserId, 
+    rawCommand: rawInstallCommand,
+    hasUser: !!user
+  });
+  
+  const installCommand = currentUserId ? rawInstallCommand
+    .replace(/\{user_id\}/g, currentUserId)
+    .replace(/\{USER_ID\}/g, currentUserId) : rawInstallCommand;
     
   const mcpLink = `${MCP_URL}/mcp/openmemory/sse/${user?.id}`;
   const chatgptLink = `${MCP_URL}/mcp/chatgpt/sse/${user?.id}`;
