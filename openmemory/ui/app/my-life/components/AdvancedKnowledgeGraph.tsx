@@ -123,21 +123,44 @@ const VIEW_MODES: ViewMode[] = [
     icon: Clock,
     description: 'Chronological view of memories and events',
     layoutConfig: {
-      name: 'cose',
+      name: 'preset',
+      positions: (node: any) => {
+        // Position nodes on actual timeline from oldest (left) to newest (right)
+        const createdAt = node.data('created_at');
+        if (!createdAt) {
+          return { x: 100, y: 300 }; // Default position for nodes without dates
+        }
+        
+        const nodeDate = new Date(createdAt);
+        
+        // Get the date range of all memories to create timeline scale
+        // This will be calculated dynamically when we have all nodes
+        const now = new Date();
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(now.getMonth() - 6);
+        
+        // Timeline spans 1000px from left to right
+        const timelineWidth = 1000;
+        const timelineStart = 100; // Left margin
+        
+        // Calculate position: older memories on left, newer on right
+        const totalTimeSpan = now.getTime() - sixMonthsAgo.getTime();
+        const nodeTimeFromStart = nodeDate.getTime() - sixMonthsAgo.getTime();
+        
+        // Clamp to timeline bounds
+        const timelineProgress = Math.max(0, Math.min(1, nodeTimeFromStart / totalTimeSpan));
+        const xPosition = timelineStart + (timelineProgress * timelineWidth);
+        
+        // Y position with vertical spread to avoid overlap, grouped by month
+        const monthGroup = nodeDate.getMonth() % 4; // Group into 4 horizontal lanes
+        const yPosition = 200 + (monthGroup * 80) + (Math.random() - 0.5) * 40;
+        
+        return { x: xPosition, y: yPosition };
+      },
       animate: true,
-      animationDuration: 1000,
-      nodeRepulsion: 4000,
-      idealEdgeLength: 50,
-      edgeElasticity: 100,
-      nestingFactor: 0.1,
-      gravity: 80,
-      numIter: 1000,
-      initialTemp: 200,
-      coolingFactor: 0.95,
-      minTemp: 1.0,
+      animationDuration: 1200,
       fit: true,
-      padding: 20,
-      randomize: false
+      padding: 80
     }
   },
   {
@@ -450,7 +473,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const cyNodes = nodes.map((node: any) => ({
         data: {
           id: node.id,
-          label: node.title || (node.content ? node.content.substring(0, 15) + '...' : '') || node.name || 'Memory',
+          label: node.title || (node.content ? node.content.substring(0, 25) : '') || node.name || 'Memory',
           nodeType: node.type,
           created_at: node.created_at,
           ...node
@@ -532,7 +555,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           return {
             data: {
               id: node.id,
-              label: node.content ? (node.content.substring(0, 12) + '...') : (node.name || 'Expanded'),
+              label: node.content ? node.content.substring(0, 20) : (node.name || 'Expanded'),
               content: node.content,
               nodeType: node.type,
               source: node.source,
