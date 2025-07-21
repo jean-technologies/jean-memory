@@ -27,7 +27,8 @@ import {
   RefreshCw,
   X,
   ChevronRight,
-  Info
+  Info,
+  Target
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { useSelector } from "react-redux";
@@ -105,16 +106,18 @@ const VIEW_MODES: ViewMode[] = [
       quality: 'proof',
       randomize: false,
       animate: true,
-      animationDuration: 1000,
-      nodeRepulsion: 8000,
-      idealEdgeLength: 100,
-      edgeElasticity: 0.45,
-      nestingFactor: 0.1,
-      gravity: 0.25,
-      numIter: 2500,
+      animationDuration: 1500,
+      nodeRepulsion: 20000,
+      idealEdgeLength: 200,
+      edgeElasticity: 0.1,
+      nestingFactor: 0.2,
+      gravity: 0.1,
+      numIter: 3000,
       tile: true,
-      tilingPaddingVertical: 10,
-      tilingPaddingHorizontal: 10,
+      tilingPaddingVertical: 50,
+      tilingPaddingHorizontal: 50,
+      nodeSeparation: 100,
+      packComponents: true
     }
   },
   {
@@ -123,17 +126,15 @@ const VIEW_MODES: ViewMode[] = [
     icon: Clock,
     description: 'Chronological view of memories and events',
     layoutConfig: {
-      name: 'grid',
-      rows: 10,
-      cols: 20,
-      position: (node: any) => {
-        const date = new Date(node.data('created_at') || Date.now());
-        const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24));
-        return {
-          row: Math.floor(Math.random() * 10),
-          col: daysSinceEpoch % 20
-        };
-      }
+      name: 'breadthfirst',
+      directed: true,
+      padding: 80,
+      spacingFactor: 2,
+      animate: true,
+      animationDuration: 1000,
+      fit: true,
+      avoidOverlap: true,
+      nodeDimensionsIncludeLabels: true
     }
   },
   {
@@ -144,13 +145,17 @@ const VIEW_MODES: ViewMode[] = [
     layoutConfig: {
       name: 'cola',
       animate: true,
-      maxSimulationTime: 4000,
-      ungrabifyWhileSimulating: true,
+      maxSimulationTime: 5000,
+      ungrabifyWhileSimulating: false,
       fit: true,
-      padding: 30,
-      nodeSpacing: 50,
-      edgeLength: 150,
-      randomize: false
+      padding: 80,
+      nodeSpacing: 120,
+      edgeLength: 200,
+      randomize: false,
+      avoidOverlap: true,
+      handleDisconnected: true,
+      convergenceThreshold: 0.01,
+      flow: { axis: 'y', minSeparation: 100 }
     }
   },
   {
@@ -161,9 +166,17 @@ const VIEW_MODES: ViewMode[] = [
     layoutConfig: {
       name: 'concentric',
       animate: true,
-      animationDuration: 1000,
-      levelWidth: () => 2,
+      animationDuration: 1500,
+      fit: true,
+      padding: 100,
+      startAngle: 0,
+      sweep: Math.PI * 2,
+      clockwise: true,
+      equidistant: false,
+      minNodeSpacing: 80,
+      levelWidth: () => 3,
       concentric: (node: any) => {
+        if (node.data('nodeType') === 'cluster') return 4;
         if (node.data('nodeType') === 'entity') return 3;
         if (node.data('nodeType') === 'memory') return 1;
         return 2;
@@ -220,6 +233,55 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
   
   const userId = useSelector((state: RootState) => state.profile.userId);
 
+  // Jean Memory brand colors and styling functions
+  const getBrandColorForNode = (node: any) => {
+    // Use Jean Memory's chart colors for different node types
+    if (node.type === 'memory') {
+      // Use app-specific colors based on source
+      const appColors: { [key: string]: string } = {
+        'claude': 'hsl(240, 70%, 65%)',
+        'cursor': 'hsl(45, 80%, 65%)',
+        'twitter': 'hsl(200, 80%, 65%)',
+        'windsurf': 'hsl(0, 70%, 65%)',
+        'chatgpt': 'hsl(180, 60%, 60%)',
+        'jean memory': 'hsl(150, 60%, 60%)',
+        'default': 'hsl(222, 47%, 45%)'
+      };
+      return appColors[node.source?.toLowerCase()] || appColors.default;
+    }
+    
+    // Entity colors using Jean Memory's system
+    const entityColors: { [key: string]: string } = {
+      'person': '#3B82F6',
+      'place': '#10B981', 
+      'event': '#F59E0B',
+      'topic': '#8B5CF6',
+      'object': '#EF4444',
+      'emotion': '#EC4899',
+      'default': '#6B7280'
+    };
+    
+    return entityColors[node.entity_type] || entityColors.default;
+  };
+
+  const getSmartNodeSize = (node: any) => {
+    // Progressive sizing based on content and importance
+    if (node.type === 'memory') {
+      const contentLength = node.content?.length || 0;
+      const baseSize = 40;
+      const sizeBonus = Math.min(contentLength / 100, 20); // Up to 20px bonus
+      return baseSize + sizeBonus;
+    }
+    return 35; // Smaller for entities
+  };
+
+  const getNodeClasses = (node: any) => {
+    let classes = 'jean-node';
+    if (node.type === 'memory') classes += ' memory-node';
+    if (node.is_expansion) classes += ' expansion-node';
+    return classes;
+  };
+
   // Initialize Cytoscape
   useEffect(() => {
     const initGraph = async () => {
@@ -236,60 +298,83 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           selector: 'node',
           style: {
             'background-color': (ele: any) => ENTITY_COLORS[ele.data('nodeType')] || '#6B7280',
-            'label': 'data(label)',
+            'label': (ele: any) => {
+              const label = ele.data('label') || '';
+              // Truncate long labels to prevent overlap
+              return label.length > 25 ? label.substring(0, 22) + '...' : label;
+            },
             'text-valign': 'center',
             'text-halign': 'center',
-            'font-size': '12px',
+            'font-size': (ele: any) => {
+              const type = ele.data('nodeType');
+              if (type === 'cluster') return '14px';
+              if (type === 'entity') return '11px';
+              return '10px';
+            },
             'color': '#ffffff',
             'text-outline-width': 2,
-            'text-outline-color': (ele: any) => ENTITY_COLORS[ele.data('nodeType')] || '#6B7280',
+            'text-outline-color': '#000000',
+            'font-weight': 'bold',
+            'text-wrap': 'wrap',
+            'text-max-width': (ele: any) => {
+              const type = ele.data('nodeType');
+              if (type === 'cluster') return '120px';
+              if (type === 'entity') return '80px';
+              return '60px';
+            },
             'width': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 80;
-              if (type === 'entity') return 50;
-              return 30;
+              if (type === 'cluster') return 100;
+              if (type === 'entity') return 60;
+              return 40;
             },
             'height': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 80;
-              if (type === 'entity') return 50;
-              return 30;
+              if (type === 'cluster') return 100;
+              if (type === 'entity') return 60;
+              return 40;
             },
-            'overlay-padding': 6,
-            'z-index': 10
+            'overlay-padding': 8,
+            'z-index': 10,
+            'border-width': 2,
+            'border-color': '#ffffff',
+            'border-opacity': 0.3
           }
         },
         {
           selector: 'node:selected',
           style: {
-            'border-width': 3,
+            'border-width': 4,
             'border-color': '#ffffff',
             'background-color': (ele: any) => ENTITY_COLORS[ele.data('nodeType')] || '#6B7280',
             'width': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 90;
-              if (type === 'entity') return 60;
-              return 40;
+              if (type === 'cluster') return 110;
+              if (type === 'entity') return 70;
+              return 50;
             },
             'height': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 90;
-              if (type === 'entity') return 60;
-              return 40;
+              if (type === 'cluster') return 110;
+              if (type === 'entity') return 70;
+              return 50;
             },
-            'z-index': 999
+            'z-index': 999,
+            'box-shadow': '0 0 20px rgba(255, 255, 255, 0.5)'
           }
         },
         {
           selector: 'edge',
           style: {
-            'width': (ele: any) => Math.max(1, ele.data('weight') || 1),
-            'line-color': '#4B5563',
-            'target-arrow-color': '#4B5563',
+            'width': (ele: any) => Math.max(2, (ele.data('weight') || 1) * 2),
+            'line-color': '#6B7280',
+            'target-arrow-color': '#6B7280',
             'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'opacity': 0.6,
-            'z-index': 5
+            'target-arrow-size': 8,
+            'curve-style': 'haystack',
+            'haystack-radius': 0.3,
+            'opacity': 0.4,
+            'z-index': 1
           }
         },
         {
@@ -297,8 +382,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           style: {
             'line-color': '#3B82F6',
             'target-arrow-color': '#3B82F6',
-            'opacity': 1,
-            'width': 3,
+            'opacity': 0.8,
+            'width': 4,
             'z-index': 999
           }
         },
@@ -322,8 +407,14 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       ],
       layout: viewMode.layoutConfig,
       minZoom: 0.1,
-      maxZoom: 3,
-      wheelSensitivity: 0.2
+      maxZoom: 5,
+      wheelSensitivity: 0.1,
+      boxSelectionEnabled: false,
+      autounselectify: false,
+      autoungrabify: false,
+      userZoomingEnabled: true,
+      userPanningEnabled: true,
+      selectionType: 'single'
     });
 
     // Event handlers
@@ -396,17 +487,32 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
 
       const { nodes, edges, metadata } = response.data;
       
-      // Convert to Cytoscape format
-      const cyNodes = nodes.map((node: any) => ({
-        data: {
-          id: node.id,
-          label: node.title || node.content?.substring(0, 50) || node.name || 'Unknown',
-          nodeType: node.type,
-          created_at: node.created_at,
-          ...node
-        },
-        position: node.position
-      }));
+      // Convert to Cytoscape format with improved styling
+      const cyNodes = nodes.map((node: any, index: number) => {
+        // Create better labels
+        let label = node.title || node.name || 'Memory';
+        if (!label && node.content) {
+          label = node.content.substring(0, 30).trim();
+          if (node.content.length > 30) label += '...';
+        }
+        
+        return {
+          data: {
+            id: node.id,
+            label: label,
+            nodeType: node.type || 'memory',
+            created_at: node.created_at,
+            source: node.source,
+            content: node.content,
+            brandColor: getBrandColorForNode(node),
+            size: getSmartNodeSize(node),
+            importance: node.strength || 1,
+            ...node
+          },
+          // Don't set position initially - let layout handle it
+          classes: getNodeClasses(node)
+        };
+      });
 
       const cyEdges = edges.map((edge: any, index: number) => ({
         data: {
@@ -418,12 +524,22 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         }
       }));
 
-      // Update graph
+      // Update graph with better rendering
       cyInstance.current?.elements().remove();
       cyInstance.current?.add([...cyNodes, ...cyEdges]);
       
-      // Apply layout
-      cyInstance.current?.layout(viewMode.layoutConfig).run();
+      // Apply layout with fit and center
+      const layout = cyInstance.current?.layout({
+        ...viewMode.layoutConfig,
+        stop: () => {
+          // Center and fit the graph after layout completes
+          setTimeout(() => {
+            cyInstance.current?.fit(undefined, 50);
+            cyInstance.current?.center();
+          }, 100);
+        }
+      });
+      layout?.run();
       
       // Update stats
       setGraphStats({
@@ -462,18 +578,25 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         
         // Convert expansion nodes to Cytoscape format with smart positioning
         const cyExpansionNodes = expansion_nodes.map((node: any, index: number) => {
-          // Position new nodes in a circle around the parent
+          // Position new nodes in a circle around the parent with better spacing
           const angle = (index / expansion_nodes.length) * 2 * Math.PI;
-          const radius = 150; // Distance from parent node
+          const radius = 200; // Increased distance from parent node
           const x = parentPos.x + Math.cos(angle) * radius;
           const y = parentPos.y + Math.sin(angle) * radius;
+          
+          // Create better labels for expansion nodes
+          let label = node.title || node.name || 'Memory';
+          if (!label && node.content) {
+            label = node.content.substring(0, 25).trim();
+            if (node.content.length > 25) label += '...';
+          }
           
           return {
             data: {
               id: node.id,
-              label: node.content?.substring(0, 50) || node.name || 'Unknown',
+              label: label,
               content: node.content,
-              nodeType: node.type,
+              nodeType: node.type || 'memory',
               source: node.source,
               isExpansion: true,
               parentNode: nodeId
@@ -497,8 +620,19 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         // Add expansion nodes and edges to graph
         cyInstance.current?.add([...cyExpansionNodes, ...cyExpansionEdges]);
         
-        // Re-apply layout to incorporate new nodes
-        cyInstance.current?.layout(viewMode.layoutConfig).run();
+        // Apply a gentle layout adjustment for the new nodes only
+        const layoutConfig = {
+          name: 'preset',
+          positions: (node: any) => {
+            const pos = node.position();
+            return pos && pos.x && pos.y ? pos : undefined;
+          },
+          fit: false,
+          animate: true,
+          animationDuration: 500
+        };
+        
+        cyInstance.current?.layout(layoutConfig).run();
         
         // Mark node as expanded
         setExpandedNodes(prev => new Set(prev).add(nodeId));
@@ -548,13 +682,19 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
 
   // Zoom controls
   const handleZoom = useCallback((delta: number) => {
-    const newZoom = Math.max(0.1, Math.min(3, zoomLevel + delta));
-    cyInstance.current?.zoom(newZoom);
-    cyInstance.current?.center();
+    const newZoom = Math.max(0.1, Math.min(5, zoomLevel + delta));
+    cyInstance.current?.zoom({
+      level: newZoom,
+      renderedPosition: { x: cyRef.current!.clientWidth / 2, y: cyRef.current!.clientHeight / 2 }
+    });
   }, [zoomLevel]);
 
   const handleFit = useCallback(() => {
-    cyInstance.current?.fit();
+    cyInstance.current?.fit(undefined, 50);
+  }, []);
+  
+  const handleCenter = useCallback(() => {
+    cyInstance.current?.center();
   }, []);
 
   return (
@@ -709,6 +849,9 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         </Button>
         <Button size="icon" variant="outline" onClick={handleFit}>
           <Maximize2 className="w-4 h-4" />
+        </Button>
+        <Button size="icon" variant="outline" onClick={handleCenter}>
+          <Target className="w-4 h-4" />
         </Button>
         <Button size="icon" variant="outline" onClick={loadGraphData}>
           <RefreshCw className="w-4 h-4" />
