@@ -158,15 +158,22 @@ const VIEW_MODES: ViewMode[] = [
     icon: Brain,
     description: 'Memories clustered by meaning and topics',
     layoutConfig: {
-      name: 'cola',
+      name: 'fcose',
+      quality: 'default',
+      randomize: false,
       animate: true,
-      maxSimulationTime: 4000,
-      ungrabifyWhileSimulating: true,
+      animationDuration: 1000,
+      nodeRepulsion: 2000,
+      idealEdgeLength: 50,
+      edgeElasticity: 0.45,
+      nestingFactor: 0.3,
+      gravity: 0.8,
+      numIter: 1500,
+      tile: true,
+      tilingPaddingVertical: 10,
+      tilingPaddingHorizontal: 10,
       fit: true,
-      padding: 30,
-      nodeSpacing: 50,
-      edgeLength: 100,
-      randomize: false
+      padding: 20
     }
   },
   {
@@ -484,15 +491,23 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       cyInstance.current?.elements().remove();
       cyInstance.current?.add([...cyNodes, ...cyEdges]);
       
-      // Apply layout with reasonable zoom level
+      // Apply layout with better zoom handling
       const layout = cyInstance.current?.layout({
         ...viewMode.layoutConfig,
         stop: () => {
-          // Center but don't auto-fit to avoid tiny nodes
           setTimeout(() => {
-            cyInstance.current?.center();
-            // Set a reasonable zoom level instead of auto-fit
-            cyInstance.current?.zoom(0.8);
+            if (viewMode.id === 'semantic') {
+              // For semantic view, fit but with minimum zoom to keep nodes readable
+              cyInstance.current?.fit();
+              const currentZoom = cyInstance.current?.zoom() || 1;
+              if (currentZoom < 0.5) {
+                cyInstance.current?.zoom(0.5);
+              }
+            } else {
+              // For other views, center with reasonable zoom
+              cyInstance.current?.center();
+              cyInstance.current?.zoom(0.8);
+            }
           }, 100);
         }
       });
@@ -630,8 +645,37 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     cyInstance.current?.fit();
   }, []);
 
+  // Get timeline memories for plotting
+  const getTimelineMemories = () => {
+    if (!cyInstance.current) return [];
+    
+    const memories = cyInstance.current.nodes().filter(node => node.data('nodeType') === 'memory');
+    return memories.map(node => ({
+      id: node.data('id'),
+      label: node.data('label'),
+      content: node.data('content'),
+      created_at: node.data('created_at'),
+      source: node.data('source')
+    }));
+  };
+
+  // Calculate position on timeline based on date
+  const getTimelinePosition = (createdAt: string) => {
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const memoryDate = new Date(createdAt);
+    
+    const totalTimeSpan = now.getTime() - oneYearAgo.getTime();
+    const memoryTimeFromStart = Math.max(0, memoryDate.getTime() - oneYearAgo.getTime());
+    const timelineProgress = Math.min(1, memoryTimeFromStart / totalTimeSpan);
+    
+    return timelineProgress * 100; // Return percentage position
+  };
+
   // Custom timeline view for temporal visualization
   if (viewMode.id === 'temporal') {
+    const timelineMemories = getTimelineMemories();
+    
     return (
       <div className="relative w-full h-full bg-background">
         {/* Loading State */}
@@ -653,16 +697,17 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           )}
         </AnimatePresence>
 
-        {/* Simple Timeline Container */}
-        <div className="w-full h-full flex flex-col items-center justify-center">
+        {/* Timeline Container */}
+        <div className="w-full h-full flex flex-col items-center justify-center p-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-foreground mb-2">Memory Timeline</h2>
-            <p className="text-muted-foreground">Chronological view of your memories</p>
+            <p className="text-muted-foreground">Chronological view of your memories over the past year</p>
           </div>
           
-          {/* Timeline Axis */}
-          <div className="relative w-full max-w-6xl h-64 border-b border-border">
-            <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+          {/* Timeline Visualization */}
+          <div className="relative w-full max-w-6xl h-80">
+            {/* Main timeline axis */}
+            <div className="absolute bottom-16 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500/20 via-blue-500/60 to-blue-500/20"></div>
             
             {/* Month markers */}
             {Array.from({ length: 12 }, (_, i) => {
@@ -672,27 +717,110 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
               const position = (i / 11) * 100;
               
               return (
-                <div key={i} className="absolute bottom-0" style={{ left: `${position}%` }}>
-                  <div className="w-px h-4 bg-border"></div>
-                  <div className="text-xs text-muted-foreground mt-1 -translate-x-1/2">
+                <div key={i} className="absolute bottom-16" style={{ left: `${position}%` }}>
+                  <div className="w-px h-6 bg-border -translate-x-0.5"></div>
+                  <div className="text-xs text-muted-foreground mt-2 -translate-x-1/2 whitespace-nowrap">
                     {monthName}
                   </div>
                 </div>
               );
             })}
             
-            {/* Memory dots positioned on timeline */}
-            {graphStats.memories > 0 && (
-              <div className="absolute bottom-4 w-full h-8">
-                <div className="text-sm text-center text-muted-foreground">
-                  Timeline visualization coming soon...
-                </div>
-              </div>
-            )}
+            {/* Memory plot points */}
+            {timelineMemories.map((memory, index) => {
+              if (!memory.created_at) return null;
+              
+              const position = getTimelinePosition(memory.created_at);
+              const verticalOffset = (index % 5) * 40 + 20; // Stack memories vertically to avoid overlap
+              const memoryDate = new Date(memory.created_at);
+              
+              // Color based on source app
+              const getMemoryColor = () => {
+                const source = memory.source?.toLowerCase() || 'default';
+                const colors: { [key: string]: string } = {
+                  'claude': '#8B5CF6',
+                  'cursor': '#F59E0B', 
+                  'twitter': '#06B6D4',
+                  'windsurf': '#EC4899',
+                  'chatgpt': '#10B981',
+                  'jean memory': '#6366F1',
+                  'default': '#6366F1'
+                };
+                return colors[source] || colors.default;
+              };
+              
+              return (
+                <motion.div
+                  key={memory.id}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="absolute cursor-pointer group"
+                  style={{ 
+                    left: `${position}%`,
+                    bottom: `${80 + verticalOffset}px`,
+                    transform: 'translateX(-50%)'
+                  }}
+                  onClick={() => {
+                    setSelectedNode({
+                      ...memory,
+                      nodeType: 'memory',
+                      label: memory.label || memory.content?.substring(0, 30) + '...'
+                    });
+                  }}
+                >
+                  {/* Memory dot */}
+                  <div
+                    className="w-4 h-4 rounded-full border-2 border-white shadow-lg transition-all duration-200 group-hover:scale-125 group-hover:shadow-xl"
+                    style={{ backgroundColor: getMemoryColor() }}
+                  />
+                  
+                  {/* Connection line to timeline */}
+                  <div 
+                    className="absolute w-px bg-gray-300 opacity-30 group-hover:opacity-60 transition-opacity"
+                    style={{
+                      left: '50%',
+                      top: '16px',
+                      height: `${verticalOffset + 16}px`,
+                      transform: 'translateX(-50%)'
+                    }}
+                  />
+                  
+                  {/* Hover tooltip */}
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg p-3 shadow-xl border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 min-w-64 max-w-80">
+                    <div className="text-sm font-medium mb-1">{memory.label || 'Memory'}</div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      {memoryDate.toLocaleDateString('en', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      {memory.source && ` • ${memory.source}`}
+                    </div>
+                    {memory.content && (
+                      <div className="text-xs text-muted-foreground">
+                        {memory.content.length > 100 
+                          ? memory.content.substring(0, 100) + '...'
+                          : memory.content
+                        }
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+            
+            {/* Timeline labels */}
+            <div className="absolute bottom-8 left-0 text-xs text-muted-foreground">
+              1 Year Ago
+            </div>
+            <div className="absolute bottom-8 right-0 text-xs text-muted-foreground">
+              Today
+            </div>
           </div>
           
           <div className="mt-8 text-sm text-muted-foreground text-center">
-            Showing {graphStats.memories} memories over the past year
+            Showing {timelineMemories.length} memories over the past year
           </div>
         </div>
 
@@ -717,6 +845,72 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
             </div>
           </Card>
         </div>
+
+        {/* Selected Memory Details */}
+        <AnimatePresence>
+          {selectedNode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-4 left-4 right-4 z-40 max-w-2xl mx-auto"
+            >
+              <Card className="bg-card/95 backdrop-blur-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="p-2 rounded-full"
+                        style={{ backgroundColor: '#6366F1' }}
+                      >
+                        <Brain className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{selectedNode.label}</CardTitle>
+                        <CardDescription>
+                          {selectedNode.created_at ? 
+                            new Date(selectedNode.created_at).toLocaleDateString('en', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            }) : 
+                            'No date'
+                          }
+                          {selectedNode.source && ` • ${selectedNode.source}`}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setSelectedNode(null)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {selectedNode.content && (
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {selectedNode.content}
+                    </p>
+                  )}
+                  <Button 
+                    size="sm" 
+                    className="mt-3"
+                    onClick={() => {
+                      window.location.href = `/memory/${selectedNode.id}`;
+                    }}
+                  >
+                    View Memory Details
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }

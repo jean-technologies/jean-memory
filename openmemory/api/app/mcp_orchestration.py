@@ -264,6 +264,15 @@ Provide rich context that helps understand them deeply, but keep it conversation
             # Step 4: Execute context retrieval
             context_results = await context_task
             
+            # Step 4.5: AI QUALITY CHECK - Don't return weak context
+            is_quality_context, quality_reason = await self._ai_evaluate_context_quality(context_results, user_message)
+            if not is_quality_context:
+                processing_time = time.time() - orchestration_start_time
+                logger.info(f"🎯 [AI Filter] Context not relevant enough in {processing_time:.2f}s - user {user_id}: {quality_reason}")
+                return ""  # Return no context rather than irrelevant context
+            
+            logger.info(f"✅ [AI Quality] Context passed AI relevance check - user {user_id}: {quality_reason}")
+            
             # Step 5: Format the context using top-down approach
             enhanced_context = self._format_layered_context(context_results, plan)
             
@@ -293,7 +302,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 
                 # Get background tasks context
                 try:
-                    from app.mcp_server import background_tasks_var
+                    from app.context import background_tasks_var
                     background_tasks = background_tasks_var.get()
                 except (LookupError, ImportError):
                     background_tasks = None
@@ -329,7 +338,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 
                 # Get background tasks context
                 try:
-                    from app.mcp_server import background_tasks_var
+                    from app.context import background_tasks_var
                     background_tasks = background_tasks_var.get()
                 except (LookupError, ImportError):
                     background_tasks = None
@@ -366,6 +375,185 @@ Provide rich context that helps understand them deeply, but keep it conversation
         except Exception as e:
             logger.error(f"❌ [Standard] Background memory saving failed: {e}")
 
+    async def _ai_context_relevance_check(self, user_message: str) -> tuple[bool, str]:
+        """
+        PURE AI INTELLIGENCE - No heuristics, just fast Gemini Flash decision
+        Target: 1-3 seconds with much higher accuracy than any hardcoded rules
+        """
+        try:
+            prompt = f"""You are an intelligent context engine. Decide if this user message would benefit from personal context about the user.
+
+USER MESSAGE: "{user_message}"
+
+CONTEXT IS HELPFUL FOR:
+- Questions about their work, projects, interests, preferences
+- Requests for personalized advice or recommendations  
+- References to past conversations or experiences
+- Anything that would be better answered knowing who they are
+
+CONTEXT NOT NEEDED FOR:
+- Simple greetings and social pleasantries
+- General factual questions about the world
+- Math calculations or definitions
+- Generic requests that don't depend on personal history
+
+Be intelligent about edge cases. "hey" might be a greeting OR the start of a deeper conversation.
+
+Respond with just: CONTEXT or NO_CONTEXT"""
+
+            # Use Gemini Flash for speed and intelligence
+            gemini = self._get_gemini()
+            response = await asyncio.wait_for(
+                gemini.generate_response(prompt), 
+                timeout=3.0  # Intelligence over speed hacks
+            )
+            
+            needs_context = "CONTEXT" in response.strip().upper()
+            return needs_context, f"ai_decision_{'context' if needs_context else 'no_context'}"
+            
+        except asyncio.TimeoutError:
+            logger.warning("AI context check timed out, defaulting to provide context")
+            return True, "ai_timeout_default"
+        except Exception as e:
+            logger.warning(f"AI context check failed: {e}, defaulting to provide context")
+            return True, "ai_error_default"
+
+    async def _ai_should_save_memory(self, user_message: str) -> bool:
+        """
+        Let AI decide if this message contains memorable information
+        No hardcoded rules about length or content - pure intelligence
+        """
+        try:
+            prompt = f"""Should this message be saved to the user's long-term memory?
+
+USER MESSAGE: "{user_message}"
+
+SAVE IF IT CONTAINS:
+- New information about the user (facts, preferences, experiences)
+- Important context for future conversations
+- Personal details, goals, or insights
+- Anything that would help understand them better later
+
+DON'T SAVE IF IT'S:
+- Just a greeting or acknowledgment
+- A simple question with no personal information
+- Temporary states or casual remarks
+
+Respond with just: SAVE or SKIP"""
+
+            gemini = self._get_gemini()
+            response = await asyncio.wait_for(
+                gemini.generate_response(prompt), 
+                timeout=2.0
+            )
+            
+            should_save = "SAVE" in response.strip().upper()
+            logger.info(f"🤖 [AI Memory] {'Saving' if should_save else 'Skipping'} memory for: '{user_message[:50]}...'")
+            return should_save
+            
+        except Exception as e:
+            logger.warning(f"AI memory decision failed: {e}, defaulting to save")
+            return len(user_message) > 10  # Minimal fallback
+
+    async def _ai_evaluate_context_quality(self, context_results: Dict, user_message: str) -> tuple[bool, str]:
+        """
+        Use AI to evaluate if the retrieved context is actually helpful
+        Much more intelligent than keyword matching
+        """
+        try:
+            # Extract context items
+            context_items = []
+            if context_results.get('ai_guided_context'):
+                context_items.extend(context_results['ai_guided_context'])
+            elif context_results.get('relevant_memories'):
+                context_items.extend(context_results['relevant_memories'].values())
+            elif context_results.get('comprehensive_memories'):
+                context_items.extend(context_results['comprehensive_memories'].values())
+            
+            if not context_items:
+                return False, "no_context_found"
+            
+            # Prepare context for AI evaluation
+            context_preview = "\n".join([f"- {item}" for item in context_items[:5]])
+            
+            prompt = f"""Evaluate if this retrieved context is helpful for answering the user's message.
+
+USER MESSAGE: "{user_message}"
+
+RETRIEVED CONTEXT:
+{context_preview}
+
+Is this context relevant and helpful for responding to the user's message?
+Consider:
+- Does it provide useful background about the user?
+- Would it help give a more personalized response?
+- Is there meaningful connection to their question?
+
+Respond with: HELPFUL or NOT_HELPFUL"""
+
+            gemini = self._get_gemini()
+            response = await asyncio.wait_for(
+                gemini.generate_response(prompt),
+                timeout=2.0
+            )
+            
+            is_helpful = "HELPFUL" in response.strip().upper()
+            reason = f"ai_quality_{'helpful' if is_helpful else 'not_helpful'}"
+            
+            return is_helpful, reason
+            
+        except Exception as e:
+            logger.warning(f"AI quality evaluation failed: {e}, defaulting to show context")
+            return True, "ai_quality_error_default"
+
+    def _evaluate_context_quality(self, context_results: Dict, user_message: str) -> tuple[bool, str]:
+        """
+        SMART RELEVANCE SCORING: Don't return weak/irrelevant context
+        Returns (is_quality_context, reason)
+        """
+        try:
+            # Extract context items from different result types
+            context_items = []
+            
+            if context_results.get('ai_guided_context'):
+                context_items.extend(context_results['ai_guided_context'])
+            elif context_results.get('relevant_memories'):
+                context_items.extend(context_results['relevant_memories'].values())
+            elif context_results.get('comprehensive_memories'):
+                context_items.extend(context_results['comprehensive_memories'].values())
+            
+            if not context_items:
+                return False, "no_context_items"
+            
+            # Quality checks
+            if len(context_items) < 2:
+                return False, "too_few_results"
+            
+            # Check for minimum relevance - look for keyword overlap
+            user_words = set(user_message.lower().split())
+            relevant_count = 0
+            
+            for item in context_items[:5]:  # Check top 5 items
+                if isinstance(item, str):
+                    item_words = set(item.lower().split())
+                    # Check for meaningful word overlap (not just stop words)
+                    overlap = user_words.intersection(item_words)
+                    meaningful_overlap = overlap - {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'was', 'are', 'were', 'i', 'you', 'we', 'they', 'he', 'she', 'it'}
+                    
+                    if len(meaningful_overlap) >= 2:  # At least 2 meaningful words overlap
+                        relevant_count += 1
+            
+            relevance_ratio = relevant_count / min(len(context_items), 5)
+            
+            if relevance_ratio >= 0.4:  # At least 40% of top items are relevant
+                return True, f"quality_context_{relevance_ratio:.1f}"
+            else:
+                return False, f"poor_relevance_{relevance_ratio:.1f}"
+                
+        except Exception as e:
+            logger.warning(f"Context quality evaluation failed: {e}")
+            return True, "evaluation_failed_default"  # Default to showing context if evaluation fails
+
     async def orchestrate_smart_context(
         self, 
         user_message: str, 
@@ -375,14 +563,42 @@ Provide rich context that helps understand them deeply, but keep it conversation
         background_tasks: BackgroundTasks = None
     ) -> str:
         """
-        Main orchestration method with enhanced narrative caching capability.
+        Main orchestration method with LIGHTNING FAST context relevance checking.
         
         ENHANCED STRATEGY: 
-        - Narrative Cache: Check for cached user narrative ONLY for new conversations
-        - Deep Memory Analysis: For new conversations when no cache exists
-        - Standard Orchestration: For continuing conversations (5-10s, targeted)
+        - ⚡ Lightning Fast Check: Ultra-fast exit for obvious cases (< 2s)
+        - 🎯 Smart Context: Only provide context when truly helpful
+        - 📝 Background Saving: Always save memorable content async
+        - 🚀 Speed Optimized: Most responses in < 2s, complex in < 15s
         """
-        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}")
+        orchestration_start = time.time()
+        logger.info(f"🚀 [Jean Memory] Starting FAST orchestration for user {user_id}")
+        
+        try:
+            # STEP 1: AI-POWERED context relevance check
+            check_start = time.time()
+            should_provide_context, reason = await self._ai_context_relevance_check(user_message)
+            check_duration = time.time() - check_start
+            
+            if not should_provide_context:
+                logger.info(f"⚡ [FAST EXIT] No context needed in {check_duration:.2f}s - user {user_id}: {reason}")
+                
+                # Use AI to decide if we should save this message as memory
+                should_save = await self._ai_should_save_memory(user_message)
+                if should_save:
+                    asyncio.create_task(self._handle_background_memory_saving(
+                        user_message, user_id, client_name, is_new_conversation
+                    ))
+                
+                total_time = time.time() - orchestration_start
+                logger.info(f"✅ [FAST EXIT] Complete in {total_time:.2f}s")
+                return ""  # No context needed
+            
+            logger.info(f"✅ [CONTEXT NEEDED] in {check_duration:.2f}s - user {user_id}: {reason}")
+            
+        except Exception as e:
+            logger.error(f"Fast context check failed for user {user_id}: {e}")
+            # Continue with full orchestration if fast check fails
         
         try:
             # SMART CACHE: Only check for cached narrative on NEW conversations
@@ -809,7 +1025,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
             from app.utils.memory import get_memory_client
             
             # CRITICAL FIX: Set context variables in background task since they're lost
-            from app.mcp_server import user_id_var, client_name_var
+            from app.context import user_id_var, client_name_var
             user_token = user_id_var.set(user_id)
             client_token = client_name_var.set(client_name)
             
