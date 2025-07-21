@@ -153,45 +153,6 @@ const VIEW_MODES: ViewMode[] = [
     }
   },
   {
-    id: 'semantic',
-    name: 'By Source',
-    icon: Layers,
-    description: 'Memories organized by source app in concentric rings',
-    layoutConfig: {
-      name: 'concentric',
-      animate: true,
-      animationDuration: 1000,
-      fit: true,
-      padding: 30,
-      startAngle: 0,
-      sweep: Math.PI * 2,
-      clockwise: true,
-      equidistant: false,
-      minNodeSpacing: 60,
-      boundingBox: undefined,
-      avoidOverlap: true,
-      height: undefined,
-      width: undefined,
-      spacingFactor: undefined,
-      concentric: (node: any) => {
-        const nodeType = node.data('nodeType');
-        const source = node.data('source')?.toLowerCase() || '';
-        const importance = node.data('importance') || 1;
-        
-        // Create semantic rings: source apps in outer rings, general memories in inner rings
-        if (source === 'claude' || source === 'cursor') return 4; // Outermost ring for development tools
-        if (source === 'twitter' || source === 'windsurf') return 3; // Social/creative tools
-        if (source === 'chatgpt' || source === 'jean memory') return 2; // AI tools
-        if (nodeType === 'entity') return 1; // Entities in center
-        return Math.max(1, 5 - importance); // Other memories by importance
-      },
-      levelWidth: (nodes: any) => {
-        // Wider rings for more nodes
-        return Math.max(2, Math.ceil(nodes.length / 6));
-      }
-    }
-  },
-  {
     id: 'entities',
     name: 'Entities',
     icon: Layers,
