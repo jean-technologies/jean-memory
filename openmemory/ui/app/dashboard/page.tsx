@@ -17,7 +17,6 @@ import { useToast } from "@/components/ui/use-toast";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
 import { SyncModal } from '@/components/dashboard/SyncModal';
 import { RequestIntegrationModal } from '@/components/dashboard/RequestIntegrationModal';
-import { RefreshAllButton, RefreshStatus } from "@/components/dashboard/RefreshAllButton";
 import { MigrationBanner } from "./MigrationBanner";
 import { ProfileCompletionBanner } from "./ProfileCompletionBanner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -302,10 +301,6 @@ export default function Dashboard() {
     }
   }, [posthog, user]);
 
-  const handleRefreshComplete = () => {
-    // Refresh the apps list to show updated data - memory count will be automatically updated via useEffect
-    fetchApps();
-  };
 
   if (!mounted) {
     return null;
@@ -416,26 +411,17 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Header with refresh status and buttons */}
-            <div className="flex items-center justify-between gap-4 mb-8">
-              {/* Refresh Status */}
-              <RefreshStatus />
-              
-              <div className="flex items-center gap-3">
-                {/* Refresh All Button (without status) */}
-                <RefreshAllButton onRefreshComplete={handleRefreshComplete} showStatus={false} />
-                
-                {/* Add Integration button */}
-                <Button
-                  onClick={() => setIsSyncModalOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="whitespace-nowrap"
-                >
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Add Integration
-                </Button>
-              </div>
+            {/* Header with Add Integration button */}
+            <div className="flex items-center justify-end gap-4 mb-8">
+              <Button
+                onClick={() => setIsSyncModalOpen(true)}
+                variant="outline"
+                size="sm"
+                className="whitespace-nowrap"
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Add Integration
+              </Button>
             </div>
 
             {/* Scrollable App Grid Container */}
