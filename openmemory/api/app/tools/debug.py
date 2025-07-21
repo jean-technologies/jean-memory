@@ -1,7 +1,9 @@
 import logging
+import asyncio
 import datetime
 import os
 import json
+from typing import Optional
 
 from app.mcp_instance import mcp
 from app.context import user_id_var, client_name_var
@@ -12,9 +14,24 @@ from app.analytics import track_tool_usage
 
 logger = logging.getLogger(__name__)
 
-def _track_tool_usage(tool_name: str, properties: dict = None):
-    """Analytics tracking - only active if enabled via environment variable"""
-    pass
+@mcp.tool(description="🔧 SIMPLE TEST - Use this to verify Claude can call tools successfully. Returns basic info about your connection.")
+async def simple_test() -> str:
+    """
+    Simple test tool to verify MCP connection is working.
+    """
+    try:
+        supa_uid = user_id_var.get(None)
+        client_name = client_name_var.get(None)
+        
+        timestamp = datetime.datetime.now().isoformat()
+        service_name = os.getenv('RENDER_SERVICE_NAME', 'unknown-service')
+        
+        return f"✅ Test successful! Connected to {service_name} at {timestamp}. User: {supa_uid[:8] if supa_uid else 'unknown'}, Client: {client_name or 'unknown'}"
+        
+    except Exception as e:
+        logger.error(f"Error in simple_test: {e}", exc_info=True)
+        return f"❌ Test failed: {str(e)}"
+
 
 @mcp.tool(description="DEBUG: Directly fetch a point's payload from Qdrant.")
 async def debug_get_qdrant_payload(point_id: str) -> str:
