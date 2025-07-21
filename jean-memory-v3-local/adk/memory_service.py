@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from services.stm_service import STMService
 from services.ltm_service import LTMService
 from services.memory_shuttle import MemoryShuttle
+from services.google_memory_service import GoogleADKMemoryService
 
 logger = logging.getLogger(__name__)
 
@@ -381,18 +382,62 @@ class HybridMemoryService(BaseMemoryService):
             }
         }
 
+class GoogleADKService(BaseMemoryService):
+    """Google ADK Memory Service wrapper for Tier 1 operations"""
+    
+    def __init__(self, google_service: GoogleADKMemoryService):
+        self.google = google_service
+    
+    async def add_memory(self, content: Union[str, List], user_id: str, 
+                        metadata: Optional[Dict] = None) -> Dict[str, Any]:
+        """Add memory to Google ADK (Tier 1)"""
+        content_str = content if isinstance(content, str) else str(content)
+        result = await self.google.add_memory_to_google_adk(content_str, user_id, metadata)
+        
+        if result:
+            return result
+        else:
+            raise Exception("Failed to add memory to Google ADK")
+    
+    async def search_memories(self, query: str, user_id: str, 
+                             limit: int = 10) -> MemoryResult:
+        """Search Google ADK memories"""
+        start_time = datetime.now()
+        
+        memories = await self.google.search_google_memories(query, user_id, limit)
+        
+        execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+        
+        return MemoryResult(
+            memories=memories,
+            source="google_adk",
+            execution_time_ms=execution_time
+        )
+    
+    async def get_memory(self, memory_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get memory from Google ADK"""
+        return await self.google.get_memory_by_id(memory_id, user_id)
+    
+    async def delete_memory(self, memory_id: str, user_id: str) -> bool:
+        """Delete memory from Google ADK"""
+        return await self.google.delete_memory(memory_id, user_id)
+
 # Factory function for creating appropriate memory service
 def create_memory_service(stm_service: STMService, 
                          ltm_service: Optional[LTMService] = None,
-                         shuttle: Optional[MemoryShuttle] = None) -> BaseMemoryService:
+                         shuttle: Optional[MemoryShuttle] = None,
+                         google_service: Optional[GoogleADKMemoryService] = None) -> BaseMemoryService:
     """Create appropriate memory service based on available components"""
     
-    if ltm_service and shuttle:
-        # Full hybrid service
+    # Prioritize Google ADK if available (Tier 1)
+    if google_service:
+        return GoogleADKService(google_service)
+    elif ltm_service and shuttle:
+        # Full hybrid service (Tier 2 + 3)
         return HybridMemoryService(stm_service, ltm_service, shuttle)
     elif ltm_service:
-        # Cloud-only service (unusual case)
+        # Cloud-only service (Tier 3)
         return CloudMemoryService(ltm_service)
     else:
-        # STM-only service
+        # STM-only service (Tier 2)
         return InMemoryMemoryService(stm_service)
