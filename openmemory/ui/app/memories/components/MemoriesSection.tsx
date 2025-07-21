@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Category, Client } from "../../../components/types";
 import { MemoryTable } from "./MemoryTable";
-import { MemoryPagination } from "./MemoryPagination";
 import { CreateMemoryDialog } from "./CreateMemoryDialog";
-import { PageSizeSelector } from "./PageSizeSelector";
 import { useMemoriesApi } from "@/hooks/useMemoriesApi";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MemoryTableSkeleton } from "@/skeleton/MemoryTableSkeleton";
@@ -12,12 +10,7 @@ import { MemoryTableSkeleton } from "@/skeleton/MemoryTableSkeleton";
 interface MemoriesSectionProps {
   memories: any[];
   totalItems: number;
-  totalPages: number;
-  currentPage: number;
-  itemsPerPage: number;
   isLoading: boolean;
-  setCurrentPage: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -25,12 +18,7 @@ interface MemoriesSectionProps {
 export function MemoriesSection({
   memories,
   totalItems,
-  totalPages,
-  currentPage,
-  itemsPerPage,
   isLoading,
-  setCurrentPage,
-  onPageSizeChange,
   onClearFilters,
   hasActiveFilters,
 }: MemoriesSectionProps) {
@@ -42,13 +30,6 @@ export function MemoriesSection({
     "all"
   );
   const [selectedClient, setSelectedClient] = useState<Client | "all">("all");
-
-  const handlePageSizeChange = (size: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1"); // Reset to page 1 when changing page size
-    params.set("size", size.toString());
-    router.push(`?${params.toString()}`);
-  };
 
   if (isLoading) {
     return (
@@ -69,21 +50,10 @@ export function MemoriesSection({
         {memories.length > 0 ? (
           <>
             <MemoryTable memories={memories} />
-            <div className="flex items-center justify-between mt-4">
-              <PageSizeSelector
-                pageSize={itemsPerPage}
-                onPageSizeChange={handlePageSizeChange}
-              />
-              <div className="text-sm text-zinc-500 mr-2">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                {totalItems} memories
+            <div className="flex items-center justify-end mt-4">
+              <div className="text-sm text-zinc-500">
+                Total: {totalItems} memories
               </div>
-              <MemoryPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={setCurrentPage}
-              />
             </div>
           </>
         ) : (

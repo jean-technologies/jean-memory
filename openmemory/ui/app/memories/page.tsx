@@ -21,16 +21,12 @@ export default function MemoriesPage() {
   const { fetchMemories } = useMemoriesApi();
   const [memories, setMemories] = useState<any[]>([]);
   const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const filters = useSelector((state: RootState) => state.filters.apps);
 
-  const currentPage = Number(searchParams.get("page")) || 1;
-  const itemsPerPage = Number(searchParams.get("size")) || 10;
-
   useEffect(() => {
     loadMemories();
-  }, [currentPage, itemsPerPage, searchParams, filters]);
+  }, [searchParams, filters]);
 
   const loadMemories = async () => {
     setIsLoading(true);
@@ -49,24 +45,10 @@ export default function MemoriesPage() {
       );
       setMemories(result.memories);
       setTotalItems(result.total);
-      setTotalPages(Math.ceil(result.total / itemsPerPage));
     } catch (error) {
       console.error("Failed to fetch memories:", error);
     }
     setIsLoading(false);
-  };
-
-  const setCurrentPage = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", page.toString());
-    router.push(`?${params.toString()}`);
-  };
-
-  const handlePageSizeChange = (size: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-    params.set("size", size.toString());
-    router.push(`?${params.toString()}`);
   };
 
   const handleClearFilters = () => {
@@ -95,12 +77,7 @@ export default function MemoriesPage() {
             <MemoriesSection
               memories={memories}
               totalItems={totalItems}
-              totalPages={totalPages}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
               isLoading={isLoading}
-              setCurrentPage={setCurrentPage}
-              onPageSizeChange={handlePageSizeChange}
               onClearFilters={handleClearFilters}
               hasActiveFilters={
                 filters.selectedApps.length > 0 ||
