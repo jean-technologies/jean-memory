@@ -1,301 +1,263 @@
 """
-Memory Service for Jean Memory V3 Local
-Handles mem0 with FAISS backend for local memory operations
+Jean Memory V3 Main Service
+Orchestrates STM + LTM + Memory Shuttle + ADK interfaces
 """
 
 import asyncio
 import logging
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
-from pathlib import Path
 
-# Import mem0 for memory management with FAISS backend
-try:
-    from mem0 import Memory
-    import numpy as np
-except ImportError as e:
-    logging.error(f"Required dependencies not installed: {e}")
-    logging.error("Please run: pip install mem0ai")
-    raise
-
-from config import get_config, get_data_paths, get_mem0_config
-from .graph_service import GraphService
+from config import get_config
+from services.stm_service import STMService
+from services.ltm_service import LTMService
+from services.memory_shuttle import MemoryShuttle
+from services.google_memory_service import GoogleADKMemoryService
+from services.hybrid_orchestrator import HybridMemoryOrchestrator
+from adk.session_service import InMemorySessionService, CloudSessionService
+from adk.memory_service import create_memory_service, BaseMemoryService
 
 logger = logging.getLogger(__name__)
 
-class LocalMemory:
-    """Local memory item structure"""
-    
-    def __init__(self, 
-                 id: str,
-                 content: str,
-                 embedding: Optional[np.ndarray] = None,
-                 metadata: Optional[Dict[str, Any]] = None,
-                 created_at: Optional[datetime] = None):
-        self.id = id
-        self.content = content
-        self.embedding = embedding
-        self.metadata = metadata or {}
-        self.created_at = created_at or datetime.now()
-        self.updated_at = datetime.now()
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API responses"""
-        return {
-            "id": self.id,
-            "content": self.content,
-            "metadata": self.metadata,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "source": "local"
-        }
-
-class MemoryService:
-    """Local memory service using mem0 with FAISS backend"""
+class JeanMemoryV3Service:
+    """Main Jean Memory V3 service implementing the complete V3 architecture"""
     
     def __init__(self):
         self.config = get_config()
-        self.data_paths = get_data_paths()
-        self.mem0_config = get_mem0_config()
         
-        # Core components
-        self.memory_client: Optional[Memory] = None
-        self.graph_service = GraphService()
-        self.memories: Dict[str, LocalMemory] = {}
+        # Core V3 components
+        self.stm_service: Optional[STMService] = None
+        self.ltm_service: Optional[LTMService] = None
+        self.memory_shuttle: Optional[MemoryShuttle] = None
+        
+        # Google ADK integration
+        self.google_service: Optional[GoogleADKMemoryService] = None
+        self.hybrid_orchestrator: Optional[HybridMemoryOrchestrator] = None
+        
+        # ADK interfaces
+        self.session_service: Optional[InMemorySessionService] = None
+        self.cloud_session_service: Optional[CloudSessionService] = None
+        self.memory_service: Optional[BaseMemoryService] = None
         
         # State
         self.is_initialized = False
         
     async def initialize(self):
-        """Initialize the memory service"""
+        """Initialize the complete Jean Memory V3 system"""
         try:
-            logger.info("🧠 Initializing mem0 with FAISS backend...")
+            logger.info("🚀 Initializing Jean Memory V3 - STM + LTM + Memory Shuttle + ADK...")
             
-            # Initialize mem0 with FAISS configuration
-            await self._initialize_mem0_client()
+            # 1. Initialize STM (Short-Term Memory)
+            logger.info("🧠 Initializing STM (Short-Term Memory)...")
+            self.stm_service = STMService()
+            await self.stm_service.initialize()
             
-            # Initialize graph service
-            await self.graph_service.initialize()
+            # 2. Initialize LTM (Long-Term Memory)
+            logger.info("☁️  Initializing LTM (Long-Term Memory)...")
+            self.ltm_service = LTMService()
+            await self.ltm_service.initialize()
             
-            # Load existing memories
-            await self._load_existing_memories()
+            # 3. Initialize Memory Shuttle
+            logger.info("🚀 Initializing Memory Shuttle...")
+            self.memory_shuttle = MemoryShuttle(self.stm_service, self.ltm_service)
+            await self.memory_shuttle.start()
+            
+            # 4. Initialize Google ADK Service
+            logger.info("🔗 Initializing Google ADK Service...")
+            self.google_service = GoogleADKMemoryService()
+            await self.google_service.initialize()
+            
+            # 5. Initialize Hybrid Memory Orchestrator
+            logger.info("⚡ Initializing Hybrid Memory Orchestrator...")
+            self.hybrid_orchestrator = HybridMemoryOrchestrator()
+            await self.hybrid_orchestrator.initialize(
+                google_service=self.google_service,
+                stm_service=self.stm_service,
+                ltm_service=self.ltm_service,
+                shuttle=self.memory_shuttle
+            )
+            
+            # 6. Initialize ADK Session Services
+            logger.info("📝 Initializing ADK Session Services...")
+            self.session_service = InMemorySessionService()
+            if self.ltm_service.is_ready():
+                self.cloud_session_service = CloudSessionService(self.ltm_service)
+            
+            # 7. Initialize ADK Memory Service
+            logger.info("🔗 Initializing ADK Memory Service...")
+            self.memory_service = create_memory_service(
+                stm_service=self.stm_service,
+                ltm_service=self.ltm_service,
+                shuttle=self.memory_shuttle,
+                google_service=self.google_service
+            )
             
             self.is_initialized = True
-            logger.info(f"✅ Memory service initialized with mem0 + FAISS backend + Neo4j graph")
+            
+            # Log system status
+            await self._log_system_status()
+            
+            logger.info("🎉 Jean Memory V3 initialization complete!")
             
         except Exception as e:
-            logger.error(f"❌ Memory service initialization failed: {e}")
+            logger.error(f"❌ Jean Memory V3 initialization failed: {e}")
             raise
     
-    async def _initialize_mem0_client(self):
-        """Initialize mem0 client with FAISS backend"""
+    async def _log_system_status(self):
+        """Log the status of all V3 components"""
         try:
-            logger.info(f"📥 Initializing mem0 with FAISS backend...")
+            logger.info("📊 Jean Memory V3 System Status:")
+            logger.info(f"  🧠 STM Ready: {self.stm_service.is_ready() if self.stm_service else False}")
+            logger.info(f"  ☁️  LTM Ready: {self.ltm_service.is_ready() if self.ltm_service else False}")
+            logger.info(f"  🚀 Shuttle Running: {self.memory_shuttle.is_running if self.memory_shuttle else False}")
+            logger.info(f"  🔗 Google ADK Ready: {self.google_service.initialized if self.google_service else False}")
+            logger.info(f"  ⚡ Hybrid Orchestrator Ready: {self.hybrid_orchestrator.initialized if self.hybrid_orchestrator else False}")
+            logger.info(f"  📝 Sessions Ready: {self.session_service is not None}")
+            logger.info(f"  🔗 Memory Service: {type(self.memory_service).__name__ if self.memory_service else 'None'}")
             
-            # Run in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
-            self.memory_client = await loop.run_in_executor(
-                None, 
-                Memory,
-                self.mem0_config
-            )
-            
-            logger.info(f"✅ mem0 client initialized with FAISS backend")
-            
+            # Get initial stats
+            if self.memory_service:
+                stats = await self.memory_service.get_stats()
+                logger.info(f"  📈 Service Type: {stats.get('service_type', 'unknown')}")
+                
         except Exception as e:
-            logger.error(f"❌ Failed to initialize mem0 client: {e}")
-            raise
+            logger.error(f"❌ Failed to log system status: {e}")
     
-    async def _load_existing_memories(self):
-        """Load existing memories from disk (if any)"""
-        # For now, start fresh. In future versions, we'll add persistence
-        logger.info("📁 Starting with empty memory store")
-        pass
-    
+    # V3 ADK Memory Interface Methods
     async def add_memory(self, 
-                        content: str, 
+                        content: Union[str, List], 
                         user_id: str,
-                        metadata: Optional[Dict[str, Any]] = None) -> LocalMemory:
-        """Add a new memory to local storage using mem0"""
-        try:
-            # Prepare metadata for mem0
-            mem0_metadata = {
-                **(metadata or {}),
-                "user_id": user_id,
-                "type": "local",
-                "source": "jean_memory_v3"
-            }
+                        metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Add memory using V3 ADK Memory Service"""
+        if not self.memory_service:
+            raise Exception("Memory service not initialized")
             
-            # Add memory using mem0
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None,
-                self.memory_client.add,
-                content,
-                user_id,
-                mem0_metadata
-            )
-            
-            # Extract memory ID from mem0 result
-            memory_id = result.get('id') or f"local_{user_id}_{int(datetime.now().timestamp() * 1000)}"
-            
-            # Create local memory object for our tracking
-            memory = LocalMemory(
-                id=memory_id,
-                content=content,
-                metadata=mem0_metadata
-            )
-            
-            # Store in our local cache
-            self.memories[memory_id] = memory
-            
-            # Add to graph service
-            await self.graph_service.add_memory_to_graph(
-                memory_id=memory_id,
-                content=content,
-                user_id=user_id
-            )
-            
-            logger.info(f"✅ Added memory via mem0: {memory_id[:20]}...")
-            return memory
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to add memory via mem0: {e}")
-            raise
+        return await self.memory_service.add_memory(
+            content=content,
+            user_id=user_id,
+            metadata=metadata
+        )
     
     async def search_memories(self, 
                              query: str,
                              user_id: str,
                              limit: int = 10,
-                             threshold: float = 0.3) -> List[Dict[str, Any]]:
-        """Search memories using mem0's semantic search"""
-        try:
-            # Use mem0's search functionality
-            loop = asyncio.get_event_loop()
+                             threshold: float = 0.3) -> Dict[str, Any]:
+        """Search memories using V3 ADK Memory Service"""
+        if not self.memory_service:
+            raise Exception("Memory service not initialized")
             
-            # Set environment variable to avoid OpenMP threading issues
-            os.environ['OMP_NUM_THREADS'] = '1'
-            
-            search_results = await loop.run_in_executor(
-                None,
-                self.memory_client.search,
-                query,
-                user_id,
-                limit
-            )
-            
-            results = []
-            for mem0_result in search_results:
-                # Convert mem0 result to our format
-                memory_data = {
-                    "id": mem0_result.get("id", "unknown"),
-                    "content": mem0_result.get("memory", mem0_result.get("text", "")),
-                    "metadata": mem0_result.get("metadata", {}),
-                    "created_at": mem0_result.get("created_at", datetime.now().isoformat()),
-                    "updated_at": mem0_result.get("updated_at", datetime.now().isoformat()),
-                    "source": "local",
-                    "score": mem0_result.get("score", 0.0)
-                }
-                
-                # Apply threshold filter
-                if memory_data["score"] >= threshold:
-                    results.append(memory_data)
-            
-            logger.info(f"🔍 Found {len(results)} memories via mem0 for query: {query[:30]}...")
-            return results
-            
-        except Exception as e:
-            logger.error(f"❌ mem0 search failed: {e}")
-            # Fallback to empty results instead of crashing
-            return []
+        result = await self.memory_service.search_memories(
+            query=query,
+            user_id=user_id,
+            limit=limit
+        )
+        
+        # Filter by threshold and return in API format
+        filtered_memories = []
+        for memory in result.memories:
+            score = memory.get("score", 0.0)
+            if score >= threshold:
+                filtered_memories.append(memory)
+        
+        return {
+            "memories": filtered_memories,
+            "total": len(filtered_memories),
+            "source": result.source,
+            "execution_time_ms": result.execution_time_ms,
+            "query": query
+        }
     
-    async def get_memory(self, memory_id: str) -> Optional[LocalMemory]:
-        """Get a specific memory by ID"""
-        return self.memories.get(memory_id)
+    async def get_memory(self, memory_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific memory using V3 ADK Memory Service"""
+        if not self.memory_service:
+            return None
+            
+        return await self.memory_service.get_memory(memory_id, user_id)
     
-    async def delete_memory(self, memory_id: str) -> bool:
-        """Delete a memory using mem0"""
-        try:
-            # Delete from mem0
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None,
-                self.memory_client.delete,
-                memory_id
-            )
-            
-            # Remove from local cache
-            if memory_id in self.memories:
-                del self.memories[memory_id]
-            
-            # Remove from graph service
-            await self.graph_service.delete_memory_from_graph(memory_id)
-            
-            logger.info(f"✅ Deleted memory via mem0: {memory_id[:20]}...")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to delete memory via mem0: {e}")
+    async def delete_memory(self, memory_id: str, user_id: str) -> bool:
+        """Delete memory using V3 ADK Memory Service"""
+        if not self.memory_service:
             return False
+            
+        return await self.memory_service.delete_memory(memory_id, user_id)
     
     async def get_stats(self, user_id: Optional[str] = None) -> Dict[str, Any]:
-        """Get memory statistics"""
-        try:
-            # Get stats from mem0 if available
-            loop = asyncio.get_event_loop()
-            mem0_stats = await loop.run_in_executor(
-                None,
-                getattr,
-                self.memory_client,
-                'get_stats',
-                lambda: {}
-            )
+        """Get comprehensive V3 system statistics"""
+        if not self.memory_service:
+            return {"error": "Memory service not initialized"}
             
-            # Filter local cache by user if specified
-            if user_id:
-                user_memories = [m for m in self.memories.values() 
-                               if m.metadata.get("user_id") == user_id]
-                count = len(user_memories)
-            else:
-                count = len(self.memories)
-                user_memories = list(self.memories.values())
+        return await self.memory_service.get_stats(user_id)
+    
+    # V3 ADK Session Interface Methods
+    async def create_session(self, user_id: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+        """Create new session using ADK Session Service"""
+        if not self.session_service:
+            raise Exception("Session service not initialized")
             
-            return {
-                "total_memories": count,
-                "index_size": mem0_stats.get("index_size", 0),
-                "embedding_dim": mem0_stats.get("embedding_dim", 384),  # Default for sentence transformers
-                "oldest_memory": min((m.created_at for m in user_memories), default=None),
-                "newest_memory": max((m.created_at for m in user_memories), default=None),
-                "model": "mem0_with_faiss_backend"
-            }
+        return await self.session_service.create_session(user_id, metadata)
+    
+    async def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Get session data"""
+        if not self.session_service:
+            return None
             
-        except Exception as e:
-            logger.error(f"❌ Failed to get stats: {e}")
-            return {
-                "total_memories": len(self.memories),
-                "index_size": 0,
-                "embedding_dim": 384,
-                "oldest_memory": None,
-                "newest_memory": None,
-                "model": "mem0_with_faiss_backend"
-            }
+        session = await self.session_service.get_session(session_id)
+        return session.to_dict() if session else None
+    
+    async def update_session_state(self, session_id: str, key: str, value: Any) -> bool:
+        """Update session state"""
+        if not self.session_service:
+            return False
+            
+        return await self.session_service.update_session_state(session_id, key, value)
+    
+    # V3 Memory Shuttle Interface Methods
+    async def force_sync_to_ltm(self, user_id: str) -> Dict[str, Any]:
+        """Force immediate sync of user memories to LTM"""
+        if not self.memory_shuttle:
+            return {"error": "Memory shuttle not initialized"}
+            
+        return await self.memory_shuttle.force_upload_user_memories(user_id)
+    
+    async def preload_hot_memories(self, user_id: str) -> Dict[str, Any]:
+        """Preload hot memories from LTM to STM"""
+        if not self.memory_shuttle:
+            return {"error": "Memory shuttle not initialized"}
+            
+        return await self.memory_shuttle.preload_hot_memories(user_id)
+    
+    async def get_shuttle_stats(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get Memory Shuttle statistics"""
+        if not self.memory_shuttle:
+            return {"error": "Memory shuttle not initialized"}
+            
+        return await self.memory_shuttle.get_shuttle_stats(user_id)
     
     def is_ready(self) -> bool:
-        """Check if service is ready"""
-        return self.is_initialized and self.memory_client is not None
+        """Check if V3 service is ready"""
+        return (self.is_initialized and 
+                self.memory_service is not None and
+                self.stm_service is not None)
     
     async def cleanup(self):
-        """Cleanup resources"""
-        logger.info("🧹 Cleaning up memory service...")
+        """Cleanup V3 resources"""
+        logger.info("🧹 Cleaning up Jean Memory V3...")
         
-        # Clear local cache
-        self.memories.clear()
+        # Stop memory shuttle
+        if self.memory_shuttle:
+            await self.memory_shuttle.stop()
         
-        # Cleanup graph service
-        await self.graph_service.cleanup()
+        # Cleanup STM service
+        if self.stm_service:
+            await self.stm_service.cleanup()
         
-        # mem0 handles its own cleanup
-        self.memory_client = None
+        # Cleanup LTM service
+        if self.ltm_service:
+            await self.ltm_service.cleanup()
         
-        logger.info("✅ Memory service cleanup complete")
+        logger.info("✅ Jean Memory V3 cleanup complete")
+
+# Legacy alias for backward compatibility
+MemoryService = JeanMemoryV3Service

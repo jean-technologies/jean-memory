@@ -75,7 +75,7 @@ async def create_memory(
             metadata=request.metadata
         )
         
-        return MemoryResponse(**memory.to_dict())
+        return MemoryResponse(**memory)
         
     except Exception as e:
         logger.error(f"Failed to create memory: {e}")
@@ -103,8 +103,8 @@ async def search_memories(
         execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
         
         return SearchResponse(
-            memories=results,
-            total=len(results),
+            memories=results.get("memories", []),
+            total=results.get("total", 0),
             query=query,
             execution_time_ms=execution_time
         )
@@ -132,8 +132,8 @@ async def search_memories_post(
         execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
         
         return SearchResponse(
-            memories=results,
-            total=len(results),
+            memories=results.get("memories", []),
+            total=results.get("total", 0),
             query=request.query,
             execution_time_ms=execution_time
         )
@@ -145,16 +145,17 @@ async def search_memories_post(
 @router.get("/memories/{memory_id}", response_model=MemoryResponse)
 async def get_memory(
     memory_id: str,
+    user_id: str = Query(..., description="User ID"),
     service = Depends(get_memory_service)
 ):
     """Get a specific memory by ID"""
     try:
-        memory = await service.get_memory(memory_id)
+        memory = await service.get_memory(memory_id, user_id)
         
         if not memory:
             raise HTTPException(status_code=404, detail="Memory not found")
         
-        return MemoryResponse(**memory.to_dict())
+        return MemoryResponse(**memory)
         
     except HTTPException:
         raise
@@ -165,11 +166,12 @@ async def get_memory(
 @router.delete("/memories/{memory_id}")
 async def delete_memory(
     memory_id: str,
+    user_id: str = Query(..., description="User ID"),
     service = Depends(get_memory_service)
 ):
     """Delete a memory"""
     try:
-        success = await service.delete_memory(memory_id)
+        success = await service.delete_memory(memory_id, user_id)
         
         if not success:
             raise HTTPException(status_code=404, detail="Memory not found")
@@ -204,85 +206,128 @@ async def get_stats(
         logger.error(f"Failed to get stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/graph/search", response_model=SearchResponse)
-async def search_graph_memories(
-    query: str = Query(..., description="Search query"),
+# V3 Session Management Endpoints
+@router.post("/sessions/")
+async def create_session(
     user_id: str = Query(..., description="User ID"),
-    limit: int = Query(default=10, ge=1, le=100, description="Maximum results"),
+    metadata: Optional[Dict[str, Any]] = None,
     service = Depends(get_memory_service)
 ):
-    """Search memories using graph context"""
+    """Create new session"""
     try:
-        start_time = datetime.now()
-        
-        results = await service.graph_service.search_graph_context(
-            query=query,
-            user_id=user_id,
-            limit=limit
-        )
-        
-        execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
-        
-        return SearchResponse(
-            memories=results,
-            total=len(results),
-            query=query,
-            execution_time_ms=execution_time
-        )
+        session_id = await service.create_session(user_id, metadata)
+        return {"session_id": session_id, "user_id": user_id}
         
     except Exception as e:
-        logger.error(f"Graph search failed: {e}")
+        logger.error(f"Failed to create session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/graph/memories/{user_id}")
-async def get_graph_memories(
-    user_id: str,
-    limit: int = Query(default=50, ge=1, le=100, description="Maximum results"),
+@router.get("/sessions/{session_id}")
+async def get_session(
+    session_id: str,
     service = Depends(get_memory_service)
 ):
-    """Get all memories for a user from graph"""
+    """Get session data"""
     try:
-        memories = await service.graph_service.get_user_memories(
-            user_id=user_id,
-            limit=limit
-        )
+        session = await service.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        return session
         
-        return {
-            "memories": memories,
-            "total": len(memories),
-            "user_id": user_id
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to get graph memories: {e}")
+        logger.error(f"Failed to get session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/graph/stats")
-async def get_graph_stats(
+@router.put("/sessions/{session_id}/state")
+async def update_session_state(
+    session_id: str,
+    key: str,
+    value: Any,
+    service = Depends(get_memory_service)
+):
+    """Update session state"""
+    try:
+        success = await service.update_session_state(session_id, key, value)
+        if not success:
+            raise HTTPException(status_code=404, detail="Session not found")
+        return {"message": "Session state updated", "session_id": session_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update session state: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# V3 Memory Shuttle Endpoints
+@router.post("/shuttle/sync")
+async def force_sync_to_ltm(
+    user_id: str = Query(..., description="User ID"),
+    service = Depends(get_memory_service)
+):
+    """Force immediate sync of user memories to LTM"""
+    try:
+        result = await service.force_sync_to_ltm(user_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to sync to LTM: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/shuttle/preload")
+async def preload_hot_memories(
+    user_id: str = Query(..., description="User ID"),
+    service = Depends(get_memory_service)
+):
+    """Preload hot memories from LTM to STM"""
+    try:
+        result = await service.preload_hot_memories(user_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to preload memories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/shuttle/stats")
+async def get_shuttle_stats(
     user_id: Optional[str] = Query(None, description="User ID for user-specific stats"),
     service = Depends(get_memory_service)
 ):
-    """Get graph service statistics"""
+    """Get Memory Shuttle statistics"""
     try:
-        stats = await service.graph_service.get_graph_stats(user_id=user_id)
+        stats = await service.get_shuttle_stats(user_id)
         return stats
         
     except Exception as e:
-        logger.error(f"Failed to get graph stats: {e}")
+        logger.error(f"Failed to get shuttle stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/sync")
-async def sync_to_cloud(
-    user_id: str = Query(..., description="User ID"),
+# V3 Enhanced Memory Endpoints
+@router.get("/memories/user/{user_id}")
+async def get_user_memories(
+    user_id: str,
+    limit: int = Query(default=50, ge=1, le=100, description="Maximum results"),
+    source: str = Query(default="hybrid", description="Memory source: stm, ltm, or hybrid"),
     service = Depends(get_memory_service)
 ):
-    """Sync local memories to cloud (placeholder for now)"""
-    # This will be implemented in a later phase
-    return {
-        "message": "Cloud sync not yet implemented",
-        "user_id": user_id,
-        "status": "pending"
-    }
+    """Get user memories from specified source(s)"""
+    try:
+        if hasattr(service.memory_service, 'get_user_memories'):
+            result = await service.memory_service.get_user_memories(
+                user_id=user_id,
+                limit=limit,
+                source=source
+            )
+            return result
+        else:
+            # Fallback to search for all memories
+            result = await service.search_memories("", user_id, limit)
+            return result
+        
+    except Exception as e:
+        logger.error(f"Failed to get user memories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Function to set the memory service reference
 def set_memory_service(service):
