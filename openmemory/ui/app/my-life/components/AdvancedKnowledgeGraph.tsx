@@ -106,8 +106,8 @@ const VIEW_MODES: ViewMode[] = [
       randomize: false,
       animate: true,
       animationDuration: 1000,
-      nodeRepulsion: 8000,
-      idealEdgeLength: 100,
+      nodeRepulsion: 6000,
+      idealEdgeLength: 80,
       edgeElasticity: 0.45,
       nestingFactor: 0.1,
       gravity: 0.25,
@@ -123,16 +123,21 @@ const VIEW_MODES: ViewMode[] = [
     icon: Clock,
     description: 'Chronological view of memories and events',
     layoutConfig: {
-      name: 'breadthfirst',
-      directed: true,
-      roots: '[created_at]',
-      padding: 30,
-      spacingFactor: 1.5,
+      name: 'cose',
       animate: true,
-      animationDuration: 800,
+      animationDuration: 1000,
+      nodeRepulsion: 4000,
+      idealEdgeLength: 50,
+      edgeElasticity: 100,
+      nestingFactor: 0.1,
+      gravity: 80,
+      numIter: 1000,
+      initialTemp: 200,
+      coolingFactor: 0.95,
+      minTemp: 1.0,
       fit: true,
-      avoidOverlap: true,
-      nodeDimensionsIncludeLabels: true
+      padding: 20,
+      randomize: false
     }
   },
   {
@@ -146,9 +151,9 @@ const VIEW_MODES: ViewMode[] = [
       maxSimulationTime: 4000,
       ungrabifyWhileSimulating: true,
       fit: true,
-      padding: 20,
-      nodeSpacing: 60,
-      edgeLength: 120,
+      padding: 30,
+      nodeSpacing: 50,
+      edgeLength: 100,
       randomize: false
     }
   },
@@ -191,15 +196,24 @@ const ENTITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   'cluster': Network
 };
 
+// Elegant blue gradient color scheme for clean, cohesive look
+const BLUE_GRADIENT_COLORS = {
+  'primary': '#0EA5E9',     // Sky blue (primary nodes)
+  'secondary': '#0284C7',   // Deeper blue (important nodes)
+  'accent': '#0369A1',      // Dark blue (clusters)
+  'light': '#38BDF8',       // Light blue (secondary)
+  'subtle': '#7DD3FC'       // Very light blue (background)
+};
+
 const ENTITY_COLORS: Record<string, string> = {
-  'person': '#8B5CF6',      // Jean Memory Purple
-  'place': '#3B82F6',       // Jean Memory Blue
-  'event': '#06B6D4',       // Jean Memory Cyan
-  'topic': '#10B981',       // Jean Memory Green
-  'object': '#F59E0B',      // Jean Memory Amber
-  'emotion': '#EC4899',     // Jean Memory Pink
-  'memory': '#6366F1',      // Jean Memory Indigo
-  'cluster': '#8B5CF6'      // Jean Memory Purple
+  'person': BLUE_GRADIENT_COLORS.primary,
+  'place': BLUE_GRADIENT_COLORS.secondary,
+  'event': BLUE_GRADIENT_COLORS.accent,
+  'topic': BLUE_GRADIENT_COLORS.light,
+  'object': BLUE_GRADIENT_COLORS.primary,
+  'emotion': BLUE_GRADIENT_COLORS.subtle,
+  'memory': BLUE_GRADIENT_COLORS.primary,
+  'cluster': BLUE_GRADIENT_COLORS.accent
 };
 
 interface AdvancedKnowledgeGraphProps {
@@ -230,22 +244,30 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
 
   // Jean Memory brand colors and styling functions
   const getBrandColorForNode = (node: any) => {
-    // Use Jean Memory's app-specific colors for different node types
-    if (node.type === 'memory') {
+    // Beautiful Jean Memory color palette with gradients
+    const importance = node.strength || 1;
+    const nodeType = node.type || 'memory';
+    
+    // App-specific colors for memories with Jean Memory aesthetic
+    if (nodeType === 'memory') {
       const appColors: { [key: string]: string } = {
-        'claude': '#8B5CF6',
-        'cursor': '#F59E0B',
-        'twitter': '#3B82F6',
-        'windsurf': '#EC4899',
-        'chatgpt': '#10B981',
-        'jean memory': '#6366F1',
-        'default': '#6366F1'
+        'claude': '#8B5CF6',     // Purple
+        'cursor': '#F59E0B',     // Amber
+        'twitter': '#06B6D4',    // Cyan
+        'windsurf': '#EC4899',   // Pink
+        'chatgpt': '#10B981',    // Emerald
+        'jean memory': '#6366F1', // Indigo
+        'default': importance > 2 ? '#6366F1' : '#8B5CF6' // Dynamic based on importance
       };
       return appColors[node.source?.toLowerCase()] || appColors.default;
     }
     
-    // Entity colors using Jean Memory's system
-    return ENTITY_COLORS[node.entity_type] || ENTITY_COLORS[node.type] || '#6366F1';
+    // Entity colors with visual hierarchy
+    if (nodeType === 'cluster') return '#4338CA'; // Deep indigo for clusters
+    if (importance > 3) return '#6366F1';  // Important entities in brand indigo
+    if (importance > 1.5) return '#8B5CF6'; // Medium importance in purple
+    
+    return ENTITY_COLORS[node.entity_type] || ENTITY_COLORS[nodeType] || '#A855F7'; // Light purple default
   };
 
   // Initialize Cytoscape
@@ -264,28 +286,34 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           selector: 'node',
           style: {
             'background-color': (ele: any) => getBrandColorForNode(ele.data()) || '#6366F1',
-            'label': 'data(label)',
+            'label': 'data(label)', // Keep labels visible for readability
             'text-valign': 'center',
             'text-halign': 'center',
-            'font-size': '11px',
+            'font-size': '10px',
             'color': '#ffffff',
             'text-outline-width': 2,
             'text-outline-color': '#000000',
-            'text-wrap': 'wrap',
-            'text-max-width': '80px',
+            'text-wrap': 'none',
+            'text-max-width': 'none',
             'width': (ele: any) => {
+              const importance = ele.data('importance') || 1;
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 80;
-              if (type === 'entity') return 50;
-              return 30;
+              let baseSize = type === 'cluster' ? 50 : (type === 'entity' ? 40 : 35); // Larger, readable sizes
+              return Math.min(baseSize + (importance - 1) * 5, baseSize * 1.3);
             },
             'height': (ele: any) => {
+              const importance = ele.data('importance') || 1;
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 80;
-              if (type === 'entity') return 50;
-              return 30;
+              let baseSize = type === 'cluster' ? 50 : (type === 'entity' ? 40 : 35); // Larger, readable sizes
+              return Math.min(baseSize + (importance - 1) * 5, baseSize * 1.3);
             },
-            'overlay-padding': 6,
+            'box-shadow': '0 0 20px rgba(99, 102, 241, 0.4)', // Subtle Jean Memory glow
+            'border-width': 1,
+            'border-color': 'rgba(255, 255, 255, 0.2)',
+            'border-opacity': 0.8,
+            'transition-property': 'box-shadow, width, height',
+            'transition-duration': '0.3s',
+            'overlay-padding': 4,
             'z-index': 10
           }
         },
@@ -295,31 +323,23 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
             'border-width': 3,
             'border-color': '#ffffff',
             'background-color': (ele: any) => getBrandColorForNode(ele.data()) || '#6366F1',
-            'width': (ele: any) => {
-              const type = ele.data('nodeType');
-              if (type === 'cluster') return 90;
-              if (type === 'entity') return 60;
-              return 40;
-            },
-            'height': (ele: any) => {
-              const type = ele.data('nodeType');
-              if (type === 'cluster') return 90;
-              if (type === 'entity') return 60;
-              return 40;
-            },
+            'box-shadow': '0 0 20px rgba(99, 102, 241, 0.8)', // Beautiful glow on selection
+            'font-size': '11px', // Slightly larger text when selected
             'z-index': 999
           }
         },
         {
           selector: 'edge',
           style: {
-            'width': (ele: any) => Math.max(1, ele.data('weight') || 1),
-            'line-color': '#4B5563',
-            'target-arrow-color': '#4B5563',
+            'width': 1, // Consistent thin lines for elegance
+            'line-color': 'rgba(156, 163, 175, 0.4)', // Subtle gray with transparency
+            'target-arrow-color': 'rgba(156, 163, 175, 0.4)',
             'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'opacity': 0.6,
-            'z-index': 5
+            'target-arrow-size': 6,
+            'curve-style': 'haystack', // Cleaner straight lines
+            'haystack-radius': 0,
+            'opacity': 0.4,
+            'z-index': 1
           }
         },
         {
@@ -417,7 +437,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const response = await apiClient.get('/api/v1/memories/life-graph-data', {
         params: {
           limit: 25,  // Reduced for better performance: 25 core nodes
-          include_entities: viewMode.id === 'entities',  // Only include entities in entity view
+          include_entities: true,  // Always include entities for proper connections
           include_temporal_clusters: viewMode.id === 'temporal',
           focus_query: searchQuery || undefined,
           progressive: true  // Enable progressive loading mode
@@ -430,7 +450,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       const cyNodes = nodes.map((node: any) => ({
         data: {
           id: node.id,
-          label: node.title || node.content?.substring(0, 40) || node.name || 'Memory',
+          label: node.title || (node.content ? node.content.substring(0, 15) + '...' : '') || node.name || 'Memory',
           nodeType: node.type,
           created_at: node.created_at,
           ...node
@@ -452,13 +472,15 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
       cyInstance.current?.elements().remove();
       cyInstance.current?.add([...cyNodes, ...cyEdges]);
       
-      // Apply layout with auto-fit for better visibility
+      // Apply layout with reasonable zoom level
       const layout = cyInstance.current?.layout({
         ...viewMode.layoutConfig,
         stop: () => {
-          // Fit and center the graph after layout completes
+          // Center but don't auto-fit to avoid tiny nodes
           setTimeout(() => {
-            cyInstance.current?.fit(undefined, 30);
+            cyInstance.current?.center();
+            // Set a reasonable zoom level instead of auto-fit
+            cyInstance.current?.zoom(0.8);
           }, 100);
         }
       });
@@ -510,7 +532,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
           return {
             data: {
               id: node.id,
-              label: node.content?.substring(0, 35) || node.name || 'Expanded',
+              label: node.content ? (node.content.substring(0, 12) + '...') : (node.name || 'Expanded'),
               content: node.content,
               nodeType: node.type,
               source: node.source,
