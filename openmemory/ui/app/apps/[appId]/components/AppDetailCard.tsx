@@ -176,6 +176,7 @@ const AppDetailCard = ({
                 One-click install for Claude Desktop
               </p>
               
+              {/* Manual Install Command section hidden for Claude Desktop 
               <details className="mt-4">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
                   Manual Install Command
@@ -200,6 +201,7 @@ const AppDetailCard = ({
                   </div>
                 </div>
               </details>
+              */}
             </div>
           ) : null}
 
