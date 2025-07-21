@@ -10,6 +10,7 @@ from unittest.mock import Mock, AsyncMock
 from fastapi.testclient import TestClient
 import os
 import sys
+from pathlib import Path
 
 # Add the parent directory to the path so we can import our modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -18,7 +19,7 @@ from services.memory_service import JeanMemoryV3Service
 from services.stm_service import STMService
 from services.ltm_service import LTMService
 from services.memory_shuttle import MemoryShuttle
-from config import Config
+from config import JeanMemoryV3Config
 
 
 @pytest.fixture(scope="session")
@@ -32,16 +33,18 @@ def event_loop():
 @pytest.fixture
 def mock_config():
     """Create a mock configuration for testing."""
-    config = Mock(spec=Config)
-    config.NEO4J_URI = "bolt://localhost:7687"
-    config.NEO4J_USER = "neo4j"
-    config.NEO4J_PASSWORD = "testpassword"
-    config.OPENAI_API_KEY = "test-api-key"
-    config.FAISS_INDEX_PATH = "/tmp/test_faiss"
-    config.STM_CAPACITY = 100
-    config.LTM_THRESHOLD = 0.8
-    config.MEMORY_RETENTION_DAYS = 30
-    config.LOG_LEVEL = "DEBUG"
+    config = Mock(spec=JeanMemoryV3Config)
+    config.neo4j_host = "localhost"
+    config.neo4j_port = 7687
+    config.neo4j_user = "neo4j"
+    config.neo4j_password = "testpassword"
+    config.neo4j_database = "neo4j"
+    config.openai_api_key = "test-api-key"
+    config.data_dir = Path("/tmp/test_data")
+    config.embedding_model = "all-MiniLM-L6-v2"
+    config.max_local_memories = 100
+    config.memory_ttl_days = 30
+    config.debug = True
     return config
 
 
