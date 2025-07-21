@@ -87,7 +87,7 @@ export default function MemoriesPage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-1 pb-4 animate-fade-slide-down">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <MemoryFilters onFilterChange={loadMemories} />
-              <STMToggle />
+              {/* <STMToggle /> */}
             </div>
             <DeepQueryDialog />
           </div>
