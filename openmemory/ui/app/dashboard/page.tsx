@@ -411,18 +411,6 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Header with Add Integration button */}
-            <div className="flex items-center justify-start gap-4 mb-8">
-              <Button
-                onClick={() => setIsSyncModalOpen(true)}
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap"
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Add Integration
-              </Button>
-            </div>
 
             {/* Scrollable App Grid Container */}
             <div className="flex-1 overflow-y-auto pr-2">
