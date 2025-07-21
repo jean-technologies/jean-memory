@@ -42,8 +42,18 @@ class JeanMemoryV3Config(BaseSettings):
     sync_enabled: bool = Field(default=False, description="Enable background sync")
     sync_interval: int = Field(default=300, description="Sync interval in seconds")
     
+    # Jean Memory V2 Integration
+    jean_memory_v2_api_url: Optional[str] = Field(default="https://api.jeanmemory.com", description="Jean Memory V2 API URL")
+    jean_memory_v2_api_key: Optional[str] = Field(default=None, description="Jean Memory V2 API key")
+    
     # OpenAI Configuration (for embeddings fallback and entity extraction)
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key")
+    
+    # Google Cloud Configuration
+    google_cloud_project: Optional[str] = Field(default=None, description="Google Cloud project ID")
+    google_application_credentials: Optional[str] = Field(default=None, description="Path to Google service account JSON")
+    google_adk_memory_bank_id: Optional[str] = Field(default=None, description="Google ADK Memory Bank ID")
+    vertex_ai_location: str = Field(default="us-central1", description="Vertex AI region/location")
     
     # Performance Settings
     max_local_memories: int = Field(default=50000, description="Maximum local memories")
@@ -85,25 +95,33 @@ def get_mem0_config() -> dict:
     """Get mem0 configuration for FAISS backend"""
     paths = get_data_paths()
     
-    return {
+    mem0_config = {
         "vector_store": {
             "provider": "faiss",
             "config": {
                 "collection_name": "jean_memory_v3_local",
-                "path": str(paths["faiss"]),
-                "distance_strategy": config.faiss_distance_strategy,
-                "normalize_L2": True
+                "path": str(paths["faiss"])
             }
         },
         "embedder": {
             "provider": "sentence_transformers",
             "config": {
-                "model": config.embedding_model,
-                "embedding_dim": config.embedding_dim
+                "model": config.embedding_model
             }
-        },
-        "version": "v1.1"
+        }
     }
+    
+    # Add OpenAI API key if available (required by mem0)
+    if config.openai_api_key:
+        mem0_config["llm"] = {
+            "provider": "openai",
+            "config": {
+                "model": "gpt-4o-mini",
+                "api_key": config.openai_api_key
+            }
+        }
+    
+    return mem0_config
 
 def get_neo4j_config() -> dict:
     """Get Neo4j configuration for local instance"""
@@ -112,6 +130,16 @@ def get_neo4j_config() -> dict:
         "user": config.neo4j_user,
         "password": config.neo4j_password,
         "database": config.neo4j_database
+    }
+
+def get_google_cloud_config() -> dict:
+    """Get Google Cloud configuration for ADK integration"""
+    return {
+        "project_id": config.google_cloud_project,
+        "credentials_path": config.google_application_credentials,
+        "memory_bank_id": config.google_adk_memory_bank_id,
+        "location": config.vertex_ai_location,
+        "enabled": bool(config.google_cloud_project and config.google_adk_memory_bank_id)
     }
 
 def get_docker_neo4j_config() -> dict:
