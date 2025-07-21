@@ -102,22 +102,22 @@ const VIEW_MODES: ViewMode[] = [
     icon: Network,
     description: 'High-level view of your knowledge graph',
     layoutConfig: {
-      name: 'fcose',
-      quality: 'proof',
-      randomize: false,
+      name: 'cose',
       animate: true,
-      animationDuration: 1500,
-      nodeRepulsion: 20000,
-      idealEdgeLength: 200,
-      edgeElasticity: 0.1,
-      nestingFactor: 0.2,
-      gravity: 0.1,
-      numIter: 3000,
-      tile: true,
-      tilingPaddingVertical: 50,
-      tilingPaddingHorizontal: 50,
-      nodeSeparation: 100,
-      packComponents: true
+      animationDuration: 1000,
+      nodeRepulsion: 10000,
+      nodeOverlap: 20,
+      idealEdgeLength: 120,
+      edgeElasticity: 100,
+      nestingFactor: 0.5,
+      gravity: 80,
+      numIter: 1000,
+      initialTemp: 200,
+      coolingFactor: 0.95,
+      minTemp: 1.0,
+      fit: true,
+      padding: 30,
+      randomize: false
     }
   },
   {
@@ -126,15 +126,18 @@ const VIEW_MODES: ViewMode[] = [
     icon: Clock,
     description: 'Chronological view of memories and events',
     layoutConfig: {
-      name: 'breadthfirst',
-      directed: true,
-      padding: 80,
-      spacingFactor: 2,
+      name: 'dagre',
+      rankDir: 'LR', // Left to right for timeline
+      align: 'UL',
+      rankSep: 150,
+      nodeSep: 100,
+      edgeSep: 20,
+      marginX: 20,
+      marginY: 20,
       animate: true,
       animationDuration: 1000,
       fit: true,
-      avoidOverlap: true,
-      nodeDimensionsIncludeLabels: true
+      padding: 50
     }
   },
   {
@@ -145,17 +148,19 @@ const VIEW_MODES: ViewMode[] = [
     layoutConfig: {
       name: 'cola',
       animate: true,
-      maxSimulationTime: 5000,
+      refresh: 1,
+      maxSimulationTime: 4000,
       ungrabifyWhileSimulating: false,
       fit: true,
-      padding: 80,
-      nodeSpacing: 120,
-      edgeLength: 200,
+      padding: 60,
+      nodeSpacing: 80,
+      edgeLength: 150,
+      edgeSymDiffLength: 100,
+      edgeJaccardLength: 100,
       randomize: false,
       avoidOverlap: true,
       handleDisconnected: true,
-      convergenceThreshold: 0.01,
-      flow: { axis: 'y', minSeparation: 100 }
+      convergenceThreshold: 0.01
     }
   },
   {
@@ -166,20 +171,28 @@ const VIEW_MODES: ViewMode[] = [
     layoutConfig: {
       name: 'concentric',
       animate: true,
-      animationDuration: 1500,
+      animationDuration: 1000,
       fit: true,
-      padding: 100,
+      padding: 50,
       startAngle: 0,
       sweep: Math.PI * 2,
       clockwise: true,
       equidistant: false,
-      minNodeSpacing: 80,
-      levelWidth: () => 3,
+      minNodeSpacing: 60,
+      levelWidth: () => 2,
       concentric: (node: any) => {
-        if (node.data('nodeType') === 'cluster') return 4;
-        if (node.data('nodeType') === 'entity') return 3;
-        if (node.data('nodeType') === 'memory') return 1;
-        return 2;
+        const nodeType = node.data('nodeType');
+        const entityType = node.data('entity_type');
+        
+        // Put entities in outer rings based on type
+        if (nodeType === 'entity') {
+          if (entityType === 'person') return 5;
+          if (entityType === 'place') return 4;
+          if (entityType === 'event') return 3;
+          return 2;
+        }
+        // Memories in the center
+        return 1;
       }
     }
   }
@@ -300,8 +313,16 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
             'background-color': (ele: any) => ENTITY_COLORS[ele.data('nodeType')] || '#6B7280',
             'label': (ele: any) => {
               const label = ele.data('label') || '';
-              // Truncate long labels to prevent overlap
-              return label.length > 25 ? label.substring(0, 22) + '...' : label;
+              const nodeType = ele.data('nodeType');
+              
+              // Different truncation for different node types
+              if (nodeType === 'entity') {
+                return label.length > 20 ? label.substring(0, 18) + '...' : label;
+              } else if (nodeType === 'cluster') {
+                return label.length > 30 ? label.substring(0, 27) + '...' : label;
+              } else {
+                return label.length > 35 ? label.substring(0, 32) + '...' : label;
+              }
             },
             'text-valign': 'center',
             'text-halign': 'center',
@@ -318,21 +339,33 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
             'text-wrap': 'wrap',
             'text-max-width': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return '120px';
-              if (type === 'entity') return '80px';
-              return '60px';
+              if (type === 'cluster') return '140px';
+              if (type === 'entity') return '100px';
+              return '120px';
             },
             'width': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 100;
-              if (type === 'entity') return 60;
-              return 40;
+              const importance = ele.data('importance') || 1;
+              
+              let baseSize;
+              if (type === 'cluster') baseSize = 80;
+              else if (type === 'entity') baseSize = 50;
+              else baseSize = 35;
+              
+              // Scale based on importance but keep reasonable bounds
+              return Math.min(Math.max(baseSize + (importance - 1) * 5, baseSize * 0.8), baseSize * 1.5);
             },
             'height': (ele: any) => {
               const type = ele.data('nodeType');
-              if (type === 'cluster') return 100;
-              if (type === 'entity') return 60;
-              return 40;
+              const importance = ele.data('importance') || 1;
+              
+              let baseSize;
+              if (type === 'cluster') baseSize = 80;
+              else if (type === 'entity') baseSize = 50;
+              else baseSize = 35;
+              
+              // Scale based on importance but keep reasonable bounds
+              return Math.min(Math.max(baseSize + (importance - 1) * 5, baseSize * 0.8), baseSize * 1.5);
             },
             'overlay-padding': 8,
             'z-index': 10,
@@ -477,8 +510,8 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     try {
       const response = await apiClient.get('/api/v1/memories/life-graph-data', {
         params: {
-          limit: 8,  // Minimal initial load: start with only 8 core memories
-          include_entities: false,  // No entities initially - cleaner view
+          limit: viewMode.id === 'overview' ? 25 : 30,  // More meaningful initial load
+          include_entities: viewMode.id === 'entities',  // Include entities for entity view
           include_temporal_clusters: viewMode.id === 'temporal',
           focus_query: searchQuery || undefined,
           progressive: true  // Enable progressive loading mode
@@ -487,23 +520,37 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
 
       const { nodes, edges, metadata } = response.data;
       
-      // Convert to Cytoscape format with improved styling
+      // Convert to Cytoscape format with improved styling and rich labels
       const cyNodes = nodes.map((node: any, index: number) => {
-        // Create better labels
-        let label = node.title || node.name || 'Memory';
+        // Create meaningful labels based on content
+        let label = node.title || node.name;
+        
         if (!label && node.content) {
-          label = node.content.substring(0, 30).trim();
-          if (node.content.length > 30) label += '...';
+          // Extract meaningful content for label - avoid generic starts
+          let content = node.content.trim();
+          
+          // Remove common prefixes
+          content = content.replace(/^(User |I |The user |They |This |That |It |A |An )/i, '');
+          
+          // Take first meaningful sentence or phrase
+          const sentences = content.split(/[.!?]/);
+          label = sentences[0].substring(0, 35).trim();
+          if (content.length > 35) label += '...';
         }
+        
+        if (!label) label = node.type === 'entity' ? node.entity_type || 'Entity' : 'Memory';
         
         return {
           data: {
             id: node.id,
             label: label,
             nodeType: node.type || 'memory',
+            entity_type: node.entity_type,
             created_at: node.created_at,
             source: node.source,
             content: node.content,
+            title: node.title,
+            name: node.name,
             brandColor: getBrandColorForNode(node),
             size: getSmartNodeSize(node),
             importance: node.strength || 1,
@@ -566,7 +613,7 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
     setIsExpanding(true);
     try {
       const response = await apiClient.get(`/api/v1/memories/life-graph-expand/${nodeId}`, {
-        params: { limit: 15 }
+        params: { limit: 10 }  // Reasonable expansion size
       });
 
       const { expansion_nodes, expansion_edges } = response.data;
@@ -580,16 +627,27 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         const cyExpansionNodes = expansion_nodes.map((node: any, index: number) => {
           // Position new nodes in a circle around the parent with better spacing
           const angle = (index / expansion_nodes.length) * 2 * Math.PI;
-          const radius = 200; // Increased distance from parent node
+          const radius = 180; // Good distance from parent node
           const x = parentPos.x + Math.cos(angle) * radius;
           const y = parentPos.y + Math.sin(angle) * radius;
           
-          // Create better labels for expansion nodes
-          let label = node.title || node.name || 'Memory';
+          // Create meaningful labels for expansion nodes using same logic as main nodes
+          let label = node.title || node.name;
+          
           if (!label && node.content) {
-            label = node.content.substring(0, 25).trim();
-            if (node.content.length > 25) label += '...';
+            // Extract meaningful content for label - avoid generic starts
+            let content = node.content.trim();
+            
+            // Remove common prefixes
+            content = content.replace(/^(User |I |The user |They |This |That |It |A |An )/i, '');
+            
+            // Take first meaningful sentence or phrase
+            const sentences = content.split(/[.!?]/);
+            label = sentences[0].substring(0, 30).trim();
+            if (content.length > 30) label += '...';
           }
+          
+          if (!label) label = node.type === 'entity' ? node.entity_type || 'Entity' : 'Expanded Memory';
           
           return {
             data: {
@@ -597,7 +655,10 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
               label: label,
               content: node.content,
               nodeType: node.type || 'memory',
+              entity_type: node.entity_type,
               source: node.source,
+              title: node.title,
+              name: node.name,
               isExpansion: true,
               parentNode: nodeId
             },
@@ -620,16 +681,24 @@ function AdvancedKnowledgeGraphInner({ onMemorySelect }: AdvancedKnowledgeGraphP
         // Add expansion nodes and edges to graph
         cyInstance.current?.add([...cyExpansionNodes, ...cyExpansionEdges]);
         
-        // Apply a gentle layout adjustment for the new nodes only
+        // Apply a gentle force-directed adjustment to integrate new nodes
         const layoutConfig = {
-          name: 'preset',
-          positions: (node: any) => {
-            const pos = node.position();
-            return pos && pos.x && pos.y ? pos : undefined;
-          },
-          fit: false,
+          name: 'cose',
           animate: true,
-          animationDuration: 500
+          animationDuration: 800,
+          nodeRepulsion: 5000,
+          idealEdgeLength: 80,
+          edgeElasticity: 32,
+          numIter: 100,
+          fit: false,
+          randomize: false,
+          // Only apply to expansion nodes and their immediate neighbors
+          boundingBox: {
+            x1: parentPos.x - 300,
+            y1: parentPos.y - 300,
+            x2: parentPos.x + 300,
+            y2: parentPos.y + 300
+          }
         };
         
         cyInstance.current?.layout(layoutConfig).run();
