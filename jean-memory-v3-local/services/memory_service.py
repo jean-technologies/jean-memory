@@ -13,6 +13,8 @@ from config import get_config
 from services.stm_service import STMService
 from services.ltm_service import LTMService
 from services.memory_shuttle import MemoryShuttle
+from services.google_memory_service import GoogleADKMemoryService
+from services.hybrid_orchestrator import HybridMemoryOrchestrator
 from adk.session_service import InMemorySessionService, CloudSessionService
 from adk.memory_service import create_memory_service, BaseMemoryService
 
@@ -28,6 +30,10 @@ class JeanMemoryV3Service:
         self.stm_service: Optional[STMService] = None
         self.ltm_service: Optional[LTMService] = None
         self.memory_shuttle: Optional[MemoryShuttle] = None
+        
+        # Google ADK integration
+        self.google_service: Optional[GoogleADKMemoryService] = None
+        self.hybrid_orchestrator: Optional[HybridMemoryOrchestrator] = None
         
         # ADK interfaces
         self.session_service: Optional[InMemorySessionService] = None
@@ -57,18 +63,34 @@ class JeanMemoryV3Service:
             self.memory_shuttle = MemoryShuttle(self.stm_service, self.ltm_service)
             await self.memory_shuttle.start()
             
-            # 4. Initialize ADK Session Services
+            # 4. Initialize Google ADK Service
+            logger.info("🔗 Initializing Google ADK Service...")
+            self.google_service = GoogleADKMemoryService()
+            await self.google_service.initialize()
+            
+            # 5. Initialize Hybrid Memory Orchestrator
+            logger.info("⚡ Initializing Hybrid Memory Orchestrator...")
+            self.hybrid_orchestrator = HybridMemoryOrchestrator()
+            await self.hybrid_orchestrator.initialize(
+                google_service=self.google_service,
+                stm_service=self.stm_service,
+                ltm_service=self.ltm_service,
+                shuttle=self.memory_shuttle
+            )
+            
+            # 6. Initialize ADK Session Services
             logger.info("📝 Initializing ADK Session Services...")
             self.session_service = InMemorySessionService()
             if self.ltm_service.is_ready():
                 self.cloud_session_service = CloudSessionService(self.ltm_service)
             
-            # 5. Initialize ADK Memory Service
+            # 7. Initialize ADK Memory Service
             logger.info("🔗 Initializing ADK Memory Service...")
             self.memory_service = create_memory_service(
                 stm_service=self.stm_service,
                 ltm_service=self.ltm_service,
-                shuttle=self.memory_shuttle
+                shuttle=self.memory_shuttle,
+                google_service=self.google_service
             )
             
             self.is_initialized = True
@@ -89,6 +111,8 @@ class JeanMemoryV3Service:
             logger.info(f"  🧠 STM Ready: {self.stm_service.is_ready() if self.stm_service else False}")
             logger.info(f"  ☁️  LTM Ready: {self.ltm_service.is_ready() if self.ltm_service else False}")
             logger.info(f"  🚀 Shuttle Running: {self.memory_shuttle.is_running if self.memory_shuttle else False}")
+            logger.info(f"  🔗 Google ADK Ready: {self.google_service.initialized if self.google_service else False}")
+            logger.info(f"  ⚡ Hybrid Orchestrator Ready: {self.hybrid_orchestrator.initialized if self.hybrid_orchestrator else False}")
             logger.info(f"  📝 Sessions Ready: {self.session_service is not None}")
             logger.info(f"  🔗 Memory Service: {type(self.memory_service).__name__ if self.memory_service else 'None'}")
             
