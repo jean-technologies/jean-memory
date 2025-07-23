@@ -1,0 +1,24 @@
+*.db
+.env*
+!.env.example
+!.env.dev
+!env.local.example
+!ui/lib
+.venv/
+__pycache__
+.DS_Store
+node_modules/
+*.log
+
+# Package manager lock files (keep only one type)
+package-lock.json
+*.lock.backup
+*.lock.production
+api/.openmemory*
+**/.next
+.openmemory/
+
+# Supabase
+.supabase/
+supabase/.temp/
+supabase/.branches/
