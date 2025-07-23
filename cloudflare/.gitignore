@@ -1,7 +1,0 @@
-# Dependencies
-node_modules
-
-# Wrangler
-.wrangler
-dist
-.mf 
