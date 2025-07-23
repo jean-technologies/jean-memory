@@ -17,7 +17,7 @@ project_root = openmemory_dir.parent  # your-memory/
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from jean_memory_v2.mem0_adapter_optimized import get_memory_client_v2_optimized
+from jean_memory.mem0_adapter_optimized import get_memory_client_v2_optimized
 from app.settings import config  # Import the application config
 
 
@@ -76,7 +76,7 @@ async def get_async_memory_client(custom_instructions: str = None):
     """
     try:
         # Import OPTIMIZED async adapter
-        from jean_memory_v2.mem0_adapter_optimized import get_async_memory_client_v2_optimized
+        from jean_memory.mem0_adapter_optimized import get_async_memory_client_v2_optimized
         
         # Verify required environment variables are set (same as sync version)
         qdrant_host = os.getenv("QDRANT_HOST")
@@ -107,7 +107,7 @@ async def get_async_memory_client(custom_instructions: str = None):
         logger.debug("Checking environment variables for Jean Memory V2 configuration")
         
         # Create config from current environment variables (FIXED: No hardcoded values)
-        from jean_memory_v2.config import JeanMemoryConfig
+        from jean_memory.config import JeanMemoryConfig
         
         # Get actual environment values - NO HARDCODED FALLBACKS
         neo4j_uri_env = os.getenv("NEO4J_URI")

@@ -1,5 +1,5 @@
-# Jean Memory V2 - Standalone Library
-jean-memory-v2 @ git+https://github.com/jean-technologies/jean-memory.git
+# Jean Memory - Standalone Library
+jean-memory @ git+https://github.com/jean-technologies/jean-memory.git
 
 fastapi>=0.115.0
 uvicorn>=0.32.0

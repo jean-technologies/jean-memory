@@ -128,7 +128,7 @@ Advanced features for power users and developers, including **priority support, 
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [contributing guide](CONTRIBUTING.md) to get started.
+We welcome contributions! Please see our [contributing guide](docs/contributing/CONTRIBUTING.md) to get started.
 
 ## 📄 License
 
