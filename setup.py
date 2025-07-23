@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""
+Setup script for Jean Memory V2
+Fallback setup.py for compatibility with older pip versions
+"""
+from setuptools import setup, find_packages
+import pathlib
+
+here = pathlib.Path(__file__).parent.resolve()
+long_description = (here / "README.md").read_text(encoding="utf-8")
+
+setup(
+    name="jean-memory-v2",
+    version="2.0.0",
+    description="Advanced Hybrid Memory System combining Mem0, Graphiti, and Gemini AI",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/jonathan-politzki/jean-memory-v2",
+    author="Jean Memory Team",
+    author_email="team@jeanmemory.com",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Database :: Database Engines/Servers",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    keywords="memory ai graph search embeddings vector-database",
+    packages=find_packages(where="."),
+    python_requires=">=3.8",
+    install_requires=[
+        "fastapi>=0.115.0",
+        "uvicorn>=0.32.0",
+        "sqlalchemy>=2.0.36",
+        "python-dotenv>=1.0.0",
+        "alembic>=1.14.0",
+        "psycopg2-binary>=2.9.10",
+        "python-multipart>=0.0.12",
+        "setuptools>=75.0.0",
+        "fastapi-pagination>=0.12.30",
+        "mem0ai[graph]>=0.1.107",
+        "aiohttp>=3.11.0",
+        "pytest>=8.0.0",
+        "pytest-asyncio>=0.25.0",
+        "httpx>=0.28.0",
+        "pytest-cov>=6.0.0",
+        "tenacity>=9.1.2",
+        "supabase>=2.5.0,<3.0.0",
+        "feedparser>=6.0.11",
+        "python-dateutil>=2.9.0",
+        "google-generativeai>=0.8.0",
+        "beautifulsoup4>=4.12.3",
+        "psutil>=6.1.0",
+        "starlette>=0.40.0",
+        "sse-starlette>=2.1.3",
+        "posthog>=3.8.0",
+        "email-validator>=2.2.0",
+        "stripe>=12.2.0",
+        "twilio>=9.6.5",
+        "anthropic>=0.40.0",
+        "redis>=5.2.0",
+        "neo4j>=5.28.0",
+        "pgvector>=0.3.6",
+        "graphiti-core>=0.13.0",
+        "openai>=1.58.0",
+        "qdrant-client>=1.12.0",
+        "numpy>=1.24.0",
+    ],
+    extras_require={
+        "dev": [
+            "pytest>=8.0.0",
+            "pytest-asyncio>=0.25.0",
+            "pytest-cov>=6.0.0",
+            "black>=23.0.0",
+            "isort>=5.12.0",
+            "flake8>=6.0.0",
+            "mypy>=1.5.0",
+        ],
+    },
+    package_data={
+        "jean_memory_v2": ["*.json", "*.txt", "*.md"],
+    },
+    project_urls={
+        "Bug Reports": "https://github.com/jonathan-politzki/jean-memory-v2/issues",
+        "Source": "https://github.com/jonathan-politzki/jean-memory-v2/",
+        "Documentation": "https://github.com/jonathan-politzki/jean-memory-v2#readme",
+    },
+)
