@@ -9,7 +9,7 @@ Test script to demonstrate the new high-impact optimizations:
 3. Automated Memory Management
 
 Usage:
-    python jean_memory_v2/examples/test_optimizations.py
+    python jean_memory/examples/test_optimizations.py
 """
 
 import asyncio
@@ -25,8 +25,8 @@ logging.basicConfig(
 )
 
 # Enable cache logging to see hits
-logging.getLogger('jean_memory_v2.cache').setLevel(logging.INFO)
-logging.getLogger('jean_memory_v2.search').setLevel(logging.INFO)
+logging.getLogger('jean_memory.cache').setLevel(logging.INFO)
+logging.getLogger('jean_memory.search').setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ async def test_semantic_caching():
     print("=" * 50)
     
     try:
-        from jean_memory_v2.api_optimized import JeanMemoryAPIOptimized
+        from jean_memory.api_optimized import JeanMemoryAPIOptimized
         
         # Initialize API
         api = JeanMemoryAPIOptimized()
@@ -130,7 +130,7 @@ async def test_memory_deduplication():
     print("=" * 50)
     
     try:
-        from jean_memory_v2.api_optimized import JeanMemoryAPIOptimized
+        from jean_memory.api_optimized import JeanMemoryAPIOptimized
         
         api = JeanMemoryAPIOptimized()
         await api.initialize()
@@ -195,7 +195,7 @@ async def test_memory_optimization():
     print("=" * 50)
     
     try:
-        from jean_memory_v2.api_optimized import JeanMemoryAPIOptimized
+        from jean_memory.api_optimized import JeanMemoryAPIOptimized
         
         api = JeanMemoryAPIOptimized()
         await api.initialize()
@@ -355,7 +355,7 @@ async def main():
     else:
         print(f"\n⚠️ {total - passed} test(s) failed. Check logs above for details.")
     
-    print("\n📖 For more information, see: jean_memory_v2/OPTIMIZATION_GUIDE.md")
+    print("\n📖 For more information, see: docs/OPTIMIZATION_GUIDE.md")
 
 
 if __name__ == "__main__":

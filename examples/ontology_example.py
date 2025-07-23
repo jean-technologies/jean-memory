@@ -16,9 +16,9 @@ current_dir = Path(__file__).parent.resolve()
 project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
-from jean_memory_v2.ontology import get_ontology_config, ENTITY_TYPES, EDGE_TYPES
-from jean_memory_v2.custom_fact_extraction import CUSTOM_FACT_EXTRACTION_PROMPT
-from jean_memory_v2.config import JeanMemoryConfig
+from jean_memory.ontology import get_ontology_config, ENTITY_TYPES, EDGE_TYPES
+from jean_memory.custom_fact_extraction import CUSTOM_FACT_EXTRACTION_PROMPT
+from jean_memory.config import JeanMemoryConfig
 
 
 def demonstrate_ontology():
@@ -188,7 +188,7 @@ async def main():
         print("   • 100% backward compatibility with existing code")
         
         print("\n🎯 NEXT STEPS:")
-        print("   1. Run the test: python jean_memory_v2/test_ontology_integration.py")
+        print("   1. Run the test: python jean_memory/test_ontology_integration.py")
         print("   2. Use your existing Jean Memory V2 code - it will automatically use the new features")
         print("   3. Monitor logs for enhanced entity extraction")
         

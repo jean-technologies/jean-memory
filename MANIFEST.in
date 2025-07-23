@@ -5,10 +5,10 @@ include setup.py
 include requirements.txt
 include *.json
 include *.txt
-recursive-include jean_memory_v2 *.py
-recursive-include jean_memory_v2 *.json
-recursive-include jean_memory_v2 *.txt
-recursive-include jean_memory_v2 *.md
+recursive-include jean_memory *.py
+recursive-include jean_memory *.json
+recursive-include jean_memory *.txt
+recursive-include jean_memory *.md
 recursive-include examples *.py
 recursive-include examples *.md
 global-exclude __pycache__

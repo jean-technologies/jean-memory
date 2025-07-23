@@ -207,12 +207,12 @@ def get_eligible_users():
     finally:
         conn.close()
 
-async def get_user_context_with_jean_memory_v2(user_id: str):
+async def get_user_context_with_jean_memory(user_id: str):
     """Get comprehensive user context using Jean Memory V2 (same as live API)"""
     try:
         # Import and initialize Jean Memory V2 (same as live API)
-        from jean_memory_v2.mem0_adapter_optimized import get_async_memory_client_v2_optimized
-        from jean_memory_v2.config import JeanMemoryConfig
+        from jean_memory.mem0_adapter_optimized import get_async_memory_client_v2_optimized
+        from jean_memory.config import JeanMemoryConfig
         
         # Verify required environment variables (same as live API)
         qdrant_host = os.getenv("QDRANT_HOST")
@@ -308,7 +308,7 @@ async def generate_narrative_for_user(user_id: str, gemini: GeminiService, retry
     
     try:
         # Get comprehensive context using Jean Memory V2 (same as live API)
-        context_text = await get_user_context_with_jean_memory_v2(user_id)
+        context_text = await get_user_context_with_jean_memory(user_id)
         
         if not context_text or len(context_text) < 200:
             logger.warning(f"⚠️ [User {user_id}] Insufficient context ({len(context_text) if context_text else 0} chars)")

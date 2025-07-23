@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for Jean Memory V2
+Setup script for Jean Memory
 Fallback setup.py for compatibility with older pip versions
 """
 from setuptools import setup, find_packages
@@ -10,12 +10,12 @@ here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="jean-memory-v2",
+    name="jean-memory",
     version="2.0.0",
     description="Advanced Hybrid Memory System combining Mem0, Graphiti, and Gemini AI",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jonathan-politzki/jean-memory-v2",
+    url="https://github.com/jean-technologies/jean-memory",
     author="Jean Memory Team",
     author_email="team@jeanmemory.com",
     classifiers=[
@@ -85,11 +85,11 @@ setup(
         ],
     },
     package_data={
-        "jean_memory_v2": ["*.json", "*.txt", "*.md"],
+        "jean_memory": ["*.json", "*.txt", "*.md"],
     },
     project_urls={
-        "Bug Reports": "https://github.com/jonathan-politzki/jean-memory-v2/issues",
-        "Source": "https://github.com/jonathan-politzki/jean-memory-v2/",
-        "Documentation": "https://github.com/jonathan-politzki/jean-memory-v2#readme",
+        "Bug Reports": "https://github.com/jean-technologies/jean-memory/issues",
+        "Source": "https://github.com/jean-technologies/jean-memory/",
+        "Documentation": "https://github.com/jean-technologies/jean-memory#readme",
     },
 )

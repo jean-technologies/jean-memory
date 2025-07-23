@@ -7,7 +7,7 @@ openmemory test environment configuration for easy testing.
 """
 
 import asyncio
-from jean_memory_v2 import JeanMemoryV2
+from jean_memory import JeanMemoryV2
 
 
 async def main():
@@ -90,7 +90,7 @@ async def main():
         # Health check
         print(f"\n🏥 System Health Check")
         health = await jm.health_check()
-        print(f"   Overall status: {health['jean_memory_v2']}")
+        print(f"   Overall status: {health['jean_memory']}")
         print(f"   Components: {health['components']}")
         
         # Clean up after demonstration

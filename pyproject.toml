@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "jean-memory-v2"
+name = "jean-memory"
 version = "2.0.0"
 description = "Advanced Hybrid Memory System combining Mem0, Graphiti, and Gemini AI"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Jean Memory Team", email = "team@jeanmemory.com"}
 ]
@@ -16,7 +16,6 @@ keywords = ["memory", "ai", "graph", "search", "embeddings", "vector-database"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -79,17 +78,18 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jonathan-politzki/jean-memory-v2"
-Repository = "https://github.com/jonathan-politzki/jean-memory-v2.git"
-Issues = "https://github.com/jonathan-politzki/jean-memory-v2/issues"
-Documentation = "https://github.com/jonathan-politzki/jean-memory-v2#readme"
+Homepage = "https://github.com/jean-technologies/jean-memory"
+Repository = "https://github.com/jean-technologies/jean-memory.git"
+Issues = "https://github.com/jean-technologies/jean-memory/issues"
+Documentation = "https://github.com/jean-technologies/jean-memory#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["jean_memory_v2*"]
+include = ["jean_memory*"]
+exclude = ["jean_memory_v2*", "openmemory*", "tests*", "docs*", "examples*"]
 
 [tool.setuptools.package-data]
-jean_memory_v2 = ["*.json", "*.txt", "*.md"]
+jean_memory = ["*.json", "*.txt", "*.md"]
 
 [tool.black]
 line-length = 100

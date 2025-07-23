@@ -8,7 +8,7 @@ This example demonstrates the basic functionality of the Jean Memory V2 library.
 
 import asyncio
 import os
-from jean_memory_v2 import JeanMemoryV2, setup_logging
+from jean_memory import JeanMemoryV2, setup_logging
 
 
 async def main():
@@ -37,7 +37,7 @@ async def main():
         # Health check
         print("\n🏥 Performing health check...")
         health = await jm.health_check()
-        print(f"System status: {health['jean_memory_v2']}")
+        print(f"System status: {health['jean_memory']}")
         
         # Ingest some example memories
         print("\n📝 Ingesting memories...")

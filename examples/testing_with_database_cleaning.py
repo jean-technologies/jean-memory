@@ -9,7 +9,7 @@ environments and proper test isolation.
 
 import asyncio
 import os
-from jean_memory_v2 import (
+from jean_memory import (
     JeanMemoryV2,
     JeanMemoryConfig,
     DatabaseCleaner,

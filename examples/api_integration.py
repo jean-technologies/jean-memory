@@ -12,8 +12,8 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
-from jean_memory_v2.api_adapter import JeanMemoryV2ApiAdapter, create_v2_adapter_from_env
-from jean_memory_v2.exceptions import JeanMemoryError, SearchError, IngestionError
+from jean_memory.api_adapter import JeanMemoryV2ApiAdapter, create_v2_adapter_from_env
+from jean_memory.exceptions import JeanMemoryError, SearchError, IngestionError
 
 # Initialize FastAPI app
 app = FastAPI(title="Jean Memory V2 API Integration Example")
@@ -26,7 +26,7 @@ v2_adapter: Optional[JeanMemoryV2ApiAdapter] = None
 class CreateMemoryRequest(BaseModel):
     text: str
     metadata: Optional[Dict[str, Any]] = None
-    app_name: str = "jean_memory_v2"
+    app_name: str = "jean_memory"
 
 
 class SearchMemoriesRequest(BaseModel):
