@@ -64,8 +64,7 @@ class Config:
         self.QDRANT_URL = os.getenv("QDRANT_URL", "")
         
         # Collection name based on environment
-        default_collection = "openmemory_dev" if self.is_local_development else "openmemory_prod"
-        self.QDRANT_COLLECTION_NAME = os.getenv("MAIN_QDRANT_COLLECTION_NAME", default_collection)
+        self.QDRANT_COLLECTION_NAME = "openmemory_dev" if self.is_local_development else "openmemory_prod"
         
         # OpenAI configuration
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

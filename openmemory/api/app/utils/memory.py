@@ -129,8 +129,7 @@ async def get_async_memory_client(custom_instructions: str = None):
             'NEO4J_URI': neo4j_uri_env,  # May be None if not configured
             'NEO4J_USER': neo4j_user_env,  # May be None if not configured
             'NEO4J_PASSWORD': neo4j_password_env,  # May be None if not configured
-            'GEMINI_API_KEY': os.getenv("GEMINI_API_KEY") or "",
-            'MAIN_QDRANT_COLLECTION_NAME': os.getenv("MAIN_QDRANT_COLLECTION_NAME", "openmemory_dev")
+            'GEMINI_API_KEY': os.getenv("GEMINI_API_KEY") or ""
         }
         
         logger.debug("Initializing Jean Memory V2 with environment configuration")

@@ -1,6 +1,7 @@
 import enum
 import uuid
 import datetime
+import logging
 from sqlalchemy import (
     Column, String, Boolean, ForeignKey, Enum, Table,
     DateTime, JSON, Integer, UUID, Index, event, UniqueConstraint, Text, ARRAY, Float, func, text
@@ -13,6 +14,9 @@ from app.utils.categorization import get_categories_for_memory
 from sqlalchemy.schema import DDL
 import os
 from enum import Enum as PyEnum
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Python 3.10 compatibility
 try:

@@ -238,8 +238,7 @@ async def get_user_context_with_jean_memory_v2(user_id: str):
             'NEO4J_URI': os.getenv("NEO4J_URI"),
             'NEO4J_USER': os.getenv("NEO4J_USER"),
             'NEO4J_PASSWORD': os.getenv("NEO4J_PASSWORD"),
-            'GEMINI_API_KEY': os.getenv("GEMINI_API_KEY") or "",
-            'MAIN_QDRANT_COLLECTION_NAME': os.getenv("MAIN_QDRANT_COLLECTION_NAME", "openmemory_dev")
+            'GEMINI_API_KEY': os.getenv("GEMINI_API_KEY") or ""
         }
         
         config = JeanMemoryConfig.from_dict(config_dict)

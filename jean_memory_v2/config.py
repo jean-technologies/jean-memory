@@ -137,6 +137,11 @@ class JeanMemoryConfig:
         """Create configuration from environment variables"""
         return cls.from_dict(dict(os.environ))
     
+    @classmethod
+    def from_openmemory_test_env(cls) -> 'JeanMemoryConfig':
+        """Create configuration from OpenMemory test environment variables"""
+        return cls.from_environment()
+    
     def to_mem0_config(self) -> Dict[str, Any]:
         """
         Convert to Mem0 configuration format with ENHANCED DEDUPLICATION and CUSTOM FACT EXTRACTION

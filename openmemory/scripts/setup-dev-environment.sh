@@ -188,7 +188,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
 QDRANT_HOST=localhost
 QDRANT_PORT=6333
 QDRANT_API_KEY=
-MAIN_QDRANT_COLLECTION_NAME=openmemory_dev
 
 # Development Settings
 DEBUG=true
@@ -232,7 +231,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
 QDRANT_HOST=localhost
 QDRANT_PORT=6333
 QDRANT_API_KEY=
-MAIN_QDRANT_COLLECTION_NAME=openmemory_dev
 
 # =============================================================================
 # DEVELOPMENT SETTINGS

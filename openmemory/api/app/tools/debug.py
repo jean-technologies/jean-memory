@@ -11,6 +11,7 @@ from app.database import SessionLocal
 from app.utils.db import get_user_and_app
 from app.models import Document
 from app.analytics import track_tool_usage
+from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ async def debug_get_qdrant_payload(point_id: str) -> str:
     try:
         qdrant_host = os.getenv("QDRANT_HOST")
         qdrant_api_key = os.getenv("QDRANT_API_KEY")
-        collection_name = os.getenv("MAIN_QDRANT_COLLECTION_NAME")
+        collection_name = settings.QDRANT_COLLECTION_NAME
 
         if not all([qdrant_host, collection_name]):
             return "Error: Missing Qdrant environment variables for debugging."
