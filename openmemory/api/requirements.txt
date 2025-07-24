@@ -1,5 +1,5 @@
-# Jean Memory - Standalone Library
-jean-memory @ git+https://github.com/jean-technologies/jean-memory.git
+# Jean Memory - Now integrated locally in jean_memory/
+# (Previously: jean-memory @ git+https://github.com/jean-technologies/jean-memory.git)
 
 fastapi>=0.115.0
 uvicorn>=0.32.0
@@ -37,3 +37,4 @@ pgvector>=0.3.6
 graphiti-core>=0.13.0
 openai>=1.58.0
 qdrant-client>=1.12.0
+numpy>=1.24.0
