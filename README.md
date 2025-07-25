@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://github.com/jonathan-politzki/your-memory">
+  <a href="https://github.com/jean-technologies/jean-memory">
     <img src="docs/images/jean-logo.png" width="300px" alt="Jean Memory - Your Memory, Your AI">
   </a>
 </p>
 
 <p align="center">
-  <h1 align="center">Your Memory</h1>
+  <h1 align="center">Jean Memory</h1>
   <p align="center">A secure, private memory layer for your AI.</p>
 </p>
 
@@ -16,18 +16,18 @@
   ·
   <a href="https://jeanmemory.com/api-docs">Docs</a>
   ·
-  <a href="https://github.com/jonathan-politzki/your-memory/issues">Report an Issue</a>
+  <a href="https://github.com/jean-technologies/jean-memory/issues">Report an Issue</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jonathan-politzki/your-memory">
-    <img src="https://img.shields.io/github/stars/jonathan-politzki/your-memory?style=social" alt="GitHub stars">
+  <a href="https://github.com/jean-technologies/jean-memory">
+    <img src="https://img.shields.io/github/stars/jean-technologies/jean-memory?style=social" alt="GitHub stars">
   </a>
-  <a href="https://github.com/jonathan-politzki/your-memory/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/jonathan-politzki/your-memory?style=flat-square&color=blue" alt="License">
+  <a href="https://github.com/jean-technologies/jean-memory/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/jean-technologies/jean-memory?style=flat-square&color=blue" alt="License">
   </a>
-  <a href="https://github.com/jonathan-politzki/your-memory/issues">
-    <img src="https://img.shields.io/github/issues/jonathan-politzki/your-memory?style=flat-square&color=orange" alt="GitHub issues">
+  <a href="https://github.com/jean-technologies/jean-memory/issues">
+    <img src="https://img.shields.io/github/issues/jean-technologies/jean-memory?style=flat-square&color=orange" alt="GitHub issues">
   </a>
 </p>
 
@@ -72,49 +72,88 @@ Run the entire Jean Memory stack on your local machine.
 
 **Prerequisites:**
 - Node.js 18+ and npm
+- Python 3.12+ (auto-installed on macOS via Homebrew if missing)
 - Docker and Docker Compose
 - Git
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/jonathan-politzki/your-memory.git
-cd your-memory
+git clone https://github.com/jonathan-politzki/jean-memory.git
+cd jean-memory
 ```
 
-**2. Run initial setup:**
-This creates environment files and starts all services:
+**2. Navigate to the openmemory directory:**
+```bash
+cd openmemory
+```
+
+**3. Run one-time setup:**
+This collects your API keys and creates all environment files:
 ```bash
 make setup
 ```
 
-**3. Add your API keys:**
-When prompted during setup, add your API keys:
+**4. Add your API keys when prompted:**
 - `OPENAI_API_KEY` (required) - Get from [OpenAI Platform](https://platform.openai.com/api-keys)
 - `GEMINI_API_KEY` (optional) - Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-**4. Build the environment:**
-After adding API keys, build the environment:
+**5. Build the environment:**
+After adding API keys, build and configure everything:
 ```bash
 make build
 ```
 
-**5. Start the services:**
-You'll need two separate terminals:
+**6. Start development:**
 
-*Terminal 1 - Start backend (includes Supabase):*
+**Option A - Full development environment:**
 ```bash
-make backend
+make dev
+```
+
+**Option B - Start services individually:**
+
+*Terminal 1 - Start API and databases:*
+```bash
+make dev-api
 ```
 
 *Terminal 2 - Start frontend:*
 ```bash
-make ui-local
+make dev-ui
 ```
 
-**3. Access the application:**
-- **UI**: `http://localhost:3000`
-- **API Docs**: `http://localhost:8765/docs`
+**7. Access the application:**
+- **UI Dashboard**: `http://localhost:3000`
+- **API Documentation**: `http://localhost:8765/docs`
 - **Supabase Studio**: `http://localhost:54323`
+
+## 🔧 Environment Configuration
+
+Jean Memory uses a centralized environment configuration:
+
+- **Primary config**: `openmemory/.env.local` (your main environment file)
+- **API specific**: `openmemory/api/.env` (synced automatically)
+- **UI specific**: `openmemory/ui/.env.local` (synced automatically)
+
+The setup script automatically creates and synchronizes these files. Environment variables are loaded in this order of precedence:
+1. `.env.local` (highest priority)
+2. `api/.env` (API-specific)
+3. `.env` (fallback)
+
+**Useful commands:**
+```bash
+# Update environment with latest Supabase keys
+make configure-env
+
+# Check what services are running
+make status
+
+# View service logs
+make logs
+
+# Stop all services
+make stop
+```
 
 ## ⭐ Upgrade to Jean Memory Pro
 
@@ -137,7 +176,7 @@ This project incorporates code from [mem0ai/mem0](https://github.com/mem0ai/mem0
 ## 🙋‍♂️ Support
 
 - **Docs**: [jeanmemory.com/api-docs](https://jeanmemory.com/api-docs)
-- **Issues**: [GitHub Issues](https://github.com/jonathan-politzki/your-memory/issues)
+- **Issues**: [GitHub Issues](https://github.com/jonathan-politzki/jean-memory/issues)
 - **Email**: [jonathan@jeantechnologies.com](mailto:jonathan@jeantechnologies.com)
 
 ---
