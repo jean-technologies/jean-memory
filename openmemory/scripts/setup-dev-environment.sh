@@ -189,6 +189,9 @@ QDRANT_HOST=localhost
 QDRANT_PORT=6333
 QDRANT_API_KEY=
 
+# Admin Configuration (Auto-generated for security)
+ADMIN_SECRET_KEY=jean-memory-local-dev-$(openssl rand -hex 16)
+
 # Development Settings
 DEBUG=true
 LOG_LEVEL=INFO
@@ -231,6 +234,11 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
 QDRANT_HOST=localhost
 QDRANT_PORT=6333
 QDRANT_API_KEY=
+
+# =============================================================================
+# ADMIN CONFIGURATION
+# =============================================================================
+ADMIN_SECRET_KEY=jean-memory-local-dev-$(openssl rand -hex 16)
 
 # =============================================================================
 # DEVELOPMENT SETTINGS
