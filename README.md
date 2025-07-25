@@ -140,6 +140,8 @@ The setup script automatically creates and synchronizes these files. Environment
 2. `api/.env` (API-specific)
 3. `.env` (fallback)
 
+**Note**: The setup script automatically generates a secure `ADMIN_SECRET_KEY` for admin endpoints. This is required for the API server to start.
+
 **Useful commands:**
 ```bash
 # Update environment with latest Supabase keys
