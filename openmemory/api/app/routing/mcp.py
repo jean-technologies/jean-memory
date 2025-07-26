@@ -45,9 +45,11 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
         return JSONResponse(status_code=400, content={"error": "Missing user authentication details"})
 
     # 2. Set Context and Get Client Profile
+    logger.info(f"🔧 [MCP Context] Setting context variables for user: {user_id_from_header}, client: {client_name_from_header}")
     user_token = user_id_var.set(user_id_from_header)
     client_token = client_name_var.set(client_name_from_header)
     tasks_token = background_tasks_var.set(background_tasks)
+    logger.info(f"🔧 [MCP Context] Context variables set - background_tasks: {background_tasks is not None}")
     
     request_id = body.get("id") # Get request_id early for error reporting
     
@@ -86,10 +88,13 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
         elif method_name == "tools/call":
             tool_name = params.get("name")
             tool_args = params.get("arguments", {})
+            logger.info(f"🔧 [MCP Tool Call] Tool: {tool_name}, User: {user_id_from_header}, Client: {client_key}")
+            logger.info(f"🔧 [MCP Tool Call] Background tasks context: {background_tasks is not None}")
             try:
                 # Use the profile to handle the tool call, which encapsulates client-specific logic
                 result = await client_profile.handle_tool_call(tool_name, tool_args, user_id_from_header)
                 # Use the profile to format the response
+                logger.info(f"🔧 [MCP Tool Call] Tool {tool_name} completed successfully")
                 return JSONResponse(content=client_profile.format_tool_response(result, request_id))
             except Exception as e:
                 logger.error(f"Error calling tool '{tool_name}' for client '{client_key}': {e}", exc_info=True)

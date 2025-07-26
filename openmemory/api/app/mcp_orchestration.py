@@ -1108,40 +1108,52 @@ Keep it concise but comprehensive."""
 
     async def _add_memory_background(self, content: str, user_id: str, client_name: str, priority: bool = False):
         """
-        Add memory in background task with proper context isolation.
+        Add memory in background task with proper context isolation and comprehensive logging.
         Context variables are lost in background tasks, so we pass them as parameters.
         """
+        import time
+        bg_start = time.time()
+        
         try:
-            logger.info(f"💾 [BG Add Memory] ===== BACKGROUND MEMORY SAVE =====")
+            logger.info(f"💾 [BG Add Memory] ===== ORCHESTRATION BACKGROUND MEMORY SAVE =====")
             logger.info(f"💾 [BG Add Memory] User: {user_id}")
-            logger.info(f"💾 [BG Add Memory] Content: {content[:100]}...")
+            logger.info(f"💾 [BG Add Memory] Content Length: {len(content)} chars")
+            logger.info(f"💾 [BG Add Memory] Content Preview: {content[:100]}{'...' if len(content) > 100 else ''}")
             logger.info(f"💾 [BG Add Memory] Client: {client_name}")
             logger.info(f"💾 [BG Add Memory] Priority: {priority}")
+            logger.info(f"💾 [BG Add Memory] Called from: orchestration context")
             
             # Import here to avoid circular imports
+            logger.info(f"💾 [BG Add Memory] Step 1: Importing memory client")
             from app.utils.memory import get_memory_client
             
             # CRITICAL FIX: Set context variables in background task since they're lost
+            logger.info(f"💾 [BG Add Memory] Step 2: Setting context variables")
             from app.context import user_id_var, client_name_var
             user_token = user_id_var.set(user_id)
             client_token = client_name_var.set(client_name)
-            logger.info(f"💾 [BG Add Memory] Context variables set successfully")
+            logger.info(f"💾 [BG Add Memory] ✅ Context variables set successfully")
             
             try:
-                logger.info(f"💾 [BG Add Memory] Getting memory client...")
+                logger.info(f"💾 [BG Add Memory] Step 3: Getting memory client")
+                client_start = time.time()
                 memory_client = get_memory_client()
-                logger.info(f"💾 [BG Add Memory] Memory client obtained successfully")
+                client_time = time.time() - client_start
+                logger.info(f"💾 [BG Add Memory] ✅ Memory client obtained in {client_time:.3f}s")
                 
-                logger.info(f"💾 [BG Add Memory] Opening database session...")
+                logger.info(f"💾 [BG Add Memory] Step 4: Opening database session")
                 db = SessionLocal()
                 
                 try:
-                    logger.info(f"💾 [BG Add Memory] Getting user and app from database...")
+                    logger.info(f"💾 [BG Add Memory] Step 5: Getting user and app from database")
+                    db_start = time.time()
                     user, app = get_user_and_app(db, supabase_user_id=user_id, app_name=client_name, email=None)
+                    db_time = time.time() - db_start
+                    logger.info(f"💾 [BG Add Memory] ✅ DB lookup completed in {db_time:.3f}s")
                     logger.info(f"💾 [BG Add Memory] Found user: {user.id}, app: {app.name} (active: {app.is_active})")
                     
                     if not app.is_active:
-                        logger.warning(f"💾 [BG Add Memory] ❌ App {app.name} is paused for user {user_id} - skipping memory save")
+                        logger.warning(f"💾 [BG Add Memory] ⚠️ App {app.name} is paused for user {user_id} - skipping memory save")
                         return
 
                     metadata = {
