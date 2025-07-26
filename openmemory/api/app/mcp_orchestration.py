@@ -1027,25 +1027,36 @@ Examples: "none", "search: python project API", "deep_analysis", "conversation_h
         Context variables are lost in background tasks, so we pass them as parameters.
         """
         try:
-            logger.info(f"💾 [BG Add Memory] Saving memory for user {user_id}: {content[:50]}...")
+            logger.info(f"💾 [BG Add Memory] ===== BACKGROUND MEMORY SAVE =====")
+            logger.info(f"💾 [BG Add Memory] User: {user_id}")
+            logger.info(f"💾 [BG Add Memory] Content: {content[:100]}...")
+            logger.info(f"💾 [BG Add Memory] Client: {client_name}")
+            logger.info(f"💾 [BG Add Memory] Priority: {priority}")
             
             # Import here to avoid circular imports
             from app.utils.memory import get_memory_client
             
             # CRITICAL FIX: Set context variables in background task since they're lost
-            from app.mcp_server import user_id_var, client_name_var
+            from app.context import user_id_var, client_name_var
             user_token = user_id_var.set(user_id)
             client_token = client_name_var.set(client_name)
+            logger.info(f"💾 [BG Add Memory] Context variables set successfully")
             
             try:
+                logger.info(f"💾 [BG Add Memory] Getting memory client...")
                 memory_client = get_memory_client()
+                logger.info(f"💾 [BG Add Memory] Memory client obtained successfully")
+                
+                logger.info(f"💾 [BG Add Memory] Opening database session...")
                 db = SessionLocal()
                 
                 try:
+                    logger.info(f"💾 [BG Add Memory] Getting user and app from database...")
                     user, app = get_user_and_app(db, supabase_user_id=user_id, app_name=client_name, email=None)
+                    logger.info(f"💾 [BG Add Memory] Found user: {user.id}, app: {app.name} (active: {app.is_active})")
                     
                     if not app.is_active:
-                        logger.warning(f"Background memory add skipped - app {app.name} is paused for user {user_id}")
+                        logger.warning(f"💾 [BG Add Memory] ❌ App {app.name} is paused for user {user_id} - skipping memory save")
                         return
 
                     metadata = {
