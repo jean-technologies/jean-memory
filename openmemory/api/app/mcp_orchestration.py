@@ -415,6 +415,194 @@ Provide rich context that helps understand them deeply, but keep it conversation
             logger.error(f"❌ [Jean Memory] Orchestration failed: {e}", exc_info=True)
             return await self._fallback_simple_search(user_message, user_id)
 
+    async def _agentic_orchestration(self, user_message: str, user_id: str, client_name: str, background_tasks: BackgroundTasks) -> str:
+        """
+        Simplified agentic orchestration with recent memories baseline.
+        
+        3-Step Process:
+        1. Always get recent memories as baseline working context
+        2. Ask Claude for additional context strategy
+        3. Execute strategy and combine with formatted response
+        """
+        logger.info(f"🤖 [Agentic] Starting agentic orchestration for user {user_id}")
+        start_time = time.time()
+        
+        try:
+            tools = self._get_tools()
+            
+            # STEP 1: Always get recent memories baseline (your key requirement)
+            logger.info(f"📋 [Agentic] Step 1: Getting recent memories baseline")
+            recent_memories_result = await tools['list_memories'](limit=10)
+            
+            # Parse recent memories
+            recent_memories = []
+            if recent_memories_result:
+                try:
+                    recent_memories_data = json.loads(recent_memories_result)
+                    for mem in recent_memories_data:
+                        if isinstance(mem, dict):
+                            content = mem.get('memory', mem.get('content', ''))
+                            if content:
+                                recent_memories.append(content)
+                except (json.JSONDecodeError, TypeError):
+                    logger.warning(f"Failed to parse recent memories: {recent_memories_result[:100]}")
+            
+            logger.info(f"📋 [Agentic] Found {len(recent_memories)} recent memories")
+            
+            # STEP 2: Ask Claude for additional context strategy
+            logger.info(f"🧠 [Agentic] Step 2: Asking Claude for context strategy")
+            strategy = await self._decide_additional_context_strategy(user_message, recent_memories, user_id)
+            logger.info(f"🧠 [Agentic] Strategy decided: {strategy}")
+            
+            # STEP 3: Execute strategy and format response
+            logger.info(f"⚡ [Agentic] Step 3: Executing strategy and formatting")
+            additional_context = await self._execute_context_strategy(strategy, user_message, user_id, client_name)
+            
+            # Start background memory saving
+            if background_tasks:
+                background_tasks.add_task(self._add_memory_background, user_message, user_id, client_name)
+            
+            # Format final response with clear sections
+            response = self._format_agentic_response(recent_memories, additional_context, strategy)
+            
+            processing_time = time.time() - start_time
+            logger.info(f"🤖 [Agentic] Completed in {processing_time:.2f}s for user {user_id}")
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"❌ [Agentic] Error in agentic orchestration: {e}", exc_info=True)
+            # Fallback to standard orchestration
+            return await self._standard_orchestration(user_message, user_id, client_name, False)
+
+    async def _decide_additional_context_strategy(self, user_message: str, recent_memories: list, user_id: str) -> str:
+        """
+        Ask Claude to decide what additional context strategy is needed.
+        """
+        try:
+            from app.utils.gemini import GeminiService
+            gemini = GeminiService()
+            
+            recent_context = '; '.join(recent_memories[:5]) if recent_memories else "No recent memories"
+            
+            prompt = f"""Given this user message and their recent context, what additional context strategy is needed?
+
+USER MESSAGE: "{user_message}"
+RECENT CONTEXT: {recent_context}
+
+Strategy options:
+- "none" - Recent memories are sufficient
+- "search: [terms]" - Search for specific topics (provide search terms)
+- "deep_analysis" - Full narrative/comprehensive context
+- "conversation_history" - Focus on recent conversation flow
+
+Respond with just the strategy name, or "search:" followed by specific terms.
+Examples: "none", "search: python project API", "deep_analysis", "conversation_history"
+"""
+            
+            response = await gemini.generate_response(prompt)
+            return response.strip()
+            
+        except Exception as e:
+            logger.error(f"❌ [Agentic] Strategy decision failed: {e}")
+            return "search: " + user_message[:50]  # Fallback strategy
+
+    async def _execute_context_strategy(self, strategy: str, user_message: str, user_id: str, client_name: str) -> str:
+        """
+        Execute the chosen context strategy.
+        """
+        try:
+            tools = self._get_tools()
+            
+            if strategy.lower() == "none":
+                return ""
+            
+            elif strategy.lower().startswith("search:"):
+                # Extract search terms
+                search_terms = strategy[7:].strip()  # Remove "search:" prefix
+                if not search_terms:
+                    search_terms = user_message
+                
+                logger.info(f"🔍 [Agentic] Executing search strategy: {search_terms}")
+                search_result = await tools['search_memory'](query=search_terms, limit=5)
+                
+                if search_result:
+                    try:
+                        memories = json.loads(search_result)
+                        search_items = []
+                        for mem in memories:
+                            if isinstance(mem, dict):
+                                content = mem.get('memory', mem.get('content', ''))
+                                if content:
+                                    search_items.append(content)
+                        return '; '.join(search_items[:3])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                return ""
+            
+            elif strategy.lower() == "deep_analysis":
+                logger.info(f"🔬 [Agentic] Executing deep analysis strategy")
+                return await self._fast_deep_analysis(user_message, user_id, client_name)
+            
+            elif strategy.lower() == "conversation_history":
+                logger.info(f"💬 [Agentic] Executing conversation history strategy")
+                # Get recent conversational context
+                result = await tools['search_memory'](query="conversation discussion talked about", limit=5)
+                if result:
+                    try:
+                        memories = json.loads(result)
+                        conv_items = []
+                        for mem in memories:
+                            if isinstance(mem, dict):
+                                content = mem.get('memory', mem.get('content', ''))
+                                if content:
+                                    conv_items.append(content)
+                        return '; '.join(conv_items[:3])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                return ""
+            
+            else:
+                # Unknown strategy, fallback to search
+                return await self._execute_context_strategy(f"search: {user_message}", user_message, user_id, client_name)
+                
+        except Exception as e:
+            logger.error(f"❌ [Agentic] Strategy execution failed: {e}")
+            return ""
+
+    def _format_agentic_response(self, recent_memories: list, additional_context: str, strategy: str) -> str:
+        """
+        Format the final agentic response with clear sections.
+        """
+        try:
+            sections = []
+            
+            # ALWAYS include recent memories baseline
+            if recent_memories:
+                recent_section = "👥 **Recent Working Context** (Last 10 memories)\n"
+                for i, memory in enumerate(recent_memories[:5], 1):  # Show top 5
+                    recent_section += f"• {memory}\n"
+                if len(recent_memories) > 5:
+                    recent_section += f"• ...and {len(recent_memories) - 5} more recent memories\n"
+                sections.append(recent_section)
+            
+            # Add additional context if available
+            if additional_context and additional_context.strip():
+                strategy_name = strategy.split(':')[0].replace('_', ' ').title()
+                additional_section = f"⚡ **Additional Context** ({strategy_name})\n{additional_context}\n"
+                sections.append(additional_section)
+            
+            if sections:
+                response = "\n".join(sections)
+                response += "\n---\n💡 *Note: Recent context shows your current projects and preferences. Additional context provides deeper analysis relevant to your specific query.*"
+                return response
+            else:
+                return ""
+                
+        except Exception as e:
+            logger.error(f"❌ [Agentic] Response formatting failed: {e}")
+            return ""
+
     async def _fallback_simple_search(self, user_message: str, user_id: str) -> str:
         """
         Simple fallback search when all orchestration methods fail.
