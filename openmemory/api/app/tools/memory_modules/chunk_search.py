@@ -22,7 +22,7 @@ async def search_document_chunks(
     total_limit: int = 15
 ) -> List[Dict]:
     """
-    Fast text search through document chunks using PostgreSQL full-text search.
+    Fast text search through document chunks using ILIKE (fallback from full-text search).
     
     Args:
         query: Search query
@@ -46,41 +46,26 @@ async def search_document_chunks(
         if document_ids:
             chunks_query = chunks_query.filter(Document.id.in_(document_ids))
         
-        # Try full-text search first (if index exists)
-        try:
+        # Skip full-text search entirely for now - use ILIKE directly
+        # TODO: Fix PostgreSQL full-text search setup in production
+        logger.info(f"Using ILIKE search for query: {query}")
+        
+        # Split query into words for better ILIKE matching
+        query_words = query.lower().split()
+        ilike_conditions = []
+        
+        for word in query_words[:5]:  # Limit to first 5 words
+            if len(word) > 2:  # Skip very short words
+                ilike_conditions.append(DocumentChunk.content.ilike(f"%{word}%"))
+        
+        if ilike_conditions:
             chunks = chunks_query.filter(
-                func.to_tsvector('english', DocumentChunk.content).match(
-                    func.plainto_tsquery('english', query)
-                )
-            ).order_by(
-                func.ts_rank(
-                    func.to_tsvector('english', DocumentChunk.content),
-                    func.plainto_tsquery('english', query)
-                ).desc()
+                or_(*ilike_conditions)
             ).limit(total_limit).all()
-            
-            logger.info(f"Full-text search found {len(chunks)} chunks")
-            
-        except Exception as fts_error:
-            # Fallback to ILIKE if full-text search fails (no index)
-            logger.warning(f"Full-text search failed, using ILIKE: {fts_error}")
-            
-            # Split query into words for better ILIKE matching
-            query_words = query.lower().split()
-            ilike_conditions = []
-            
-            for word in query_words[:5]:  # Limit to first 5 words
-                if len(word) > 2:  # Skip very short words
-                    ilike_conditions.append(DocumentChunk.content.ilike(f"%{word}%"))
-            
-            if ilike_conditions:
-                chunks = chunks_query.filter(
-                    or_(*ilike_conditions)
-                ).limit(total_limit).all()
-            else:
-                chunks = []
-            
-            logger.info(f"ILIKE search found {len(chunks)} chunks")
+        else:
+            chunks = []
+        
+        logger.info(f"ILIKE search found {len(chunks)} chunks")
         
         # Format chunks as memory-like objects
         formatted_chunks = []
@@ -119,10 +104,18 @@ async def search_document_chunks(
         return formatted_chunks
         
     except Exception as e:
-        logger.error(f"Error searching document chunks: {e}", exc_info=True)
+        logger.error(f"Error searching document chunks: {e}")
+        # Rollback the transaction to prevent cascading errors
+        try:
+            db.rollback()
+        except:
+            pass
         return []
     finally:
-        db.close()
+        try:
+            db.close()
+        except:
+            pass
 
 
 def extract_document_ids_from_results(search_results: List[Dict]) -> Set[str]:

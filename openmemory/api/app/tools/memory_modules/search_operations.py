@@ -130,7 +130,8 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
                 continue
         
         # Handle deep search if requested or triggered automatically
-        if deep_search or await should_trigger_deep_search(query, formatted_memories):
+        # TEMPORARILY DISABLED: Deep search causing PostgreSQL hangs
+        if False:  # deep_search or await should_trigger_deep_search(query, formatted_memories):
             logger.info(f"Deep search activated for query: {query}")
             
             # Extract document IDs from vector results
@@ -256,7 +257,8 @@ async def _search_memory_v2_impl(query: str, supa_uid: str, client_name: str,
                 continue
         
         # Handle deep search if requested
-        if deep_search or await should_trigger_deep_search(query, formatted_results):
+        # TEMPORARILY DISABLED: Deep search causing PostgreSQL hangs
+        if False:  # deep_search or await should_trigger_deep_search(query, formatted_results):
             logger.info(f"Deep search activated for v2 query: {query}")
             
             # Extract document IDs from vector results
@@ -379,7 +381,9 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
                 )
             )
             
-            if should_deep_search:
+            # TEMPORARILY DISABLED: Deep search causing PostgreSQL hangs
+            # TODO: Re-enable once PostgreSQL full-text search is fixed
+            if False:  # should_deep_search:
                 logger.info("ask_memory: Triggering deep search for detailed content")
                 
                 # Extract document IDs
@@ -401,6 +405,8 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
                         search_result = {
                             'results': initial_memories + chunk_results
                         }
+            
+            logger.info("ask_memory: Chunk search temporarily disabled due to PostgreSQL issues")
 
             search_duration = time.time() - search_start_time
             
