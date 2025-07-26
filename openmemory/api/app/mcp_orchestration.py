@@ -479,16 +479,30 @@ Provide rich context that helps understand them deeply, but keep it conversation
             if background_tasks:
                 background_tasks.add_task(self._add_memory_background, user_message, user_id, client_name)
             
-            # Format final response with clear sections
-            logger.info(f"📝 [Agentic] ===== STEP 4: FORMAT RESPONSE =====")
-            response = self._format_agentic_response(recent_memories, additional_context, strategy)
+            # INTELLIGENT AGGREGATION: Combine contexts smartly without distillation
+            logger.info(f"📝 [Agentic] ===== STEP 4: INTELLIGENT CONTEXT AGGREGATION =====")
+            
+            # Build final context by intelligently combining all relevant information
+            context_parts = []
+            
+            # Always include recent memories as baseline (full context, no truncation)
+            if recent_memories:
+                recent_context = "\n".join([f"• {memory}" for memory in recent_memories])
+                context_parts.append(f"Recent Context:\n{recent_context}")
+            
+            # Add strategy-specific context if available (already optimized by strategy execution)
+            if additional_context and additional_context.strip():
+                context_parts.append(f"Additional Context:\n{additional_context}")
+            
+            # Return comprehensive context ready for AI consumption
+            final_context = "\n\n".join(context_parts) if context_parts else ""
             
             processing_time = time.time() - start_time
-            logger.info(f"📝 [Agentic] Final response length: {len(response)} characters")
-            logger.info(f"📝 [Agentic] Final response preview: {response[:300]}...")
+            logger.info(f"📝 [Agentic] Final context length: {len(final_context)} characters")
+            logger.info(f"📝 [Agentic] Context preview: {final_context[:300]}...")
             logger.info(f"🤖 [Agentic] ===== ORCHESTRATION COMPLETE in {processing_time:.2f}s =====")
             
-            return response
+            return final_context
             
         except Exception as e:
             logger.error(f"❌ [Agentic] Error in agentic orchestration: {e}", exc_info=True)
@@ -579,11 +593,12 @@ STRATEGY:"""
                             if isinstance(mem, dict):
                                 content = mem.get('memory', mem.get('content', ''))
                                 if content:
-                                    search_items.append(content)
+                                    search_items.append(f"• {content}")
                                     logger.info(f"⚡ [Strategy Exec] Search result {i+1}: {content}")
                         
-                        final_result = '; '.join(search_items[:3])
-                        logger.info(f"⚡ [Strategy Exec] ✅ Returning {len(search_items)} search results: {final_result}")
+                        # Return well-formatted search results ready for AI consumption
+                        final_result = "\n".join(search_items[:5])  # Include more results, better formatting
+                        logger.info(f"⚡ [Strategy Exec] ✅ Returning {len(search_items)} search results")
                         return final_result
                     except (json.JSONDecodeError, TypeError) as e:
                         logger.error(f"⚡ [Strategy Exec] Failed to parse search results: {e}")
@@ -607,8 +622,8 @@ STRATEGY:"""
                             if isinstance(mem, dict):
                                 content = mem.get('memory', mem.get('content', ''))
                                 if content:
-                                    conv_items.append(content)
-                        return '; '.join(conv_items[:3])
+                                    conv_items.append(f"• {content}")
+                        return "\n".join(conv_items[:5])  # Better formatting, more results
                     except (json.JSONDecodeError, TypeError):
                         pass
                 return ""
@@ -621,38 +636,6 @@ STRATEGY:"""
             logger.error(f"❌ [Agentic] Strategy execution failed: {e}")
             return ""
 
-    def _format_agentic_response(self, recent_memories: list, additional_context: str, strategy: str) -> str:
-        """
-        Format the final agentic response with clear sections.
-        """
-        try:
-            sections = []
-            
-            # ALWAYS include recent memories baseline
-            if recent_memories:
-                recent_section = "👥 **Recent Working Context** (Last 10 memories)\n"
-                for i, memory in enumerate(recent_memories[:5], 1):  # Show top 5
-                    recent_section += f"• {memory}\n"
-                if len(recent_memories) > 5:
-                    recent_section += f"• ...and {len(recent_memories) - 5} more recent memories\n"
-                sections.append(recent_section)
-            
-            # Add additional context if available
-            if additional_context and additional_context.strip():
-                strategy_name = strategy.split(':')[0].replace('_', ' ').title()
-                additional_section = f"⚡ **Additional Context** ({strategy_name})\n{additional_context}\n"
-                sections.append(additional_section)
-            
-            if sections:
-                response = "\n".join(sections)
-                response += "\n---\n💡 *Note: Recent context shows your current projects and preferences. Additional context provides deeper analysis relevant to your specific query.*"
-                return response
-            else:
-                return ""
-                
-        except Exception as e:
-            logger.error(f"❌ [Agentic] Response formatting failed: {e}")
-            return ""
 
     async def _fallback_simple_search(self, user_message: str, user_id: str) -> str:
         """
