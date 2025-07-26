@@ -1,6 +1,6 @@
 """
-Claude Haiku service for fast strategy decisions.
-Uses Claude Haiku 3.5 for ultra-fast, cost-effective simple reasoning tasks.
+Claude Sonnet 4 service for intelligent strategy decisions.
+Uses Claude Sonnet 4 for optimal tool calling and reasoning performance.
 """
 import os
 import anthropic
@@ -19,13 +19,13 @@ class ClaudeService:
         
         self.client = anthropic.Anthropic(api_key=api_key)
         
-    async def generate_response(self, prompt: str, model: str = "claude-3-5-haiku-20241022") -> str:
+    async def generate_response(self, prompt: str, model: str = "claude-sonnet-4-20250514") -> str:
         """
         Generate response using Claude.
         
         Args:
             prompt: The prompt to send
-            model: Model to use (default: claude-3-5-haiku for speed)
+            model: Model to use (default: claude-sonnet-4 for optimal performance)
         """
         start_time = time.time()
         logger.info(f"🤖 [CLAUDE] Starting API call - Model: {model}")
@@ -34,7 +34,7 @@ class ClaudeService:
         try:
             response = self.client.messages.create(
                 model=model,
-                max_tokens=1000,  # Keep low for strategy decisions
+                max_tokens=2000,  # Increased for Sonnet 4's more detailed responses
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -51,5 +51,34 @@ class ClaudeService:
             raise
     
     async def fast_strategy_decision(self, prompt: str) -> str:
-        """Fast strategy decision using Haiku for sub-second response"""
-        return await self.generate_response(prompt, model="claude-3-5-haiku-20241022")
+        """Intelligent strategy decision using Sonnet 4 for optimal tool calling performance"""
+        return await self.generate_response(prompt, model="claude-sonnet-4-20250514")
+    
+    async def strategy_decision_optimized(self, prompt: str) -> str:
+        """
+        Optimized strategy decision using Sonnet 4 with specific parameters for tool calling.
+        Uses lower temperature and optimized max_tokens for consistent, fast responses.
+        """
+        start_time = time.time()
+        logger.info(f"🤖 [CLAUDE-STRATEGY] Starting optimized strategy call - Model: claude-sonnet-4-20250514")
+        logger.debug(f"🤖 [CLAUDE-STRATEGY] Prompt length: {len(prompt)} chars")
+        
+        try:
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=100,  # Very low for strategy decisions - should be just a few words
+                temperature=0.1,  # Low temperature for consistent responses
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            elapsed = time.time() - start_time
+            logger.info(f"⏱️ [CLAUDE-STRATEGY] Optimized strategy call completed: {elapsed:.2f}s")
+            
+            return response.content[0].text.strip()
+            
+        except Exception as e:
+            elapsed = time.time() - start_time
+            logger.error(f"❌ [CLAUDE-STRATEGY] Optimized strategy call failed after {elapsed:.2f}s: {e}")
+            raise

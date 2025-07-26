@@ -648,11 +648,11 @@ async def _deep_memory_query_impl(search_query: str, supa_uid: str, client_name:
             
             logger.info(f"deep_memory_query: Memory fetching for user {supa_uid} took {mem_fetch_duration:.2f}s. Found {len(prioritized_memories)} memories.")
 
-            # 2. Get ALL documents for comprehensive analysis
+            # 2. Get documents for comprehensive analysis (increased limit for better coverage)
             doc_fetch_start_time = time.time()
             all_db_documents = db.query(Document).filter(
                 Document.user_id == user.id
-            ).order_by(Document.created_at.desc()).limit(20).all()
+            ).order_by(Document.created_at.desc()).limit(25).all()
             doc_fetch_duration = time.time() - doc_fetch_start_time
             logger.info(f"deep_memory_query: Document fetching for user {supa_uid} took {doc_fetch_duration:.2f}s. Found {len(all_db_documents)} documents.")
             
@@ -768,8 +768,16 @@ async def _deep_memory_query_impl(search_query: str, supa_uid: str, client_name:
                 context += "=== FULL DOCUMENT CONTENT ===\n\n"
                 
                 docs_included = 0
+                total_content_chars = 0
+                max_content_per_analysis = 800000  # Conservative limit for Gemini 2.5 Pro (2M token limit ~= 1M chars, keeping buffer)
+                
                 for doc, score, reasons in selected_documents:
-                    if docs_included >= 3:  # Reasonable limit
+                    if docs_included >= 5:  # Increased limit given higher token capacity
+                        break
+                    
+                    # Check content length to prevent overwhelming Gemini
+                    if doc.content and len(doc.content) + total_content_chars > max_content_per_analysis:
+                        logger.info(f"deep_memory_query: Skipping document '{doc.title}' to prevent content overflow")
                         break
                         
                     context += f"=== FULL CONTENT: {doc.title} ===\n"
@@ -778,6 +786,7 @@ async def _deep_memory_query_impl(search_query: str, supa_uid: str, client_name:
                     
                     if doc.content:
                         context += doc.content
+                        total_content_chars += len(doc.content)
                     
                     context += "\n\n" + "="*50 + "\n\n"
                     docs_included += 1
