@@ -68,7 +68,7 @@ export const Install = () => {
       textToCopy =
         isMcp
           ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
-          : `npx install-mcp ${MCP_URL}/mcp/${tab}/sse/${userId} --client ${tab}`;
+          : `npx install-mcp "${MCP_URL}/mcp/${tab}/sse/${userId}" --client ${tab}`;
     }
 
     try {
@@ -113,12 +113,12 @@ export const Install = () => {
     let manualCommand;
     if (appKey === 'cursor') {
       const MCP_URL = "https://api.jeanmemory.com";
-      manualCommand = `npx install-mcp ${MCP_URL}/mcp/cursor/sse/${userId} --client cursor`;
+      manualCommand = `npx install-mcp "${MCP_URL}/mcp/cursor/sse/${userId}" --client cursor`;
     } else {
       const MCP_URL = "https://api.jeanmemory.com";
       manualCommand = isMcp 
         ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
-        : `npx install-mcp ${MCP_URL}/mcp/${appKey}/sse/${userId} --client ${appKey}`;
+        : `npx install-mcp "${MCP_URL}/mcp/${appKey}/sse/${userId}" --client ${appKey}`;
     }
 
     return (

@@ -89,7 +89,7 @@ const MCPDocsPage = () => {
                     <p>This method configures an existing, compatible agent (e.g., Claude) to use your memory. It will not work for custom Python scripts.</p>
                     <h3 className="font-semibold text-slate-200 pt-4">Your Personalized Install Command:</h3>
                     <p>Run the following command in your terminal. It includes your unique User ID and will configure your local MCP client.</p>
-                    <CodeBlock code={`npx install-mcp ${mcpUrl} --client claude`} lang="bash" />
+                    <CodeBlock code={`npx install-mcp "${mcpUrl}" --client claude-code`} lang="bash" />
                     <p>Once installed, the agent will automatically discover and be able to use your memory tools.</p>
                 </DocsSection>
 
