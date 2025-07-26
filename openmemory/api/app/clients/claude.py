@@ -12,12 +12,13 @@ class ClaudeProfile(BaseClientProfile):
         tools = [
             {
                 "name": "jean_memory",
-                "description": "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true.",
+                "description": "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false only if context definitely won't help the response.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "user_message": {"type": "string", "description": "The user's complete message or question"},
-                        "is_new_conversation": {"type": "boolean", "description": "Set to true only for the very first message in a new chat session, otherwise false."}
+                        "is_new_conversation": {"type": "boolean", "description": "Set to true only for the very first message in a new chat session, otherwise false."},
+                        "needs_context": {"type": "boolean", "description": "Whether context retrieval is needed for this query. Defaults to true. Set to false only if context definitely won't help the response.", "default": True}
                     },
                     "required": ["user_message", "is_new_conversation"]
                 }
