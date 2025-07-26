@@ -424,49 +424,69 @@ Provide rich context that helps understand them deeply, but keep it conversation
         2. Ask Claude for additional context strategy
         3. Execute strategy and combine with formatted response
         """
-        logger.info(f"🤖 [Agentic] Starting agentic orchestration for user {user_id}")
+        logger.info(f"🤖 [Agentic] ===== STARTING AGENTIC ORCHESTRATION =====")
+        logger.info(f"🤖 [Agentic] User: {user_id}")
+        logger.info(f"🤖 [Agentic] Message: '{user_message}'")
+        logger.info(f"🤖 [Agentic] Client: {client_name}")
         start_time = time.time()
         
         try:
             tools = self._get_tools()
             
             # STEP 1: Always get recent memories baseline (your key requirement)
-            logger.info(f"📋 [Agentic] Step 1: Getting recent memories baseline")
+            logger.info(f"📋 [Agentic] ===== STEP 1: RECENT MEMORIES BASELINE =====")
+            step1_start = time.time()
             recent_memories_result = await tools['list_memories'](limit=10)
+            step1_time = time.time() - step1_start
+            
+            logger.info(f"📋 [Agentic] Raw recent memories result: {recent_memories_result}")
             
             # Parse recent memories
             recent_memories = []
             if recent_memories_result:
                 try:
                     recent_memories_data = json.loads(recent_memories_result)
-                    for mem in recent_memories_data:
+                    logger.info(f"📋 [Agentic] Parsed memories data: {recent_memories_data}")
+                    
+                    for i, mem in enumerate(recent_memories_data):
                         if isinstance(mem, dict):
                             content = mem.get('memory', mem.get('content', ''))
                             if content:
                                 recent_memories.append(content)
-                except (json.JSONDecodeError, TypeError):
-                    logger.warning(f"Failed to parse recent memories: {recent_memories_result[:100]}")
+                                logger.info(f"📋 [Agentic] Memory {i+1}: {content}")
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.error(f"📋 [Agentic] Failed to parse recent memories: {e}")
+                    logger.error(f"📋 [Agentic] Raw result was: {recent_memories_result[:200]}")
             
-            logger.info(f"📋 [Agentic] Found {len(recent_memories)} recent memories")
+            logger.info(f"📋 [Agentic] ✅ STEP 1 COMPLETE: Found {len(recent_memories)} recent memories in {step1_time:.2f}s")
             
             # STEP 2: Ask Claude for additional context strategy
-            logger.info(f"🧠 [Agentic] Step 2: Asking Claude for context strategy")
+            logger.info(f"🧠 [Agentic] ===== STEP 2: CLAUDE STRATEGY DECISION =====")
+            step2_start = time.time()
             strategy = await self._decide_additional_context_strategy(user_message, recent_memories, user_id)
-            logger.info(f"🧠 [Agentic] Strategy decided: {strategy}")
+            step2_time = time.time() - step2_start
+            logger.info(f"🧠 [Agentic] ✅ STEP 2 COMPLETE: Strategy decided: '{strategy}' in {step2_time:.2f}s")
             
             # STEP 3: Execute strategy and format response
-            logger.info(f"⚡ [Agentic] Step 3: Executing strategy and formatting")
+            logger.info(f"⚡ [Agentic] ===== STEP 3: EXECUTE STRATEGY =====")
+            step3_start = time.time()
             additional_context = await self._execute_context_strategy(strategy, user_message, user_id, client_name)
+            step3_time = time.time() - step3_start
+            logger.info(f"⚡ [Agentic] Strategy execution result: {additional_context[:200] if additional_context else 'No additional context'}")
+            logger.info(f"⚡ [Agentic] ✅ STEP 3 COMPLETE: Strategy executed in {step3_time:.2f}s")
             
             # Start background memory saving
             if background_tasks:
                 background_tasks.add_task(self._add_memory_background, user_message, user_id, client_name)
             
             # Format final response with clear sections
+            logger.info(f"📝 [Agentic] ===== STEP 4: FORMAT RESPONSE =====")
             response = self._format_agentic_response(recent_memories, additional_context, strategy)
             
             processing_time = time.time() - start_time
-            logger.info(f"🤖 [Agentic] Completed in {processing_time:.2f}s for user {user_id}")
+            logger.info(f"📝 [Agentic] Final response length: {len(response)} characters")
+            logger.info(f"📝 [Agentic] Final response preview: {response[:300]}...")
+            logger.info(f"🤖 [Agentic] ===== ORCHESTRATION COMPLETE in {processing_time:.2f}s =====")
             
             return response
             
@@ -480,10 +500,12 @@ Provide rich context that helps understand them deeply, but keep it conversation
         Ask Claude to decide what additional context strategy is needed.
         """
         try:
+            logger.info(f"🧠 [Strategy] Starting Claude strategy decision for user {user_id}")
             from app.utils.gemini import GeminiService
             gemini = GeminiService()
             
             recent_context = '; '.join(recent_memories[:5]) if recent_memories else "No recent memories"
+            logger.info(f"🧠 [Strategy] Recent context being sent to Claude: {recent_context}")
             
             prompt = f"""Given this user message and their recent context, what additional context strategy is needed?
 
@@ -500,21 +522,30 @@ Respond with just the strategy name, or "search:" followed by specific terms.
 Examples: "none", "search: python project API", "deep_analysis", "conversation_history"
 """
             
+            logger.info(f"🧠 [Strategy] Sending prompt to Claude: {prompt}")
+            prompt_start = time.time()
             response = await gemini.generate_response(prompt)
+            prompt_time = time.time() - prompt_start
+            
+            logger.info(f"🧠 [Strategy] Claude responded in {prompt_time:.2f}s: '{response.strip()}'")
             return response.strip()
             
         except Exception as e:
-            logger.error(f"❌ [Agentic] Strategy decision failed: {e}")
-            return "search: " + user_message[:50]  # Fallback strategy
+            logger.error(f"❌ [Strategy] Strategy decision failed: {e}")
+            fallback = "search: " + user_message[:50]
+            logger.info(f"🧠 [Strategy] Using fallback strategy: {fallback}")
+            return fallback
 
     async def _execute_context_strategy(self, strategy: str, user_message: str, user_id: str, client_name: str) -> str:
         """
         Execute the chosen context strategy.
         """
         try:
+            logger.info(f"⚡ [Strategy Exec] Executing strategy: '{strategy}' for user {user_id}")
             tools = self._get_tools()
             
             if strategy.lower() == "none":
+                logger.info(f"⚡ [Strategy Exec] Strategy is 'none' - returning empty context")
                 return ""
             
             elif strategy.lower().startswith("search:"):
@@ -522,22 +553,36 @@ Examples: "none", "search: python project API", "deep_analysis", "conversation_h
                 search_terms = strategy[7:].strip()  # Remove "search:" prefix
                 if not search_terms:
                     search_terms = user_message
+                    logger.info(f"⚡ [Strategy Exec] No search terms provided, using user message: '{search_terms}'")
                 
-                logger.info(f"🔍 [Agentic] Executing search strategy: {search_terms}")
+                logger.info(f"⚡ [Strategy Exec] 🔍 EXECUTING SEARCH: '{search_terms}'")
+                search_start = time.time()
                 search_result = await tools['search_memory'](query=search_terms, limit=5)
+                search_time = time.time() - search_start
+                
+                logger.info(f"⚡ [Strategy Exec] Search completed in {search_time:.2f}s")
+                logger.info(f"⚡ [Strategy Exec] Raw search result: {search_result}")
                 
                 if search_result:
                     try:
                         memories = json.loads(search_result)
+                        logger.info(f"⚡ [Strategy Exec] Parsed {len(memories)} search results")
+                        
                         search_items = []
-                        for mem in memories:
+                        for i, mem in enumerate(memories):
                             if isinstance(mem, dict):
                                 content = mem.get('memory', mem.get('content', ''))
                                 if content:
                                     search_items.append(content)
-                        return '; '.join(search_items[:3])
-                    except (json.JSONDecodeError, TypeError):
-                        pass
+                                    logger.info(f"⚡ [Strategy Exec] Search result {i+1}: {content}")
+                        
+                        final_result = '; '.join(search_items[:3])
+                        logger.info(f"⚡ [Strategy Exec] ✅ Returning {len(search_items)} search results: {final_result}")
+                        return final_result
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.error(f"⚡ [Strategy Exec] Failed to parse search results: {e}")
+                
+                logger.warning(f"⚡ [Strategy Exec] No valid search results found")
                 return ""
             
             elif strategy.lower() == "deep_analysis":
