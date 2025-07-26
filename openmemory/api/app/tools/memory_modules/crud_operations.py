@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 @retry_on_exception(retries=3, delay=1, backoff=2, exceptions=(ConnectionError,))
 async def add_memories(text: str, tags: Optional[List[str]] = None, priority: bool = False) -> str:
     """
-    Add new memories to the user's memory collection.
+    Add new memories to the user's memory collection with comprehensive logging.
     
     Args:
         text: The content to remember
@@ -37,21 +37,38 @@ async def add_memories(text: str, tags: Optional[List[str]] = None, priority: bo
     Returns:
         JSON string confirming successful addition or error details
     """
+    import time
+    request_start = time.time()
+    
+    logger.info(f"🚀 [Add Memories] ===== MCP TOOL CALL: add_memories =====")
+    
     supa_uid = user_id_var.get(None)
     client_name = client_name_var.get(None)
     
+    logger.info(f"🚀 [Add Memories] Context check - User ID: {supa_uid}, Client: {client_name}")
+    
     if not supa_uid:
+        logger.error(f"🚀 [Add Memories] ❌ Missing user_id in context")
         return format_error_response("Supabase user_id not available in context", "add_memories")
     if not client_name:
+        logger.error(f"🚀 [Add Memories] ❌ Missing client_name in context")
         return format_error_response("client_name not available in context", "add_memories")
     
     # Validate and sanitize input
+    logger.info(f"🚀 [Add Memories] Input validation - Original length: {len(text)} chars")
     text = text.strip()
     if not text:
+        logger.error(f"🚀 [Add Memories] ❌ Empty text after stripping")
         return format_error_response("Memory content cannot be empty", "add_memories")
     
+    original_length = len(text)
     text = truncate_text(text, 5000)  # Limit memory content length
+    if len(text) != original_length:
+        logger.warning(f"🚀 [Add Memories] ⚠️ Text truncated from {original_length} to {len(text)} chars")
+    
     tags = sanitize_tags(tags or [])
+    logger.info(f"🚀 [Add Memories] Sanitized tags: {tags}")
+    logger.info(f"🚀 [Add Memories] Final content preview: {text[:100]}{'...' if len(text) > 100 else ''}")
     
     try:
         # Track usage
@@ -60,79 +77,148 @@ async def add_memories(text: str, tags: Optional[List[str]] = None, priority: bo
             'has_tags': bool(tags),
             'priority': priority
         })
+        logger.info(f"🚀 [Add Memories] Usage tracking completed")
         
         # Add timeout for operation
-        return await asyncio.wait_for(
+        logger.info(f"🚀 [Add Memories] Starting background memory addition (60s timeout)")
+        operation_start = time.time()
+        
+        result = await asyncio.wait_for(
             _add_memories_background_claude(text, tags, supa_uid, client_name, priority),
             timeout=60.0
         )
+        
+        operation_time = time.time() - operation_start
+        total_time = time.time() - request_start
+        logger.info(f"🚀 [Add Memories] ✅ Background operation completed in {operation_time:.2f}s")
+        logger.info(f"🚀 [Add Memories] ===== TOTAL REQUEST TIME: {total_time:.2f}s =====")
+        
+        return result
+        
     except asyncio.TimeoutError:
+        total_time = time.time() - request_start
+        logger.error(f"🚀 [Add Memories] ❌ Memory addition timed out after 60s (total: {total_time:.2f}s)")
+        logger.error(f"🚀 [Add Memories] ❌ Timeout context - User: {supa_uid}, Client: {client_name}")
         return format_error_response("Memory addition timed out", "add_memories")
     except Exception as e:
-        logger.error(f"Error in add_memories: {e}", exc_info=True)
+        total_time = time.time() - request_start
+        logger.error(f"🚀 [Add Memories] ❌ Error after {total_time:.2f}s: {e}", exc_info=True)
+        logger.error(f"🚀 [Add Memories] ❌ Error context - User: {supa_uid}, Client: {client_name}, Text preview: {text[:50]}...")
         return format_error_response(f"Failed to add memory: {e}", "add_memories")
 
 
 async def _add_memories_background_claude(text: str, tags: Optional[List[str]], 
                                         supa_uid: str, client_name: str, priority: bool = False):
-    """Background implementation for adding memories"""
+    """Background implementation for adding memories with comprehensive logging"""
     from app.utils.memory import get_async_memory_client
+    import time
+    
+    operation_start = time.time()
+    logger.info(f"💾 [Memory Add] ===== STARTING BACKGROUND MEMORY ADDITION =====")
+    logger.info(f"💾 [Memory Add] User: {supa_uid}")
+    logger.info(f"💾 [Memory Add] Client: {client_name}")
+    logger.info(f"💾 [Memory Add] Content Length: {len(text)} chars")
+    logger.info(f"💾 [Memory Add] Tags: {tags}")
+    logger.info(f"💾 [Memory Add] Priority: {priority}")
     
     db = SessionLocal()
     try:
         # Get or create user
+        logger.info(f"💾 [Memory Add] Step 1: Getting or creating user {supa_uid}")
         user = get_or_create_user(db, supa_uid, f"{supa_uid}@placeholder.com")
         if not user:
+            logger.error(f"💾 [Memory Add] ❌ Failed to get or create user {supa_uid}")
             return format_error_response("Failed to get or create user", "add_memories")
+        logger.info(f"💾 [Memory Add] ✅ User found/created: ID {user.id}")
         
         # Check subscription limits
+        logger.info(f"💾 [Memory Add] Step 2: Checking subscription limits")
         subscription_checker = SubscriptionChecker()
         current_memory_count = db.query(Memory).filter(
             Memory.user_id == user.id,
             Memory.state == MemoryState.active
         ).count()
+        logger.info(f"💾 [Memory Add] Current memory count: {current_memory_count}")
         
         # Validate memory limits
         can_add, limit_message = validate_memory_limits(
             supa_uid, current_memory_count, MEMORY_LIMITS.__dict__
         )
         if not can_add:
+            logger.warning(f"💾 [Memory Add] ⚠️ Memory limit exceeded: {limit_message}")
             return format_error_response(limit_message, "add_memories")
+        logger.info(f"💾 [Memory Add] ✅ Memory limits OK, can add memory")
         
         # Get app context
+        logger.info(f"💾 [Memory Add] Step 3: Getting app context")
         user, app = get_user_and_app(db, supa_uid, client_name)
+        logger.info(f"💾 [Memory Add] ✅ App context: {app.name} (ID: {app.id}, Active: {app.is_active})")
+        
+        if not app.is_active:
+            logger.warning(f"💾 [Memory Add] ⚠️ App {app.name} is not active for user {supa_uid}")
+            return format_error_response(f"App {app.name} is paused", "add_memories")
         
         # Add to memory client
-        memory_client = await get_async_memory_client()
+        logger.info(f"💾 [Memory Add] Step 4: Initializing memory client")
+        try:
+            memory_client = await get_async_memory_client()
+            logger.info(f"💾 [Memory Add] ✅ Memory client initialized successfully")
+        except Exception as e:
+            logger.error(f"💾 [Memory Add] ❌ Failed to initialize memory client: {e}", exc_info=True)
+            return format_error_response(f"Memory client initialization failed: {str(e)}", "add_memories")
         
         # Prepare metadata
+        logger.info(f"💾 [Memory Add] Step 5: Preparing metadata")
         metadata = {
             'app_name': client_name,
             'user_id': supa_uid,
             'priority': priority,
-            'added_at': datetime.datetime.now().isoformat()
+            'added_at': datetime.datetime.now().isoformat(),
+            'source': 'background_add_memories'
         }
         
         if tags:
             metadata['tags'] = tags
         
+        logger.info(f"💾 [Memory Add] Metadata prepared: {list(metadata.keys())}")
+        
         # Add to memory system
-        result = await memory_client.add(
-            text,
-            user_id=supa_uid,
-            metadata=metadata
-        )
+        logger.info(f"💾 [Memory Add] Step 6: Adding to memory system")
+        memory_add_start = time.time()
+        try:
+            result = await memory_client.add(
+                text,
+                user_id=supa_uid,
+                metadata=metadata
+            )
+            memory_add_time = time.time() - memory_add_start
+            logger.info(f"💾 [Memory Add] ✅ Memory client add successful in {memory_add_time:.2f}s")
+            logger.info(f"💾 [Memory Add] Memory client result: {result}")
+        except Exception as e:
+            logger.error(f"💾 [Memory Add] ❌ Memory client add failed: {e}", exc_info=True)
+            return format_error_response(f"Memory system add failed: {str(e)}", "add_memories")
         
         # Also save to local database for backup/querying
-        memory_record = Memory(
-            content=text,
-            user_id=user.id,
-            app_id=app.id,
-            state=MemoryState.active,
-            metadata_={'tags': tags, 'priority': priority}
-        )
-        db.add(memory_record)
-        db.commit()
+        logger.info(f"💾 [Memory Add] Step 7: Saving to local database")
+        try:
+            memory_record = Memory(
+                content=text,
+                user_id=user.id,
+                app_id=app.id,
+                state=MemoryState.active,
+                metadata_={'tags': tags, 'priority': priority, 'mem0_id': result.get('id') if result else None}
+            )
+            db.add(memory_record)
+            db.commit()
+            logger.info(f"💾 [Memory Add] ✅ Local database save successful: record ID {memory_record.id}")
+        except Exception as e:
+            logger.error(f"💾 [Memory Add] ❌ Local database save failed: {e}", exc_info=True)
+            db.rollback()
+            # Continue anyway since memory client succeeded
+            logger.warning(f"💾 [Memory Add] ⚠️ Continuing despite local DB failure (memory client succeeded)")
+        
+        operation_time = time.time() - operation_start
+        logger.info(f"💾 [Memory Add] ===== BACKGROUND MEMORY ADDITION COMPLETE in {operation_time:.2f}s =====")
         
         return safe_json_dumps({
             "status": "success",
@@ -140,14 +226,18 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
             "memory_id": result.get('id') if result else str(memory_record.id),
             "content_preview": text[:100] + "..." if len(text) > 100 else text,
             "tags": tags,
-            "priority": priority
+            "priority": priority,
+            "processing_time": f"{operation_time:.2f}s"
         })
         
     except Exception as e:
+        operation_time = time.time() - operation_start
         db.rollback()
-        logger.error(f"Error adding memory: {e}", exc_info=True)
+        logger.error(f"💾 [Memory Add] ❌ CRITICAL ERROR after {operation_time:.2f}s: {e}", exc_info=True)
+        logger.error(f"💾 [Memory Add] ❌ Error context - User: {supa_uid}, Client: {client_name}, Content: {text[:50]}...")
         return format_error_response(f"Failed to add memory: {str(e)}", "add_memories")
     finally:
+        logger.info(f"💾 [Memory Add] Closing database connection for user {supa_uid}")
         db.close()
 
 

@@ -1694,10 +1694,13 @@ User Message: "what time is it?"
             try:
                 # Get user by user_id string
                 from app.models import User
+                logger.debug(f"📝 [Narrative Cache] Looking up user in database for user_id: {user_id}")
                 user = db.query(User).filter(User.user_id == user_id).first()
                 if not user:
-                    logger.warning(f"User not found for user_id: {user_id}")
+                    logger.warning(f"📝 [Narrative Cache] User not found in database for user_id: {user_id}")
                     return None
+                
+                logger.debug(f"📝 [Narrative Cache] Found user in database: {user.id} for user_id: {user_id}")
                 
                 # Check for existing narrative
                 narrative = db.query(UserNarrative).filter(UserNarrative.user_id == user.id).first()
