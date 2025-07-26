@@ -386,9 +386,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
         logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}, needs_context: {needs_context}")
         
         try:
-            # NEW CONVERSATIONS: Always use cached narrative first (ignore needs_context)
+            # NEW CONVERSATIONS: Always use cached narrative first
             if is_new_conversation:
-                logger.info(f"🆕 [New Conversation] Processing new conversation (ignoring needs_context={needs_context})")
                 cached_narrative = await self._get_cached_narrative(user_id)
                 if cached_narrative:
                     logger.info(f"✅ [New Conversation] Using cached narrative for user {user_id}")
@@ -408,13 +407,6 @@ Provide rich context that helps understand them deeply, but keep it conversation
                     logger.warning(f"Background narrative caching failed: {cache_error}")
                 
                 return deep_analysis
-            
-            # CONTINUING CONVERSATIONS: Check needs_context first
-            if not needs_context:
-                logger.info(f"🚫 [No Context] User indicated no context needed for: '{user_message}'")
-                # Just save memory in background and return empty context
-                await self._add_memory_background(user_message, user_id, client_name, priority=False)
-                return ""
             
             # CONTINUING CONVERSATIONS: Use simplified agentic approach
             return await self._agentic_orchestration(user_message, user_id, client_name, background_tasks)
@@ -509,33 +501,39 @@ Provide rich context that helps understand them deeply, but keep it conversation
         """
         try:
             logger.info(f"🧠 [Strategy] Starting Claude strategy decision for user {user_id}")
-            from app.utils.gemini import GeminiService
-            gemini = GeminiService()
+            from app.utils.claude import ClaudeService
+            claude = ClaudeService()
             
             recent_context = '; '.join(recent_memories[:5]) if recent_memories else "No recent memories"
             logger.info(f"🧠 [Strategy] Recent context being sent to Claude: {recent_context}")
             
-            prompt = f"""Given this user message and their recent context, what additional context strategy is needed?
+            prompt = f"""CONTEXT: User needs additional context (needs_context=true already confirmed).
 
 USER MESSAGE: "{user_message}"
-RECENT CONTEXT: {recent_context}
+RECENT DISTILLED CONTEXT: {recent_context}
 
-Strategy options:
-- "none" - Recent memories are sufficient
-- "search: [terms]" - Search for specific topics (provide search terms)
-- "deep_analysis" - Full narrative/comprehensive context
-- "conversation_history" - Focus on recent conversation flow
+TASK: Choose the best strategy to get additional context beyond what's shown above.
 
-Respond with just the strategy name, or "search:" followed by specific terms.
-Examples: "none", "search: python project API", "deep_analysis", "conversation_history"
-"""
+DECISION RULES:
+- If recent context seems comprehensive for this question → "none"
+- If need to search for specific missing information → "search: [exact terms]"
+- If need full user background/narrative → "deep_analysis" 
+- If about recent conversation patterns → "conversation_history"
+
+RESPOND WITH EXACTLY ONE OF:
+none
+search: [specific search terms]
+deep_analysis
+conversation_history
+
+STRATEGY:"""
             
-            logger.info(f"🧠 [Strategy] Sending prompt to Claude: {prompt}")
+            logger.info(f"🧠 [Strategy] Sending prompt to Claude Haiku: {prompt}")
             prompt_start = time.time()
-            response = await gemini.generate_response(prompt)
+            response = await claude.fast_strategy_decision(prompt)
             prompt_time = time.time() - prompt_start
             
-            logger.info(f"🧠 [Strategy] Claude responded in {prompt_time:.2f}s: '{response.strip()}'")
+            logger.info(f"🧠 [Strategy] Claude Haiku responded in {prompt_time:.2f}s: '{response.strip()}'")
             return response.strip()
             
         except Exception as e:
