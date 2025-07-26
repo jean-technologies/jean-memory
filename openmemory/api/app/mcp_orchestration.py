@@ -408,7 +408,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 
                 return deep_analysis
             
-            # CONTINUING CONVERSATIONS: Use Claude's agentic intelligence
+            # CONTINUING CONVERSATIONS: Use simplified agentic approach
             return await self._agentic_orchestration(user_message, user_id, client_name, background_tasks)
             
         except Exception as e:
