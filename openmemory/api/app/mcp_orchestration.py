@@ -372,6 +372,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         user_id: str, 
         client_name: str,
         is_new_conversation: bool,
+        needs_context: bool = True,
         background_tasks: BackgroundTasks = None
     ) -> str:
         """
@@ -382,9 +383,17 @@ Provide rich context that helps understand them deeply, but keep it conversation
         - Deep Memory Analysis: For new conversations when no cache exists
         - Standard Orchestration: For continuing conversations (5-10s, targeted)
         """
-        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}")
+        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}, needs_context: {needs_context}")
         
         try:
+            # Server-side intelligence: Use Claude/AI to decide strategy
+            # This replaces much of the complex logic with intelligent decisions
+            if needs_context:
+                context_plan = await self.ai_service.create_context_plan(user_message, is_new_conversation)
+                logger.info(f"🧠 Claude context strategy: {context_plan.get('context_strategy', 'unknown')}")
+            else:
+                # Fast path already handled in orchestration.py, shouldn't reach here
+                context_plan = {"context_strategy": "no_context", "should_save_memory": True}
             # SMART CACHE: Only check for cached narrative on NEW conversations
             if is_new_conversation:
                 cached_narrative = await self._get_cached_narrative(user_id)

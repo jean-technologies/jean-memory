@@ -15,8 +15,8 @@ def _track_tool_usage(tool_name: str, properties: dict = None):
     # Placeholder for the actual analytics call.
     pass
 
-@mcp.tool(description="🌟 ALWAYS USE THIS TOOL. It is the primary tool for all conversational interactions. It intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true.")
-async def jean_memory(user_message: str, is_new_conversation: bool) -> str:
+@mcp.tool(description="🌟 ALWAYS USE THIS TOOL. It is the primary tool for all conversational interactions. It intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false only if context definitely won't help the response.")
+async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool = True) -> str:
     """
     Smart context orchestration combining single-tool simplicity with session-based caching.
     
@@ -45,8 +45,25 @@ async def jean_memory(user_message: str, is_new_conversation: bool) -> str:
         # Track usage
         track_tool_usage('jean_memory', {
             'message_length': len(user_message),
-            'is_new_conversation': is_new_conversation
+            'is_new_conversation': is_new_conversation,
+            'needs_context': needs_context
         })
+        
+        # Fast path: if no context needed, just save memory in background and return
+        if not needs_context:
+            try:
+                background_tasks = background_tasks_var.get()
+            except LookupError:
+                from fastapi import BackgroundTasks
+                background_tasks = BackgroundTasks()
+                background_tasks_var.set(background_tasks)
+            
+            # Simple background memory save for messages that seem personal
+            if len(user_message) > 20 and any(word in user_message.lower() for word in ['i', 'my', 'me', 'remember']):
+                from app.tools.memory import add_memories
+                background_tasks.add_task(lambda: add_memories(text=user_message))
+            
+            return ""
         
         # CRITICAL FIX: Set up background tasks context for orchestration
         try:
@@ -68,6 +85,7 @@ async def jean_memory(user_message: str, is_new_conversation: bool) -> str:
                     user_id=supa_uid,
                     client_name=client_name,
                     is_new_conversation=is_new_conversation,
+                    needs_context=needs_context,
                     background_tasks=background_tasks
                 )
                 return enhanced_context
@@ -81,6 +99,7 @@ async def jean_memory(user_message: str, is_new_conversation: bool) -> str:
                     user_id=supa_uid,
                     client_name=client_name,
                     is_new_conversation=is_new_conversation,
+                    needs_context=needs_context,
                     background_tasks=background_tasks
                 )
             
