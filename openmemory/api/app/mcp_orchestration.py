@@ -386,8 +386,9 @@ Provide rich context that helps understand them deeply, but keep it conversation
         logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}, needs_context: {needs_context}")
         
         try:
-            # NEW CONVERSATIONS: Always use cached narrative first
+            # NEW CONVERSATIONS: Always use cached narrative first (ignore needs_context)
             if is_new_conversation:
+                logger.info(f"🆕 [New Conversation] Processing new conversation (ignoring needs_context={needs_context})")
                 cached_narrative = await self._get_cached_narrative(user_id)
                 if cached_narrative:
                     logger.info(f"✅ [New Conversation] Using cached narrative for user {user_id}")
@@ -407,6 +408,13 @@ Provide rich context that helps understand them deeply, but keep it conversation
                     logger.warning(f"Background narrative caching failed: {cache_error}")
                 
                 return deep_analysis
+            
+            # CONTINUING CONVERSATIONS: Check needs_context first
+            if not needs_context:
+                logger.info(f"🚫 [No Context] User indicated no context needed for: '{user_message}'")
+                # Just save memory in background and return empty context
+                await self._add_memory_background(user_message, user_id, client_name, priority=False)
+                return ""
             
             # CONTINUING CONVERSATIONS: Use simplified agentic approach
             return await self._agentic_orchestration(user_message, user_id, client_name, background_tasks)
