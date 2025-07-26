@@ -386,48 +386,30 @@ Provide rich context that helps understand them deeply, but keep it conversation
         logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}, needs_context: {needs_context}")
         
         try:
-            # Server-side intelligence: Use Claude/AI to decide strategy
-            # This replaces much of the complex logic with intelligent decisions
-            if needs_context:
-                context_plan = await self.ai_service.create_context_plan(user_message, is_new_conversation)
-                logger.info(f"🧠 Claude context strategy: {context_plan.get('context_strategy', 'unknown')}")
-            else:
-                # Fast path already handled in orchestration.py, shouldn't reach here
-                context_plan = {"context_strategy": "no_context", "should_save_memory": True}
-            # SMART CACHE: Only check for cached narrative on NEW conversations
+            # NEW CONVERSATIONS: Always use cached narrative first
             if is_new_conversation:
                 cached_narrative = await self._get_cached_narrative(user_id)
                 if cached_narrative:
-                    logger.info(f"✅ [Smart Cache] Using cached narrative for NEW conversation - user {user_id}")
+                    logger.info(f"✅ [New Conversation] Using cached narrative for user {user_id}")
                     return cached_narrative
                 
-                logger.info(f"⚠️ [Smart Cache] No cached narrative found for user {user_id}, falling back to deep analysis")
-                
-                # CACHE MISS: Fall back to deep analysis and start background caching
-                analysis_start = time.time()
+                logger.info(f"⚠️ [New Conversation] No cached narrative found for user {user_id}, using deep analysis")
                 deep_analysis = await self._fast_deep_analysis(user_message, user_id, client_name)
-                analysis_time = time.time() - analysis_start
                 
-                logger.info(f"🔍 [Smart Context] Deep analysis completed in {analysis_time:.1f}s for user {user_id}")
-                
-                # Extract memories text from the analysis for caching
+                # Start background narrative caching (non-blocking)
                 try:
-                    # Get memories for background narrative generation
                     memories = await self._get_user_memories(user_id, limit=50)
                     if memories:
                         memories_text = "\n".join([f"• {mem}" for mem in memories[:25]])
-                        # Start background narrative generation with Pro model
                         await self._generate_and_cache_narrative(user_id, memories_text, background_tasks)
-                        logger.info(f"🔄 [Smart Cache] Started background narrative generation for user {user_id}")
+                        logger.info(f"🔄 [Background] Started narrative caching for user {user_id}")
                 except Exception as cache_error:
-                    logger.warning(f"Background narrative caching failed for user {user_id}: {cache_error}")
-                    # Don't fail the main request if background caching fails
+                    logger.warning(f"Background narrative caching failed: {cache_error}")
                 
                 return deep_analysis
-            else:
-                # CONTINUING CONVERSATION: Use standard orchestration (targeted context)
-                logger.info(f"🔄 [Standard] Using standard orchestration for CONTINUING conversation - user {user_id}")
-                return await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation)
+            
+            # CONTINUING CONVERSATIONS: Use Claude's agentic intelligence
+            return await self._agentic_orchestration(user_message, user_id, client_name, background_tasks)
             
         except Exception as e:
             logger.error(f"❌ [Jean Memory] Orchestration failed: {e}", exc_info=True)
