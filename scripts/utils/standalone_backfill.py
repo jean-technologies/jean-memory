@@ -140,20 +140,28 @@ async def backfill_narratives(db):
 async def backfill_entities(db):
     """Main logic for entity backfill."""
     logger.info("🚀 Starting Entity Backfill")
-    memories_to_process = db.query(Memory).filter(Memory.entities == None).all()
-    total_memories = len(memories_to_process)
-    logger.info(f"Found a total of {total_memories} memories to process for entities.")
     
-    for i, memory in enumerate(memories_to_process):
-        logger.info(f"Processing memory {i+1}/{total_memories} (ID: {memory.id}) for entity extraction.")
-        try:
-            await extract_and_store_entities(str(memory.id))
-        except Exception as e:
-            logger.error(f"Failed to process memory {memory.id}: {e}")
-        # Small delay to avoid overwhelming the database and API services
-        await asyncio.sleep(0.5)
-
-    logger.info("✅ Entity backfill completed.")
+    while True:
+        # Process in batches to avoid loading all memories into memory at once
+        memories_to_process = db.query(Memory).filter(Memory.entities == None).limit(100).all()
+        
+        if not memories_to_process:
+            logger.info("✅ No more memories to process. Entity backfill completed.")
+            break
+            
+        total_in_batch = len(memories_to_process)
+        logger.info(f"Found a batch of {total_in_batch} memories to process for entities.")
+        
+        for i, memory in enumerate(memories_to_process):
+            logger.info(f"Processing memory {i+1}/{total_in_batch} (ID: {memory.id}) for entity extraction.")
+            try:
+                await extract_and_store_entities(str(memory.id))
+            except Exception as e:
+                logger.error(f"Failed to process memory {memory.id}: {e}")
+            # Small delay to avoid overwhelming the database and API services
+            await asyncio.sleep(0.5)
+        
+        logger.info(f"✅ Completed processing a batch of {total_in_batch} memories.")
 
 
 async def main():
