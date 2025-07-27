@@ -36,13 +36,12 @@ from app.utils.gemini import GeminiService
 MEMORY_THRESHOLD = 5
 NARRATIVE_TTL_DAYS = 7
 BATCH_SIZE = 10
-ENTITY_BATCH_SIZE = 2  # Very small batch size for production connection constraints
+ENTITY_BATCH_SIZE = 5  # Smaller batch size for entity processing to prevent connection issues
 CONCURRENT_USERS = 3
-MAX_RETRIES = 10  # More retries for production connection issues
+MAX_RETRIES = 3
 RETRY_DELAYS = [5, 15, 30]
 API_RATE_LIMIT_DELAY = 3
-CONNECTION_RETRY_DELAY = 30  # Longer delay between connection retry attempts
-BATCH_MEMORY_LIMIT = 20  # Limit how many memory IDs we fetch at once
+CONNECTION_RETRY_DELAY = 10  # Delay between connection retry attempts
 
 # Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -142,38 +141,26 @@ async def backfill_narratives(db):
         batch_users = eligible_users[i:i + BATCH_SIZE]
         await process_narrative_batch(batch_users, gemini, db)
 
-def get_batch_session_with_retry(max_retries=MAX_RETRIES):
-    """Create a new database session with exponential backoff retry logic."""
-    base_delay = CONNECTION_RETRY_DELAY
-    
+def get_batch_session_with_retry(max_retries=3):
+    """Create a new database session with retry logic for connection failures."""
     for attempt in range(max_retries):
         try:
             db = SessionLocal()
             # Test the connection
             db.execute(text("SELECT 1"))
-            logger.info(f"✅ Successfully created database session on attempt {attempt + 1}")
             return db
         except OperationalError as e:
-            if "Max client connections reached" in str(e):
-                # Exponential backoff: 30s, 60s, 120s, 240s, etc.
-                delay = base_delay * (2 ** attempt)
-                if attempt < max_retries - 1:
-                    logger.warning(f"🔄 Connection pool exhausted (attempt {attempt + 1}/{max_retries}). Waiting {delay}s before retry...")
-                    time.sleep(delay)
-                    continue
-                else:
-                    logger.error(f"❌ Failed to create database session after {max_retries} attempts: {e}")
-                    raise
+            if "Max client connections reached" in str(e) and attempt < max_retries - 1:
+                logger.warning(f"Connection pool exhausted (attempt {attempt + 1}/{max_retries}). Waiting {CONNECTION_RETRY_DELAY}s before retry...")
+                time.sleep(CONNECTION_RETRY_DELAY)
+                continue
             else:
-                logger.error(f"❌ Database connection error (attempt {attempt + 1}): {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(base_delay)
-                    continue
+                logger.error(f"Failed to create database session after {attempt + 1} attempts: {e}")
                 raise
         except Exception as e:
-            logger.error(f"❌ Unexpected error creating database session (attempt {attempt + 1}): {e}")
+            logger.error(f"Unexpected error creating database session: {e}")
             if attempt < max_retries - 1:
-                time.sleep(base_delay)
+                time.sleep(CONNECTION_RETRY_DELAY)
                 continue
             raise
     
@@ -227,8 +214,8 @@ async def backfill_entities():
         try:
             temp_db = get_batch_session_with_retry()
             
-            # Get memory IDs that need processing (very small batches for production)
-            memories_to_process = temp_db.query(Memory.id).filter(Memory.entities == None).limit(BATCH_MEMORY_LIMIT).all()
+            # Get memory IDs that need processing (not the full objects to save memory)
+            memories_to_process = temp_db.query(Memory.id).filter(Memory.entities == None).limit(50).all()
             memory_ids = [mem.id for mem in memories_to_process]
             
         except Exception as e:
@@ -256,21 +243,18 @@ async def backfill_entities():
                 total_failed += batch_results['failed']
                 total_processed += len(batch_memory_ids)
                 
-                # Longer pause between batches to allow connection pool recovery
-                await asyncio.sleep(10)
+                # Brief pause between batches to allow other connections
+                await asyncio.sleep(2)
                 
             except Exception as e:
                 logger.error(f"Failed to process batch: {e}")
                 total_failed += len(batch_memory_ids)
                 total_processed += len(batch_memory_ids)
                 
-                # Wait much longer if we encounter errors to let connection issues resolve
-                await asyncio.sleep(60)
+                # Wait a bit longer if we encounter errors to let connection issues resolve
+                await asyncio.sleep(5)
         
         logger.info(f"📊 Progress: {total_successful} successful, {total_failed} failed, {total_processed} total processed")
-        
-        # Additional delay between main batches to allow full connection pool recovery
-        await asyncio.sleep(15)
 
 
 async def main():
