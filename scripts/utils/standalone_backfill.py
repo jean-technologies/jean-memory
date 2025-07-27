@@ -144,15 +144,15 @@ async def backfill_entities(db):
     total_memories = len(memories_to_process)
     logger.info(f"Found a total of {total_memories} memories to process for entities.")
     
-    tasks = []
     for i, memory in enumerate(memories_to_process):
-        tasks.append(extract_and_store_entities(str(memory.id)))
-        if len(tasks) >= 50:
-            await asyncio.gather(*tasks)
-            tasks = []
-            logger.info(f"Processed a batch of 50 memories for entities. ({i+1}/{total_memories})")
-    if tasks:
-        await asyncio.gather(*tasks)
+        logger.info(f"Processing memory {i+1}/{total_memories} (ID: {memory.id}) for entity extraction.")
+        try:
+            await extract_and_store_entities(str(memory.id))
+        except Exception as e:
+            logger.error(f"Failed to process memory {memory.id}: {e}")
+        # Small delay to avoid overwhelming the database and API services
+        await asyncio.sleep(0.5)
+
     logger.info("✅ Entity backfill completed.")
 
 
