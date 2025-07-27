@@ -1,12 +1,13 @@
 <p align="center">
   <a href="https://github.com/jean-technologies/jean-memory">
-    <img src="docs/images/jean-logo.png" width="300px" alt="Jean Memory - Your Memory, Your AI">
+    <img src="docs/images/jean-logo.png" width="300px" alt="Jean Memory Logo">
   </a>
 </p>
 
+<h1 align="center">Jean Memory</h1>
+
 <p align="center">
-  <h1 align="center">Jean Memory</h1>
-  <p align="center">A secure, private memory layer for your AI.</p>
+  <strong>A secure, private, and intelligent memory layer for AI.</strong>
 </p>
 
 <p align="center">
@@ -14,7 +15,7 @@
   ·
   <a href="https://jeanmemory.com/dashboard-new">Dashboard</a>
   ·
-  <a href="https://jeanmemory.com/api-docs">Docs</a>
+  <a href="https://jeanmemory.com/api-docs">API Docs</a>
   ·
   <a href="https://github.com/jean-technologies/jean-memory/issues">Report an Issue</a>
 </p>
@@ -31,94 +32,97 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="https://star-history.com/#jean-technologies/jean-memory&Date">
+    <img src="https://api.star-history.com/svg?repos=jean-technologies/jean-memory&type=Date" alt="Star History Chart" width="600">
+  </a>
+</p>
+
 ## What is Jean Memory?
 
-Jean securely stores the personal context that makes your AI truly yours. From your unique insights to your personal preferences, this is the data that powers a smarter, more helpful AI. You control what's remembered and what's shared, always.
+Jean Memory provides a persistent and intelligent memory layer that enables AI applications to understand users with deep, personal context. It moves beyond simple information retrieval to sophisticated context engineering, ensuring that an AI has precisely the right information at the time of inference to provide personalized, accurate, and helpful responses.
 
-- **🔒 Private & Secure**: Your context is yours alone.
-- **🚀 Fast & Universal**: Works across all your MCP-compatible AI tools like Claude and Cursor.
-- **🏠 Cloud or Local**: Use our managed service or host it yourself.
+- **Intelligent Orchestration**: Jean uses an AI-powered orchestration layer to dynamically analyze user intent, save new information, and retrieve the most relevant context. It's more than a vector database; it's a reasoning engine for memory.
+- **Secure and Private**: Your context is stored securely, under your control.
+- **Universal Compatibility**: Works across MCP-compatible AI tools like Claude and Cursor.
+- **Flexible Hosting**: Use our managed cloud service for a zero-setup experience or self-host the entire stack for complete control.
 
-🧠 **Human-like Agentic Memory**: Jean is more than just a vector database. It creates a dynamic, connected graph of your memories, allowing AI agents to understand relationships, context, and how ideas evolve over time. This enables more sophisticated reasoning and a deeper understanding of you.
+## Architecture: Intelligent Orchestration & Tooling
+
+Jean Memory operates on a two-layer architecture: an intelligent orchestration layer and a core API of granular tools.
+
+1.  **Orchestration Layer (`jean_memory` tool)**: This is the primary entry point for all interactions. When called, this tool analyzes the user's message and conversation history to determine the optimal context strategy. It then calls the necessary core tools to gather information, synthesizes the results, and provides a perfectly engineered context package to the AI. It also handles background memory saving.
+
+2.  **Core API (Granular Tools)**: These are the underlying building blocks that the orchestrator uses. They are also exposed via a REST API for developers who need direct, granular control for building custom agents or applications. The core tools include:
+    - `add_memories`: Saves new information.
+    - `search_memory`: Performs semantic search.
+    - `list_memories`: Retrieves recent memories.
+    - `ask_memory`: Answers questions based on stored context.
+    - `deep_memory_query`: Conducts comprehensive, analytical searches across all data.
 
 <p align="center">
   <img src="/openmemory/ui/public/og-image.png" width="600px" alt="Jean Memory Knowledge Graph">
 </p>
 
-## 🚀 Quick Start
+## Quick Start: Hosted Service
 
-Get started in seconds with our hosted service:
+Get started in seconds with our managed service:
 
-1.  **Sign up** at [jeanmemory.com](https://jeanmemory.com) and go to your dashboard.
-2.  **Choose an app** (like Claude or Cursor) and get your install command.
-3.  **Run the command** to connect your AI tool.
-4.  **Restart your AI app** and start using your memory!
+1.  **Sign Up**: Create an account at [jeanmemory.com](https://jeanmemory.com) and navigate to your dashboard.
+2.  **Get Install Command**: Choose a client application (e.g., Claude, Cursor) to generate your unique installation command.
+3.  **Connect Client**: Run the provided command in your terminal.
+4.  **Restart and Use**: Restart your AI application. Jean Memory will now be available as a tool.
 
-## 🎥 **Video Tutorial**
+## Local Development Setup
 
-Watch this 5-minute step-by-step tutorial to get Jean Memory working with your AI tools:
-
-<p align="center">
-  <a href="https://youtu.be/qXe4mEaCN9k">
-    <img src="https://img.youtube.com/vi/qXe4mEaCN9k/maxresdefault.jpg" alt="Jean Memory Setup Tutorial" width="600">
-  </a>
-</p>
-
-**[▶️ Watch the Full Tutorial on YouTube](https://youtu.be/qXe4mEaCN9k)**
-
-## 🛠️ Local Development
-
-Run the entire Jean Memory stack on your local machine.
+Run the entire Jean Memory stack on your local machine for development and self-hosting.
 
 **Prerequisites:**
 - Node.js 18+ and npm
-- Python 3.12+ (auto-installed on macOS via Homebrew if missing)
+- Python 3.12+
 - Docker and Docker Compose
 - Git
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/jonathan-politzki/jean-memory.git
+git clone https://github.com/jean-technologies/jean-memory.git
 cd jean-memory
 ```
 
-**2. Navigate to the openmemory directory:**
+**2. Navigate to the `openmemory` directory:**
 ```bash
 cd openmemory
 ```
 
 **3. Run one-time setup:**
-This collects your API keys and creates all environment files:
+This script will gather required API keys and generate the necessary environment files.
 ```bash
 make setup
 ```
 
 **4. Add your API keys when prompted:**
-- `OPENAI_API_KEY` (required) - Get from [OpenAI Platform](https://platform.openai.com/api-keys)
+- `OPENAI_API_KEY` (required) - Get from the [OpenAI Platform](https://platform.openai.com/api-keys)
 - `GEMINI_API_KEY` (optional) - Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 **5. Build the environment:**
-After adding API keys, build and configure everything:
+This command builds the Docker containers and configures the environment based on your keys.
 ```bash
 make build
 ```
 
-**6. Start development:**
+**6. Start the development services:**
 
-**Option A - Full development environment:**
+*Option A: Run all services concurrently:*
 ```bash
 make dev
 ```
 
-**Option B - Start services individually:**
-
-*Terminal 1 - Start API and databases:*
+*Option B: Run services individually in separate terminals:*
 ```bash
+# Terminal 1: Start the backend API and databases
 make dev-api
-```
 
-*Terminal 2 - Start frontend:*
-```bash
+# Terminal 2: Start the frontend UI
 make dev-ui
 ```
 
@@ -127,62 +131,28 @@ make dev-ui
 - **API Documentation**: `http://localhost:8765/docs`
 - **Supabase Studio**: `http://localhost:54323`
 
-## 🔧 Environment Configuration
+## API Usage
 
-Jean Memory uses a centralized environment configuration:
+Jean Memory exposes a granular API for memory operations, which is orchestrated by the primary `jean_memory` tool. These underlying tools can also be called directly for specific use cases or when building custom agents. The API includes endpoints for:
 
-- **Primary config**: `openmemory/.env.local` (your main environment file)
-- **API specific**: `openmemory/api/.env` (synced automatically)
-- **UI specific**: `openmemory/ui/.env.local` (synced automatically)
+- Adding new memories (`add_memories`)
+- Searching memories (`search_memory`)
+- Listing recent memories (`list_memories`)
+- Performing conversational Q&A (`ask_memory`)
+- Executing deep, analytical queries (`deep_memory_query`)
 
-The setup script automatically creates and synchronizes these files. Environment variables are loaded in this order of precedence:
-1. `.env.local` (highest priority)
-2. `api/.env` (API-specific)
-3. `.env` (fallback)
+For detailed information, please refer to our full **[API Documentation](https://jeanmemory.com/api-docs)**.
 
-**Note**: The setup script automatically generates a secure `ADMIN_SECRET_KEY` for admin endpoints. This is required for the API server to start.
+## Contributing
 
-**Useful commands:**
-```bash
-# Update environment with latest Supabase keys
-make configure-env
+We welcome contributions from the community. Please read our [contributing guide](docs/contributing/CONTRIBUTING.md) to get started with the development process and pull request submission.
 
-# Check what services are running
-make status
+## License
 
-# View service logs
-make logs
+This project incorporates code from [mem0ai/mem0](https://github.com/mem0ai/mem0), which is distributed under the Apache 2.0 License. All additions and modifications made by Jean Technologies are proprietary.
 
-# Stop all services
-make stop
-```
+## Support
 
-## ⭐ Upgrade to Jean Memory Pro
-
-Advanced features for power users and developers, including **priority support, advanced search, higher limits, and data export.**
-
-<p align="center">
-  <a href="https://buy.stripe.com/8x214n2K0cmVadx3pIabK01">
-    <img src="https://img.shields.io/badge/⭐_Upgrade_to_Pro-$19%2Fmonth-9333ea?style=for-the-badge&logo=stripe&logoColor=white" alt="Upgrade to Jean Memory Pro">
-  </a>
-</p>
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [contributing guide](docs/contributing/CONTRIBUTING.md) to get started.
-
-## 📄 License
-
-This project incorporates code from [mem0ai/mem0](https://github.com/mem0ai/mem0) under the Apache 2.0 License. Jean Memory additions and modifications are proprietary.
-
-## 🙋‍♂️ Support
-
-- **Docs**: [jeanmemory.com/api-docs](https://jeanmemory.com/api-docs)
-- **Issues**: [GitHub Issues](https://github.com/jonathan-politzki/jean-memory/issues)
-- **Email**: [jonathan@jeantechnologies.com](mailto:jonathan@jeantechnologies.com)
-
----
-
-<p align="center">
-  Built with ❤️ by <a href="https://jeantechnologies.com">Jean Technologies</a>
-</p>
+- **Documentation**: [jeanmemory.com/api-docs](https://jeanmemory.com/api-docs)
+- **Bug Reports**: [GitHub Issues](https://github.com/jean-technologies/jean-memory/issues)
+- **General Inquiries**: [jonathan@jeantechnologies.com](mailto:jonathan@jeantechnologies.com)
