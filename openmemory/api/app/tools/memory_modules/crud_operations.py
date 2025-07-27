@@ -21,9 +21,23 @@ from .utils import (
     format_error_response, validate_memory_limits, truncate_text, sanitize_tags
 )
 from app.services.entity_extraction import extract_and_store_entities
+from app.database import SessionLocal
 
 
 logger = logging.getLogger(__name__)
+
+async def _extract_entities_background(memory_id: str):
+    """
+    Background task to extract entities using its own database session.
+    This prevents session conflicts with the main transaction.
+    """
+    db = SessionLocal()
+    try:
+        await extract_and_store_entities(db, memory_id)
+    except Exception as e:
+        logger.error(f"Background entity extraction failed for memory {memory_id}: {e}", exc_info=True)
+    finally:
+        db.close()
 
 
 @retry_on_exception(retries=3, delay=1, backoff=2, exceptions=(ConnectionError,))
@@ -221,8 +235,8 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
             db.refresh(memory_record) # Refresh to get the ID
             logger.info(f"💾 [Memory Add] ✅ Local database save successful: record ID {memory_record.id}")
 
-            # Trigger background entity extraction
-            asyncio.create_task(extract_and_store_entities(db, str(memory_record.id)))
+            # Trigger background entity extraction with a new database session
+            asyncio.create_task(_extract_entities_background(str(memory_record.id)))
             logger.info(f"💾 [Memory Add] 🚀 Triggered background entity extraction for memory {memory_record.id}")
 
         except Exception as e:
