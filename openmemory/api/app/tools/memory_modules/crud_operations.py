@@ -20,6 +20,8 @@ from .utils import (
     safe_json_dumps, track_tool_usage, format_memory_response, 
     format_error_response, validate_memory_limits, truncate_text, sanitize_tags
 )
+from app.services.entity_extraction import extract_and_store_entities
+
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +218,13 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
             )
             db.add(memory_record)
             db.commit()
+            db.refresh(memory_record) # Refresh to get the ID
             logger.info(f"💾 [Memory Add] ✅ Local database save successful: record ID {memory_record.id}")
+
+            # Trigger background entity extraction
+            asyncio.create_task(extract_and_store_entities(str(memory_record.id)))
+            logger.info(f"💾 [Memory Add] 🚀 Triggered background entity extraction for memory {memory_record.id}")
+
         except Exception as e:
             logger.error(f"💾 [Memory Add] ❌ Local database save failed: {e}", exc_info=True)
             db.rollback()

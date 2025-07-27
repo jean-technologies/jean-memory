@@ -145,6 +145,7 @@ class Memory(Base):
     vector = Column(String)
     metadata_ = Column('metadata', JSON, default=dict)
     state = Column(Enum(MemoryState), default=MemoryState.active, index=True)
+    entities = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=get_current_utc_time, index=True)
     updated_at = Column(DateTime,
                         default=get_current_utc_time,
@@ -161,6 +162,7 @@ class Memory(Base):
         Index('idx_memory_user_state', 'user_id', 'state'),
         Index('idx_memory_app_state', 'app_id', 'state'),
         Index('idx_memory_user_app', 'user_id', 'app_id'),
+        Index('idx_memory_entities', 'entities', postgresql_using='gin'),
     )
 
 

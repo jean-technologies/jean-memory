@@ -51,8 +51,17 @@ class ClaudeProfile(BaseClientProfile):
             },
             {
                 "name": "ask_memory",
-                "description": "FAST memory search for simple questions about the user's memories, thoughts, documents, or experiences",
-                "inputSchema": {"type": "object", "properties": {"question": {"type": "string", "description": "A natural language question"}}, "required": ["question"]}
+                "description": "Answers a question by searching through memories. Use this for specific questions where the user is asking for information they have previously provided.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "The user's question to be answered from memory."
+                        }
+                    },
+                    "required": ["question"]
+                }
             },
             {
                 "name": "search_memory",
