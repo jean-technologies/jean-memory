@@ -158,6 +158,11 @@ async def main():
     parser.add_argument('task', choices=['narrative', 'entities', 'all'], help="The backfill task to run.")
     args = parser.parse_args()
 
+    # Make the task argument required
+    if not args.task:
+        parser.print_help()
+        sys.exit(1)
+
     db = SessionLocal()
     try:
         if args.task in ['narrative', 'all']:
