@@ -15,7 +15,7 @@ def _track_tool_usage(tool_name: str, properties: dict = None):
     # Placeholder for the actual analytics call.
     pass
 
-@mcp.tool(description="🌟 ALWAYS USE THIS TOOL FIRST - NEVER use ask_memory, search_memory, or other tools directly. This is the primary tool for ALL conversational interactions. It intelligently engineers context, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false only for simple greetings that don't need context.")
+@mcp.tool(description="🌟 ALWAYS USE THIS TOOL FIRST - NEVER use ask_memory, search_memory, or other tools directly. This is the primary tool for ALL conversational interactions. It intelligently engineers context, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.")
 async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool = True) -> str:
     """
     Smart context orchestration combining single-tool simplicity with session-based caching.
@@ -58,25 +58,32 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
                 background_tasks = BackgroundTasks()
                 background_tasks_var.set(background_tasks)
             
+            orchestrator = get_smart_orchestrator()
+
             # For new conversations, still check for cached narrative even when needs_context=false
             if is_new_conversation:
                 logger.info(f"🔄 [Fast Path] New conversation with needs_context=false - checking for cached narrative")
-                orchestrator = get_smart_orchestrator()
                 cached_narrative = await orchestrator._get_cached_narrative(supa_uid)
                 if cached_narrative:
                     logger.info(f"✅ [Fast Path] Found cached narrative for new conversation")
-                    # Still save memory in background
-                    if len(user_message) > 20 and any(word in user_message.lower() for word in ['i', 'my', 'me', 'remember']):
-                        from app.tools.memory import add_memories
-                        background_tasks.add_task(lambda: add_memories(text=user_message))
+                    # Still save memory in background (using intelligent check)
+                    await orchestrator._handle_background_memory_saving(
+                        user_message, supa_uid, client_name, is_new_conversation
+                    )
                     return cached_narrative
                 else:
                     logger.info(f"⚠️ [Fast Path] No cached narrative found - falling through to orchestration")
             
-            # Simple background memory save for messages that seem personal
-            if len(user_message) > 20 and any(word in user_message.lower() for word in ['i', 'my', 'me', 'remember']):
-                from app.tools.memory import add_memories
-                background_tasks.add_task(lambda: add_memories(text=user_message))
+            # INTELLIGENT SAVE: Use AI to check if the message is memorable, even on the fast path.
+            analysis = await orchestrator._ai_memory_analysis(user_message)
+            if analysis.get("should_remember"):
+                logger.info(f"💾 [Fast Path] Memorable content found, saving to memory: {analysis.get('content')}")
+                background_tasks.add_task(
+                    orchestrator._add_memory_background, 
+                    analysis.get('content'), 
+                    supa_uid, 
+                    client_name
+                )
             
             return ""
         
