@@ -222,7 +222,7 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
             logger.info(f"💾 [Memory Add] ✅ Local database save successful: record ID {memory_record.id}")
 
             # Trigger background entity extraction
-            asyncio.create_task(extract_and_store_entities(str(memory_record.id)))
+            asyncio.create_task(extract_and_store_entities(db, str(memory_record.id)))
             logger.info(f"💾 [Memory Add] 🚀 Triggered background entity extraction for memory {memory_record.id}")
 
         except Exception as e:

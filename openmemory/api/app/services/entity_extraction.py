@@ -5,14 +5,15 @@ import openai
 import os
 import json
 import re
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-async def extract_and_store_entities(memory_id: str):
+async def extract_and_store_entities(db: Session, memory_id: str):
     """
     Asynchronously extracts entities from a memory's content and stores them.
+    Accepts a database session to prevent connection pooling issues.
     """
-    db = SessionLocal()
     try:
         memory = db.query(Memory).filter(Memory.id == memory_id).first()
         if not memory or not memory.content:
@@ -88,5 +89,4 @@ Return the extracted facts in JSON format:
     except Exception as e:
         logger.error(f"Entity extraction failed for memory {memory_id}: {e}", exc_info=True)
         db.rollback()
-    finally:
-        db.close() 
+    # The session is managed by the calling function, so we don't close it here. 
