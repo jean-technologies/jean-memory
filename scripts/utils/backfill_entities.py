@@ -4,15 +4,19 @@ import os
 import sys
 from sqlalchemy.orm import Session
 
-# Add project root to path
+# --- Path Setup ---
+# This ensures the script can find the application's modules
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+api_root = os.path.join(project_root, 'openmemory', 'api')
+if api_root not in sys.path:
+    sys.path.insert(0, api_root)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Now we can import from the app
-from openmemory.api.app.database import SessionLocal
-from openmemory.api.app.models import Memory
-from openmemory.api.app.services.entity_extraction import extract_and_store_entities
+# Now we can import from the app as if we were in the api directory
+from app.database import SessionLocal
+from app.models import Memory
+from app.services.entity_extraction import extract_and_store_entities
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
