@@ -107,7 +107,6 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
                     user_id=supa_uid,
                     client_name=client_name,
                     is_new_conversation=is_new_conversation,
-                    needs_context=needs_context,
                     background_tasks=background_tasks
                 )
                 return enhanced_context
@@ -121,7 +120,6 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
                     user_id=supa_uid,
                     client_name=client_name,
                     is_new_conversation=is_new_conversation,
-                    needs_context=needs_context,
                     background_tasks=background_tasks
                 )
             
