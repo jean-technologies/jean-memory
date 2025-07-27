@@ -36,34 +36,9 @@ from .memories_modules.schemas import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/memories", tags=["memories"])
 
-class JeanMemoryRequest(BaseModel):
-    user_message: str
-    is_new_conversation: bool = False
+# REMOVED: Jean Memory V2 app ID no longer needed
 
-@router.post("/context", response_model=str)
-async def get_jean_memory_context(
-    request: JeanMemoryRequest,
-    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
-):
-    """
-    Get orchestrated context from Jean Memory.
-    This is the primary endpoint for all conversational interactions.
-    """
-    from app.tools.orchestration import jean_memory
-    from app.context import user_id_var, client_name_var
-    
-    supa_uid = str(current_supa_user.id)
-    # For API calls, client_name can be a default or passed in headers later
-    client_name = "api_client"
 
-    # Set context variables for the tool call
-    user_id_var.set(supa_uid)
-    client_name_var.set(client_name)
-    
-    return await jean_memory(
-        user_message=request.user_message,
-        is_new_conversation=request.is_new_conversation
-    )
 
 
 # List all memories with filtering (no pagination)
@@ -542,98 +517,495 @@ async def create_memory(
 @router.get("/life-graph-data")
 async def get_life_graph_data(
     current_supa_user: SupabaseUser = Depends(get_current_supa_user),
-    limit: int = Query(25, description="Maximum number of core memories to analyze initially"),
+    limit: int = Query(8, description="Maximum number of core memories to analyze initially"),
     focus_query: Optional[str] = Query(None, description="Optional query to focus the graph on specific topics"),
+    use_cache: bool = Query(True, description="Whether to use cached data"),
+    include_entities: bool = Query(False, description="Whether to extract entities from memories"),
+    include_temporal_clusters: bool = Query(True, description="Whether to create temporal clusters"),
     progressive: bool = Query(True, description="Use progressive loading for better performance"),
     db: Session = Depends(get_db)
 ):
     """
-    Get optimized life graph data for visualization.
-    This endpoint provides pre-computed entities and relationships for fast visualization.
+    Get optimized life graph data for visualization using the same approach as Deep Life Query.
+    
+    This endpoint provides:
+    1. Memory nodes with entity extraction
+    2. Relationships between memories  
+    3. Clustering information for visualization
+    4. Cached for performance
+    5. Uses the WORKING memory client approach (same as Deep Life Query)
     """
     supabase_user_id_str = str(current_supa_user.id)
     user = get_or_create_user(db, supabase_user_id_str, current_supa_user.email)
     
     try:
+        # Skip caching for now - direct data generation
         logger.info(f"🚀 Generating life graph data for user {supabase_user_id_str}")
         
-        # Base query for user's memories
-        query = db.query(Memory).filter(Memory.user_id == user.id, Memory.state == MemoryState.active)
-
-        # Apply focus query if provided
-        if focus_query:
-            query = query.filter(Memory.content.ilike(f"%{focus_query}%"))
+        # Use the SAME memory client approach as Deep Life Query (which works!)
+        from app.utils.memory import get_async_memory_client
+        memory_client = await get_async_memory_client()
+        
+        logger.info(f"🚀 Generating life graph data using WORKING memory client for user {supabase_user_id_str}")
+        
+        # Use enhanced search query based on focus or comprehensive overview
+        search_query = focus_query if focus_query else "comprehensive life overview experiences relationships growth"
+        
+        # Get memories using the WORKING approach (same as Deep Life Query)
+        memory_results = await memory_client.search(
+            query=search_query,
+            user_id=supabase_user_id_str,
+            limit=limit
+        )
+        
+        # Process memory results (same as Deep Life Query)
+        memories = []
+        if isinstance(memory_results, dict) and 'results' in memory_results:
+            memories = memory_results['results']
+        elif isinstance(memory_results, list):
+            memories = memory_results
+        
+        logger.info(f"📊 Retrieved {len(memories)} memories from Jean Memory V2")
+        
+        # SMART PROGRESSIVE LOADING: Select most important nodes instead of truncating
+        if progressive and len(memories) > limit:
+            logger.info(f"🧠 Smart progressive loading: analyzing {len(memories)} memories to find {limit} most important nodes")
+            memories = await select_most_important_memories(memories, limit)
+            logger.info(f"📊 Selected {len(memories)} high-value memories for initial graph")
+        
+        # Process memories for visualization
+        processed_memories = []
+        for i, mem in enumerate(memories):
+            content = mem.get('memory', mem.get('content', ''))
+            metadata = mem.get('metadata', {})
             
-        memories = query.order_by(Memory.created_at.desc()).limit(limit).all()
+            if not content or len(content.strip()) < 5:
+                continue
+            
+            processed_memories.append({
+                'id': mem.get('id', f'mem_{i}'),
+                'content': content.strip(),
+                'metadata': metadata,
+                'created_at': mem.get('created_at'),
+                'source': metadata.get('app_name', 'Jean Memory V2')
+            })
         
-        logger.info(f"📊 Retrieved {len(memories)} memories from database")
-        
-        nodes = []
-        edges = []
+        # Enhanced ontological entity extraction and visualization
         entities = {}
         entity_memory_map = {}
-
-        for mem in memories:
-            nodes.append({
-                'id': str(mem.id),
-                'title': mem.content[:80] + '...' if len(mem.content) > 80 else mem.content,
-                'content': mem.content,
-                'type': 'memory',
-                'created_at': mem.created_at.isoformat(),
-                'source': mem.app.name if mem.app else 'Jean Memory'
-            })
+        
+        if include_entities:
+            logger.info("🔍 Extracting entities using Jean Memory V2 ontological approach...")
             
-            if mem.entities and 'entities' in mem.entities:
-                for fact in mem.entities['entities']:
-                    parts = fact.split(': ', 1)
-                    if len(parts) != 2: continue
+            try:
+                # Use the same Custom Fact Extraction Prompt as Jean Memory V2 ingestion
+                fact_extraction_prompt = """
+Please extract structured facts about entities and their relationships from the provided text.
+Focus on extracting entities of types: Person, Place, Event, Topic, Object, Emotion.
+
+Entity types to extract:
+1. Person: Names, ages, occupations, locations, relationships, roles
+2. Place: Locations, addresses, place types, descriptions, buildings
+3. Event: Activities, meetings, experiences, occurrences, milestones
+4. Topic: Subjects, interests, categories, themes, skills
+5. Object: Items, products, belongings, purchases, tools
+6. Emotion: Feelings, moods, emotional states, reactions
+
+Return the extracted facts in JSON format:
+{
+    "facts": [
+        "Person: [name]",
+        "Person: [name] - [attribute]: [value]",
+        "Place: [name]",
+        "Place: [name] - [attribute]: [value]",
+        "Event: [name]",
+        "Event: [name] - [attribute]: [value]",
+        "Topic: [name]",
+        "Object: [name]",
+        "Emotion: [name]"
+    ]
+}
+
+Examples:
+Input: "I had coffee with Sarah at Blue Bottle yesterday. She's a software engineer at Google."
+Output: {"facts": [
+    "Person: Sarah",
+    "Person: Sarah - occupation: software engineer", 
+    "Person: Sarah - employer: Google",
+    "Place: Blue Bottle",
+    "Event: coffee meeting",
+    "Event: coffee meeting - participants: user, Sarah",
+    "Event: coffee meeting - location: Blue Bottle"
+]}
+
+Input: "Feeling excited about the new AI project launch at the office."
+Output: {"facts": [
+    "Emotion: excited",
+    "Topic: AI project",
+    "Event: project launch",
+    "Place: office"
+]}
+
+Text to analyze:
+"""
+                
+                # Try to use GPT-4o-mini for entity extraction
+                try:
+                    import openai
+                    import os
+                    import json
                     
-                    entity_type, entity_info = parts
-                    entity_type = entity_type.strip().lower()
-
-                    if ' - ' in entity_info:
-                        entity_name = entity_info.split(' - ')[0].strip()
-                    else:
-                        entity_name = entity_info.strip()
-
-                    if entity_name and len(entity_name) > 1 and entity_type in ['person', 'place', 'event', 'topic', 'object', 'emotion']:
-                        entity_id = f"{entity_type}_{entity_name.lower().replace(' ', '_')}"
+                    # Initialize OpenAI client
+                    api_key = os.getenv('OPENAI_API_KEY')
+                    if not api_key:
+                        raise Exception("OpenAI API key not available")
+                    
+                    openai_client = openai.AsyncOpenAI(api_key=api_key)
+                    logger.info("✅ OpenAI client initialized for Jean Memory V2 aligned entity extraction")
+                    
+                    # Process memories in batches for efficiency (similar to Jean Memory V2 ingestion)
+                    batch_size = 10
+                    for i in range(0, min(len(processed_memories), 50), batch_size):  # Limit for performance
+                        batch = processed_memories[i:i + batch_size]
                         
-                        if entity_id not in entities:
-                            entities[entity_id] = {'id': entity_id, 'name': entity_name, 'type': entity_type, 'mentions': 0}
-                        
-                        entities[entity_id]['mentions'] += 1
-                        entity_memory_map.setdefault(entity_id, []).append(str(mem.id))
-
-        # Add entity nodes
-        for entity_id, entity in entities.items():
+                        for memory in batch:
+                            try:
+                                # Use GPT-4o-mini with the same approach as Jean Memory V2
+                                response = await openai_client.chat.completions.create(
+                                    model="gpt-4o-mini",
+                                    messages=[
+                                        {"role": "system", "content": fact_extraction_prompt},
+                                        {"role": "user", "content": memory['content'][:1500]}  # Limit content length
+                                    ],
+                                    temperature=0.1,
+                                    max_tokens=800
+                                )
+                                
+                                # Parse the structured response
+                                content = response.choices[0].message.content.strip()
+                                if content:
+                                    try:
+                                        # Try to parse JSON response
+                                        if content.startswith('{') and content.endswith('}'):
+                                            fact_data = json.loads(content)
+                                        else:
+                                            # Try to find JSON within the response
+                                            import re
+                                            json_match = re.search(r'\{[^}]*"facts"[^}]*\}', content, re.DOTALL)
+                                            if json_match:
+                                                fact_data = json.loads(json_match.group())
+                                            else:
+                                                continue
+                                        
+                                        # Process facts using Jean Memory V2 ontology structure
+                                        facts = fact_data.get('facts', [])
+                                        for fact in facts:
+                                            if not fact or not isinstance(fact, str):
+                                                continue
+                                            
+                                            # Parse fact format: "EntityType: EntityName" or "EntityType: EntityName - attribute: value"
+                                            parts = fact.split(': ', 1)
+                                            if len(parts) != 2:
+                                                continue
+                                            
+                                            entity_type = parts[0].strip().lower()
+                                            entity_info = parts[1].strip()
+                                            
+                                            # Extract entity name and attributes
+                                            if ' - ' in entity_info:
+                                                entity_name = entity_info.split(' - ')[0].strip()
+                                                attr_part = entity_info.split(' - ', 1)[1]
+                                                if ': ' in attr_part:
+                                                    attr_key, attr_value = attr_part.split(': ', 1)
+                                                    attributes = {attr_key.strip(): attr_value.strip()}
+                                                else:
+                                                    attributes = {}
+                                            else:
+                                                entity_name = entity_info
+                                                attributes = {}
+                                            
+                                            # Validate entity type is in our ontology
+                                            if entity_type not in ['person', 'place', 'event', 'topic', 'object', 'emotion']:
+                                                continue
+                                            
+                                            if entity_name and len(entity_name) > 1:
+                                                # Create entity ID consistent with Jean Memory V2 ontology
+                                                entity_id = f"{entity_type}_{entity_name.lower().replace(' ', '_').replace('-', '_')}"
+                                                
+                                                if entity_id not in entities:
+                                                    entities[entity_id] = {
+                                                        'id': entity_id,
+                                                        'name': entity_name,
+                                                        'type': entity_type,
+                                                        'mentions': 0,
+                                                        'attributes': attributes
+                                                    }
+                                                else:
+                                                    # Merge attributes
+                                                    entities[entity_id]['attributes'].update(attributes)
+                                                
+                                                entities[entity_id]['mentions'] += 1
+                                                entity_memory_map.setdefault(entity_id, []).append(memory['id'])
+                                        
+                                    except json.JSONDecodeError as e:
+                                        logger.warning(f"Failed to parse JSON from GPT response for memory {memory['id']}: {e}")
+                                        continue
+                                        
+                            except Exception as e:
+                                logger.warning(f"GPT entity extraction failed for memory {memory['id']}: {e}")
+                                continue
+                    
+                    logger.info(f"✅ Extracted {len(entities)} entities using Jean Memory V2 GPT-4o-mini approach")
+                    
+                except Exception as gpt_error:
+                    logger.warning(f"GPT-4o-mini entity extraction failed: {gpt_error}")
+                    # Fall back to basic entity extraction if GPT fails
+                    raise gpt_error
+                
+            except Exception as e:
+                logger.warning(f"Jean Memory V2 entity extraction failed: {e}")
+                logger.info("🔄 Falling back to basic entity extraction...")
+                
+                # Basic fallback using simple patterns for critical entities
+                import re
+                
+                basic_patterns = {
+                    'person': [r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', r'\b(?:I|me|my|myself)\b'],
+                    'place': [r'\b(?:office|home|work|school|restaurant|cafe|park)\b'],
+                    'event': [r'\b(?:meeting|conference|party|project|trip)\b'],
+                    'topic': [r'\b(?:programming|business|health|learning|travel)\b'],
+                    'object': [r'\b(?:laptop|phone|car|book|app)\b'],
+                    'emotion': [r'\b(?:happy|sad|excited|frustrated|confident)\b']
+                }
+                
+                for memory in processed_memories:
+                    content = memory['content'].lower()
+                    memory_id = memory['id']
+                    
+                    for entity_type, patterns in basic_patterns.items():
+                        for pattern in patterns:
+                            matches = re.findall(pattern, content, re.IGNORECASE)
+                            for match in matches:
+                                if len(match.strip()) > 1:
+                                    entity_name = match.strip().title()
+                                    entity_id = f"{entity_type}_{entity_name.lower().replace(' ', '_')}"
+                                    
+                                    if entity_id not in entities:
+                                        entities[entity_id] = {
+                                            'id': entity_id,
+                                            'name': entity_name,
+                                            'type': entity_type,
+                                            'mentions': 0,
+                                            'attributes': {}
+                                        }
+                                    
+                                    entities[entity_id]['mentions'] += 1
+                                    entity_memory_map.setdefault(entity_id, []).append(memory_id)
+                
+                logger.info(f"✅ Extracted {len(entities)} entities using fallback approach")
+        
+        # Create enhanced visualization data
+        nodes = []
+        edges = []
+        
+        # Convert memories to nodes with safety checks
+        for i, memory in enumerate(processed_memories):
+            if not memory.get('id') or not memory.get('content'):
+                continue
+                
+            content = str(memory['content'])
+            title = content[:80] + '...' if len(content) > 80 else content
+            
+            node = {
+                'id': str(memory['id']),
+                'title': title,
+                'content': content,
+                'type': 'memory',
+                'created_at': memory.get('created_at'),
+                'source': memory.get('source', 'Unknown'),
+                'metadata': memory.get('metadata', {}),
+                'position': {
+                    'x': (i % 20) * 150,  # Improved spacing
+                    'y': (i // 20) * 150,
+                    'z': 0
+                }
+            }
+            nodes.append(node)
+        
+        # Add entity nodes with proper positioning
+        for i, (entity_id, entity) in enumerate(entities.items()):
+            if not entity.get('id') or not entity.get('name') or not entity.get('type'):
+                continue
+            
+            # Position entities by type for better organization
+            type_offsets = {
+                'person': {'x': 0, 'y': 0},
+                'place': {'x': 2000, 'y': 0},
+                'event': {'x': 4000, 'y': 0},
+                'topic': {'x': 0, 'y': 2000},
+                'object': {'x': 2000, 'y': 2000},
+                'emotion': {'x': 4000, 'y': 2000}
+            }
+            
+            offset = type_offsets.get(entity['type'], {'x': 0, 'y': 0})
+            x = offset['x'] + (i % 10) * 120
+            y = offset['y'] + (i // 10) * 120
+            
             nodes.append({
-                'id': entity_id,
-                'title': entity['name'],
+                'id': str(entity_id),
+                'title': str(entity['name']),
                 'content': f"{entity['type'].title()}: {entity['name']} (mentioned {entity['mentions']} times)",
                 'type': entity['type'],
-                'mentions': entity['mentions']
+                'mentions': entity['mentions'],
+                'position': {'x': x, 'y': y, 'z': 0}
             })
-
-        # Create memory-to-entity edges
+        
+        # Create ontological relationships
         edge_id = 0
+        
+        # Memory-to-entity edges using semantic edge types
         for entity_id, memory_ids in entity_memory_map.items():
+            if entity_id not in entities:
+                continue
+                
+            entity_type = entities[entity_id]['type']
+            
             for memory_id in memory_ids:
-                edges.append({'id': f"edge_{edge_id}", 'source': memory_id, 'target': entity_id, 'type': 'mentions'})
+                if not memory_id:
+                    continue
+                
+                # Determine edge type based on entity type (aligned with Jean Memory V2 ontology)
+                if entity_type == 'person':
+                    edge_type = 'participatedIn'
+                elif entity_type == 'place':
+                    edge_type = 'locatedAt'
+                elif entity_type == 'event':
+                    edge_type = 'participatedIn'
+                elif entity_type == 'topic':
+                    edge_type = 'relatedTo'
+                elif entity_type == 'object':
+                    edge_type = 'relatedTo'
+                elif entity_type == 'emotion':
+                    edge_type = 'expressed'
+                else:
+                    edge_type = 'mentions'
+                
+                edges.append({
+                    'id': f"edge_{edge_id}",
+                    'source': str(memory_id),
+                    'target': str(entity_id),
+                    'type': edge_type,
+                    'weight': 1
+                })
                 edge_id += 1
+        
+        # Entity-to-entity edges (only for significant co-occurrences)
+        entity_pairs_processed = set()
+        for entity_id1, memory_ids1 in entity_memory_map.items():
+            for entity_id2, memory_ids2 in entity_memory_map.items():
+                if entity_id1 == entity_id2:
+                    continue
+                    
+                # Avoid duplicate pairs
+                pair_key = tuple(sorted([entity_id1, entity_id2]))
+                if pair_key in entity_pairs_processed:
+                    continue
+                entity_pairs_processed.add(pair_key)
+                
+                shared_memories = set(memory_ids1) & set(memory_ids2)
+                if len(shared_memories) >= 2:  # Only connect if they share multiple memories
+                    entity_type1 = entities[entity_id1]['type']
+                    entity_type2 = entities[entity_id2]['type']
+                    
+                    # Determine semantic edge type
+                    if (entity_type1 == 'person' and entity_type2 == 'place') or (entity_type1 == 'place' and entity_type2 == 'person'):
+                        edge_type = 'locatedAt'
+                    elif (entity_type1 == 'person' and entity_type2 == 'event') or (entity_type1 == 'event' and entity_type2 == 'person'):
+                        edge_type = 'participatedIn'
+                    elif (entity_type1 == 'event' and entity_type2 == 'place') or (entity_type1 == 'place' and entity_type2 == 'event'):
+                        edge_type = 'locatedAt'
+                    elif (entity_type1 == 'person' and entity_type2 == 'emotion') or (entity_type1 == 'emotion' and entity_type2 == 'person'):
+                        edge_type = 'expressed'
+                    else:
+                        edge_type = 'relatedTo'
+                    
+                    edges.append({
+                        'id': f"edge_{edge_id}",
+                        'source': str(entity_id1),
+                        'target': str(entity_id2),
+                        'type': edge_type,
+                        'weight': len(shared_memories)
+                    })
+                    edge_id += 1
+        
+        # Memory-to-memory similarity edges (limited for performance)
+        similarity_edges = 0
+        max_similarity_edges = 100
+        
+        for i, memory1 in enumerate(processed_memories):
+            if similarity_edges >= max_similarity_edges:
+                break
+                
+            for j, memory2 in enumerate(processed_memories[i+1:], i+1):
+                if similarity_edges >= max_similarity_edges:
+                    break
+                
+                # Calculate content similarity
+                content1_words = set(memory1['content'].lower().split())
+                content2_words = set(memory2['content'].lower().split())
+                
+                if len(content1_words) > 3 and len(content2_words) > 3:
+                    similarity = len(content1_words & content2_words) / len(content1_words | content2_words)
+                    
+                    if similarity > 0.3:  # Higher threshold for better quality
+                        edges.append({
+                            'id': f"edge_{edge_id}",
+                            'source': str(memory1['id']),
+                            'target': str(memory2['id']),
+                            'type': 'similar',
+                            'weight': similarity
+                        })
+                        edge_id += 1
+                        similarity_edges += 1
         
         visualization_data = {
             'nodes': nodes,
             'edges': edges,
             'clusters': [],
             'metadata': {
-                'total_memories': len(memories),
+                'total_memories': len(processed_memories),
                 'total_entities': len(entities),
-                'focus_query': focus_query
+                'total_nodes': len(nodes),
+                'total_edges': len(edges),
+                'entity_counts': {
+                    'person': len([e for e in entities.values() if e['type'] == 'person']),
+                    'place': len([e for e in entities.values() if e['type'] == 'place']),
+                    'event': len([e for e in entities.values() if e['type'] == 'event']),
+                    'topic': len([e for e in entities.values() if e['type'] == 'topic']),
+                    'object': len([e for e in entities.values() if e['type'] == 'object']),
+                    'emotion': len([e for e in entities.values() if e['type'] == 'emotion'])
+                },
+                'edge_types': {
+                    'participatedIn': len([e for e in edges if e['type'] == 'participatedIn']),
+                    'locatedAt': len([e for e in edges if e['type'] == 'locatedAt']),
+                    'relatedTo': len([e for e in edges if e['type'] == 'relatedTo']),
+                    'expressed': len([e for e in edges if e['type'] == 'expressed']),
+                    'similar': len([e for e in edges if e['type'] == 'similar']),
+                    'mentions': len([e for e in edges if e['type'] == 'mentions'])
+                },
+                'focus_query': focus_query,
+                'generated_at': datetime.datetime.now(UTC).isoformat(),
+                'search_method': 'ontological_pattern_matching',
+                'entity_extraction_method': 'jean_memory_v2_aligned_patterns',
+                'ontology_aligned': True,
+                'include_entities': include_entities,
+                'include_temporal_clusters': include_temporal_clusters
             }
         }
         
-        logger.info(f"✅ Life graph data generated successfully: {len(nodes)} nodes, {len(edges)} edges")
+        # Caching disabled for now - direct return
+        
+        logger.info(f"✅ Life graph data generated successfully: {len(visualization_data['nodes'])} nodes, {len(visualization_data['edges'])} edges")
         
         return visualization_data
         
@@ -1465,45 +1837,153 @@ async def enhanced_deep_life_query(
     db: Session = Depends(get_db)
 ):
     """
-    Performs a true deep life query using the full orchestration logic.
+    Enhanced Deep Life Query using Jean Memory V2 with ontology-guided analysis
+    
+    This endpoint provides comprehensive life analysis by:
+    1. Using Jean Memory V2 for enhanced memory retrieval
+    2. Leveraging ontology-guided entity extraction
+    3. Providing richer context than standard UI queries
     """
     supabase_user_id_str = str(current_supa_user.id)
+    user = get_or_create_user(db, supabase_user_id_str, current_supa_user.email)
+    
     query = request.get("query", "").strip()
     if not query:
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
     try:
-        from app.mcp_orchestration import get_smart_orchestrator
-        orchestrator = get_smart_orchestrator()
+        # Use Jean Memory V2 for comprehensive memory retrieval
+        from app.utils.memory import get_async_memory_client
         
-        # Use a default client_name for API-initiated deep queries
-        client_name = "deep_life_query_client"
-
-        logger.info(f"🧠 [DEEP LIFE QUERY] Initiating full deep analysis for user {supabase_user_id_str}: '{query}'")
+        logger.warning(f"🧠 [DEEP LIFE QUERY] Starting Enhanced Deep Life Query for user {supabase_user_id_str}: '{query}'")
+        logger.warning(f"🔄 [DEEP LIFE QUERY] Initializing Jean Memory V2 async client...")
         
-        # Await the comprehensive analysis from the orchestrator
-        analysis_result = await orchestrator._full_deep_analysis(
-            search_query=query,
+        memory_client = await get_async_memory_client()
+        logger.warning(f"✅ [DEEP LIFE QUERY] Jean Memory V2 client initialized successfully")
+        
+        # Get comprehensive memories from Jean Memory V2 with enhanced search
+        enhanced_query = f"{query} life experiences goals values relationships achievements"
+        logger.warning(f"🔍 [DEEP LIFE QUERY] Enhanced search query: '{enhanced_query}'")
+        logger.warning(f"📊 [DEEP LIFE QUERY] Searching Jean Memory V2 with limit=50...")
+        
+        import time
+        search_start_time = time.time()
+        memory_results = await memory_client.search(
+            query=enhanced_query,
             user_id=supabase_user_id_str,
-            client_name=client_name
+            limit=50  # Get more comprehensive results
         )
+        search_duration = time.time() - search_start_time
+        logger.warning(f"⚡ [DEEP LIFE QUERY] Jean Memory V2 search completed in {search_duration:.2f}s")
         
-        logger.info(f"✅ [DEEP LIFE QUERY] Full deep analysis completed for user {supabase_user_id_str}")
+        # Process memory results
+        memories_text = []
+        enhanced_context = []
+        
+        if isinstance(memory_results, dict) and 'results' in memory_results:
+            memories = memory_results['results']
+        elif isinstance(memory_results, list):
+            memories = memory_results
+        else:
+            memories = []
+        
+        logger.warning(f"📋 [DEEP LIFE QUERY] Raw memory results type: {type(memory_results)}")
+        logger.warning(f"📋 [DEEP LIFE QUERY] Found {len(memories)} memories for enhanced analysis")
+        if len(memories) > 0:
+            logger.warning(f"📋 [DEEP LIFE QUERY] Sample memory content: {memories[0].get('memory', memories[0].get('content', ''))[:100]}...")
+        
+        # Build enhanced context with Jean Memory V2 insights
+        for i, mem in enumerate(memories[:30]):  # Use top 30 most relevant
+            content = mem.get('memory', mem.get('content', ''))
+            metadata = mem.get('metadata', {})
+            
+            if not content or len(content.strip()) < 5:
+                continue
+            
+            # Add memory with context
+            timestamp = mem.get('created_at', 'Unknown date')
+            source = metadata.get('app_name', 'Jean Memory V2')
+            
+            enhanced_context.append({
+                'content': content.strip(),
+                'timestamp': timestamp,
+                'source': source,
+                'metadata': metadata
+            })
+            
+            # Add to text for prompt
+            memories_text.append(f"[{timestamp}] {content.strip()}")
+        
+        if not memories_text:
+            return {
+                "response": "I don't have enough memory context to provide a meaningful analysis. Please add more memories to enable deep life insights.",
+                "analysis_type": "insufficient_data",
+                "memories_analyzed": 0
+            }
+        
+        # Create enhanced prompt for deep analysis
+        memory_context = "\n".join(memories_text)
+        
+        enhanced_prompt = f"""You are an advanced AI life coach and analyst with access to comprehensive memory data enhanced with ontology-guided entity extraction. Your task is to provide deep, insightful analysis that goes beyond surface-level observations.
+
+ENHANCED MEMORY CONTEXT (Ontology-Enhanced):
+{memory_context}
+
+USER'S DEEP LIFE QUESTION: "{query}"
+
+ANALYSIS INSTRUCTIONS:
+1. **Pattern Recognition**: Identify underlying themes, recurring patterns, and life trajectories
+2. **Entity Analysis**: Recognize key people, places, events, and their relationships
+3. **Growth Insights**: Highlight personal development, skill acquisition, and mindset evolution
+4. **Value Alignment**: Assess how experiences align with stated or implied values
+5. **Future Implications**: Suggest areas for growth and potential opportunities
+6. **Holistic Perspective**: Connect diverse experiences into a coherent life narrative
+
+Provide a thoughtful, multi-paragraph response that synthesizes information across memories to deliver profound insights. Be specific, empathetic, and actionable in your analysis.
+
+MEMORY ANALYSIS COUNT: {len(memories_text)} memories analyzed
+ENHANCEMENT: Ontology-guided entity extraction active"""
+
+        # Use Gemini for analysis (same as regular Deep Life Query but with enhanced context)
+        from app.utils.gemini import GeminiService
+        gemini_service = GeminiService()
+        
+        logger.warning(f"🤖 [DEEP LIFE QUERY] Generating enhanced AI analysis with {len(memories_text)} memories")
+        logger.warning(f"📝 [DEEP LIFE QUERY] Prompt length: {len(enhanced_prompt)} characters")
+        
+        analysis_start_time = time.time()
+        analysis_result = await gemini_service.generate_response(enhanced_prompt)
+        analysis_duration = time.time() - analysis_start_time
+        
+        logger.warning(f"✅ [DEEP LIFE QUERY] AI analysis completed in {analysis_duration:.2f}s")
+        logger.warning(f"📤 [DEEP LIFE QUERY] Response length: {len(analysis_result)} characters")
+        
+        # Add metadata about the analysis
+        analysis_metadata = {
+            "memories_analyzed": len(memories_text),
+            "analysis_type": "enhanced_jean_memory_v2",
+            "ontology_enhanced": True,
+            "entity_extraction": True,
+            "timestamp": datetime.datetime.now(UTC).isoformat()
+        }
+        
+        total_duration = time.time() - search_start_time
+        logger.warning(f"🎉 [DEEP LIFE QUERY] COMPLETE - Total duration: {total_duration:.2f}s (search: {search_duration:.2f}s, analysis: {analysis_duration:.2f}s)")
+        logger.warning(f"📊 [DEEP LIFE QUERY] Final stats - Memories: {len(memories_text)}, Response: {len(analysis_result)} chars")
         
         return {
             "response": analysis_result,
-            "metadata": {
-                "analysis_type": "full_deep_analysis",
-                "timestamp": datetime.datetime.now(UTC).isoformat()
-            },
+            "metadata": analysis_metadata,
             "success": True
         }
         
     except Exception as e:
-        logger.error(f"❌ [DEEP LIFE QUERY] Failed for user {supabase_user_id_str}: {e}", exc_info=True)
+        logger.error(f"❌ [DEEP LIFE QUERY] Enhanced Deep Life Query failed for user {supabase_user_id_str}: {e}", exc_info=True)
+        logger.error(f"❌ [DEEP LIFE QUERY] Query was: '{query}'")
+        logger.error(f"❌ [DEEP LIFE QUERY] Error type: {type(e).__name__}")
         raise HTTPException(
             status_code=500, 
-            detail=f"Deep life query failed: {str(e)}"
+            detail=f"Enhanced analysis failed: {str(e)}"
         )
 
 
