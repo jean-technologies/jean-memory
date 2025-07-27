@@ -12,13 +12,13 @@ class ClaudeProfile(BaseClientProfile):
         tools = [
             {
                 "name": "jean_memory",
-                "description": "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false only if context definitely won't help the response.",
+                "description": "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "user_message": {"type": "string", "description": "The user's complete message or question"},
                         "is_new_conversation": {"type": "boolean", "description": "Set to true only for the very first message in a new chat session, otherwise false."},
-                        "needs_context": {"type": "boolean", "description": "Whether context retrieval is needed for this query. Defaults to true. Set to false only if context definitely won't help the response.", "default": True}
+                        "needs_context": {"type": "boolean", "description": "Whether personal context retrieval is needed for this query. Set to false for generic knowledge questions (science, definitions, general concepts). Set to true for questions that would benefit from the user's personal memories, experiences, or previous conversations.", "default": True}
                     },
                     "required": ["user_message", "is_new_conversation"]
                 }

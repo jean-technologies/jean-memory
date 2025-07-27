@@ -182,12 +182,18 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
         
         logger.info(f"💾 [Memory Add] Metadata prepared: {list(metadata.keys())}")
         
-        # Add to memory system
+        # Add to memory system (using same format as working REST API)
         logger.info(f"💾 [Memory Add] Step 6: Adding to memory system")
         memory_add_start = time.time()
         try:
+            # Format message the same way as working REST API
+            message_to_add = {
+                "role": "user", 
+                "content": text
+            }
+            
             result = await memory_client.add(
-                text,
+                messages=[message_to_add],
                 user_id=supa_uid,
                 metadata=metadata
             )

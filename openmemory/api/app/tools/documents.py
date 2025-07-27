@@ -536,7 +536,6 @@ async def sync_substack_posts(substack_url: str, max_posts: int = 20) -> str:
         logging.error(f"Error in sync_substack_posts MCP tool: {e}", exc_info=True)
         return f"❌ Error syncing Substack: {str(e)}"
 
-
 @mcp.tool(description="Deep memory search with automatic full document inclusion. Use this for: 1) Reading/summarizing specific essays (e.g. 'summarize The Irreverent Act'), 2) Analyzing personality/writing style across documents, 3) Finding insights from essays written months/years ago, 4) Any query needing full essay context. Automatically detects and includes complete relevant documents using dynamic scoring.")
 async def deep_memory_query(search_query: str, memory_limit: int = None, chunk_limit: int = None, include_full_docs: bool = True) -> str:
     """
@@ -830,3 +829,4 @@ Provide a thorough, insightful response."""
         processing_time = time.time() - start_time
         logger.error(f"Error in deep_memory_query after {processing_time:.2f}s: {e}", exc_info=True)
         return f"Error performing deep search: {str(e)}"
+

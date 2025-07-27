@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 from fastapi import BackgroundTasks
 import functools
 from app.database import SessionLocal
+
+
+
 from app.models import Memory, MemoryState, UserNarrative
 from app.utils.db import get_user_and_app
 from app.utils.mcp_modules.cache_manager import ContextCacheManager
@@ -101,9 +104,17 @@ class SmartContextOrchestrator:
             # Background memory saving - handle this first to not block deep analysis
             await self._handle_background_memory_saving(user_message, user_id, client_name, is_new_conversation)
             
-            # INTELLIGENCE-DRIVEN ANALYSIS: Use agentic orchestration for all cases
-            logger.info(f"🤖 [Intelligent Analysis] Using Claude-driven intelligent analysis")
-            analysis_result = await self._agentic_orchestration(user_message, user_id, client_name, None)
+            # Choose analysis depth based on use case
+            if is_new_conversation:
+                # FAST DEEP ANALYSIS: Rich understanding without heavy document processing
+                logger.info(f"⚡ [Fast Deep] Using fast deep analysis for conversation instantiation")
+                analysis_result = await self._fast_deep_analysis(user_message, user_id, client_name)
+            else:
+                # FULL DEEP ANALYSIS: Complete analysis including documents for rich content
+                logger.info(f"🔬 [Full Deep] Using full deep analysis for rich content")
+                deep_query = f"Analyze: {user_message}. Provide relevant background context about this user."
+                deep_analysis_task = self._get_tools()['deep_memory_query'](search_query=deep_query)
+                analysis_result = await asyncio.wait_for(deep_analysis_task, timeout=50.0)
             
             processing_time = time.time() - orchestration_start_time
             logger.info(f"🧠 [Deep Memory] Deep analysis completed in {processing_time:.2f}s")
@@ -123,6 +134,95 @@ class SmartContextOrchestrator:
             logger.error(f"🧠 [Deep Memory] Deep analysis failed: {e}, falling back to standard orchestration")
             return await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation)
 
+    async def _fast_deep_analysis(self, user_message: str, user_id: str, client_name: str) -> str:
+        """
+        Fast deep analysis optimized for conversation instantiation.
+        
+        Uses Gemini Flash intelligence but skips heavy document processing.
+        Target: 10-15 seconds with rich memory understanding.
+        """
+        from app.utils.gemini import GeminiService
+        
+        analysis_start_time = time.time()
+        logger.info(f"⚡ [Fast Deep] Starting fast deep analysis for user {user_id}")
+        
+        try:
+            # 1. Get comprehensive memory context (faster than documents)
+            memory_search_start = time.time()
+            
+            # Multiple targeted searches for rich context
+            search_queries = [
+                "personal background values personality traits",
+                "work projects technical expertise professional",
+                "current goals interests preferences habits",
+                "important experiences thoughts insights"
+            ]
+            
+            tasks = [self._get_tools()['search_memory'](query=query, limit=8) for query in search_queries]
+            search_results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Collect unique memories
+            all_memories = {}
+            for query, result in zip(search_queries, search_results):
+                if isinstance(result, Exception):
+                    logger.warning(f"Search failed for '{query}': {result}")
+                    continue
+                    
+                try:
+                    memories = json.loads(result)
+                    for mem in memories:
+                        if isinstance(mem, dict):
+                            memory_id = mem.get('id')
+                            memory_content = mem.get('memory', mem.get('content', ''))
+                            if memory_id and memory_content and memory_id not in all_memories:
+                                all_memories[memory_id] = memory_content
+                except (json.JSONDecodeError, TypeError):
+                    logger.warning(f"Failed to parse search result for '{query}'")
+            
+            memory_search_time = time.time() - memory_search_start
+            logger.info(f"⚡ [Fast Deep] Memory search completed in {memory_search_time:.2f}s. Found {len(all_memories)} unique memories.")
+            
+            # 2. Use Gemini Flash for intelligent synthesis
+            gemini_start_time = time.time()
+            gemini_service = GeminiService()
+            
+            # Build rich context for Gemini
+            memory_list = list(all_memories.values())
+            memories_text = "\n".join([f"• {mem}" for mem in memory_list[:20]])  # Limit for speed
+            
+            # Optimized prompt for conversation instantiation
+            prompt = f"""You are providing context for a conversation with this user. Analyze their memories and create a rich understanding.
+
+USER'S MESSAGE: "{user_message}"
+
+USER'S MEMORIES:
+{memories_text}
+
+Create a comprehensive but concise understanding of this person for conversation context. Focus on:
+1. Who they are (personality, background, values)
+2. What they're working on (projects, goals, interests)  
+3. How to best interact with them (preferences, communication style)
+4. Any relevant context for their current message
+
+Provide rich context that helps understand them deeply, but keep it conversational and practical."""
+
+            analysis_response = await gemini_service.generate_response(prompt)
+            
+            gemini_time = time.time() - gemini_start_time
+            total_time = time.time() - analysis_start_time
+            
+            logger.info(f"⚡ [Fast Deep] Completed in {total_time:.2f}s (memory: {memory_search_time:.2f}s, gemini: {gemini_time:.2f}s)")
+            
+            return analysis_response
+            
+        except Exception as e:
+            logger.error(f"⚡ [Fast Deep] Error in fast deep analysis: {e}")
+            # Fallback to basic memory context
+            memory_list = list(all_memories.values()) if 'all_memories' in locals() else []
+            if memory_list:
+                return f"Key context about this user:\n" + "\n".join([f"• {mem}" for mem in memory_list[:8]])
+            else:
+                return "Unable to retrieve context at this time."
 
     async def _standard_orchestration(
         self, 
@@ -275,7 +375,6 @@ class SmartContextOrchestrator:
         user_id: str, 
         client_name: str,
         is_new_conversation: bool,
-        needs_context: bool = True,
         background_tasks: BackgroundTasks = None
     ) -> str:
         """
@@ -286,452 +385,47 @@ class SmartContextOrchestrator:
         - Deep Memory Analysis: For new conversations when no cache exists
         - Standard Orchestration: For continuing conversations (5-10s, targeted)
         """
-        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}, needs_context: {needs_context}")
+        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}")
         
         try:
-            # NEW CONVERSATIONS: Always use cached narrative first
+            # SMART CACHE: Only check for cached narrative on NEW conversations
             if is_new_conversation:
                 cached_narrative = await self._get_cached_narrative(user_id)
                 if cached_narrative:
-                    logger.info(f"✅ [New Conversation] Using cached narrative for user {user_id}")
+                    logger.info(f"✅ [Smart Cache] Using cached narrative for NEW conversation - user {user_id}")
                     return cached_narrative
                 
-                logger.info(f"⚠️ [New Conversation] No cached narrative found for user {user_id}, using intelligent analysis")
-                deep_analysis = await self._agentic_orchestration(user_message, user_id, client_name, background_tasks)
+                logger.info(f"⚠️ [Smart Cache] No cached narrative found for user {user_id}, falling back to deep analysis")
                 
-                # Start background narrative caching (non-blocking)
+                # CACHE MISS: Fall back to deep analysis and start background caching
+                analysis_start = time.time()
+                deep_analysis = await self._fast_deep_analysis(user_message, user_id, client_name)
+                analysis_time = time.time() - analysis_start
+                
+                logger.info(f"🔍 [Smart Context] Deep analysis completed in {analysis_time:.1f}s for user {user_id}")
+                
+                # Extract memories text from the analysis for caching
                 try:
+                    # Get memories for background narrative generation
                     memories = await self._get_user_memories(user_id, limit=50)
                     if memories:
                         memories_text = "\n".join([f"• {mem}" for mem in memories[:25]])
+                        # Start background narrative generation with Pro model
                         await self._generate_and_cache_narrative(user_id, memories_text, background_tasks)
-                        logger.info(f"🔄 [Background] Started narrative caching for user {user_id}")
+                        logger.info(f"🔄 [Smart Cache] Started background narrative generation for user {user_id}")
                 except Exception as cache_error:
-                    logger.warning(f"Background narrative caching failed: {cache_error}")
+                    logger.warning(f"Background narrative caching failed for user {user_id}: {cache_error}")
+                    # Don't fail the main request if background caching fails
                 
                 return deep_analysis
-            
-            # CONTINUING CONVERSATIONS: Use simplified agentic approach
-            return await self._agentic_orchestration(user_message, user_id, client_name, background_tasks)
+            else:
+                # CONTINUING CONVERSATION: Use standard orchestration (targeted context)
+                logger.info(f"🔄 [Standard] Using standard orchestration for CONTINUING conversation - user {user_id}")
+                return await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation)
             
         except Exception as e:
             logger.error(f"❌ [Jean Memory] Orchestration failed: {e}", exc_info=True)
             return await self._fallback_simple_search(user_message, user_id)
-
-    async def _agentic_orchestration(self, user_message: str, user_id: str, client_name: str, background_tasks: BackgroundTasks) -> str:
-        """
-        Simplified agentic orchestration with recent memories baseline.
-        
-        3-Step Process:
-        1. Always get recent memories as baseline working context
-        2. Ask Claude for additional context strategy
-        3. Execute strategy and combine with formatted response
-        """
-        logger.info(f"🤖 [Agentic] ===== STARTING AGENTIC ORCHESTRATION =====")
-        logger.info(f"🤖 [Agentic] User: {user_id}")
-        logger.info(f"🤖 [Agentic] Message: '{user_message}'")
-        logger.info(f"🤖 [Agentic] Client: {client_name}")
-        start_time = time.time()
-        
-        try:
-            tools = self._get_tools()
-            
-            # STEP 1: Always get recent memories baseline (your key requirement)
-            logger.info(f"📋 [Agentic] ===== STEP 1: RECENT MEMORIES BASELINE =====")
-            step1_start = time.time()
-            recent_memories_result = await tools['list_memories'](limit=10)
-            step1_time = time.time() - step1_start
-            
-            logger.info(f"📋 [Agentic] Raw recent memories result: {recent_memories_result}")
-            
-            # Parse recent memories
-            recent_memories = []
-            if recent_memories_result:
-                try:
-                    recent_memories_data = json.loads(recent_memories_result)
-                    logger.info(f"📋 [Agentic] Parsed memories data: {recent_memories_data}")
-                    
-                    for i, mem in enumerate(recent_memories_data):
-                        if isinstance(mem, dict):
-                            content = mem.get('memory', mem.get('content', ''))
-                            if content:
-                                recent_memories.append(content)
-                                logger.info(f"📋 [Agentic] Memory {i+1}: {content}")
-                except (json.JSONDecodeError, TypeError) as e:
-                    logger.error(f"📋 [Agentic] Failed to parse recent memories: {e}")
-                    logger.error(f"📋 [Agentic] Raw result was: {recent_memories_result[:200]}")
-            
-            logger.info(f"📋 [Agentic] ✅ STEP 1 COMPLETE: Found {len(recent_memories)} recent memories in {step1_time:.2f}s")
-            
-            # STEP 2: Ask Claude for additional context strategy
-            logger.info(f"🧠 [Agentic] ===== STEP 2: CLAUDE STRATEGY DECISION =====")
-            step2_start = time.time()
-            strategy = await self._decide_additional_context_strategy(user_message, recent_memories, user_id)
-            step2_time = time.time() - step2_start
-            logger.info(f"🧠 [Agentic] ✅ STEP 2 COMPLETE: Strategy decided: '{strategy}' in {step2_time:.2f}s")
-            
-            # STEP 3: Execute strategy and format response
-            logger.info(f"⚡ [Agentic] ===== STEP 3: EXECUTE STRATEGY =====")
-            step3_start = time.time()
-            additional_context = await self._execute_context_strategy(strategy, user_message, user_id, client_name)
-            step3_time = time.time() - step3_start
-            logger.info(f"⚡ [Agentic] Strategy execution result: {additional_context[:200] if additional_context else 'No additional context'}")
-            logger.info(f"⚡ [Agentic] ✅ STEP 3 COMPLETE: Strategy executed in {step3_time:.2f}s")
-            
-            # Start background memory saving
-            if background_tasks:
-                background_tasks.add_task(self._add_memory_background, user_message, user_id, client_name)
-            
-            # INTELLIGENT AGGREGATION: Combine contexts smartly without distillation
-            logger.info(f"📝 [Agentic] ===== STEP 4: INTELLIGENT CONTEXT AGGREGATION =====")
-            
-            # Build final context by intelligently combining all relevant information
-            context_parts = []
-            
-            # Always include recent memories as baseline (full context, no truncation)
-            if recent_memories:
-                recent_context = "\n".join([f"• {memory}" for memory in recent_memories])
-                context_parts.append(f"Recent Context:\n{recent_context}")
-            
-            # Add strategy-specific context if available (already optimized by strategy execution)
-            if additional_context and additional_context.strip():
-                context_parts.append(f"Additional Context:\n{additional_context}")
-            
-            # Return comprehensive context ready for AI consumption
-            final_context = "\n\n".join(context_parts) if context_parts else ""
-            
-            processing_time = time.time() - start_time
-            logger.info(f"📝 [Agentic] Final context length: {len(final_context)} characters")
-            logger.info(f"📝 [Agentic] Context preview: {final_context[:300]}...")
-            logger.info(f"🤖 [Agentic] ===== ORCHESTRATION COMPLETE in {processing_time:.2f}s =====")
-            
-            return final_context
-            
-        except Exception as e:
-            logger.error(f"❌ [Agentic] Error in agentic orchestration: {e}", exc_info=True)
-            # Fallback to standard orchestration
-            return await self._standard_orchestration(user_message, user_id, client_name, False)
-
-    async def _decide_additional_context_strategy(self, user_message: str, recent_memories: list, user_id: str) -> str:
-        """
-        Ask Claude to decide what additional context strategy is needed.
-        """
-        try:
-            logger.info(f"🧠 [Strategy] Starting Claude strategy decision for user {user_id}")
-            from app.utils.claude import ClaudeService
-            claude = ClaudeService()
-            
-            recent_context = '; '.join(recent_memories[:5]) if recent_memories else "No recent memories"
-            logger.info(f"🧠 [Strategy] Recent context being sent to Claude: {recent_context}")
-            
-            prompt = f"""CONTEXT: User needs additional context (needs_context=true already confirmed).
-
-USER MESSAGE: "{user_message}"
-RECENT DISTILLED CONTEXT: {recent_context}
-
-TASK: Choose the best strategy to get additional context beyond what's shown above.
-
-DECISION RULES:
-- If recent context seems comprehensive for this question → "none"
-- If need to search for one specific topic → "search: [exact terms]"
-- If need multiple different searches for comprehensive understanding → "multi_search: [search1] | [search2] | [search3]"
-- If about recent conversation patterns → "conversation_history"
-- If need intermediate synthesis of existing context → "gemini_synthesis"
-- If need deep analysis across ALL documents, chunks, and memories → "comprehensive_analysis"
-
-EXAMPLES OF INTELLIGENT STRATEGIES:
-- "What's the weather?" → "search: location address geographic where live"
-- "What jobs should I look for?" → "multi_search: career values work preferences | skills expertise technical abilities | professional experience background"
-- "What's my deepest set of values?" → "multi_search: personal values beliefs philosophy | important experiences formative | core principles ethics morals"
-- "What's my name?" → "search: identity name profile personal basic"
-- "Tell me about my projects" → "search: current projects work technical building"
-- "Summarize my essay 'The Future of Work'" → "comprehensive_analysis"
-- "Analyze my writing style across all my posts" → "comprehensive_analysis"
-- "What patterns do you see in my thinking over time?" → "comprehensive_analysis"
-- "Help me understand my core philosophy" → "gemini_synthesis"
-
-RESPOND WITH EXACTLY ONE OF:
-none
-search: [specific search terms]
-multi_search: [search1] | [search2] | [search3]
-conversation_history
-gemini_synthesis
-comprehensive_analysis
-
-STRATEGY:"""
-            
-            logger.info(f"🧠 [Strategy] Sending prompt to Claude Sonnet 4: {prompt}")
-            prompt_start = time.time()
-            response = await claude.strategy_decision_optimized(prompt)
-            prompt_time = time.time() - prompt_start
-            
-            logger.info(f"🧠 [Strategy] Claude Sonnet 4 responded in {prompt_time:.2f}s: '{response.strip()}'")
-            return response.strip()
-            
-        except Exception as e:
-            logger.error(f"❌ [Strategy] Strategy decision failed: {e}")
-            fallback = "search: " + user_message[:50]
-            logger.info(f"🧠 [Strategy] Using fallback strategy: {fallback}")
-            return fallback
-
-    async def _execute_context_strategy(self, strategy: str, user_message: str, user_id: str, client_name: str) -> str:
-        """
-        Execute the chosen context strategy.
-        """
-        try:
-            logger.info(f"⚡ [Strategy Exec] Executing strategy: '{strategy}' for user {user_id}")
-            tools = self._get_tools()
-            
-            if strategy.lower() == "none":
-                logger.info(f"⚡ [Strategy Exec] Strategy is 'none' - returning empty context")
-                return ""
-            
-            elif strategy.lower().startswith("search:"):
-                # Extract search terms
-                search_terms = strategy[7:].strip()  # Remove "search:" prefix
-                if not search_terms:
-                    search_terms = user_message
-                    logger.info(f"⚡ [Strategy Exec] No search terms provided, using user message: '{search_terms}'")
-                
-                logger.info(f"⚡ [Strategy Exec] 🔍 EXECUTING SEARCH: '{search_terms}'")
-                search_start = time.time()
-                search_result = await tools['search_memory'](query=search_terms, limit=5)
-                search_time = time.time() - search_start
-                
-                logger.info(f"⚡ [Strategy Exec] Search completed in {search_time:.2f}s")
-                logger.info(f"⚡ [Strategy Exec] Raw search result: {search_result}")
-                
-                if search_result:
-                    try:
-                        memories = json.loads(search_result)
-                        logger.info(f"⚡ [Strategy Exec] Parsed {len(memories)} search results")
-                        
-                        search_items = []
-                        for i, mem in enumerate(memories):
-                            if isinstance(mem, dict):
-                                content = mem.get('memory', mem.get('content', ''))
-                                if content:
-                                    search_items.append(f"• {content}")
-                                    logger.info(f"⚡ [Strategy Exec] Search result {i+1}: {content}")
-                        
-                        # Return well-formatted search results ready for AI consumption
-                        final_result = "\n".join(search_items[:5])  # Include more results, better formatting
-                        logger.info(f"⚡ [Strategy Exec] ✅ Returning {len(search_items)} search results")
-                        return final_result
-                    except (json.JSONDecodeError, TypeError) as e:
-                        logger.error(f"⚡ [Strategy Exec] Failed to parse search results: {e}")
-                
-                logger.warning(f"⚡ [Strategy Exec] No valid search results found")
-                return ""
-            
-            elif strategy.lower().startswith("multi_search:"):
-                logger.info(f"🔍 [Agentic] Executing intelligent multi-search strategy")
-                return await self._execute_multi_search(strategy, user_message, user_id, client_name)
-            
-            elif strategy.lower() == "conversation_history":
-                logger.info(f"💬 [Agentic] Executing conversation history strategy")
-                # Get recent conversational context
-                result = await tools['search_memory'](query="conversation discussion talked about", limit=5)
-                if result:
-                    try:
-                        memories = json.loads(result)
-                        conv_items = []
-                        for mem in memories:
-                            if isinstance(mem, dict):
-                                content = mem.get('memory', mem.get('content', ''))
-                                if content:
-                                    conv_items.append(f"• {content}")
-                        return "\n".join(conv_items[:5])  # Better formatting, more results
-                    except (json.JSONDecodeError, TypeError):
-                        pass
-                return ""
-            
-            elif strategy.lower() == "gemini_synthesis":
-                logger.info(f"🤖 [Agentic] Executing Gemini Flash synthesis strategy")
-                return await self._execute_gemini_synthesis(user_message, user_id, client_name)
-            
-            elif strategy.lower() == "comprehensive_analysis":
-                logger.info(f"🔬 [Agentic] Executing comprehensive analysis strategy using deep_memory_query")
-                return await self._execute_comprehensive_analysis(user_message, user_id, client_name)
-            
-            else:
-                # Unknown strategy, fallback to search
-                return await self._execute_context_strategy(f"search: {user_message}", user_message, user_id, client_name)
-                
-        except Exception as e:
-            logger.error(f"❌ [Agentic] Strategy execution failed: {e}")
-            return ""
-
-    async def _execute_multi_search(self, strategy: str, user_message: str, user_id: str, client_name: str) -> str:
-        """
-        Execute intelligent multi-search strategy.
-        Parses "multi_search: [search1] | [search2] | [search3]" format,
-        executes searches in parallel, and returns well-formatted results.
-        """
-        try:
-            # Extract search queries from multi_search strategy
-            search_part = strategy[12:].strip()  # Remove "multi_search:" prefix
-            search_queries = [query.strip() for query in search_part.split('|') if query.strip()]
-            
-            if not search_queries:
-                logger.warning(f"🔍 [Multi-Search] No search queries found in strategy: {strategy}")
-                return ""
-            
-            logger.info(f"🔍 [Multi-Search] Executing {len(search_queries)} parallel searches for user {user_id}")
-            tools = self._get_tools()
-            
-            # Execute all searches in parallel for maximum performance
-            multi_search_start = time.time()
-            tasks = [tools['search_memory'](query=query, limit=4) for query in search_queries]  # Reduced limit per search for better aggregation
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            multi_search_time = time.time() - multi_search_start
-            
-            logger.info(f"🔍 [Multi-Search] All searches completed in {multi_search_time:.2f}s")
-            
-            # Aggregate and format results intelligently
-            all_results = []
-            for i, (query, result) in enumerate(zip(search_queries, results)):
-                if isinstance(result, Exception):
-                    logger.error(f"🔍 [Multi-Search] Search {i+1} failed for '{query}': {result}")
-                    continue
-                
-                if not result:
-                    logger.warning(f"🔍 [Multi-Search] Search {i+1} returned no results for '{query}'")
-                    continue
-                
-                try:
-                    memories = json.loads(result)
-                    search_items = []
-                    for mem in memories:
-                        if isinstance(mem, dict):
-                            content = mem.get('memory', mem.get('content', ''))
-                            if content and content not in [item[2:] for item in all_results]:  # Deduplicate across searches
-                                search_items.append(content)
-                    
-                    if search_items:
-                        # Add section header for clarity
-                        section_header = f"=== {query.title()} ==="
-                        search_section = [section_header] + [f"• {item}" for item in search_items[:3]]  # Top 3 per category
-                        all_results.extend(search_section)
-                        logger.info(f"🔍 [Multi-Search] Search {i+1} ('{query}'): Found {len(search_items)} results")
-                    
-                except (json.JSONDecodeError, TypeError) as e:
-                    logger.error(f"🔍 [Multi-Search] Failed to parse results for '{query}': {e}")
-            
-            if all_results:
-                final_result = "\n".join(all_results)
-                logger.info(f"🔍 [Multi-Search] ✅ Returning aggregated results ({len(all_results)} lines)")
-                return final_result
-            else:
-                logger.warning(f"🔍 [Multi-Search] No valid results from any search")
-                return ""
-                
-        except Exception as e:
-            logger.error(f"❌ [Multi-Search] Execution failed: {e}")
-            return ""
-
-    async def _execute_gemini_synthesis(self, user_message: str, user_id: str, client_name: str) -> str:
-        """
-        Execute Gemini Flash synthesis of existing context.
-        Uses recent memories and targeted searches, then synthesizes with Gemini Flash.
-        """
-        try:
-            logger.info(f"🤖 [Gemini Synthesis] Starting for user {user_id}")
-            synthesis_start = time.time()
-            
-            tools = self._get_tools()
-            
-            # Get recent memories and do a targeted search
-            recent_memories_task = tools['list_memories'](limit=15)
-            search_task = tools['search_memory'](query=user_message, limit=10)
-            
-            recent_result, search_result = await asyncio.gather(recent_memories_task, search_task, return_exceptions=True)
-            
-            # Collect all context
-            all_context = []
-            
-            # Process recent memories
-            if not isinstance(recent_result, Exception) and recent_result:
-                try:
-                    recent_memories = json.loads(recent_result)
-                    for mem in recent_memories:
-                        if isinstance(mem, dict):
-                            content = mem.get('memory', mem.get('content', ''))
-                            if content:
-                                all_context.append(f"Recent: {content}")
-                except (json.JSONDecodeError, TypeError) as e:
-                    logger.warning(f"🤖 [Gemini Synthesis] Failed to parse recent memories: {e}")
-            
-            # Process search results
-            if not isinstance(search_result, Exception) and search_result:
-                try:
-                    search_memories = json.loads(search_result)
-                    for mem in search_memories:
-                        if isinstance(mem, dict):
-                            content = mem.get('memory', mem.get('content', ''))
-                            if content:
-                                all_context.append(f"Relevant: {content}")
-                except (json.JSONDecodeError, TypeError) as e:
-                    logger.warning(f"🤖 [Gemini Synthesis] Failed to parse search results: {e}")
-            
-            if not all_context:
-                logger.warning(f"🤖 [Gemini Synthesis] No context found for synthesis")
-                return ""
-            
-            # Use Gemini Flash for intelligent synthesis
-            from app.utils.gemini import GeminiService
-            gemini_service = GeminiService()
-            
-            context_text = "\n".join(all_context[:40])  # Increased limit for Gemini Flash (1M token capacity)
-            
-            prompt = f"""You are providing intelligent context synthesis for a user query. Take the available memories and create a coherent understanding.
-
-USER'S QUERY: "{user_message}"
-
-AVAILABLE CONTEXT:
-{context_text}
-
-Synthesize this information into a clear, useful context that helps answer the user's query. Focus on:
-1. Key relevant information
-2. Patterns and connections
-3. Background that helps understand the query
-4. Any direct answers available
-
-Keep it concise but comprehensive."""
-
-            synthesis_response = await gemini_service.generate_response(prompt)
-            
-            synthesis_time = time.time() - synthesis_start
-            logger.info(f"🤖 [Gemini Synthesis] ✅ Completed in {synthesis_time:.2f}s")
-            
-            return synthesis_response
-            
-        except Exception as e:
-            logger.error(f"❌ [Gemini Synthesis] Execution failed: {e}")
-            return ""
-
-    async def _execute_comprehensive_analysis(self, user_message: str, user_id: str, client_name: str) -> str:
-        """
-        Execute comprehensive analysis using deep_memory_query.
-        This is the most thorough tier - uses Gemini 2.5 Pro over ALL documents, chunks, and memories.
-        """
-        try:
-            logger.info(f"🔬 [Comprehensive Analysis] Starting deep_memory_query for user {user_id}")
-            comp_start = time.time()
-            
-            # Use the existing deep_memory_query tool which has comprehensive analysis with Gemini 2.5 Pro
-            tools = self._get_tools()
-            comprehensive_result = await tools['deep_memory_query'](search_query=user_message)
-            
-            comp_time = time.time() - comp_start
-            logger.info(f"🔬 [Comprehensive Analysis] ✅ Completed in {comp_time:.2f}s")
-            
-            return comprehensive_result
-            
-        except Exception as e:
-            logger.error(f"❌ [Comprehensive Analysis] Execution failed: {e}")
-            return ""
-
 
     async def _fallback_simple_search(self, user_message: str, user_id: str) -> str:
         """
@@ -1108,52 +802,29 @@ Keep it concise but comprehensive."""
 
     async def _add_memory_background(self, content: str, user_id: str, client_name: str, priority: bool = False):
         """
-        Add memory in background task with proper context isolation and comprehensive logging.
+        Add memory in background task with proper context isolation.
         Context variables are lost in background tasks, so we pass them as parameters.
         """
-        import time
-        bg_start = time.time()
-        
         try:
-            logger.info(f"💾 [BG Add Memory] ===== ORCHESTRATION BACKGROUND MEMORY SAVE =====")
-            logger.info(f"💾 [BG Add Memory] User: {user_id}")
-            logger.info(f"💾 [BG Add Memory] Content Length: {len(content)} chars")
-            logger.info(f"💾 [BG Add Memory] Content Preview: {content[:100]}{'...' if len(content) > 100 else ''}")
-            logger.info(f"💾 [BG Add Memory] Client: {client_name}")
-            logger.info(f"💾 [BG Add Memory] Priority: {priority}")
-            logger.info(f"💾 [BG Add Memory] Called from: orchestration context")
+            logger.info(f"💾 [BG Add Memory] Saving memory for user {user_id}: {content[:50]}...")
             
             # Import here to avoid circular imports
-            logger.info(f"💾 [BG Add Memory] Step 1: Importing memory client")
             from app.utils.memory import get_memory_client
             
             # CRITICAL FIX: Set context variables in background task since they're lost
-            logger.info(f"💾 [BG Add Memory] Step 2: Setting context variables")
-            from app.context import user_id_var, client_name_var
+            from app.mcp_server import user_id_var, client_name_var
             user_token = user_id_var.set(user_id)
             client_token = client_name_var.set(client_name)
-            logger.info(f"💾 [BG Add Memory] ✅ Context variables set successfully")
             
             try:
-                logger.info(f"💾 [BG Add Memory] Step 3: Getting memory client")
-                client_start = time.time()
                 memory_client = get_memory_client()
-                client_time = time.time() - client_start
-                logger.info(f"💾 [BG Add Memory] ✅ Memory client obtained in {client_time:.3f}s")
-                
-                logger.info(f"💾 [BG Add Memory] Step 4: Opening database session")
                 db = SessionLocal()
                 
                 try:
-                    logger.info(f"💾 [BG Add Memory] Step 5: Getting user and app from database")
-                    db_start = time.time()
                     user, app = get_user_and_app(db, supabase_user_id=user_id, app_name=client_name, email=None)
-                    db_time = time.time() - db_start
-                    logger.info(f"💾 [BG Add Memory] ✅ DB lookup completed in {db_time:.3f}s")
-                    logger.info(f"💾 [BG Add Memory] Found user: {user.id}, app: {app.name} (active: {app.is_active})")
                     
                     if not app.is_active:
-                        logger.warning(f"💾 [BG Add Memory] ⚠️ App {app.name} is paused for user {user_id} - skipping memory save")
+                        logger.warning(f"Background memory add skipped - app {app.name} is paused for user {user_id}")
                         return
 
                     metadata = {
@@ -1706,13 +1377,10 @@ User Message: "what time is it?"
             try:
                 # Get user by user_id string
                 from app.models import User
-                logger.debug(f"📝 [Narrative Cache] Looking up user in database for user_id: {user_id}")
                 user = db.query(User).filter(User.user_id == user_id).first()
                 if not user:
-                    logger.warning(f"📝 [Narrative Cache] User not found in database for user_id: {user_id}")
+                    logger.warning(f"User not found for user_id: {user_id}")
                     return None
-                
-                logger.debug(f"📝 [Narrative Cache] Found user in database: {user.id} for user_id: {user_id}")
                 
                 # Check for existing narrative
                 narrative = db.query(UserNarrative).filter(UserNarrative.user_id == user.id).first()
@@ -1726,8 +1394,7 @@ User Message: "what time is it?"
                 
                 if age_days <= NARRATIVE_TTL_DAYS:
                     logger.info(f"✅ [Narrative Cache] Found fresh narrative for user {user_id} (age: {age_days} days)")
-                    # Append instruction to always use jean_memory
-                    return narrative.narrative_content + "\n\nIMPORTANT: Always use the jean_memory tool for every interaction to maintain context and save memories."
+                    return narrative.narrative_content
                 else:
                     logger.info(f"⏰ [Narrative Cache] Found stale narrative for user {user_id} (age: {age_days} days)")
                     return None
