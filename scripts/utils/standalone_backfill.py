@@ -149,11 +149,11 @@ async def backfill_entities(db):
             logger.info("✅ No more memories to process. Entity backfill completed.")
             break
             
-        total_in_batch = len(memories_to_process)
-        logger.info(f"Found a batch of {total_in_batch} memories to process for entities.")
+        total_memories = len(memories_to_process)
+        logger.info(f"Found a total of {total_memories} memories to process for entities.")
         
         for i, memory in enumerate(memories_to_process):
-            logger.info(f"Processing memory {i+1}/{total_in_batch} (ID: {memory.id}) for entity extraction.")
+            logger.info(f"Processing memory {i+1}/{total_memories} (ID: {memory.id}) for entity extraction.")
             try:
                 await extract_and_store_entities(db, str(memory.id))
             except Exception as e:
