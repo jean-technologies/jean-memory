@@ -12,19 +12,23 @@ from datetime import datetime, timedelta, UTC
 import traceback
 from pathlib import Path
 import argparse
+from sqlalchemy import func
 
-# Add project root to Python path
+# --- Path Setup ---
+# This ensures the script can find the application's modules
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if str(project_root) not in sys.path:
+api_root = os.path.join(project_root, 'openmemory', 'api')
+if api_root not in sys.path:
+    sys.path.insert(0, api_root)
+if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Now we can import from the app
-from openmemory.api.app.database import SessionLocal
-from openmemory.api.app.models import User, Memory, UserNarrative
-from openmemory.api.app.services.entity_extraction import extract_and_store_entities
-from openmemory.api.app.utils.memory import get_async_memory_client
-from openmemory.api.app.utils.gemini import GeminiService
-from sqlalchemy import func
+# Now we can import from the app as if we were in the api directory
+from app.database import SessionLocal
+from app.models import User, Memory, UserNarrative
+from app.services.entity_extraction import extract_and_store_entities
+from app.utils.memory import get_async_memory_client
+from app.utils.gemini import GeminiService
 
 # Configuration
 MEMORY_THRESHOLD = 5
