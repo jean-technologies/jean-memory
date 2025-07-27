@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, UTC
 import traceback
 from pathlib import Path
 import argparse
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.exc import OperationalError
 import time
 
@@ -147,7 +147,7 @@ def get_batch_session_with_retry(max_retries=3):
         try:
             db = SessionLocal()
             # Test the connection
-            db.execute("SELECT 1")
+            db.execute(text("SELECT 1"))
             return db
         except OperationalError as e:
             if "Max client connections reached" in str(e) and attempt < max_retries - 1:
