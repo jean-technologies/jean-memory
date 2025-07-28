@@ -96,7 +96,8 @@ graph TB
     subgraph "Data Layer"
         E1 --> F1[(PostgreSQL)]
         E1 --> F2[(Qdrant)]
-        E1 --> F3[(Neo4j)]
+        E1 --> E4[Graphiti]
+        E4 --> F3[(Neo4j)]
         
         F1 --> G1[Users/Apps/Memories]
         F2 --> G2[Vector Embeddings]
@@ -123,6 +124,7 @@ graph TB
     style F1 fill:#d4edda
     style F2 fill:#f8d7da
     style F3 fill:#d1ecf1
+    style E4 fill:#fff2cc
 ```
 
 ### 1.4 Key Architectural Decisions
@@ -130,9 +132,10 @@ graph TB
 1. **Monorepo Structure**: Frontend and backend in one repository for atomic deployments
 2. **Tri-Database Design**: Each database optimized for its purpose
 3. **mem0 Abstraction**: Unified interface over vector and graph databases
-4. **MCP Protocol**: Real-time streaming for AI assistants
-5. **Background Processing**: FastAPI BackgroundTasks for non-blocking operations
-6. **AI Model Selection**: Gemini for analysis, OpenAI for embeddings
+4. **Graphiti Integration**: Intelligent graph management layer for Neo4j
+5. **MCP Protocol**: Real-time streaming for AI assistants
+6. **Background Processing**: FastAPI BackgroundTasks for non-blocking operations
+7. **AI Model Selection**: Gemini for analysis, OpenAI for embeddings
 
 ---
 
@@ -440,18 +443,34 @@ memories (N) <-> (N) documents
 
 **Integration**: Via mem0 library
 
-#### 4.1.3 Neo4j - Knowledge Graph
+#### 4.1.3 Neo4j - Knowledge Graph with Dual Storage
 
-**Purpose**: Entity relationships and graph queries
+**Purpose**: Entity relationships and graph queries via dual storage approach
 
-**Nodes:**
-- Entities extracted from memories
-- People, places, topics, concepts
+**Dual Storage Architecture:**
+- **mem0 Graph Storage**: Direct entity and relationship storage via mem0's built-in graph capabilities
+- **Graphiti Layer**: Additional intelligent layer providing enhanced temporal context and ontology-based extraction
 
-**Edges:**
-- Relationships between entities
-- Temporal connections
-- Semantic links
+**mem0 Graph Storage:**
+- Automatic entity extraction and relationship inference
+- Direct Neo4j storage of memory-derived entities
+- Basic semantic connections between memories
+- Integrated with vector storage for hybrid search
+
+**Graphiti Enhancement Layer:**
+- **Temporal Context**: Time-aware entity states and relationship evolution
+- **Ontology-Based Extraction**: Structured entity types and relationship mappings
+- **Episode Management**: Contextual grouping of related memories
+- **Advanced Reasoning**: Cross-memory relationship inference
+
+**Combined Node Types:**
+- **mem0 Entities**: Basic entities extracted from memory content
+- **Graphiti Episodes**: Temporal memory contexts with rich metadata
+- **Hybrid Relationships**: Both direct mem0 connections and Graphiti-inferred associations
+
+**Storage Flow:**
+1. **mem0**: Memory → Entity Extraction → Neo4j (basic storage)
+2. **Graphiti**: Memory → Episode Creation → Neo4j (enhanced storage with temporal context)
 
 ### 4.2 Data Flow
 
@@ -463,6 +482,7 @@ sequenceDiagram
     participant API
     participant Orchestrator
     participant mem0
+    participant Graphiti  
     participant PostgreSQL
     participant Qdrant
     participant Neo4j
@@ -480,7 +500,9 @@ sequenceDiagram
         opt If REMEMBER
             Orchestrator->>mem0: Add memory
             mem0->>Qdrant: Store vector
-            mem0->>Neo4j: Update graph
+            mem0->>Neo4j: Store graph entities & relationships
+            Orchestrator->>Graphiti: Add episode (parallel)
+            Graphiti->>Neo4j: Store temporal context & ontology
             mem0-->>Orchestrator: Memory ID
             Orchestrator->>PostgreSQL: Save metadata
         end
@@ -488,7 +510,9 @@ sequenceDiagram
         Orchestrator->>Orchestrator: Deep synthesis
         Orchestrator->>mem0: Save insight
         mem0->>Qdrant: Store vector
-        mem0->>Neo4j: Update graph
+        mem0->>Neo4j: Store graph entities & relationships
+        Orchestrator->>Graphiti: Add episode (parallel)
+        Graphiti->>Neo4j: Store temporal context & ontology
         Orchestrator->>PostgreSQL: Save as priority
     end
 ```
@@ -496,10 +520,13 @@ sequenceDiagram
 #### 4.2.2 Memory Retrieval Flow
 
 1. **Query Processing**: Parse user query
-2. **Vector Search**: Find similar memories in Qdrant
-3. **Graph Enhancement**: Enrich with Neo4j relationships
-4. **Metadata Join**: Add PostgreSQL metadata
-5. **Context Formation**: Format for AI consumption
+2. **Vector Search**: Find similar memories in Qdrant via mem0
+3. **Dual Graph Enhancement**: 
+   - Enrich with mem0's built-in Neo4j entity relationships
+   - Add Graphiti temporal context and episode connections
+4. **Entity Context**: Combine basic mem0 entities with Graphiti's temporal reasoning
+5. **Metadata Join**: Add PostgreSQL metadata
+6. **Context Formation**: Format for AI consumption with hybrid graph insights
 
 ### 4.3 Database Migrations
 
@@ -1017,9 +1044,10 @@ pnpm test          # Run tests
 
 1. **ADR-001**: Tri-database architecture for optimal performance
 2. **ADR-002**: mem0 library for vector/graph abstraction
-3. **ADR-003**: Gemini for analysis, OpenAI for embeddings
-4. **ADR-004**: FastAPI for async Python backend
-5. **ADR-005**: Next.js App Router for modern React
+3. **ADR-003**: Graphiti for intelligent Neo4j graph management
+4. **ADR-004**: Gemini for analysis, OpenAI for embeddings
+5. **ADR-005**: FastAPI for async Python backend
+6. **ADR-006**: Next.js App Router for modern React
 
 ---
 
