@@ -21,16 +21,11 @@ class ClaudeProfile(BaseClientProfile):
         """
         Returns the JSON schema for tools available to Claude client.
         """
-        # Get the tools from the client
+        # ClaudeClient.get_tools() already returns the tool schemas (mcp_tool_def objects)
+        # from get_tools_for_client(), so we can return them directly
         client = ClaudeClient()
-        tools = client.get_tools()
+        tool_schemas = client.get_tools()
         
-        # Extract the schema from each tool
-        tool_schemas = []
-        for tool in tools:
-            if hasattr(tool, 'mcp_tool_def'):
-                tool_schemas.append(tool.mcp_tool_def)
-                
         return tool_schemas
     
     def get_tool_prompt(self, tools: List[Dict[str, Any]]) -> str:
