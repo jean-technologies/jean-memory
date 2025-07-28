@@ -1,0 +1,64 @@
+{
+  "deployment_info": {
+    "version": "1.0.0",
+    "deployment_date": "2025-07-28T15:54:27.769696",
+    "framework_name": "Jean Memory Evaluation Framework",
+    "environment": "production"
+  },
+  "evaluation_settings": {
+    "memory_triage": {
+      "enabled": true,
+      "target_accuracy": 85.0,
+      "max_test_scenarios": 50,
+      "timeout_seconds": 300
+    },
+    "context_quality": {
+      "enabled": true,
+      "target_pass_rate": 60.0,
+      "quality_threshold": 70.0,
+      "timeout_seconds": 120
+    },
+    "performance_benchmarks": {
+      "enabled": true,
+      "fast_path_target_ms": 3000,
+      "standard_path_target_ms": 5000,
+      "timeout_seconds": 60
+    },
+    "system_integration": {
+      "enabled": true,
+      "required_components": [
+        "jean_memory_tool",
+        "smart_orchestrator",
+        "memory_analysis",
+        "context_generation"
+      ],
+      "minimum_integration_score": 75.0
+    }
+  },
+  "execution_settings": {
+    "max_concurrent_evaluations": 3,
+    "retry_failed_tests": true,
+    "max_retries": 2,
+    "save_results": true,
+    "generate_reports": true,
+    "alert_on_failures": true
+  },
+  "reporting": {
+    "generate_json_report": true,
+    "generate_html_report": true,
+    "generate_summary_report": true,
+    "save_detailed_logs": true,
+    "alert_thresholds": {
+      "system_health_critical": 50.0,
+      "system_health_warning": 75.0,
+      "memory_accuracy_critical": 70.0,
+      "performance_critical": 60.0
+    }
+  },
+  "isolation_settings": {
+    "use_test_user_ids": true,
+    "cleanup_test_data": true,
+    "isolated_memory_namespace": "jean_memory_evals",
+    "prevent_production_data_access": true
+  }
+}
