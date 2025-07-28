@@ -3,8 +3,8 @@ from typing import Dict, Any, List
 import logging
 import datetime
 
-from .base import BaseClientProfile
-from app.tools.documents import _deep_memory_query_impl
+from .base import BaseClient, BaseClientProfile
+from app.config.tool_config import get_tools_for_client
 
 logger = logging.getLogger(__name__)
 
@@ -144,127 +144,43 @@ async def handle_chatgpt_fetch(user_id: str, memory_id: str):
         logger.error(f"ChatGPT direct fetch error: {e}", exc_info=True)
         raise ValueError("unknown id")
 
+class ChatGPTClient(BaseClient):
+    """Client for handling requests from ChatGPT, which uses a 'function' calling format."""
+    
+    def get_tools(self) -> list:
+        """
+        Returns a list of tools specifically curated for the ChatGPT client,
+        fetching them from the centralized tool configuration and formatting
+        them into the JSON schema that ChatGPT expects.
+        """
+        tool_defs = get_tools_for_client(self.get_client_name())
+        
+        # ChatGPT expects a 'functions' key with a list of schemas.
+        # The tool definitions from our config are already in the correct schema format.
+        return tool_defs
+
+    def get_client_name(self) -> str:
+        return "chatgpt"
+
+    def get_client_profile(self) -> BaseClientProfile:
+        return ChatGPTProfile()
+
 class ChatGPTProfile(BaseClientProfile):
-    """Client profile for ChatGPT, with its unique tool schema and response format."""
-
-    def get_tools_schema(self, include_annotations: bool = False) -> List[Dict[str, Any]]:
-        """Returns ONLY search and fetch tools for ChatGPT clients - OpenAI compliant schemas"""
-        return [
-            {
-                "name": "search",
-                "description": "Search for memories and documents",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "Search query to find relevant memories and documents"
-                        }
-                    },
-                    "required": ["query"]
-                },
-                "outputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "structuredContent": {
-                            "type": "object",
-                            "properties": {
-                                "results": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "id": {"type": "string"},
-                                            "title": {"type": "string"},
-                                            "text": {"type": "string"},
-                                            "url": {"type": ["string", "null"]}
-                                        },
-                                        "required": ["id", "title", "text"]
-                                    }
-                                }
-                            },
-                            "required": ["results"]
-                        },
-                        "content": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "type": {"type": "string"},
-                                    "text": {"type": "string"}
-                                },
-                                "required": ["type", "text"]
-                            }
-                        }
-                    },
-                    "required": ["structuredContent", "content"]
-                }
-            },
-            {
-                "name": "fetch",
-                "description": "Fetch memory or document by ID",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "string", "description": "ID of the memory or document to fetch"}
-                    },
-                    "required": ["id"]
-                },
-                "outputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "structuredContent": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "string"},
-                                "title": {"type": "string"},
-                                "text": {"type": "string"},
-                                "url": {"type": ["string", "null"]},
-                                "metadata": {
-                                    "type": ["object", "null"],
-                                    "additionalProperties": {"type": "string"}
-                                }
-                            },
-                            "required": ["id", "title", "text"]
-                        },
-                        "content": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "type": {"type": "string"},
-                                    "text": {"type": "string"}
-                                },
-                                "required": ["type", "text"]
-                            }
-                        }
-                    },
-                    "required": ["structuredContent", "content"]
-                }
-            }
-        ]
-
-    def format_tool_response(self, result: Any, request_id: str) -> Dict[str, Any]:
-        """
-        Formats the result for ChatGPT, which expects the result directly.
-        The result from handle_chatgpt_search/fetch is already in the final desired format.
-        """
-        return {
-            "jsonrpc": "2.0",
-            "result": result,
-            "id": request_id
-        }
+    """
+    Handles the specific prompt and response formatting required by the
+    ChatGPT function-calling API.
+    """
+    def get_tool_prompt(self, tools: List[Dict[str, Any]]) -> str:
+        """Formats the tools into the JSON structure expected by ChatGPT's API."""
+        if not tools:
+            return "You have no tools available."
+        
+        # ChatGPT expects a JSON string representation of the functions.
+        return json.dumps(tools, indent=2)
 
     async def handle_tool_call(
         self, tool_name: str, tool_args: dict, user_id: str
     ) -> Any:
-        """
-        Overrides the base handler to call the specific, bespoke functions
-        for ChatGPT's 'search' and 'fetch' tools.
-        """
-        if tool_name == "search":
-            return await handle_chatgpt_search(user_id, tool_args.get("query", ""))
-        elif tool_name == "fetch":
-            return await handle_chatgpt_fetch(user_id, tool_args.get("id", ""))
-        else:
-            raise ValueError(f"ChatGPT tool '{tool_name}' not found") 
+        """Handles a tool call from ChatGPT."""
+        # The base handler is sufficient as no special argument handling is needed.
+        return await super().handle_tool_call(tool_name, tool_args, user_id) 
