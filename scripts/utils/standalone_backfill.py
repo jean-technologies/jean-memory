@@ -356,8 +356,8 @@ async def generate_narrative_for_user(user_id: str, gemini: GeminiService, retry
         if is_safety_filter:
             logger.warning(f"🛡️ [User {user_id}] Safety filter detected - this is handled by fallback prompts in Gemini class")
             # Don't retry safety filters - the GeminiService already handles fallbacks
-            return None
-            
+    return None
+
         elif is_rate_limit:
             if retry_count < MAX_RETRIES:
                 # Longer delay for rate limits
@@ -397,9 +397,9 @@ def save_narrative_to_db(user_id: str, narrative_content: str, retry_count: int 
                 cur.execute("SELECT id FROM users WHERE user_id = %s", (user_id,))
                 user_row = cur.fetchone()
                 if not user_row:
-                    logger.error(f"❌ [User {user_id}] User not found in database")
-                    return False
-                
+            logger.error(f"❌ [User {user_id}] User not found in database")
+            return False
+        
                 user_internal_id = user_row[0]
                 
                 # Delete existing narrative (upsert pattern)
@@ -453,7 +453,7 @@ async def process_batch(user_ids, gemini):
             logger.info(f"📍 [{i+1}/{len(user_ids)}] Processing user {user_id}")
             
             # Generate narrative with built-in retry logic
-            narrative = await generate_narrative_for_user(user_id, gemini)
+        narrative = await generate_narrative_for_user(user_id, gemini)
             
             if not narrative:
                 results['skipped'] += 1
@@ -502,16 +502,16 @@ async def main():
         conn.close()
         
         logger.info("🔍 Testing Gemini API...")
-        gemini = GeminiService()
+    gemini = GeminiService()
         test_response = await gemini.generate_narrative_pro("Test connection")
         logger.info(f"✅ Gemini API connected: {len(test_response)} chars response")
         
         # Get eligible users
         eligible_users = get_eligible_users()
-        if not eligible_users:
+    if not eligible_users:
             logger.info("🎯 No users need narrative generation")
-            return
-        
+        return
+
         total_users = len(eligible_users)
         logger.info(f"📊 Processing {total_users} users in batches of {BATCH_SIZE}")
         
