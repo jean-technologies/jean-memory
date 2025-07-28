@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import KnowledgeGraph from "./components/KnowledgeGraph";
-import InteractiveExplorer from "./components/InteractiveExplorer";
 import AdvancedKnowledgeGraph from "./components/AdvancedKnowledgeGraph";
 // import ChatInterface from "./components/ChatInterface";
 import { motion } from "framer-motion";
@@ -20,97 +19,11 @@ import {
 export default function MyLifePage() {
   const [selectedMemory, setSelectedMemory] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"graph" | "chat">("graph");
-  const [viewMode, setViewMode] = useState<"explorer" | "graph" | "advanced">("explorer");
   const [isChatOpen, setIsChatOpen] = useState(true);
 
   return (
     <ProtectedRoute>
       <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-3.5rem)] flex bg-background text-foreground">
-      
-      {/* Vertical Sidebar for View Mode Toggle */}
-      <div className="hidden lg:flex flex-col w-24 bg-card border-r border-border">
-        <div className="flex flex-col gap-2 p-3">
-          <Button
-            variant={viewMode === "explorer" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("explorer")}
-            className="flex flex-col items-center gap-1 h-14 w-18"
-            title="Explorer"
-          >
-            <Map className="h-5 w-5" />
-            <span className="text-xs">Explorer</span>
-          </Button>
-          <Button
-            variant={viewMode === "advanced" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("advanced")}
-            className="flex flex-col items-center gap-1 h-14 w-18"
-            title="Advanced Graph"
-          >
-            <Sparkles className="h-5 w-5" />
-            <span className="text-xs">Graph</span>
-          </Button>
-          {/* 3D Graph tab - hidden for now but keeping code for later use
-          <Button
-            variant={viewMode === "graph" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("graph")}
-            className="flex flex-col items-center gap-1 h-14 w-18"
-            title="3D Graph"
-          >
-            <Network className="h-5 w-5" />
-            <span className="text-xs">3D Graph</span>
-          </Button>
-          */}
-        </div>
-      </div>
-
-      {/* Mobile View Toggle */}
-      <div className="lg:hidden flex flex-col w-full">
-        <div className="flex items-center justify-center gap-2 p-2 bg-card border-b border-border">
-          <Button
-            variant={viewMode === "explorer" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("explorer")}
-            className="flex items-center gap-2"
-          >
-            <Map className="h-4 w-4" />
-            Explorer
-          </Button>
-          <Button
-            variant={viewMode === "advanced" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("advanced")}
-            className="flex items-center gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            Graph
-          </Button>
-          {/* 3D Graph tab - hidden for now but keeping code for later use
-          <Button
-            variant={viewMode === "graph" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("graph")}
-            className="flex items-center gap-2"
-          >
-            <Network className="h-4 w-4" />
-            3D Graph
-          </Button>
-          */}
-        </div>
-      </div>
-        {/*
-        <Button
-          variant={mobileView === "chat" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setMobileView("chat")}
-          className="flex items-center gap-2"
-        >
-          <MessageSquare className="h-4 w-4" />
-          Chat
-        </Button>
-        */}
-
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Main Content Section */}
@@ -120,20 +33,7 @@ export default function MyLifePage() {
           transition={{ duration: 0.5 }}
           className="flex-1 relative overflow-hidden"
         >
-        {viewMode === "graph" && (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-transparent to-blue-900/10" />
-            <KnowledgeGraph onMemorySelect={setSelectedMemory} />
-          </>
-        )}
-        
-        {viewMode === "explorer" && (
-          <InteractiveExplorer onMemorySelect={setSelectedMemory} />
-        )}
-        
-        {viewMode === "advanced" && (
           <AdvancedKnowledgeGraph onMemorySelect={setSelectedMemory} />
-        )}
         </motion.div>
       </div>
 
