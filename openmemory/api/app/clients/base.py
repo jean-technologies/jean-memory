@@ -2,6 +2,34 @@ import json
 from typing import Dict, Any, List
 
 
+class BaseClient:
+    """
+    Base class for all client implementations.
+    Defines the common interface that all clients must implement.
+    """
+    
+    def get_tools(self) -> list:
+        """
+        Returns a list of tools available to this client.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+    
+    def get_client_name(self) -> str:
+        """
+        Returns the canonical name of this client.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+    
+    def get_client_profile(self) -> 'BaseClientProfile':
+        """
+        Returns the client profile for this client.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+
+
 class BaseClientProfile:
     """
     Base class for a client profile.
