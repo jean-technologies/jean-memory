@@ -1852,91 +1852,84 @@ async def enhanced_deep_life_query(
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
     try:
-        # Use Jean Memory V2 for comprehensive memory retrieval
-        from app.utils.memory import get_async_memory_client
-        
-        logger.warning(f"🧠 [DEEP LIFE QUERY] Starting Enhanced Deep Life Query for user {supabase_user_id_str}: '{query}'")
-        logger.warning(f"🔄 [DEEP LIFE QUERY] Initializing Jean Memory V2 async client...")
-        
-        memory_client = await get_async_memory_client()
-        logger.warning(f"✅ [DEEP LIFE QUERY] Jean Memory V2 client initialized successfully")
-        
-        # Get comprehensive memories from Jean Memory V2 with enhanced search
-        enhanced_query = f"{query} life experiences goals values relationships achievements"
-        logger.warning(f"🔍 [DEEP LIFE QUERY] Enhanced search query: '{enhanced_query}'")
-        logger.warning(f"📊 [DEEP LIFE QUERY] Searching Jean Memory V2 with limit=50...")
-        
+        # Per your instructions, this is now a simple, high-volume memory dump.
+        # It fetches the most recent 1000 memories directly from SQL, skipping semantic search.
         import time
-        search_start_time = time.time()
-        memory_results = await memory_client.search(
-            query=enhanced_query,
-            user_id=supabase_user_id_str,
-            limit=50  # Get more comprehensive results
-        )
-        search_duration = time.time() - search_start_time
-        logger.warning(f"⚡ [DEEP LIFE QUERY] Jean Memory V2 search completed in {search_duration:.2f}s")
+        logger.warning(f"📚 [DEEP LIFE QUERY] Fetching recent 1000 memories directly from SQL as requested...")
         
+        search_start_time = time.time()
+
+        recent_sql_memories = db.query(Memory).filter(
+            Memory.user_id == user.id,
+            Memory.state != MemoryState.deleted,
+            Memory.state != MemoryState.archived
+        ).order_by(Memory.created_at.desc()).limit(1000).all()
+
+        search_duration = time.time() - search_start_time
+        logger.warning(f"⚡ [DEEP LIFE QUERY] SQL memory retrieval for {len(recent_sql_memories)} memories completed in {search_duration:.2f}s")
+
         # Process memory results
         memories_text = []
-        enhanced_context = []
+        if recent_sql_memories:
+            logger.warning(f"📋 [DEEP LIFE QUERY] Found {len(recent_sql_memories)} memories for analysis")
+            for mem in recent_sql_memories:
+                memories_text.append(f"[{mem.created_at.isoformat() if mem.created_at else 'Unknown Date'}] {mem.content}")
         
-        if isinstance(memory_results, dict) and 'results' in memory_results:
-            memories = memory_results['results']
-        elif isinstance(memory_results, list):
-            memories = memory_results
-        else:
-            memories = []
+        # STAGE 2: Retrieve relevant documents from PostgreSQL
+        logger.warning(f"📚 [DEEP LIFE QUERY - STAGE 2] Searching PostgreSQL documents for: '{query}'")
+        documents_text = []
+        try:
+            # Search for documents matching the query in title or content
+            matching_documents = db.query(Document).filter(
+                Document.user_id == user.id,
+                or_(
+                    Document.title.ilike(f"%{query}%"),
+                    Document.content.ilike(f"%{query}%")
+                )
+            ).order_by(Document.created_at.desc()).limit(15).all() # Context roof for documents
+            
+            if matching_documents:
+                logger.warning(f"📚 [DEEP LIFE QUERY] Found {len(matching_documents)} matching documents.")
+                for doc in matching_documents:
+                    documents_text.append(f"--- Document: {doc.title} ---\n{doc.content}")
+            else:
+                logger.warning(f"📚 [DEEP LIFE QUERY] No direct matching documents found. Grabbing 5 most recent as fallback.")
+                recent_documents = db.query(Document).filter(Document.user_id == user.id).order_by(Document.created_at.desc()).limit(5).all()
+                for doc in recent_documents:
+                    documents_text.append(f"--- Document: {doc.title} ---\n{doc.content}")
+
+        except Exception as e:
+            logger.error(f"❌ [DEEP LIFE QUERY] Error fetching documents: {e}", exc_info=True)
         
-        logger.warning(f"📋 [DEEP LIFE QUERY] Raw memory results type: {type(memory_results)}")
-        logger.warning(f"📋 [DEEP LIFE QUERY] Found {len(memories)} memories for enhanced analysis")
-        if len(memories) > 0:
-            logger.warning(f"📋 [DEEP LIFE QUERY] Sample memory content: {memories[0].get('memory', memories[0].get('content', ''))[:100]}...")
-        
-        # Build enhanced context with Jean Memory V2 insights
-        for i, mem in enumerate(memories[:30]):  # Use top 30 most relevant
-            content = mem.get('memory', mem.get('content', ''))
-            metadata = mem.get('metadata', {})
-            
-            if not content or len(content.strip()) < 5:
-                continue
-            
-            # Add memory with context
-            timestamp = mem.get('created_at', 'Unknown date')
-            source = metadata.get('app_name', 'Jean Memory V2')
-            
-            enhanced_context.append({
-                'content': content.strip(),
-                'timestamp': timestamp,
-                'source': source,
-                'metadata': metadata
-            })
-            
-            # Add to text for prompt
-            memories_text.append(f"[{timestamp}] {content.strip()}")
-        
-        if not memories_text:
+        if not memories_text and not documents_text:
             return {
-                "response": "I don't have enough memory context to provide a meaningful analysis. Please add more memories to enable deep life insights.",
+                "response": "I don't have enough memory or document context to provide a meaningful analysis. Please add more content to enable deep life insights.",
                 "analysis_type": "insufficient_data",
-                "memories_analyzed": 0
+                "memories_analyzed": 0,
+                "documents_analyzed": 0
             }
         
         # Create enhanced prompt for deep analysis
         memory_context = "\n".join(memories_text)
         
-        # Create a much more direct and concise prompt
-        enhanced_prompt = f"""Based on the user's memory data, answer their question directly and concisely.
+        # Combine all contexts
+        final_context = f"=== MEMORY DATA ({len(memories_text)} entries) ===\n{memory_context}"
+        if documents_text:
+            document_context = "\n\n".join(documents_text)
+            final_context += f"\n\n=== RELEVANT DOCUMENTS ({len(documents_text)} entries) ===\n{document_context}"
 
-MEMORY DATA:
-{memory_context}
+        # Create a much more direct and concise prompt
+        enhanced_prompt = f"""Based on the user's memory data and relevant documents, answer their question directly and concisely.
+
+CONTEXT:
+{final_context}
 
 USER'S QUESTION: "{query}"
 
-Provide a clear, direct answer based on the available information. If the answer isn't directly stated in the memories, say so and provide any relevant context you can find. Keep your response focused and avoid unnecessary elaboration unless the question specifically asks for detailed analysis.
+Provide a clear, direct answer based on the available information. If the answer isn't directly stated in the memories or documents, say so and provide any relevant context you can find. Keep your response focused and avoid unnecessary elaboration unless the question specifically asks for detailed analysis.
 
 If this is a simple factual question (like preferences, colors, names, etc.), give a brief, direct answer. If it's a complex question asking for analysis or insights, provide a thoughtful but concise response.
-
-Memories analyzed: {len(memories_text)}"""
+"""
 
         # Use Gemini Pro for better quality with token limits
         from app.utils.gemini import GeminiService
@@ -1944,7 +1937,7 @@ Memories analyzed: {len(memories_text)}"""
         
         gemini_service = GeminiService()
         
-        logger.warning(f"🤖 [DEEP LIFE QUERY] Generating direct AI response with {len(memories_text)} memories")
+        logger.warning(f"🤖 [DEEP LIFE QUERY] Generating direct AI response with {len(memories_text)} memories and {len(documents_text)} documents")
         logger.warning(f"📝 [DEEP LIFE QUERY] Prompt length: {len(enhanced_prompt)} characters")
         
         analysis_start_time = time.time()
@@ -1954,7 +1947,7 @@ Memories analyzed: {len(memories_text)}"""
             enhanced_prompt,
             generation_config=genai.GenerationConfig(
                 temperature=0.3,  # Lower temperature for more focused responses
-                max_output_tokens=1024,  # Reasonable limit to prevent verbose responses
+                max_output_tokens=2048,  # Increased token limit for potentially larger context
             )
         )
         analysis_result = response.text
@@ -1966,15 +1959,16 @@ Memories analyzed: {len(memories_text)}"""
         # Add metadata about the analysis
         analysis_metadata = {
             "memories_analyzed": len(memories_text),
-            "analysis_type": "enhanced_jean_memory_v2",
-            "ontology_enhanced": True,
-            "entity_extraction": True,
+            "documents_analyzed": len(documents_text),
+            "analysis_type": "direct_sql_dump_hybrid",
+            "ontology_enhanced": False,
+            "entity_extraction": False,
             "timestamp": datetime.datetime.now(UTC).isoformat()
         }
         
         total_duration = time.time() - search_start_time
         logger.warning(f"🎉 [DEEP LIFE QUERY] COMPLETE - Total duration: {total_duration:.2f}s (search: {search_duration:.2f}s, analysis: {analysis_duration:.2f}s)")
-        logger.warning(f"📊 [DEEP LIFE QUERY] Final stats - Memories: {len(memories_text)}, Response: {len(analysis_result)} chars")
+        logger.warning(f"📊 [DEEP LIFE QUERY] Final stats - Memories: {len(memories_text)}, Documents: {len(documents_text)}, Response: {len(analysis_result)} chars")
         
         return {
             "response": analysis_result,
