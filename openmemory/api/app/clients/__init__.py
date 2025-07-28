@@ -1,37 +1,42 @@
-from .base import BaseClientProfile
-from .claude import ClaudeProfile
-from .chatgpt import ChatGPTProfile
-from .api import APIProfile
-from .chorus import ChorusProfile
-from .default import DefaultProfile
+from functools import lru_cache
+from .base import BaseClient
+from .claude import ClaudeClient
+from .chatgpt import ChatGPTClient
+from .default import DefaultClient
+from .chorus import ChorusClient
 
-# Client profile mapping
-_client_profiles = {
-    "claude": ClaudeProfile(),
-    "chatgpt": ChatGPTProfile(),
-    "api": APIProfile(),
-    "chorus": ChorusProfile(),
-    "default": DefaultProfile(),
+# A mapping of client names to their respective client classes.
+# This allows for dynamic loading of clients based on their name.
+CLIENT_MAP = {
+    "claude": ClaudeClient,
+    "chatgpt": ChatGPTClient,
+    "default": DefaultClient,
+    "chorus": ChorusClient,
 }
 
-def get_client_name(client_name_from_header: str, is_api_key_path: bool) -> str:
-    """Determines the profile to use based on client name and auth method."""
-    if is_api_key_path:
-        return "api"
-    
-    # Normalize client names for robustness
-    normalized_client = client_name_from_header.lower()
-    
-    if "claude" in normalized_client:
-        return "claude"
-    if "chatgpt" in normalized_client:
-        return "chatgpt"
-    if "chorus" in normalized_client:
-        return "chorus"
+@lru_cache(maxsize=None)
+def get_client(client_name: str) -> BaseClient:
+    """
+    Returns an instance of the client class for the given client name.
+    Uses an LRU cache to ensure that client instances are reused, which
+    improves performance by avoiding repeated object creation.
 
-    return "default"
+    If a specific client is not found, it safely falls back to the DefaultClient.
+    """
+    client_class = CLIENT_MAP.get(client_name.lower(), DefaultClient)
+    return client_class()
 
+def get_client_profile(client_name: str):
+    """
+    Fetches the client's profile, which contains specific formatting rules
+    and other client-specific configurations.
+    """
+    client = get_client(client_name)
+    return client.get_client_profile()
 
-def get_client_profile(client_name_key: str) -> BaseClientProfile:
-    """Factory function to get the correct client profile instance."""
-    return _client_profiles.get(client_name_key, _client_profiles["default"]) 
+def get_client_name(client_name: str) -> str:
+    """
+    A simple helper to get the canonical name of the client.
+    """
+    client = get_client(client_name)
+    return client.get_client_name() 
