@@ -240,7 +240,9 @@ Provide rich context that helps understand them deeply, but keep it conversation
         
         try:
             # Step 1: Create plan for saving memory and determining context strategy
+            plan_start_time = time.time()
             plan = await self._ai_create_context_plan(user_message, is_new_conversation)
+            logger.info(f"[PERF] AI Plan Creation took {time.time() - plan_start_time:.4f}s")
             
             # Extract strategy and handle new schema
             context_strategy = plan.get("context_strategy", "targeted_search")
@@ -265,10 +267,14 @@ Provide rich context that helps understand them deeply, but keep it conversation
             await self._handle_background_memory_saving_from_plan(plan, user_message, user_id, client_name)
 
             # Step 4: Execute context retrieval
+            context_exec_start_time = time.time()
             context_results = await context_task
+            logger.info(f"[PERF] Context Execution took {time.time() - context_exec_start_time:.4f}s")
             
             # Step 5: Format the context using top-down approach
+            formatting_start_time = time.time()
             enhanced_context = self._format_layered_context(context_results, plan)
+            logger.info(f"[PERF] Context Formatting took {time.time() - formatting_start_time:.4f}s")
             
             processing_time = time.time() - orchestration_start_time
             logger.info(f"🔍 [Standard] Standard orchestration finished in {processing_time:.2f}s. Context length: {len(enhanced_context)} chars.")
@@ -812,8 +818,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
         Add memory in background task with proper context isolation.
         Context variables are lost in background tasks, so we pass them as parameters.
         """
+        start_time = time.time()
+        logging.info(f"[PERF_TEST] _add_memory_background started for user {user_id}")
+        
         try:
-            logger.info(f"💾 [BG Add Memory] Saving memory for user {user_id}: {content[:50]}...")
+            logging.info(f"💾 [BG Add Memory] Saving memory for user {user_id}: {content[:50]}...")
             
             # Import here to avoid circular imports
             from app.utils.memory import get_memory_client
@@ -824,14 +833,21 @@ Provide rich context that helps understand them deeply, but keep it conversation
             client_token = client_name_var.set(client_name)
             
             try:
+                get_client_start_time = time.time()
                 memory_client = get_memory_client()
+                logging.info(f"[PERF_TEST] Got memory client in {time.time() - get_client_start_time:.4f}s")
+
+                db_start_time = time.time()
                 db = SessionLocal()
+                logging.info(f"[PERF_TEST] Got DB session in {time.time() - db_start_time:.4f}s")
                 
                 try:
+                    user_app_start_time = time.time()
                     user, app = get_user_and_app(db, supabase_user_id=user_id, app_name=client_name, email=None)
+                    logging.info(f"[PERF_TEST] Got user and app in {time.time() - user_app_start_time:.4f}s")
                     
                     if not app.is_active:
-                        logger.warning(f"Background memory add skipped - app {app.name} is paused for user {user_id}")
+                        logging.warning(f"Background memory add skipped - app {app.name} is paused for user {user_id}")
                         return
 
                     metadata = {
@@ -849,6 +865,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                     }
 
                     # Execute memory addition
+                    add_call_start_time = time.time()
                     loop = asyncio.get_running_loop()
                     add_call = functools.partial(
                         memory_client.add,
@@ -857,6 +874,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                         metadata=metadata
                     )
                     response = await loop.run_in_executor(None, add_call)
+                    logging.info(f"[PERF_TEST] Executed memory_client.add in {time.time() - add_call_start_time:.4f}s")
 
                     # Process results and update SQL database
                     if isinstance(response, dict) and 'results' in response:
@@ -865,6 +883,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                             mem0_content = result.get('memory', content)
 
                             if result.get('event') == 'ADD':
+                                sql_record_start_time = time.time()
                                 sql_memory_record = Memory(
                                     user_id=user.id,
                                     app_id=app.id,
@@ -875,9 +894,10 @@ Provide rich context that helps understand them deeply, but keep it conversation
                                 db.add(sql_memory_record)
                         
                         db.commit()
-                        logger.info(f"✅ [BG Add Memory] Successfully saved memory for user {user_id}.")
+                        logging.info(f"[PERF_TEST] Committed SQL record in {time.time() - sql_record_start_time:.4f}s")
+                        logging.info(f"✅ [BG Add Memory] Successfully saved memory for user {user_id}.")
                     else:
-                        logger.warning(f"⚠️ [BG Add Memory] Unexpected response format for user {user_id}: {response}")
+                        logging.warning(f"⚠️ [BG Add Memory] Unexpected response format for user {user_id}: {response}")
                         
                 finally:
                     db.close()
@@ -888,7 +908,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 client_name_var.reset(client_token)
                 
         except Exception as e:
-            logger.error(f"❌ [BG Add Memory] Failed for user {user_id}: {e}", exc_info=True)
+            logging.error(f"❌ [BG Add Memory] Failed for user {user_id}: {e}", exc_info=True)
+        
+        finally:
+            total_duration = time.time() - start_time
+            logging.info(f"[PERF_TEST] _add_memory_background finished for user {user_id}. Total duration: {total_duration:.4f}s")
     
     def _get_cached_context(self, cache_key: str) -> Optional[Dict]:
         """Get cached context if it exists and is still valid"""
