@@ -3,6 +3,7 @@ from .claude import ClaudeProfile
 from .chatgpt import ChatGPTProfile
 from .api import APIProfile
 from .chorus import ChorusProfile
+from .cursor import CursorProfile
 from .default import DefaultProfile
 
 # Client profile mapping
@@ -11,6 +12,7 @@ _client_profiles = {
     "chatgpt": ChatGPTProfile(),
     "api": APIProfile(),
     "chorus": ChorusProfile(),
+    "cursor": CursorProfile(),
     "default": DefaultProfile(),
 }
 
@@ -28,9 +30,10 @@ def get_client_name(client_name_from_header: str, is_api_key_path: bool) -> str:
         return "chatgpt"
     if "chorus" in normalized_client:
         return "chorus"
+    if "cursor" in normalized_client:
+        return "cursor"
 
     return "default"
-
 
 def get_client_profile(client_name_key: str) -> BaseClientProfile:
     """Factory function to get the correct client profile instance."""

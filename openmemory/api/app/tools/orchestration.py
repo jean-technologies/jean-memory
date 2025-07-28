@@ -62,8 +62,20 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
 
         # --- IMMEDIATE RESPONSE ---
 
-        # 3. If no context is needed by the client, we can return a standard message.
+        # 3. If no context is needed by the client, check if it's a new conversation
         if not needs_context:
+            # For new conversations, still provide basic life narrative even if context isn't needed
+            if is_new_conversation:
+                logger.info(f"⚡️ [New Convo] Getting life narrative for new conversation without context need.")
+                try:
+                    from app.jean_memory import jean_memory_manager
+                    narrative_result = await jean_memory_manager.get_life_narrative_v2(supa_uid)
+                    narrative = narrative_result.get('narrative', '')
+                    if narrative and narrative != "I don't have enough information about you yet to create a comprehensive life narrative. Please add more memories to help me understand your experiences, interests, and journey.":
+                        return f"Context is not required for this query. The user's message will be analyzed for important information in the background.\n\n---\n[Your Life Context]\n{narrative}\n---"
+                except Exception as e:
+                    logger.error(f"Error getting life narrative for new conversation: {e}")
+            
             return "Context is not required for this query. The user's message will be analyzed for important information in the background."
 
         # 4. For context-aware requests, perform a fast, simple search for an immediate response.
