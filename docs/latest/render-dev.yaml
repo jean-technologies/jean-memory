@@ -1,0 +1,281 @@
+# Development Environment Blueprint - Connected to dev branch
+# Based on production configuration but configured for development/testing
+
+services:
+  # Development Backend API Service (Virginia)
+  - type: web
+    name: jean-memory-api-dev
+    runtime: python
+    repo: https://github.com/jonathan-politzki/your-memory
+    branch: dev  # Deploy from dev branch instead of main
+    plan: starter
+    region: virginia
+    rootDir: openmemory/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    preDeployCommand: alembic upgrade head
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # Database Configuration - DEVELOPMENT INSTANCES
+      - key: DATABASE_URL
+        sync: false  # Set to development Supabase connection string
+      
+      # Supabase Configuration - DEVELOPMENT PROJECT
+      - key: SUPABASE_URL
+        sync: false  # Set to https://[dev-project-id].supabase.co
+      - key: SUPABASE_SERVICE_KEY
+        sync: false  # Development service key
+      - key: SUPABASE_ANON_KEY
+        sync: false  # Development anon key
+      
+      # OpenAI Configuration - Same as production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: "openai"
+      - key: OPENAI_MODEL
+        value: "gpt-4o-mini"
+      - key: EMBEDDER_PROVIDER
+        value: "openai"
+      - key: EMBEDDER_MODEL
+        value: "text-embedding-3-small"
+      
+      # Qdrant Configuration - DEVELOPMENT CLUSTER
+      - key: QDRANT_HOST
+        sync: false  # Set to dev cluster endpoint
+      - key: QDRANT_PORT
+        value: "6333"
+      - key: QDRANT_API_KEY
+        sync: false  # Development cluster API key
+      
+      # Neo4j Configuration - DEVELOPMENT INSTANCE
+      - key: NEO4J_URI
+        sync: false  # Set to development Neo4j instance
+      - key: NEO4J_USER
+        sync: false  # Development username
+      - key: NEO4J_PASSWORD
+        sync: false  # Development password
+      
+      # Stripe Configuration - TEST MODE
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false  # Test webhook secret
+      - key: STRIPE_SECRET_KEY
+        sync: false  # Test secret key (sk_test_...)
+      
+      # Environment Configuration
+      - key: ENVIRONMENT
+        value: "development"  # Changed from production
+      - key: ENABLE_AGENT_API
+        value: "true"  # Enable for testing
+      - key: LOG_LEVEL
+        value: "DEBUG"  # More verbose logging
+      
+      # Analytics - Separate or same PostHog project
+      - key: POSTHOG_HOST
+        sync: false
+      - key: POSTHOG_API_KEY
+        sync: false
+      
+      # Admin & Security
+      - key: ADMIN_SECRET_KEY
+        sync: false  # Different admin key for dev
+      - key: UVICORN_TIMEOUT_KEEP_ALIVE
+        value: "75"
+      
+      # External Services - Same as production unless test versions available
+      - key: APIFY_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      
+      # Python Configuration
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      
+      # SMS Integration (Twilio) - Test account or same
+      - key: TWILIO_ACCOUNT_SID
+        sync: false  # Test account SID
+      - key: TWILIO_AUTH_TOKEN
+        sync: false  # Test auth token
+      - key: TWILIO_PHONE_NUMBER
+        value: "+15005550006"  # Twilio test number or dev number
+      - key: SMS_RATE_LIMIT_PRO
+        value: "10"  # Lower limits for development
+      - key: SMS_RATE_LIMIT_ENTERPRISE
+        value: "50"
+      - key: SMS_VERIFICATION_TIMEOUT
+        value: "600"
+      
+      # Additional Development Configurations
+      - key: ENABLE_ANALYTICS
+        value: "true"
+      - key: ENABLE_UNIFIED_MEMORY_TEST_USER
+        value: "true"  # Enable test features
+      - key: UNIFIED_MEMORY_TEST_USER_ID
+        value: "dev-test-user-123"
+      - key: USE_UNIFIED_MEMORY
+        value: "true"
+      - key: MAIN_QDRANT_COLLECTION_NAME
+        value: "dev_main_collection"
+      - key: UNIFIED_QDRANT_COLLECTION_NAME
+        value: "dev_unified_collection"
+      - key: PGVECTOR_USE_DIRECT_CONNECTION
+        value: "false"
+      
+      # Email Services
+      - key: RESEND_API_KEY
+        sync: false
+      - key: LOOPS_API_KEY
+        sync: false
+      
+      # Anthropic for additional AI features
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  # Development Frontend UI Service (Virginia)  
+  - type: web
+    name: jean-memory-ui-dev
+    runtime: node
+    repo: https://github.com/jonathan-politzki/your-memory
+    branch: dev  # Deploy from dev branch instead of main
+    plan: starter
+    region: virginia
+    rootDir: openmemory/ui
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    autoDeployTrigger: commit
+    envVars:
+      # Point to Development backend API
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://jean-memory-api-dev.onrender.com"
+      
+      # Environment Configuration
+      - key: ENVIRONMENT
+        value: "development"
+      - key: NODE_ENV
+        value: "development"  # Enable development mode
+      
+      # Supabase Configuration - DEVELOPMENT PROJECT
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false  # Development Supabase URL
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false  # Development anon key
+      
+      # Analytics - Development PostHog
+      - key: NEXT_PUBLIC_POSTHOG_KEY
+        sync: false  # Separate dev key or same
+      
+      # API Keys for client-side features
+      - key: RESEND_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Development Weekly Narrative Backfill Cron Job
+  - type: cron
+    name: narrative-backfill-dev
+    runtime: python
+    repo: https://github.com/jonathan-politzki/your-memory
+    branch: dev  # Deploy from dev branch instead of main
+    plan: starter
+    region: virginia
+    rootDir: .
+    buildCommand: pip install -r openmemory/api/requirements.txt && pip install psycopg2-binary python-dotenv
+    startCommand: python scripts/utils/standalone_backfill.py
+    schedule: "0 3 * * 0"  # Every Sunday at 3 AM UTC (1 hour after production)
+    envVars:
+      # Database Configuration - DEVELOPMENT INSTANCES
+      - key: DATABASE_URL
+        sync: false
+      
+      # Supabase Configuration - DEVELOPMENT PROJECT
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      
+      # OpenAI Configuration
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: "openai"
+      - key: OPENAI_MODEL
+        value: "gpt-4o-mini"
+      - key: EMBEDDER_PROVIDER
+        value: "openai"
+      - key: EMBEDDER_MODEL
+        value: "text-embedding-3-small"
+      
+      # Qdrant Configuration - DEVELOPMENT CLUSTER
+      - key: QDRANT_HOST
+        sync: false
+      - key: QDRANT_PORT
+        value: "6333"
+      - key: QDRANT_API_KEY
+        sync: false
+      
+      # Neo4j Configuration - DEVELOPMENT INSTANCE
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USER
+        sync: false
+      - key: NEO4J_PASSWORD
+        sync: false
+      
+      # Gemini Configuration
+      - key: GEMINI_API_KEY
+        sync: false
+      
+      # Environment Configuration
+      - key: ENVIRONMENT
+        value: "development"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: LOG_LEVEL
+        value: "DEBUG"
+      
+      # Additional configurations for cron job
+      - key: USE_UNIFIED_MEMORY
+        value: "true"
+      - key: MAIN_QDRANT_COLLECTION_NAME
+        value: "dev_main_collection"
+      - key: UNIFIED_QDRANT_COLLECTION_NAME
+        value: "dev_unified_collection"
+
+version: "1"
+
+# IMPORTANT NOTES FOR DEVELOPMENT SETUP:
+#
+# 1. All environment variables marked with "sync: false" need to be manually configured
+#    with development-specific values in the Render dashboard
+#
+# 2. Create the following development resources BEFORE deploying:
+#    - New Supabase project for development database
+#    - New Qdrant cluster for development vectors
+#    - New Neo4j Aura instance for development graph
+#
+# 3. Database Connection Strings Format:
+#    - Supabase: postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres
+#    - Qdrant: https://[cluster-id].us-east-1-0.aws.cloud.qdrant.io:6333
+#    - Neo4j: neo4j+s://[instance-id].databases.neo4j.io
+#
+# 4. Use Stripe TEST keys (sk_test_..., whsec_test_...) for development
+#
+# 5. Consider using separate PostHog project for development analytics
+#
+# 6. SMS testing can use Twilio test credentials or separate dev account
+#
+# 7. All services will auto-deploy when pushing to 'dev' branch
+#
+# 8. Cost estimate: ~$41-51/month for complete development environment
+#
+# 9. To deploy: 
+#    - Create services manually in Render dashboard, or
+#    - Use this blueprint file with Render's Blueprint feature
+#
+# 10. Remember to set up branch protection rules in GitHub for 'dev' branch
