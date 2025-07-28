@@ -181,6 +181,7 @@ class SmartContextOrchestrator:
             
             memory_search_time = time.time() - memory_search_start
             logger.info(f"⚡ [Fast Deep] Memory search completed in {memory_search_time:.2f}s. Found {len(all_memories)} unique memories.")
+            logger.info(f"⏱️ [LATENCY] Fast Deep Analysis - Memory Search took {memory_search_time:.2f}s")
             
             # 2. Use Gemini Flash for intelligent synthesis
             gemini_start_time = time.time()
@@ -212,6 +213,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
             total_time = time.time() - analysis_start_time
             
             logger.info(f"⚡ [Fast Deep] Completed in {total_time:.2f}s (memory: {memory_search_time:.2f}s, gemini: {gemini_time:.2f}s)")
+            logger.info(f"⏱️ [LATENCY] Fast Deep Analysis - Gemini Synthesis took {gemini_time:.2f}s")
+            logger.info(f"⏱️ [LATENCY] Fast Deep Analysis - Total time: {total_time:.2f}s")
             
             return analysis_response
             
@@ -265,13 +268,17 @@ Provide rich context that helps understand them deeply, but keep it conversation
             await self._handle_background_memory_saving_from_plan(plan, user_message, user_id, client_name)
 
             # Step 4: Execute context retrieval
+            context_retrieval_start_time = time.time()
             context_results = await context_task
+            context_retrieval_duration = time.time() - context_retrieval_start_time
+            logger.info(f"⏱️ [LATENCY] Standard Orchestration - Context Retrieval took {context_retrieval_duration:.2f}s")
             
             # Step 5: Format the context using top-down approach
             enhanced_context = self._format_layered_context(context_results, plan)
             
             processing_time = time.time() - orchestration_start_time
             logger.info(f"🔍 [Standard] Standard orchestration finished in {processing_time:.2f}s. Context length: {len(enhanced_context)} chars.")
+            logger.info(f"⏱️ [LATENCY] Standard Orchestration - Total time: {processing_time:.2f}s")
             
             return enhanced_context
             
@@ -393,6 +400,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         - Standard Orchestration: For continuing conversations (5-10s, targeted)
         """
         logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}")
+        orchestration_total_start_time = time.time()
         
         try:
             # SMART CACHE: Only check for cached narrative on NEW conversations
@@ -400,6 +408,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 cached_narrative = await self._get_cached_narrative(user_id)
                 if cached_narrative:
                     logger.info(f"✅ [Smart Cache] Using cached narrative for NEW conversation - user {user_id}")
+                    orchestration_total_duration = time.time() - orchestration_total_start_time
+                    logger.info(f"⏱️ [LATENCY] Total Orchestration Time (Cache Hit): {orchestration_total_duration:.2f}s")
                     return cached_narrative
                 
                 logger.info(f"⚠️ [Smart Cache] No cached narrative found for user {user_id}, falling back to deep analysis")
@@ -410,6 +420,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 analysis_time = time.time() - analysis_start
                 
                 logger.info(f"🔍 [Smart Context] Deep analysis completed in {analysis_time:.1f}s for user {user_id}")
+                logger.info(f"⏱️ [LATENCY] Total Orchestration Time (Cache Miss): {analysis_time:.2f}s")
                 
                 # Extract memories text from the analysis for caching
                 try:
@@ -428,7 +439,10 @@ Provide rich context that helps understand them deeply, but keep it conversation
             else:
                 # CONTINUING CONVERSATION: Use standard orchestration (targeted context)
                 logger.info(f"🔄 [Standard] Using standard orchestration for CONTINUING conversation - user {user_id}")
-                return await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation)
+                standard_orchestration_result = await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation)
+                orchestration_total_duration = time.time() - orchestration_total_start_time
+                logger.info(f"⏱️ [LATENCY] Total Orchestration Time (Standard): {orchestration_total_duration:.2f}s")
+                return standard_orchestration_result
             
         except Exception as e:
             logger.error(f"❌ [Jean Memory] Orchestration failed: {e}", exc_info=True)
@@ -814,6 +828,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         """
         try:
             logger.info(f"💾 [BG Add Memory] Saving memory for user {user_id}: {content[:50]}...")
+            save_start_time = time.time()
             
             # Import here to avoid circular imports
             from app.utils.memory import get_memory_client
@@ -876,6 +891,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
                         
                         db.commit()
                         logger.info(f"✅ [BG Add Memory] Successfully saved memory for user {user_id}.")
+                        save_duration = time.time() - save_start_time
+                        logger.info(f"⏱️ [LATENCY] Background Memory Save took {save_duration:.2f}s")
                     else:
                         logger.warning(f"⚠️ [BG Add Memory] Unexpected response format for user {user_id}: {response}")
                         
@@ -1096,6 +1113,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         """
         try:
             gemini = self._get_gemini()
+            triage_start_time = time.time()
             
             prompt = f"""Analyze this message to determine if it contains information worth remembering in a personal memory system.
 
@@ -1130,6 +1148,8 @@ Content: Simple question about weather with no personal information
 """
             
             response = await gemini.generate_response(prompt)
+            triage_duration = time.time() - triage_start_time
+            logger.info(f"⏱️ [LATENCY] AI Memory Triage generation took {triage_duration:.2f}s")
             
             result = response.strip()
             

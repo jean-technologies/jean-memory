@@ -52,11 +52,17 @@ New conversation: {is_new_conversation}
 }}"""
 
         try:
+            import time
+            plan_start_time = time.time()
+
             # Increased timeout to 12 seconds to handle occasional slow responses
             response_text = await asyncio.wait_for(
                 gemini.generate_response(prompt),
                 timeout=12.0
             )
+
+            plan_duration = time.time() - plan_start_time
+            logger.info(f"⏱️ [LATENCY] AI Context Plan generation took {plan_duration:.2f}s")
             
             # Extract JSON from response
             json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
