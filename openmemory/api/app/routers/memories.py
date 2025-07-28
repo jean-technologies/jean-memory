@@ -1924,35 +1924,40 @@ async def enhanced_deep_life_query(
         # Create enhanced prompt for deep analysis
         memory_context = "\n".join(memories_text)
         
-        enhanced_prompt = f"""You are an advanced AI life coach and analyst with access to comprehensive memory data enhanced with ontology-guided entity extraction. Your task is to provide deep, insightful analysis that goes beyond surface-level observations.
+        # Create a much more direct and concise prompt
+        enhanced_prompt = f"""Based on the user's memory data, answer their question directly and concisely.
 
-ENHANCED MEMORY CONTEXT (Ontology-Enhanced):
+MEMORY DATA:
 {memory_context}
 
-USER'S DEEP LIFE QUESTION: "{query}"
+USER'S QUESTION: "{query}"
 
-ANALYSIS INSTRUCTIONS:
-1. **Pattern Recognition**: Identify underlying themes, recurring patterns, and life trajectories
-2. **Entity Analysis**: Recognize key people, places, events, and their relationships
-3. **Growth Insights**: Highlight personal development, skill acquisition, and mindset evolution
-4. **Value Alignment**: Assess how experiences align with stated or implied values
-5. **Future Implications**: Suggest areas for growth and potential opportunities
-6. **Holistic Perspective**: Connect diverse experiences into a coherent life narrative
+Provide a clear, direct answer based on the available information. If the answer isn't directly stated in the memories, say so and provide any relevant context you can find. Keep your response focused and avoid unnecessary elaboration unless the question specifically asks for detailed analysis.
 
-Provide a thoughtful, multi-paragraph response that synthesizes information across memories to deliver profound insights. Be specific, empathetic, and actionable in your analysis.
+If this is a simple factual question (like preferences, colors, names, etc.), give a brief, direct answer. If it's a complex question asking for analysis or insights, provide a thoughtful but concise response.
 
-MEMORY ANALYSIS COUNT: {len(memories_text)} memories analyzed
-ENHANCEMENT: Ontology-guided entity extraction active"""
+Memories analyzed: {len(memories_text)}"""
 
-        # Use Gemini for analysis (same as regular Deep Life Query but with enhanced context)
+        # Use Gemini Pro for better quality with token limits
         from app.utils.gemini import GeminiService
+        import google.generativeai as genai
+        
         gemini_service = GeminiService()
         
-        logger.warning(f"🤖 [DEEP LIFE QUERY] Generating enhanced AI analysis with {len(memories_text)} memories")
+        logger.warning(f"🤖 [DEEP LIFE QUERY] Generating direct AI response with {len(memories_text)} memories")
         logger.warning(f"📝 [DEEP LIFE QUERY] Prompt length: {len(enhanced_prompt)} characters")
         
         analysis_start_time = time.time()
-        analysis_result = await gemini_service.generate_response(enhanced_prompt)
+        
+        # Use Pro model with reasonable token limits for better quality but controlled length
+        response = await gemini_service.model_pro.generate_content_async(
+            enhanced_prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.3,  # Lower temperature for more focused responses
+                max_output_tokens=1024,  # Reasonable limit to prevent verbose responses
+            )
+        )
+        analysis_result = response.text
         analysis_duration = time.time() - analysis_start_time
         
         logger.warning(f"✅ [DEEP LIFE QUERY] AI analysis completed in {analysis_duration:.2f}s")

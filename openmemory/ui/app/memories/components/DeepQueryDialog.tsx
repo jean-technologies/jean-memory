@@ -89,7 +89,7 @@ export function DeepQueryDialog() {
         <DialogHeader>
           <DialogTitle>Ask a Deep Life Query</DialogTitle>
           <DialogDescription>
-            Ask a complex question about your life. Jean Memory V2 will analyze your comprehensive memory archive using advanced semantic search and ontology-guided insights.
+            Ask a complex question about your life.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
