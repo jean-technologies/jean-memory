@@ -17,6 +17,22 @@ class ClaudeClient(BaseClient):
         return ClaudeProfile()
 
 class ClaudeProfile(BaseClientProfile):
+    def get_tools_schema(self, include_annotations: bool = False) -> List[Dict[str, Any]]:
+        """
+        Returns the JSON schema for tools available to Claude client.
+        """
+        # Get the tools from the client
+        client = ClaudeClient()
+        tools = client.get_tools()
+        
+        # Extract the schema from each tool
+        tool_schemas = []
+        for tool in tools:
+            if hasattr(tool, 'mcp_tool_def'):
+                tool_schemas.append(tool.mcp_tool_def)
+                
+        return tool_schemas
+    
     def get_tool_prompt(self, tools: List[Dict[str, Any]]) -> str:
         # Claude-specific prompt formatting can go here if needed
         return super().get_tool_prompt(tools) 
