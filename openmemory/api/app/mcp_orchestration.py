@@ -326,10 +326,17 @@ Provide rich context that helps understand them deeply, but keep it conversation
     ):
         """Handle memory saving in background for standard orchestration"""
         try:
-            if plan.get("should_save_memory") and plan.get("memorable_content"):
-                logger.info("💾 [Standard] Adding memory saving to background tasks.")
-                memorable_content = plan["memorable_content"]
-                
+            should_save = plan.get("should_save_memory", False)
+            memorable_content = plan.get("memorable_content")
+
+            # SAFETY NET: If AI planner fails, save the original message to be safe
+            if not memorable_content and should_save:
+                logger.warning("AI plan wanted to save memory but content was missing. Saving user message as fallback.")
+                memorable_content = user_message
+            
+            if memorable_content:
+                logger.info(f"💾 [Standard] Adding memory saving to background tasks for content: '{memorable_content[:50]}...'")
+
                 # Get background tasks context
                 try:
                     from app.mcp_server import background_tasks_var
