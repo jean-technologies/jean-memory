@@ -54,7 +54,7 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
     request_id = body.get("id") # Get request_id early for error reporting
     
     try:
-        client_key = get_client_name(client_name_from_header, is_api_key_path)
+        client_key = get_client_name(client_name_from_header)
         client_profile = get_client_profile(client_key)
 
         # 3. Process MCP Method
