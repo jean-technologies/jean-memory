@@ -1549,6 +1549,84 @@ User Message: "what time is it?"
             logger.error(f"Error getting user memories for {user_id}: {e}")
             return []
 
+    async def run_deep_analysis_and_save_as_memory(
+        self,
+        user_message: str,
+        user_id: str,
+        client_name: str
+    ):
+        """
+        Runs a deep, AI-powered analysis in the background and saves the
+        synthesized result as a new, high-quality memory.
+        """
+        try:
+            logger.info(f"🧠 [Async Analysis BG] Starting deep analysis for user {user_id} on message: '{user_message[:50]}...'")
+            
+            # 1. Use the existing standard orchestration to get a deep analysis.
+            # We can reuse this logic as it already contains the AI planning.
+            # This call is now safely in the background, so the timeout is not an issue.
+            analysis_result = await self._standard_orchestration(
+                user_message=user_message,
+                user_id=user_id,
+                client_name=client_name,
+                is_new_conversation=False # Assume not new, as we want deep context
+            )
+
+            # 2. If the analysis was successful, create a new synthesized memory.
+            if analysis_result and "Error" not in analysis_result:
+                # Create a clear, structured memory from the analysis.
+                synthesized_content = f"[System Insight based on: '{user_message}']\n{analysis_result}"
+                
+                logger.info(f"💾 [Async Analysis BG] Saving synthesized memory for user {user_id}: '{synthesized_content[:100]}...'")
+
+                # 3. Add the new memory to the database.
+                await self._add_memory_background(
+                    content=synthesized_content,
+                    user_id=user_id,
+                    client_name=client_name,
+                    priority=True # These insights are high-priority
+                )
+                logger.info(f"✅ [Async Analysis BG] Successfully saved synthesized memory for user {user_id}.")
+            else:
+                logger.warning(f"⚠️ [Async Analysis BG] Deep analysis did not produce a valid result for user {user_id}. Nothing saved.")
+
+        except Exception as e:
+            logger.error(f"❌ [Async Analysis BG] Failed for user {user_id}: {e}", exc_info=True)
+
+    async def triage_and_save_memory_background(
+        self,
+        user_message: str,
+        user_id: str,
+        client_name: str
+    ):
+        """
+        Intelligently analyzes a message and saves it to memory ONLY if it
+        contains salient, personal information.
+        """
+        try:
+            # 1. Use the lightweight AI analysis to check if the message is memorable.
+            analysis = await self._ai_memory_analysis(user_message)
+
+            # 2. If the analysis confirms the content is memorable, save it.
+            if analysis.get("should_remember"):
+                memorable_content = analysis.get("content", user_message)
+                logger.info(f"💾 [Async Triage] Message deemed memorable. Saving content for user {user_id}: '{memorable_content[:50]}...'")
+                
+                # Add the memory to the database.
+                await self._add_memory_background(
+                    content=memorable_content,
+                    user_id=user_id,
+                    client_name=client_name,
+                    priority=False # Triage-based memories are normal priority
+                )
+                logger.info(f"✅ [Async Triage] Successfully saved memorable content for user {user_id}.")
+            else:
+                # 3. If not memorable, log it and do nothing.
+                logger.info(f"🧐 [Async Triage] Message deemed not memorable for user {user_id}. No action taken.")
+
+        except Exception as e:
+            logger.error(f"❌ [Async Triage] Triage and save failed for user {user_id}: {e}", exc_info=True)
+
 
 # Global orchestrator instance
 _orchestrator = None

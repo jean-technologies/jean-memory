@@ -15,113 +15,64 @@ def _track_tool_usage(tool_name: str, properties: dict = None):
     # Placeholder for the actual analytics call.
     pass
 
-@mcp.tool(description="🌟 ALWAYS USE THIS TOOL FIRST - NEVER use ask_memory, search_memory, or other tools directly. This is the primary tool for ALL conversational interactions. It intelligently engineers context, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.")
+@mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!! This is the primary tool for ALL conversational interactions. It saves new information, and provides relevant context on the user's life. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.")
 async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool) -> str:
     """
-    Smart context orchestration combining single-tool simplicity with session-based caching.
-    
-    This tool:
-    1. Uses the 'is_new_conversation' flag from the client to determine conversation state.
-    2. Provides a context primer for new chats.
-    3. Uses an AI planner for targeted context on continuing chats.
-    4. Adds new memorable information in the background.
-    
-    Args:
-        user_message: The user's message or question.
-        is_new_conversation: Flag set by the client indicating if this is the first turn.
-    
-    Returns:
-        Enhanced context string with relevant background information.
+    Asynchronous, dual-path orchestration. Provides a fast search result immediately
+    while triggering intelligent, asynchronous memory analysis and saving in the background.
     """
     supa_uid = user_id_var.get(None)
     client_name = client_name_var.get(None)
-    
+
     if not supa_uid:
         return "Error: User ID not available"
     if not client_name:
         return "Error: Client name not available"
-    
-    try:
-        # Track usage
-        track_tool_usage('jean_memory', {
-            'message_length': len(user_message),
-            'is_new_conversation': is_new_conversation,
-            'needs_context': needs_context
-        })
-        
-        # Fast path for requests that don't need context.
-        if not needs_context:
-            logger.info("⚡️ [Fast Path] needs_context=false, skipping context retrieval.")
-            try:
-                background_tasks = background_tasks_var.get()
-            except LookupError:
-                from fastapi import BackgroundTasks
-                background_tasks = BackgroundTasks()
-                background_tasks_var.set(background_tasks)
 
-            # Still perform intelligent save in the background
-            orchestrator = get_smart_orchestrator()
-            analysis = await orchestrator._ai_memory_analysis(user_message)
-            if analysis.get("should_remember"):
-                logger.info(f"💾 [Fast Path] Memorable content found, saving to memory: {analysis.get('content')}")
-                background_tasks.add_task(
-                    orchestrator._add_memory_background,
-                    analysis.get('content'),
-                    supa_uid,
-                    client_name
-                )
-            
-            return ""
-        
-        # CRITICAL FIX: Set up background tasks context for orchestration
+    try:
+        orchestrator = get_smart_orchestrator()
         try:
             background_tasks = background_tasks_var.get()
         except LookupError:
-            # Create a simple background tasks processor if not available
             from fastapi import BackgroundTasks
             background_tasks = BackgroundTasks()
             background_tasks_var.set(background_tasks)
-        
-        # Try Python 3.11+ asyncio.timeout first, fall back to wait_for for older versions
-        try:
-            # Python 3.11+ approach (working version)
-            async with asyncio.timeout(25): # Increased to 25 seconds for Fast Deep Analysis
-                # Get enhanced orchestrator and process
-                orchestrator = get_smart_orchestrator()
-                enhanced_context = await orchestrator.orchestrate_smart_context(
-                    user_message=user_message,
-                    user_id=supa_uid,
-                    client_name=client_name,
-                    is_new_conversation=is_new_conversation,
-                    background_tasks=background_tasks
-                )
-                return enhanced_context
-        except AttributeError:
-            # Python < 3.11 fallback
-            logger.info("Using asyncio.wait_for fallback for Python < 3.11")
-            async def _orchestrate():
-                orchestrator = get_smart_orchestrator()
-                return await orchestrator.orchestrate_smart_context(
-                    user_message=user_message,
-                    user_id=supa_uid,
-                    client_name=client_name,
-                    is_new_conversation=is_new_conversation,
-                    background_tasks=background_tasks
-                )
-            
-            result = await asyncio.wait_for(_orchestrate(), timeout=25.0)
-            return result
 
-    except asyncio.TimeoutError:
-        logger.warning(f"Jean Memory context timed out for user {supa_uid}. Falling back to simple search.")
-        try:
-            # Fallback to a simple, reliable search
-            fallback_result = await search_memory(query=user_message, limit=5)
-            return f"I had trouble with my advanced context analysis, but here are some relevant memories I found:\n{fallback_result}"
-        except Exception as fallback_e:
-            logger.error(f"Error in jean_memory fallback search: {fallback_e}", exc_info=True)
-            return "My apologies, I had trouble processing your request and the fallback search also failed."
+        # --- ASYNCHRONOUS ACTIONS ---
+
+        # 1. Trigger background task for intelligent triage and selective saving.
+        # This happens for every message to ensure we capture all salient info.
+        logger.info(f"🧠 [Async Triage] Triggering analysis to determine if message is memorable: '{user_message[:50]}...'")
+        background_tasks.add_task(
+            orchestrator.triage_and_save_memory_background,
+            user_message,
+            supa_uid,
+            client_name
+        )
+
+        # 2. If context is needed, also trigger the separate deep analysis background task.
+        if needs_context:
+            logger.info(f"🧠 [Async Analysis] Triggering deep analysis for: '{user_message[:50]}...'")
+            background_tasks.add_task(
+                orchestrator.run_deep_analysis_and_save_as_memory,
+                user_message,
+                supa_uid,
+                client_name
+            )
+
+        # --- IMMEDIATE RESPONSE ---
+
+        # 3. If no context is needed by the client, we can return a standard message.
+        if not needs_context:
+            return "Context is not required for this query. The user's message will be analyzed for important information in the background."
+
+        # 4. For context-aware requests, perform a fast, simple search for an immediate response.
+        logger.info(f"⚡️ [Fast Path] Performing simple search for immediate response.")
+        fast_context = await orchestrator._fallback_simple_search(user_message, supa_uid)
+        
+        # 5. Return the fast context to the user.
+        return fast_context
 
     except Exception as e:
-        logger.error(f"Error in jean_memory: {e}", exc_info=True)
+        logger.error(f"Error in jean_memory dual-path orchestration: {e}", exc_info=True)
         return f"I had trouble processing your message: {str(e)}" 
