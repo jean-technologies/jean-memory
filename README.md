@@ -1,9 +1,3 @@
-<p align="center">
-  <a href="https://github.com/jean-technologies/jean-memory">
-    <img src="docs/images/jean-logo.png" width="300px" alt="Jean Memory Logo">
-  </a>
-</p>
-
 <h1 align="center">Jean Memory</h1>
 
 <p align="center">
@@ -156,3 +150,11 @@ This project incorporates code from [mem0ai/mem0](https://github.com/mem0ai/mem0
 - **Documentation**: [jeanmemory.com/api-docs](https://jeanmemory.com/api-docs)
 - **Bug Reports**: [GitHub Issues](https://github.com/jean-technologies/jean-memory/issues)
 - **General Inquiries**: [jonathan@jeantechnologies.com](mailto:jonathan@jeantechnologies.com)
+
+## Star History
+
+<p align="center">
+  <a href="https://star-history.com/#jean-technologies/jean-memory&Date">
+    <img src="https://api.star-history.com/svg?repos=jean-technologies/jean-memory&type=Date" alt="Star History Chart" width="600">
+  </a>
+</p>
