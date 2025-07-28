@@ -22,7 +22,7 @@ def get_client_name(client_name_from_header: str, is_api_key_path: bool) -> str:
         return "api"
     
     # Normalize client names for robustness
-    normalized_client = client_name_from_header.lower()
+    normalized_client = client_name_from_header.lower() if client_name_from_header else ""
     
     if "claude" in normalized_client:
         return "claude"
