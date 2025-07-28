@@ -1,9 +1,3 @@
-<p align="center">
-  <a href="https://github.com/jean-technologies/jean-memory">
-    <img src="docs/images/jean-logo.png" width="300px" alt="Jean Memory Logo">
-  </a>
-</p>
-
 <h1 align="center">Jean Memory</h1>
 
 <p align="center">
@@ -18,24 +12,6 @@
   <a href="https://jeanmemory.com/api-docs">API Docs</a>
   ·
   <a href="https://github.com/jean-technologies/jean-memory/issues">Report an Issue</a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/jean-technologies/jean-memory">
-    <img src="https://img.shields.io/github/stars/jean-technologies/jean-memory?style=social" alt="GitHub stars">
-  </a>
-  <a href="https://github.com/jean-technologies/jean-memory/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/jean-technologies/jean-memory?style=flat-square&color=blue" alt="License">
-  </a>
-  <a href="https://github.com/jean-technologies/jean-memory/issues">
-    <img src="https://img.shields.io/github/issues/jean-technologies/jean-memory?style=flat-square&color=orange" alt="GitHub issues">
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://star-history.com/#jean-technologies/jean-memory&Date">
-    <img src="https://api.star-history.com/svg?repos=jean-technologies/jean-memory&type=Date" alt="Star History Chart" width="600">
-  </a>
 </p>
 
 ## What is Jean Memory?
