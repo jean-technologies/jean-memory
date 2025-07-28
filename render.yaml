@@ -12,7 +12,7 @@ services:
     rootDir: openmemory/api
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    # preDeployCommand: alembic upgrade head  # TEMPORARILY DISABLED - connection pool exhausted
+    preDeployCommand: alembic upgrade head
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
