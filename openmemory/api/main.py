@@ -12,6 +12,7 @@ from app.routers import keys as keys_router
 from app.routers.admin import router as admin_router
 from app.routers.stripe_webhooks import router as stripe_webhooks_router
 from app.routers.migration import router as migration_router
+from app.routers.claude_oauth import router as claude_oauth_router
 
 from fastapi_pagination import add_pagination
 from fastapi.middleware.cors import CORSMiddleware
@@ -309,6 +310,7 @@ app.include_router(admin_router)  # Admin router has its own authentication
 app.include_router(agent_mcp_router) # New secure agent endpoint
 app.include_router(migration_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])  # Migration status endpoint
 app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - verified by signature)
+app.include_router(claude_oauth_router)  # Claude OAuth integration (isolated and additive)
 
 
 
