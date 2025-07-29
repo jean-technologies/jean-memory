@@ -32,32 +32,26 @@ class MCPAIService:
         """
         gemini = self._get_gemini()
         
-        # OPTIMIZED: Much more focused, concise prompt for faster processing
-        # Check for comprehensive analysis keywords
-        comprehensive_keywords = ['deep', 'deeper', 'comprehensive', 'extensive', 'beliefs', 'philosophy', 'values', 'what would i say', 'given my', 'based on my']
-        wants_comprehensive = any(keyword in user_message.lower() for keyword in comprehensive_keywords)
-        
-        if is_new_conversation:
-            strategy = 'deep_understanding'
-        elif wants_comprehensive:
-            strategy = 'comprehensive_analysis'
-        else:
-            strategy = 'relevant_context'
-        should_save = str(is_new_conversation or 'remember' in user_message.lower()).lower()
+        # Let the AI determine the appropriate strategy based on the message content
         # Safely handle user message in JSON by escaping quotes
         safe_message = user_message.replace('"', '\\"').replace('\n', '\\n')
-        memorable_content = f'"{safe_message}"' if (is_new_conversation or 'remember' in user_message.lower()) else 'null'
         
-        prompt = f"""Analyze this message for context engineering. Respond with JSON only:
+        prompt = f"""Analyze this message for context engineering. Choose the appropriate strategy:
 
-Message: "{user_message}"
+Message: "{safe_message}"
 New conversation: {is_new_conversation}
 
+Context strategies:
+- "relevant_context": For continuing conversations, focused search
+- "deep_understanding": For new conversations needing broad context  
+- "comprehensive_analysis": For requests asking for deep analysis, beliefs, philosophy, "what would I say", etc.
+
+Respond with JSON only:
 {{
-  "context_strategy": "{strategy}",
-  "search_queries": ["1-3 search terms"],
-  "should_save_memory": {should_save},
-  "memorable_content": {memorable_content}
+  "context_strategy": "choose one of the three strategies above",
+  "search_queries": ["1-3 specific search terms"],
+  "should_save_memory": true/false,
+  "memorable_content": "key content to remember or null"
 }}"""
 
         try:
