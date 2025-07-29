@@ -339,7 +339,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         
                         toast({
                             title: "Opening Cursor", 
-                            description: "Cursor should now prompt you to install Jean Memory. If it doesn't open, try the manual install below.",
+                            description: "Cursor should now prompt you to install Jean Memory.",
                         });
                     }}
                     className="w-full"
@@ -355,26 +355,26 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </p>
                 </div>
                 
-                {/* Manual Setup Option */}
-                <details className="group">
-                    <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                        Need manual terminal setup instead?
-                    </summary>
-                    <div className="mt-3 space-y-3">
-                        <div className="relative bg-background border rounded-md p-3 font-mono text-xs break-all">
-                            <div className="pr-12">{installCommand}</div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(installCommand)}
-                            >
-                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Run this command in terminal, then restart Cursor.</p>
+                {/* Jean Memory Benefits */}
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <h4 className="text-sm font-medium text-foreground">💭 Memory Across Sessions</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                        Jean Memory tracks your projects and builds a working memory that persists across chat sessions. 
+                        Your AI assistant will remember context from previous conversations, making each interaction more intelligent and productive.
+                    </p>
+                    <div className="flex items-start gap-2 mt-3">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-muted-foreground">Ask questions about your codebase from weeks ago</p>
                     </div>
-                </details>
+                    <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-muted-foreground">Get contextual suggestions based on your project history</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-muted-foreground">Build up knowledge that improves over time</p>
+                    </div>
+                </div>
             </div>
         ) : app.id === 'claude' ? (
             <div className="py-2 space-y-6">
