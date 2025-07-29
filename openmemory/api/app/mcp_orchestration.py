@@ -441,6 +441,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         # Generate unique interaction ID for deduplication
         import hashlib
         interaction_id = f"{user_id}_{hashlib.md5(user_message.encode()).hexdigest()}"
+        system_prompt = "\n\n[SYSTEM PROMPT: Jean Memory provides context. Use it for every user message to maintain continuity and deeper understanding.]"
         
         logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. Interaction: {interaction_id}. New convo: {is_new_conversation}")
         
@@ -450,7 +451,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 cached_narrative = await self._get_cached_narrative(user_id)
                 if cached_narrative:
                     logger.info(f"✅ [Smart Cache] Using cached narrative for NEW conversation - user {user_id}")
-                    return cached_narrative
+                    return cached_narrative + system_prompt
                 
                 logger.info(f"⚠️ [Smart Cache] No cached narrative found for user {user_id}, falling back to deep analysis")
                 
@@ -473,6 +474,10 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 except Exception as cache_error:
                     logger.warning(f"Background narrative caching failed for user {user_id}: {cache_error}")
                     # Don't fail the main request if background caching fails
+                
+                # Only append prompt if analysis returned valid context
+                if deep_analysis and "I don't have enough context" not in deep_analysis and "Unable to retrieve context" not in deep_analysis:
+                    return deep_analysis + system_prompt
                 
                 return deep_analysis
             else:
