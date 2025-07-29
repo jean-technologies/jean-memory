@@ -92,16 +92,16 @@ class SmartContextOrchestrator:
             self._gemini_service = GeminiService()
         return self._gemini_service
     
-    async def _ai_create_context_plan(self, user_message: str, is_new_conversation: bool) -> Dict:
+    async def _ai_create_context_plan(self, user_message: str) -> Dict:
         """
-        Uses AI to create a comprehensive context engineering plan.
+        Uses AI to create a comprehensive context engineering plan for continuing conversations.
         This is the core "brain" of the orchestrator - implementing top-down context theory.
         """
-        return await self.ai_service.create_context_plan(user_message, is_new_conversation)
+        return await self.ai_service.create_context_plan(user_message)
 
-    def _get_fallback_plan(self, user_message: str, is_new_conversation: bool) -> Dict:
+    def _get_fallback_plan(self, user_message: str) -> Dict:
         """Fast fallback when AI planning fails or times out"""
-        return self.ai_service._get_fallback_plan(user_message, is_new_conversation)
+        return self.ai_service._get_fallback_plan(user_message)
     
     def _should_use_deep_analysis(self, user_message: str, is_new_conversation: bool) -> bool:
         """
@@ -215,8 +215,12 @@ class SmartContextOrchestrator:
             gemini_start_time = time.time()
             gemini_service = GeminiService()
             
-            # Build rich context for Gemini
+            # Check if we have sufficient memories to generate a narrative
             memory_list = list(all_memories.values())
+            if len(memory_list) < 3:
+                logger.warning(f"⚡ [Fast Deep] Insufficient memories ({len(memory_list)}) for user {user_id}. Cannot generate life narrative.")
+                return "I don't have enough context about you yet. Please continue our conversation so I can learn more about you."
+            
             memories_text = "\n".join([f"• {mem}" for mem in memory_list[:20]])  # Limit for speed
             
             # Optimized prompt for conversation instantiation
@@ -270,7 +274,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         try:
             # Step 1: Create plan for saving memory and determining context strategy
             plan_start_time = time.time()
-            plan = await self._ai_create_context_plan(user_message, is_new_conversation)
+            plan = await self._ai_create_context_plan(user_message)
             logger.info(f"[PERF] AI Plan Creation took {time.time() - plan_start_time:.4f}s")
             
             # Extract strategy and handle new schema

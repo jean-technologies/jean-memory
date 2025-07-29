@@ -29,33 +29,36 @@ async def test_ai_planner_decisions():
     
     test_cases = [
         # Should trigger Level 4 (comprehensive_analysis)
-        ("what are my values", False),
-        ("what do I believe in", False), 
-        ("tell me about my philosophy", False),
-        ("who am I based on my memories", False),
-        ("what would I say about politics", False),
-        ("comprehensive analysis of my personality", False),
+        "what are my values",
+        "what do I believe in", 
+        "tell me about my philosophy",
+        "who am I based on my memories",
+        "what would I say about politics",
+        "comprehensive analysis of my personality",
+        "tell me everything about my background",
         
-        # Should trigger Level 3 (deep_understanding) 
-        ("hello", True),  # New conversation
-        ("hi there", True),  # New conversation
+        # Should trigger Level 3 (deep_understanding)
+        "tell me about my recent work",
+        "what do you know about my projects", 
+        "analyze my preferences",
+        "explain my work patterns",
         
         # Should trigger Level 2 (relevant_context)
-        ("what's my email address", False),
-        ("what do you know about my work", False),
-        ("tell me about my recent activities", False),
+        "what's my email address",
+        "remind me about that meeting",
+        "what did I say about X",
         
         # Edge cases
-        ("thanks", False),
-        ("ok got it", False),
+        "thanks",
+        "ok got it",
     ]
     
     logger.info("🧪 Testing AI Planner Decision Logic")
     logger.info("=" * 60)
     
-    for query, is_new_conv in test_cases:
+    for query in test_cases:
         try:
-            plan = await ai_service.create_context_plan(query, is_new_conv)
+            plan = await ai_service.create_context_plan(query)
             strategy = plan.get("context_strategy", "unknown")
             
             # Map strategy to level
@@ -67,9 +70,8 @@ async def test_ai_planner_decisions():
             }
             
             level = level_map.get(strategy, f"❓ {strategy}")
-            new_indicator = " [NEW]" if is_new_conv else ""
             
-            print(f"Query: '{query}'{new_indicator}")
+            print(f"Query: '{query}'")
             print(f"  Strategy: {strategy}")
             print(f"  Level: {level}")
             print(f"  Search queries: {plan.get('search_queries', [])}")
