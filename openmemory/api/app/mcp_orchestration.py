@@ -1624,23 +1624,11 @@ User Message: "what time is it?"
                 is_new_conversation=False # Assume not new, as we want deep context
             )
 
-            # 2. If the analysis was successful, create a new synthesized memory.
+            # 2. Analysis complete - no need to save as triage process handles memory saving
             if analysis_result and "Error" not in analysis_result:
-                # Create a clear, structured memory from the analysis.
-                synthesized_content = f"[System Insight based on: '{user_message}']\n{analysis_result}"
-                
-                logger.info(f"💾 [Async Analysis BG] Saving synthesized memory for user {user_id}: '{synthesized_content[:100]}...'")
-
-                # 3. Add the new memory to the database.
-                await self._add_memory_background(
-                    content=synthesized_content,
-                    user_id=user_id,
-                    client_name=client_name,
-                    priority=True # These insights are high-priority
-                )
-                logger.info(f"✅ [Async Analysis BG] Successfully saved synthesized memory for user {user_id}.")
+                logger.info(f"✅ [Async Analysis BG] Deep analysis completed for user {user_id}. Context provided without duplicate memory save.")
             else:
-                logger.warning(f"⚠️ [Async Analysis BG] Deep analysis did not produce a valid result for user {user_id}. Nothing saved.")
+                logger.warning(f"⚠️ [Async Analysis BG] Deep analysis did not produce a valid result for user {user_id}.")
 
         except Exception as e:
             logger.error(f"❌ [Async Analysis BG] Failed for user {user_id}: {e}", exc_info=True)
