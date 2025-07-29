@@ -574,15 +574,30 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 logger.error(f"Error searching for '{query}': {result}")
                 continue
             try:
-                memories = json.loads(result)
-                for mem in memories:
-                    if isinstance(mem, dict):
-                        # Use memory ID as key to deduplicate
-                        memory_id = mem.get('id', len(relevant_memories))
-                        relevant_memories[memory_id] = mem.get('memory', mem.get('content', ''))
-            except (json.JSONDecodeError, TypeError):
-                logger.warning(f"Could not parse search result for query '{query}': {result}")
+                # Parse the JSON response from the search tool
+                result_data = json.loads(result)
+                logger.debug(f"🔍 [Search] Parsed result for '{query}': {type(result_data)} with keys: {list(result_data.keys()) if isinstance(result_data, dict) else 'not a dict'}")
+                
+                # Extract memories from the structured response  
+                if isinstance(result_data, dict) and 'memories' in result_data:
+                    memories = result_data['memories']
+                    logger.debug(f"🔍 [Search] Found {len(memories)} memories for query '{query}'")
+                    for mem in memories:
+                        if isinstance(mem, dict):
+                            # Use memory ID as key to deduplicate
+                            memory_id = mem.get('id', len(relevant_memories))
+                            memory_content = mem.get('memory', mem.get('content', ''))
+                            if memory_content:  # Only add non-empty memories
+                                relevant_memories[memory_id] = memory_content
+                                logger.debug(f"🔍 [Search] Added memory {memory_id}: {memory_content[:50]}...")
+                else:
+                    logger.warning(f"🔍 [Search] Unexpected result structure for query '{query}': {type(result_data)} - {list(result_data.keys()) if isinstance(result_data, dict) else 'not a dict'}")
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"🔍 [Search] Could not parse search result for query '{query}': {e}")
+                logger.debug(f"🔍 [Search] Raw result was: {result[:200]}...")
         
+        logger.info(f"🔍 [Search] Found {len(relevant_memories)} relevant memories for user {user_id}")
+        logger.debug(f"🔍 [Search] Memories: {list(relevant_memories.keys())}")
         return {"relevant_memories": relevant_memories}
 
     def _format_layered_context(self, context_results: Dict, plan: Dict) -> str:
@@ -590,7 +605,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
         Format context intelligently based on what the AI found most relevant.
         Following the bitter lesson: let AI intelligence determine the optimal presentation.
         """
+        logger.info(f"🎨 [Format] Starting format with context_results type: {type(context_results)}")
+        logger.debug(f"🎨 [Format] Context results keys: {list(context_results.keys()) if isinstance(context_results, dict) else 'Not a dict'}")
+        
         if not context_results or isinstance(context_results, Exception):
+            logger.warning(f"🎨 [Format] Empty or exception context_results: {context_results}")
             return ""
 
         context_parts = []
@@ -668,15 +687,20 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 context_parts.append(f"Relevant: {'; '.join(ai_context[:2])}")
 
         if not context_parts:
+            logger.warning(f"🎨 [Format] No context parts found! Strategy: {context_strategy}, Context keys: {list(context_results.keys())}")
             return ""
 
         # Simple, clean formatting
+        final_context = ""
         if context_strategy == "comprehensive_analysis":
-            return f"---\n[Jean Memory Context - Comprehensive Analysis]\n" + "\n".join(context_parts) + "\n---"
+            final_context = f"---\n[Jean Memory Context - Comprehensive Analysis]\n" + "\n".join(context_parts) + "\n---"
         elif context_strategy == "deep_understanding":
-            return f"---\n[Jean Memory Context - New Conversation]\n" + "\n".join(context_parts) + "\n---"
+            final_context = f"---\n[Jean Memory Context - New Conversation]\n" + "\n".join(context_parts) + "\n---"
         else:
-            return f"---\n[Jean Memory Context]\n" + "\n".join(context_parts) + "\n---"
+            final_context = f"---\n[Jean Memory Context]\n" + "\n".join(context_parts) + "\n---"
+        
+        logger.info(f"🎨 [Format] Generated context length: {len(final_context)} chars")
+        return final_context
 
     async def _add_understanding_enhancement_directive(
         self, 
