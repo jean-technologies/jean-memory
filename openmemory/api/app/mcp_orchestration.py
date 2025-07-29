@@ -917,35 +917,33 @@ Provide rich context that helps understand them deeply, but keep it conversation
                     response = await loop.run_in_executor(None, add_call)
                     logging.info(f"[PERF_TEST] Executed memory_client.add in {time.time() - add_call_start_time:.4f}s")
 
-                    # Process results and update SQL database
+                    # Always save to SQL database like direct add_memory tool does
+                    # This ensures UI dashboard shows all memories regardless of Jean Memory v2 deduplication
                     sql_record_start_time = time.time()
-                    added_memories = 0
                     
+                    # Always create SQL record like direct add_memory tool
+                    sql_memory_record = Memory(
+                        user_id=user.id,
+                        app_id=app.id,
+                        content=content,
+                        state=MemoryState.active,
+                        metadata_={
+                            "source": "background_orchestration",
+                            "mem0_response": response if isinstance(response, (dict, list)) else str(response)
+                        }
+                    )
+                    db.add(sql_memory_record)
+                    db.commit()
+                    
+                    logging.info(f"[PERF_TEST] Committed SQL record in {time.time() - sql_record_start_time:.4f}s")
+                    logging.info(f"✅ [BG Add Memory] Successfully saved memory to SQL for user {user_id}: {content[:50]}...")
+                    
+                    # Log Jean Memory v2 results for debugging
                     if isinstance(response, dict) and 'results' in response:
-                        for result in response['results']:
-                            mem0_memory_id_str = result['id']
-                            mem0_content = result.get('memory', content)
-
-                            if result.get('event') == 'ADD':
-                                added_memories += 1
-                                sql_memory_record = Memory(
-                                    user_id=user.id,
-                                    app_id=app.id,
-                                    content=mem0_content,
-                                    state=MemoryState.active,
-                                    metadata_={**result.get('metadata', {}), "mem0_id": mem0_memory_id_str}
-                                )
-                                db.add(sql_memory_record)
-                                logging.info(f"💾 [BG Add Memory] Added SQL record for: {mem0_content[:50]}...")
-                        
-                        if added_memories > 0:
-                            db.commit()
-                            logging.info(f"[PERF_TEST] Committed {added_memories} SQL records in {time.time() - sql_record_start_time:.4f}s")
-                            logging.info(f"✅ [BG Add Memory] Successfully saved {added_memories} memories for user {user_id}.")
-                        else:
-                            logging.info(f"💭 [BG Add Memory] No new memories to save (all were duplicates/updates) for user {user_id}.")
+                        mem0_events = [r.get('event', 'UNKNOWN') for r in response['results']]
+                        logging.info(f"📊 [BG Add Memory] Jean Memory v2 events: {mem0_events}")
                     else:
-                        logging.warning(f"⚠️ [BG Add Memory] Unexpected response format for user {user_id}: {response}")
+                        logging.info(f"📊 [BG Add Memory] Jean Memory v2 response: {response}")
                         
                 finally:
                     db.close()
