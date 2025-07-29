@@ -42,8 +42,16 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
 
         # --- ASYNCHRONOUS ACTIONS (Always Triggered) ---
 
-        # Memory saving is now handled by AI planner in standard/deep orchestration
-        # No separate background triage needed - eliminates duplicate memory saves
+        # 1. ALWAYS trigger memory triage - decouple from context retrieval
+        logger.info(f"🧠 [Memory Triage] Always analyzing message for memorable content: '{user_message[:50]}...'")
+        triage_start_time = time.time()
+        background_tasks.add_task(
+            orchestrator.triage_and_save_memory_background,
+            user_message,
+            supa_uid,
+            client_name
+        )
+        logger.info(f"[PERF] Memory Triage triggered in {time.time() - triage_start_time:.4f}s")
 
         # 2. If context is needed, also trigger the separate deep analysis background task.
         if needs_context:
