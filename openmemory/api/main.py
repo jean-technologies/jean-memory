@@ -245,10 +245,10 @@ async def download_claude_extension(transport: str = "sse"):
     
     # Choose extension based on transport type
     if transport == "http":
-        filename = "jean-memory-http-v2.dxt"
+        filename = "jean-memory-claude.dxt"
         description = "Jean Memory Claude Desktop Extension (HTTP Transport - 50% faster)"
     else:
-        filename = "jean-memory.dxt"
+        filename = "jean-memory-legacy.dxt"
         description = "Jean Memory Claude Desktop Extension (SSE Transport - Legacy)"
     
     file_path = os.path.join(os.path.dirname(__file__), "app", "static", filename)

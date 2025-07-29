@@ -64,7 +64,9 @@ export const Install = () => {
       const cursorMcpUrl = "https://jean-memory-api-virginia.onrender.com";
       textToCopy = `npx -y supergateway --stdio ${cursorMcpUrl}/mcp/v2/cursor/${userId}`;
     } else {
-      const MCP_URL = "https://api.jeanmemory.com";
+      // Most clients use HTTP (Virginia direct), only specific clients need SSE (Cloudflare Worker)
+      const needsSSE = ['vscode', 'chatgpt'].includes(tab);
+      const MCP_URL = needsSSE ? "https://api.jeanmemory.com" : "https://jean-memory-api-virginia.onrender.com";
       textToCopy =
         isMcp
           ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
@@ -94,7 +96,7 @@ export const Install = () => {
 
   // Generate Cursor deep link for one-click installation
   const generateCursorDeepLink = () => {
-    const MCP_URL = "https://api.jeanmemory.com";
+    const MCP_URL = "https://jean-memory-api-virginia.onrender.com";
     const mcpConfig = {
       "command": "npx",
       "args": [
@@ -112,10 +114,12 @@ export const Install = () => {
   const renderInstallCard = (appKey: string, title: string, isMcp: boolean = false) => {
     let manualCommand;
     if (appKey === 'cursor') {
-      const MCP_URL = "https://api.jeanmemory.com";
+      const MCP_URL = "https://jean-memory-api-virginia.onrender.com";
       manualCommand = `npx install-mcp "${MCP_URL}/mcp/cursor/sse/${userId}" --client cursor`;
     } else {
-      const MCP_URL = "https://api.jeanmemory.com";
+      // Most clients use HTTP (Virginia direct), only specific clients need SSE (Cloudflare Worker)
+      const needsSSE = ['vscode', 'chatgpt'].includes(appKey);
+      const MCP_URL = needsSSE ? "https://api.jeanmemory.com" : "https://jean-memory-api-virginia.onrender.com";
       manualCommand = isMcp 
         ? `${MCP_URL}/mcp/openmemory/sse/${userId}`
         : `npx install-mcp "${MCP_URL}/mcp/${appKey}/sse/${userId}" --client ${appKey}`;

@@ -161,8 +161,9 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
 
   const appConfig = constants[app.id as keyof typeof constants] || constants.default;
   
-  // Use direct backend URL for Chorus and Cursor, Worker URL for others
-  const MCP_URL = (app.id === 'chorus' || app.id === 'cursor') ? "https://jean-memory-api-virginia.onrender.com" : "https://api.jeanmemory.com";
+  // Most clients use HTTP (Virginia direct), only specific clients need SSE (Cloudflare Worker)
+  const needsSSE = ['vscode', 'chatgpt'].includes(app.id);
+  const MCP_URL = needsSSE ? "https://api.jeanmemory.com" : "https://jean-memory-api-virginia.onrender.com";
 
   // Define a base command that can be used as a fallback, fixing the regression.
   let rawInstallCommand = app.installCommand;
