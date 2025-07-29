@@ -41,7 +41,35 @@ class SmartContextOrchestrator:
         self.ai_service = MCPAIService()
         self.background_handler = MCPBackgroundTaskHandler(self)
         self.memory_analyzer = MemoryAnalyzer(self)
-    
+        
+        # Simple interaction tracking to prevent duplicate memory saves
+        self._processed_interactions = set()
+
+    async def _add_memory_with_deduplication(self, content: str, user_id: str, client_name: str, 
+                                           interaction_id: str, priority: bool = False):
+        """
+        Wrapper around _add_memory_background that prevents duplicate saves per interaction.
+        
+        This is the minimal fix: keep all existing architecture but add interaction tracking.
+        """
+        # Check if we already processed this interaction
+        if interaction_id in self._processed_interactions:
+            logger.info(f"🚫 [Memory Dedupe] Already saved memory for interaction {interaction_id}")
+            return
+        
+        # Mark this interaction as processed
+        self._processed_interactions.add(interaction_id)
+        
+        # Clean up old interactions (keep last 100 to prevent memory leak)
+        if len(self._processed_interactions) > 100:
+            # Convert to list, keep recent 50
+            interactions_list = list(self._processed_interactions)
+            self._processed_interactions = set(interactions_list[-50:])
+            logger.debug(f"🧹 [Memory Dedupe] Cleaned up interaction tracking")
+        
+        # Call the existing proven method
+        await self._add_memory_background(content, user_id, client_name, priority)
+
     def _get_tools(self):
         if self._tools_cache is None:
             from app.tools.memory import (
@@ -89,7 +117,8 @@ class SmartContextOrchestrator:
         user_message: str, 
         user_id: str, 
         client_name: str, 
-        is_new_conversation: bool
+        is_new_conversation: bool,
+        interaction_id: str = None
     ) -> str:
         """
         Enhanced orchestration using FAST deep analysis for conversation instantiation.
@@ -102,7 +131,7 @@ class SmartContextOrchestrator:
         
         try:
             # Background memory saving - handle this first to not block deep analysis
-            await self._handle_background_memory_saving(user_message, user_id, client_name, is_new_conversation)
+            await self._handle_background_memory_saving(user_message, user_id, client_name, is_new_conversation, interaction_id)
             
             # Choose analysis depth based on use case
             if is_new_conversation:
@@ -290,14 +319,15 @@ Provide rich context that helps understand them deeply, but keep it conversation
         user_message: str, 
         user_id: str, 
         client_name: str, 
-        is_new_conversation: bool
+        is_new_conversation: bool,
+        interaction_id: str = None
     ):
         """Handle memory saving in background for deep memory orchestration"""
         try:
             # Always save new conversation messages and rich content
             should_save = is_new_conversation or len(user_message) > 50
             
-            if should_save:
+            if should_save and interaction_id:
                 logger.info("💾 [Deep Memory] Adding memory saving to background tasks.")
                 
                 # Get background tasks context
@@ -309,16 +339,17 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 
                 if background_tasks:
                     background_tasks.add_task(
-                        self._add_memory_background, 
+                        self._add_memory_with_deduplication, 
                         user_message, 
                         user_id, 
                         client_name,
-                        priority=is_new_conversation
+                        interaction_id,
+                        is_new_conversation
                     )
                 else:
                     # Fallback: Add memory asynchronously
-                    asyncio.create_task(self._add_memory_background(
-                        user_message, user_id, client_name, priority=is_new_conversation
+                    asyncio.create_task(self._add_memory_with_deduplication(
+                        user_message, user_id, client_name, interaction_id, priority=is_new_conversation
                     ))
         except Exception as e:
             logger.error(f"❌ [Deep Memory] Background memory saving failed: {e}")
@@ -398,7 +429,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
         - Deep Memory Analysis: For new conversations when no cache exists
         - Standard Orchestration: For continuing conversations (5-10s, targeted)
         """
-        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. New convo: {is_new_conversation}")
+        # Generate unique interaction ID for deduplication
+        import hashlib
+        interaction_id = f"{user_id}_{int(time.time())}_{hashlib.md5(user_message.encode()).hexdigest()[:8]}"
+        
+        logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. Interaction: {interaction_id}. New convo: {is_new_conversation}")
         
         try:
             # SMART CACHE: Only check for cached narrative on NEW conversations
