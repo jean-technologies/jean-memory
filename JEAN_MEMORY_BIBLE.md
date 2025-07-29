@@ -1,8 +1,8 @@
 # The Jean Memory Bible: The Definitive Technical Guide
 
-**Version**: 3.0  
-**Last Updated**: January 2025  
-**Status**: Production-Ready
+**Version**: 3.1  
+**Last Updated**: July 2025  
+**Status**: Production-Ready - Fixed Memory System Architecture
 
 ## Table of Contents
 
@@ -27,9 +27,15 @@ Jean Memory is a sophisticated, AI-powered memory layer that enables persistent,
 **Key Innovations:**
 - **Dual-Path Asynchronous Processing**: Immediate responses with background intelligence
 - **Smart Context Orchestration**: AI-driven context engineering, not just retrieval
+- **Unified Memory Processing**: Single pathway through MCP tools for consistent formatting
 - **Narrative Caching**: Pre-computed user narratives for instant context
 - **Multi-Model AI Strategy**: Gemini Flash for speed, Gemini Pro for depth
 - **Enterprise-Ready**: API keys, subscription tiers, rate limiting
+
+**Recent Architectural Fix (July 2025):**
+- **Resolved Dual Memory System Issue**: Fixed competing memory save systems that were creating poorly formatted entries
+- **Consolidated Background Processing**: All memory saves now use the proper `add_memories` MCP tool with full tag/metadata processing
+- **Context Variable Isolation**: Fixed background task context handling to prevent data loss
 
 ---
 
@@ -202,7 +208,7 @@ async def jean_memory(
    - Triggered for EVERY message
    - Uses `_ai_memory_analysis` with Gemini Flash
    - Decides REMEMBER/SKIP
-   - If REMEMBER: Saves via `_add_memory_background`
+   - If REMEMBER: Saves via `_add_memory_background` (which internally uses the proper `add_memories` MCP tool)
 
 3. **Background Path 2 - Deep Analysis**:
    - Only if `needs_context=true`
@@ -220,7 +226,56 @@ The `SmartContextOrchestrator` class in `app/mcp_orchestration.py` implements th
 - `_ai_create_context_plan()`: Uses Gemini to plan context strategy
 - `_fast_deep_analysis()`: 10-15 second analysis for new conversations
 - `_standard_orchestration()`: Full context engineering pipeline
-- `_add_memory_background()`: Asynchronous memory persistence
+- `_add_memory_background()`: Asynchronous memory persistence (uses proper MCP tool internally)
+
+**Critical Fix - Memory System Architecture (July 2025):**
+
+The `_add_memory_background` method was completely refactored to solve a dual memory system issue where memories were being saved with ugly formatting like `[System Insight based on: 'query'] --- [Jean Memory Context]` instead of clean facts.
+
+**Root Cause:** Two competing memory save systems:
+1. Direct mem0 calls (bypassing proper processing)
+2. Proper MCP `add_memories` tool (with full tag/metadata processing)
+
+**Solution:** Modified `_add_memory_background` to internally use the `add_memories` MCP tool:
+
+```python
+async def _add_memory_background(self, content: str, user_id: str, client_name: str, priority: bool = False):
+    """
+    Add memory in background task using the proper add_memories MCP tool.
+    This ensures all memories get full tag/metadata processing and proper deduplication.
+    """
+    # CRITICAL FIX: Set context variables in background task since they're lost
+    from app.context import user_id_var, client_name_var
+    user_token = user_id_var.set(user_id)
+    client_token = client_name_var.set(client_name)
+    
+    try:
+        from app.tools.memory_modules.crud_operations import add_memories
+        
+        # Prepare tags based on context
+        tags = []
+        if priority:
+            tags.append('priority')
+        tags.append('background_save')
+        tags.append(f'client_{client_name}')
+        
+        result = await add_memories(
+            text=content,
+            tags=tags,
+            priority=priority
+        )
+        return result
+    finally:
+        user_id_var.reset(user_token)
+        client_name_var.reset(client_token)
+```
+
+This fix ensures:
+- All memory saves use the same processing pipeline
+- Proper tags and metadata are applied
+- Context variables are correctly set in background tasks
+- Clean, formatted memories like "User has brown hair and hazel eyes"
+- mem0's built-in deduplication works correctly
 
 **Context Strategies:**
 
@@ -233,9 +288,36 @@ The `SmartContextOrchestrator` class in `app/mcp_orchestration.py` implements th
 The memory tools are modularized in `app/tools/memory_modules/`:
 
 - **search_operations.py**: Vector search, semantic queries
-- **crud_operations.py**: Create, read, update, delete
+- **crud_operations.py**: Create, read, update, delete (contains the proper `add_memories` MCP tool)
 - **chunk_search.py**: Document chunk searching
 - **utils.py**: Shared utilities
+
+**Key Implementation - `add_memories` Tool:**
+
+Located in `crud_operations.py:28`, this is the proper memory creation tool that all background processes now use:
+
+```python
+@retry_on_exception(retries=3, delay=1, backoff=2, exceptions=(ConnectionError,))
+async def add_memories(text: str, tags: Optional[List[str]] = None, priority: bool = False) -> str:
+    """
+    Add new memories to the user's memory collection with comprehensive logging.
+    
+    Features:
+    - Full input validation and sanitization
+    - Context variable handling
+    - mem0 integration with proper formatting
+    - PostgreSQL backup storage
+    - Comprehensive error handling and logging
+    - Proper tag and metadata processing
+    """
+```
+
+This tool ensures all memories are processed consistently with:
+- Clean formatting (no ugly brackets)
+- Proper tags and metadata
+- mem0 deduplication
+- Full logging for debugging
+- Error handling and retries
 
 ### 2.3 API Endpoints
 
@@ -498,22 +580,27 @@ sequenceDiagram
     and Background Triage
         Orchestrator->>Orchestrator: AI analysis (REMEMBER/SKIP)
         opt If REMEMBER
-            Orchestrator->>mem0: Add memory
+            Note over Orchestrator: FIXED: Uses proper add_memories MCP tool
+            Orchestrator->>CrudOperations: add_memories(content, tags)
+            CrudOperations->>mem0: Add memory (proper format)
             mem0->>Qdrant: Store vector
             mem0->>Neo4j: Store graph entities & relationships
-            Orchestrator->>Graphiti: Add episode (parallel)
+            CrudOperations->>Graphiti: Add episode (parallel)
             Graphiti->>Neo4j: Store temporal context & ontology
-            mem0-->>Orchestrator: Memory ID
-            Orchestrator->>PostgreSQL: Save metadata
+            CrudOperations->>PostgreSQL: Save metadata with tags
+            CrudOperations-->>Orchestrator: Success response
         end
     and Deep Analysis (if needed)
         Orchestrator->>Orchestrator: Deep synthesis
-        Orchestrator->>mem0: Save insight
+        Note over Orchestrator: FIXED: Uses proper add_memories MCP tool
+        Orchestrator->>CrudOperations: add_memories(insight, priority_tags)
+        CrudOperations->>mem0: Save insight (proper format)
         mem0->>Qdrant: Store vector
         mem0->>Neo4j: Store graph entities & relationships
-        Orchestrator->>Graphiti: Add episode (parallel)
+        CrudOperations->>Graphiti: Add episode (parallel)
         Graphiti->>Neo4j: Store temporal context & ontology
-        Orchestrator->>PostgreSQL: Save as priority
+        CrudOperations->>PostgreSQL: Save as priority with metadata
+        CrudOperations-->>Orchestrator: Success response
     end
 ```
 
@@ -1048,6 +1135,30 @@ pnpm test          # Run tests
 4. **ADR-004**: Gemini for analysis, OpenAI for embeddings
 5. **ADR-005**: FastAPI for async Python backend
 6. **ADR-006**: Next.js App Router for modern React
+7. **ADR-007**: Unified Memory Processing Architecture (July 2025)
+
+**ADR-007: Unified Memory Processing Architecture**
+
+**Context:** The system had two competing memory save pathways:
+- Direct mem0 calls from orchestration (bypassed tag/metadata processing)
+- Proper MCP `add_memories` tool (full processing pipeline)
+
+This caused ugly formatted memories like: `[System Insight based on: 'query'] --- [Jean Memory Context]`
+
+**Decision:** Consolidate all memory saves through the `add_memories` MCP tool by refactoring `_add_memory_background` to use it internally.
+
+**Consequences:**
+- **Positive:** 
+  - Consistent memory formatting
+  - Proper tag and metadata processing for all saves
+  - Single codebase maintenance point
+  - Leverages mem0's built-in deduplication
+  - Full logging and error handling
+- **Negative:**
+  - Slight performance overhead from context variable setup
+  - Additional abstraction layer
+
+**Status:** Implemented and deployed successfully. Production logs show clean memory saves with proper tags.
 
 ---
 
@@ -1055,7 +1166,14 @@ pnpm test          # Run tests
 
 Jean Memory represents a sophisticated approach to persistent AI memory, combining cutting-edge AI orchestration with robust engineering practices. The system's unique dual-path architecture ensures both speed and intelligence, while the tri-database design provides the flexibility needed for complex memory operations.
 
-For developers joining the project, focus first on understanding the `jean_memory` tool and the Smart Context Orchestrator - these are the heart of the system. The rest of the architecture supports these core components in delivering a seamless, intelligent memory layer for AI applications.
+**Current State (July 2025):** The system has achieved architectural stability with the resolution of the dual memory system issue. All memory saves now flow through a unified processing pipeline, ensuring consistent formatting, proper tagging, and reliable deduplication. Production logs demonstrate clean memory saves like "User has brown hair and hazel eyes" with proper tags `["background_save", "client_claude"]`.
+
+For developers joining the project, focus first on understanding:
+1. The `jean_memory` tool in `app/tools/orchestration.py` - the primary interface
+2. The `add_memories` MCP tool in `app/tools/memory_modules/crud_operations.py` - the unified memory processing pipeline
+3. The Smart Context Orchestrator's `_add_memory_background` method - how background saves work correctly
+
+These are the heart of the system. The rest of the architecture supports these core components in delivering a seamless, intelligent memory layer for AI applications.
 
 Remember: **Context Engineering, Not Information Retrieval**. We're not building a database - we're building an intelligent memory that understands, synthesizes, and anticipates.
 
