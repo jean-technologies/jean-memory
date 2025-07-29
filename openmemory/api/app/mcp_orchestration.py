@@ -578,6 +578,12 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 result_data = json.loads(result)
                 logger.debug(f"🔍 [Search] Parsed result for '{query}': {type(result_data)} with keys: {list(result_data.keys()) if isinstance(result_data, dict) else 'not a dict'}")
                 
+                # Check for error responses first
+                if isinstance(result_data, dict) and 'status' in result_data and result_data.get('status') == 'error':
+                    error_msg = result_data.get('error', 'unknown error')
+                    logger.warning(f"🔍 [Search] Search tool returned error for query '{query}': {error_msg}")
+                    continue
+                
                 # Extract memories from the structured response  
                 if isinstance(result_data, dict) and 'memories' in result_data:
                     memories = result_data['memories']
@@ -592,6 +598,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                                 logger.debug(f"🔍 [Search] Added memory {memory_id}: {memory_content[:50]}...")
                 else:
                     logger.warning(f"🔍 [Search] Unexpected result structure for query '{query}': {type(result_data)} - {list(result_data.keys()) if isinstance(result_data, dict) else 'not a dict'}")
+                    logger.debug(f"🔍 [Search] Full result data: {result_data}")
             except (json.JSONDecodeError, TypeError) as e:
                 logger.warning(f"🔍 [Search] Could not parse search result for query '{query}': {e}")
                 logger.debug(f"🔍 [Search] Raw result was: {result[:200]}...")

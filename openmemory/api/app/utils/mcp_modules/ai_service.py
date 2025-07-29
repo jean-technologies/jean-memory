@@ -33,7 +33,16 @@ class MCPAIService:
         gemini = self._get_gemini()
         
         # OPTIMIZED: Much more focused, concise prompt for faster processing
-        strategy = 'deep_understanding' if is_new_conversation else 'relevant_context'
+        # Check for comprehensive analysis keywords
+        comprehensive_keywords = ['deep', 'deeper', 'comprehensive', 'extensive', 'beliefs', 'philosophy', 'values', 'what would i say', 'given my', 'based on my']
+        wants_comprehensive = any(keyword in user_message.lower() for keyword in comprehensive_keywords)
+        
+        if is_new_conversation:
+            strategy = 'deep_understanding'
+        elif wants_comprehensive:
+            strategy = 'comprehensive_analysis'
+        else:
+            strategy = 'relevant_context'
         should_save = str(is_new_conversation or 'remember' in user_message.lower()).lower()
         # Safely handle user message in JSON by escaping quotes
         safe_message = user_message.replace('"', '\\"').replace('\n', '\\n')
@@ -79,11 +88,24 @@ New conversation: {is_new_conversation}
         """Fast fallback when AI planning fails or times out"""
         
         # Detect if user wants deeper analysis
-        deep_keywords = ['analyze', 'explain', 'understand', 'learn', 'insights', 'patterns']
+        deep_keywords = [
+            'analyze', 'explain', 'understand', 'learn', 'insights', 'patterns',
+            'deep', 'deeper', 'comprehensive', 'extensive', 'detailed', 'thorough',
+            'beliefs', 'philosophy', 'values', 'what would i say', 'given my',
+            'based on my', 'use deep memory', 'use deeper memory', 'what do you know about'
+        ]
         wants_deep_analysis = any(keyword in user_message.lower() for keyword in deep_keywords)
         
+        # Use same strategy logic as main AI planner
+        if is_new_conversation:
+            strategy = "deep_understanding"
+        elif wants_deep_analysis:
+            strategy = "comprehensive_analysis"
+        else:
+            strategy = "relevant_context"
+            
         return {
-            "context_strategy": "deep_understanding" if is_new_conversation or wants_deep_analysis else "relevant_context",
+            "context_strategy": strategy,
             "search_queries": [user_message[:50]],  # Simple search using first 50 chars
             "should_save_memory": is_new_conversation or 'remember' in user_message.lower(),
             "memorable_content": user_message if is_new_conversation or 'remember' in user_message.lower() else None
