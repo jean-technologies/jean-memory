@@ -174,8 +174,8 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
       // Use HTTP v2 transport for Claude (50% faster)
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
     } else if (app.id === 'cursor') {
-      // Use HTTP transport for Cursor - add to mcp.json file
-      rawInstallCommand = `Add to ~/.cursor/mcp.json: {"mcpServers":{"jean-memory":{"url":"https://jean-memory-api-virginia.onrender.com/mcp/v2/cursor/{user_id}","env":{}}}}`;
+      // Use proper npx install-mcp command for Cursor
+      rawInstallCommand = `npx install-mcp "${MCP_URL}/mcp/cursor/sse/{user_id}" --client cursor`;
     } else if (app.id === 'claude code') {
       // Use claude-code as client name (with hyphen, not space) and proper URL quoting
       rawInstallCommand = `npx install-mcp "${MCP_URL}/mcp/claude code/sse/{user_id}" --client claude-code`;
@@ -258,7 +258,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 ? `Provide your ${app.name} details to sync your content.`
                 : app.id === 'sms'
                 ? 'Add your phone number to interact with your memories via text message.'
-                : `Activate Jean Memory for ${app.name} in two simple steps.`
+                : `Jean Memory tracks your projects and builds a working memory.`
             }
           </MobileOptimizedDialogDescription>
         </MobileOptimizedDialogHeader>
@@ -351,7 +351,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 
                 <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-2">
-                        One-click install using HTTP transport (50% faster, bypasses Cloudflare)
+                        One-click install for Cursor IDE
                     </p>
                 </div>
                 
