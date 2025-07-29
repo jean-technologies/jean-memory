@@ -1,8 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd:*)",
-      "Bash(cd:*)"
+      "WebFetch(domain:jean-memory-api-virginia.onrender.com)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

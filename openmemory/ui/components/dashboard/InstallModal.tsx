@@ -161,8 +161,9 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
 
   const appConfig = constants[app.id as keyof typeof constants] || constants.default;
   
-  // Use direct backend URL for Chorus and Cursor, Worker URL for others
-  const MCP_URL = (app.id === 'chorus' || app.id === 'cursor') ? "https://jean-memory-api-virginia.onrender.com" : "https://api.jeanmemory.com";
+  // Most clients use HTTP (Virginia direct), only specific clients need SSE (Cloudflare Worker)
+  const needsSSE = ['vscode', 'chatgpt'].includes(app.id);
+  const MCP_URL = needsSSE ? "https://api.jeanmemory.com" : "https://jean-memory-api-virginia.onrender.com";
 
   // Define a base command that can be used as a fallback, fixing the regression.
   let rawInstallCommand = app.installCommand;
@@ -173,8 +174,8 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
       // Use HTTP v2 transport for Claude (50% faster)
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
     } else if (app.id === 'cursor') {
-      // Use original working SSE transport for Cursor
-      rawInstallCommand = `npx install-mcp "https://api.jeanmemory.com/mcp/cursor/sse/{user_id}" --client cursor`;
+      // Use proper npx install-mcp command for Cursor
+      rawInstallCommand = `npx install-mcp "${MCP_URL}/mcp/cursor/sse/{user_id}" --client cursor`;
     } else if (app.id === 'claude code') {
       // Use claude-code as client name (with hyphen, not space) and proper URL quoting
       rawInstallCommand = `npx install-mcp "${MCP_URL}/mcp/claude code/sse/{user_id}" --client claude-code`;
@@ -257,7 +258,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 ? `Provide your ${app.name} details to sync your content.`
                 : app.id === 'sms'
                 ? 'Add your phone number to interact with your memories via text message.'
-                : `Activate Jean Memory for ${app.name} in two simple steps.`
+                : `Jean Memory tracks your projects and builds a working memory.`
             }
           </MobileOptimizedDialogDescription>
         </MobileOptimizedDialogHeader>
@@ -329,13 +330,8 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 <Button 
                     onClick={() => {
                         const mcpConfig = {
-                            "command": "npx",
-                            "args": [
-                                "-y",
-                                "supergateway",
-                                "--sse",
-                                `https://api.jeanmemory.com/mcp/cursor/sse/${user?.id}`
-                            ]
+                            "url": `https://jean-memory-api-virginia.onrender.com/mcp/v2/cursor/${user?.id}`,
+                            "env": {}
                         };
                         const encodedConfig = btoa(JSON.stringify(mcpConfig));
                         const deepLink = `cursor://anysphere.cursor-deeplink/mcp/install?name=jean-memory&config=${encodedConfig}`;
@@ -343,7 +339,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         
                         toast({
                             title: "Opening Cursor", 
-                            description: "Cursor should now prompt you to install Jean Memory. If it doesn't open, try the manual install below.",
+                            description: "Cursor should now prompt you to install Jean Memory.",
                         });
                     }}
                     className="w-full"
@@ -355,30 +351,30 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 
                 <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-2">
-                        One-click install using HTTP transport (50% faster, bypasses Cloudflare)
+                        One-click install for Cursor IDE
                     </p>
                 </div>
                 
-                {/* Manual Setup Option */}
-                <details className="group">
-                    <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                        Need manual terminal setup instead?
-                    </summary>
-                    <div className="mt-3 space-y-3">
-                        <div className="relative bg-background border rounded-md p-3 font-mono text-xs break-all">
-                            <div className="pr-12">{installCommand}</div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(installCommand)}
-                            >
-                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Run this command in terminal, then restart Cursor.</p>
+                {/* Jean Memory Benefits */}
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <h4 className="text-sm font-medium text-foreground">💭 Memory Across Sessions</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                        Jean Memory tracks your projects and builds a working memory that persists across chat sessions. 
+                        Your AI assistant will remember context from previous conversations, making each interaction more intelligent and productive.
+                    </p>
+                    <div className="flex items-start gap-2 mt-3">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-muted-foreground">Ask questions about your codebase from weeks ago</p>
                     </div>
-                </details>
+                    <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-muted-foreground">Get contextual suggestions based on your project history</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-muted-foreground">Build up knowledge that improves over time</p>
+                    </div>
+                </div>
             </div>
         ) : app.id === 'claude' ? (
             <div className="py-2 space-y-6">

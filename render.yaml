@@ -6,7 +6,7 @@ services:
   - type: web
     name: jean-memory-api-virginia
     runtime: python
-    repo: https://github.com/jonathan-politzki/your-memory
+    repo: https://github.com/jean-technologies/jean-memory
     plan: starter
     region: virginia  # Changed from oregon
     rootDir: openmemory/api
@@ -105,7 +105,7 @@ services:
   - type: web
     name: jean-memory-ui-virginia
     runtime: node
-    repo: https://github.com/jonathan-politzki/your-memory
+    repo: https://github.com/jean-technologies/jean-memory
     plan: starter
     region: virginia  # Changed from oregon
     rootDir: openmemory/ui
@@ -144,7 +144,7 @@ services:
   - type: cron
     name: narrative-backfill-weekly
     runtime: python
-    repo: https://github.com/jonathan-politzki/your-memory
+    repo: https://github.com/jean-technologies/jean-memory
     plan: starter
     region: virginia
     rootDir: .
