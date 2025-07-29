@@ -891,17 +891,14 @@ Provide rich context that helps understand them deeply, but keep it conversation
 
     async def _add_memory_background(self, content: str, user_id: str, client_name: str, priority: bool = False):
         """
-        Add memory in background task with proper context isolation.
-        Context variables are lost in background tasks, so we pass them as parameters.
+        Add memory in background task using the proper add_memories MCP tool.
+        This ensures all memories get full tag/metadata processing and proper deduplication.
         """
         start_time = time.time()
         logging.info(f"[PERF_TEST] _add_memory_background started for user {user_id}")
         
         try:
-            logging.info(f"💾 [BG Add Memory] Saving memory for user {user_id}: {content[:50]}...")
-            
-            # Import here to avoid circular imports
-            from app.utils.memory import get_memory_client
+            logging.info(f"💾 [BG Add Memory] Saving memory via MCP tool for user {user_id}: {content[:50]}...")
             
             # CRITICAL FIX: Set context variables in background task since they're lost
             from app.context import user_id_var, client_name_var
@@ -909,79 +906,29 @@ Provide rich context that helps understand them deeply, but keep it conversation
             client_token = client_name_var.set(client_name)
             
             try:
-                get_client_start_time = time.time()
-                memory_client = get_memory_client()
-                logging.info(f"[PERF_TEST] Got memory client in {time.time() - get_client_start_time:.4f}s")
-
-                db_start_time = time.time()
-                db = SessionLocal()
-                logging.info(f"[PERF_TEST] Got DB session in {time.time() - db_start_time:.4f}s")
+                # Use the proper add_memories MCP tool which has better processing
+                from app.tools.memory_modules.crud_operations import add_memories
                 
-                try:
-                    user_app_start_time = time.time()
-                    user, app = get_user_and_app(db, supabase_user_id=user_id, app_name=client_name, email=None)
-                    logging.info(f"[PERF_TEST] Got user and app in {time.time() - user_app_start_time:.4f}s")
-                    
-                    if not app.is_active:
-                        logging.warning(f"Background memory add skipped - app {app.name} is paused for user {user_id}")
-                        return
-
-                    metadata = {
-                        "source_app": "openmemory_mcp",
-                        "mcp_client": client_name,
-                        "app_db_id": str(app.id)
-                    }
-                    
-                    if priority:
-                        metadata['tags'] = ['priority']
-
-                    message_to_add = {
-                        "role": "user",
-                        "content": content
-                    }
-
-                    # Execute memory addition
-                    add_call_start_time = time.time()
-                    loop = asyncio.get_running_loop()
-                    add_call = functools.partial(
-                        memory_client.add,
-                        messages=[message_to_add],
-                        user_id=user_id,
-                        metadata=metadata
-                    )
-                    response = await loop.run_in_executor(None, add_call)
-                    logging.info(f"[PERF_TEST] Executed memory_client.add in {time.time() - add_call_start_time:.4f}s")
-
-                    # Always save to SQL database like direct add_memory tool does
-                    # This ensures UI dashboard shows all memories regardless of Jean Memory v2 deduplication
-                    sql_record_start_time = time.time()
-                    
-                    # Always create SQL record like direct add_memory tool
-                    sql_memory_record = Memory(
-                        user_id=user.id,
-                        app_id=app.id,
-                        content=content,
-                        state=MemoryState.active,
-                        metadata_={
-                            "source": "background_orchestration",
-                            "mem0_response": response if isinstance(response, (dict, list)) else str(response)
-                        }
-                    )
-                    db.add(sql_memory_record)
-                    db.commit()
-                    
-                    logging.info(f"[PERF_TEST] Committed SQL record in {time.time() - sql_record_start_time:.4f}s")
-                    logging.info(f"✅ [BG Add Memory] Successfully saved memory to SQL for user {user_id}: {content[:50]}...")
-                    
-                    # Log Jean Memory v2 results for debugging
-                    if isinstance(response, dict) and 'results' in response:
-                        mem0_events = [r.get('event', 'UNKNOWN') for r in response['results']]
-                        logging.info(f"📊 [BG Add Memory] Jean Memory v2 events: {mem0_events}")
-                    else:
-                        logging.info(f"📊 [BG Add Memory] Jean Memory v2 response: {response}")
-                        
-                finally:
-                    db.close()
+                # Prepare tags based on context
+                tags = []
+                if priority:
+                    tags.append('priority')
+                
+                # Add contextual tags to improve organization
+                tags.append('background_save')
+                tags.append(f'client_{client_name}')
+                
+                tool_start_time = time.time()
+                result = await add_memories(
+                    text=content,
+                    tags=tags,
+                    priority=priority
+                )
+                logging.info(f"[PERF_TEST] add_memories tool completed in {time.time() - tool_start_time:.4f}s")
+                logging.info(f"✅ [BG Add Memory] Successfully saved via MCP tool for user {user_id}: {content[:50]}...")
+                logging.info(f"📊 [BG Add Memory] MCP tool result: {result[:200] if isinstance(result, str) else str(result)[:200]}...")
+                
+                return result
                     
             finally:
                 # Clean up context variables  
