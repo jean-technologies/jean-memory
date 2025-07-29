@@ -187,7 +187,7 @@ class SmartContextOrchestrator:
                 "important experiences thoughts insights"
             ]
             
-            tasks = [self._get_tools()['search_memory'](query=query, limit=8) for query in search_queries]
+            tasks = [self._get_tools()['search_memory'](query=query, limit=50) for query in search_queries]
             search_results = await asyncio.gather(*tasks, return_exceptions=True)
             
             # Collect unique memories
@@ -484,7 +484,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
             logger.info(f"🆘 [Fallback] Using simple search fallback for user {user_id}")
             
             # Simple search with the user message
-            search_result = await self._get_tools()['search_memory'](query=user_message, limit=5)
+            search_result = await self._get_tools()['search_memory'](query=user_message, limit=15)
             
             if search_result:
                 try:
@@ -524,9 +524,9 @@ Provide rich context that helps understand them deeply, but keep it conversation
             logger.info("No search queries specified by AI planner - using minimal fallback")
             return {}
         
-        # For new conversations, use balanced limits for faster processing while maintaining quality
-        # But let the AI decide what to search for, not hard-coded categories
-        search_limit = 12  # Balanced limit for good understanding with faster processing
+        # For new conversations, use large limits to leverage Gemini's massive token capacity
+        # Let the AI decide what to search for, not hard-coded categories
+        search_limit = 100  # Use Gemini's 1M+ token capacity for comprehensive understanding
         
         # Execute AI-determined searches in parallel
         tasks = [self._get_tools()['search_memory'](query=query, limit=search_limit) for query in search_queries]
@@ -563,8 +563,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
             # Fallback to comprehensive search
             search_queries = ["comprehensive user background and expertise", "user's projects and achievements", "user's interests and goals"]
         
-        # Use balanced limits for comprehensive analysis with good performance  
-        comprehensive_limit = 15
+        # Use large limits for comprehensive analysis - Gemini can handle massive context
+        comprehensive_limit = 150
         
         # Set context variables for search tools
         from app.context import user_id_var, client_name_var
@@ -610,7 +610,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         user_id_var.set(user_id)
         client_name_var.set(client_name)
 
-        tasks = [self._get_tools()['search_memory'](query=q, limit=12) for q in search_queries]
+        tasks = [self._get_tools()['search_memory'](query=q, limit=100) for q in search_queries]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         relevant_memories = {}
@@ -676,7 +676,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 memory_list = list(comprehensive_memories.values())
                 
                 # Show comprehensive context in structured format
-                if len(memory_list) > 15:
+                if len(memory_list) > 50:
                     # Split into multiple sections for very comprehensive analysis
                     professional_info = [m for m in memory_list if any(keyword in m.lower() for keyword in ['work', 'project', 'build', 'develop', 'engineer', 'company'])]
                     personal_info = [m for m in memory_list if any(keyword in m.lower() for keyword in ['prefer', 'love', 'like', 'value', 'interest'])]
@@ -684,13 +684,13 @@ Provide rich context that helps understand them deeply, but keep it conversation
                     other_info = [m for m in memory_list if m not in professional_info + personal_info + technical_info]
                     
                     if professional_info:
-                        context_parts.append(f"Professional Background: {'; '.join(professional_info[:8])}")
+                        context_parts.append(f"Professional Background: {'; '.join(professional_info[:25])}")
                     if technical_info:
-                        context_parts.append(f"Technical Expertise: {'; '.join(technical_info[:6])}")
+                        context_parts.append(f"Technical Expertise: {'; '.join(technical_info[:20])}")
                     if personal_info:
-                        context_parts.append(f"Personal Preferences: {'; '.join(personal_info[:4])}")
+                        context_parts.append(f"Personal Preferences: {'; '.join(personal_info[:15])}")
                     if other_info:
-                        context_parts.append(f"Additional Context: {'; '.join(other_info[:4])}")
+                        context_parts.append(f"Additional Context: {'; '.join(other_info[:15])}")
                 else:
                     # For moderate amounts, show all in comprehensive format
                     context_parts.append(f"Comprehensive Context: {'; '.join(memory_list)}")
@@ -700,14 +700,14 @@ Provide rich context that helps understand them deeply, but keep it conversation
             ai_context = context_results.get('ai_guided_context', [])
             
             if ai_context:
-                # For new conversations, show more context but let the AI's search decisions guide what's shown
+                # For new conversations, show much more context - Gemini can handle massive token counts
                 # The AI planner already determined what was most relevant to search for
-                comprehensive_context = ai_context[:12]  # Show up to 12 most relevant pieces
+                comprehensive_context = ai_context[:50]  # Show up to 50 most relevant pieces
                 
-                if len(comprehensive_context) > 6:
+                if len(comprehensive_context) > 25:
                     # Split into two logical groups if we have enough context
-                    primary_context = comprehensive_context[:6]
-                    secondary_context = comprehensive_context[6:]
+                    primary_context = comprehensive_context[:25]
+                    secondary_context = comprehensive_context[25:]
                     
                     context_parts.append(f"Core Context: {'; '.join(primary_context)}")
                     context_parts.append(f"Additional Context: {'; '.join(secondary_context)}")
@@ -732,7 +732,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
             if query_specific:
                 context_parts.append(f"Relevant: {'; '.join(query_specific[:2])}")
             elif relevant_memories:
-                mem_list = list(relevant_memories.values())[:2]
+                mem_list = list(relevant_memories.values())[:25]  # Show many more - Gemini can handle it
                 if mem_list:
                     context_parts.append(f"Relevant: {'; '.join(mem_list)}")
             elif ai_context:
@@ -818,7 +818,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
             "current_focus": {"query": "user's current projects, work, and learning goals", "tags_filter": None}
         }
         
-        tasks = [self._get_tools()['search_memory'](query=q['query'], limit=10, tags_filter=q['tags_filter']) for q in primer_queries.values()]
+        tasks = [self._get_tools()['search_memory'](query=q['query'], limit=50, tags_filter=q['tags_filter']) for q in primer_queries.values()]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         all_memories = {}
@@ -840,7 +840,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         if not search_queries:
             return {}
 
-        tasks = [self._get_tools()['search_memory'](query=q, limit=15) for q in search_queries]
+        tasks = [self._get_tools()['search_memory'](query=q, limit=100) for q in search_queries]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         all_memories = {}
@@ -1021,7 +1021,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         """
         try:
             # Use list_memories to get recent context (working memory)
-            recent_memories_str = await tools['list_memories'](limit=15)
+            recent_memories_str = await tools['list_memories'](limit=50)
             
             # Handle different response formats
             recent_memories = []
@@ -1091,7 +1091,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         """
         try:
             # Use search_memory to find relevant context
-            relevant_memories_str = await tools['search_memory'](query=user_message, limit=8)
+            relevant_memories_str = await tools['search_memory'](query=user_message, limit=50)
             
             # Handle different response formats
             relevant_memories = []
