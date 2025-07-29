@@ -42,9 +42,16 @@ Message: "{safe_message}"
 New conversation: {is_new_conversation}
 
 Context strategies:
-- "relevant_context": For continuing conversations, focused search
-- "deep_understanding": For new conversations needing broad context  
-- "comprehensive_analysis": For requests asking for deep analysis, beliefs, philosophy, "what would I say", etc.
+- "relevant_context": For continuing conversations, focused search (basic level)
+- "deep_understanding": For new conversations needing broad context (medium level)
+- "comprehensive_analysis": For deep queries requiring maximum depth and document search (maximum level)
+
+ALWAYS use "comprehensive_analysis" for:
+- Values, beliefs, philosophy queries ("what are my values", "what do I believe")
+- Identity questions ("who am I", "what defines me")  
+- Deep analysis requests ("tell me everything about", "comprehensive view")
+- Complex reasoning ("what would I say about", "based on my background")
+- Research-style queries needing documents
 
 Respond with JSON only:
 {{

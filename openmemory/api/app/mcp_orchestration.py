@@ -279,8 +279,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
             # Step 2: Execute the context strategy based on plan
             context_task = None
             if context_strategy == "comprehensive_analysis":
-                logger.info("🔬 [Standard] Executing comprehensive analysis.")
-                context_task = self._execute_comprehensive_analysis(plan, user_id, client_name)
+                logger.info("🔬 [Standard] Executing comprehensive analysis with deep memory query (Level 4 - Maximum Depth).")
+                context_task = self._execute_deep_comprehensive_analysis(plan, user_message, user_id, client_name)
             elif context_strategy == "deep_understanding":
                 logger.info("🔥 [Standard] Executing deep understanding context primer.")
                 context_task = self._get_deep_understanding_primer(plan, user_id)
@@ -596,6 +596,40 @@ Provide rich context that helps understand them deeply, but keep it conversation
         
         return {"comprehensive_memories": all_memories}
 
+    async def _execute_deep_comprehensive_analysis(self, plan: Dict, user_message: str, user_id: str, client_name: str) -> Dict:
+        """
+        Execute LEVEL 4 - Maximum depth analysis using deep_memory_query with Gemini 2.5 Pro + documents.
+        This is the ultimate level for values, beliefs, philosophy, and research queries.
+        """
+        logger.info("🚀 [Level 4] Starting deep comprehensive analysis with documents and 500+ memories")
+        
+        # Set context variables for search tools
+        from app.context import user_id_var, client_name_var
+        user_id_var.set(user_id)
+        client_name_var.set(client_name)
+        
+        try:
+            # Use deep_memory_query - the ultimate tool (Gemini 2.5 Pro + up to 500 memories + 100 documents)
+            deep_query = f"Comprehensive analysis: {user_message}. Provide detailed context and insights."
+            
+            # Call the deep memory query tool directly
+            deep_result = await self._get_tools()['deep_memory_query'](
+                search_query=deep_query,
+                memory_limit=500,  # Maximum memories
+                chunk_limit=100,   # Maximum document chunks
+                include_full_docs=True
+            )
+            
+            logger.info(f"🚀 [Level 4] Deep memory query completed, result length: {len(deep_result) if deep_result else 0} chars")
+            
+            # Return in format expected by formatter
+            return {"deep_comprehensive_result": deep_result}
+            
+        except Exception as e:
+            logger.error(f"❌ [Level 4] Deep comprehensive analysis failed: {e}", exc_info=True)
+            # Fallback to regular comprehensive analysis
+            return await self._execute_comprehensive_analysis(plan, user_id, client_name)
+
     async def _execute_relevant_context_search(self, plan: Dict, user_id: str, client_name: str) -> Dict:
         """
         Execute relevant context search based on specific queries from the AI plan.
@@ -668,7 +702,15 @@ Provide rich context that helps understand them deeply, but keep it conversation
         context_strategy = plan.get("context_strategy", "targeted_search")
         
         if context_strategy == "comprehensive_analysis":
-            # COMPREHENSIVE ANALYSIS: Show detailed, comprehensive information
+            # LEVEL 4 - MAXIMUM DEPTH: Deep memory query with documents (Gemini 2.5 Pro)
+            deep_result = context_results.get('deep_comprehensive_result')
+            if deep_result and isinstance(deep_result, str) and len(deep_result.strip()) > 0:
+                # Deep memory query returned synthesized analysis
+                final_context = f"---\n[Jean Memory Context - Level 4 Deep Analysis with Documents]\n{deep_result}\n---"
+                logger.info(f"🎨 [Format] Using Level 4 deep analysis result: {len(final_context)} chars")
+                return final_context
+                
+            # Fallback to regular comprehensive analysis if deep query failed
             comprehensive_memories = context_results.get('comprehensive_memories', {})
             
             if comprehensive_memories:
