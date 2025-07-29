@@ -828,7 +828,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
             from app.utils.memory import get_memory_client
             
             # CRITICAL FIX: Set context variables in background task since they're lost
-            from app.mcp_server import user_id_var, client_name_var
+            from app.context import user_id_var, client_name_var
             user_token = user_id_var.set(user_id)
             client_token = client_name_var.set(client_name)
             
