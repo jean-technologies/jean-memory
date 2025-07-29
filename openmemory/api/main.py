@@ -151,6 +151,7 @@ app.add_middleware(
         "https://jeanmemory.com", # New custom domain
         "https://www.jeanmemory.com", # New custom domain with www
         "https://jean-memory-ui-virginia.onrender.com", # Render.com frontend URL (Virginia)
+        "https://jean-memory-ui-dev.onrender.com", # Development frontend URL
         "https://api.jeanmemory.com", # API domain used by some components
         "https://platform.openai.com", # OpenAI API Playground
     ],  
