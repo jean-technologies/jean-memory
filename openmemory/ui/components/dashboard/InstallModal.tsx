@@ -174,8 +174,8 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
       // Use HTTP v2 transport for Claude (50% faster)
       rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
     } else if (app.id === 'cursor') {
-      // Use original working SSE transport for Cursor
-      rawInstallCommand = `npx install-mcp "https://api.jeanmemory.com/mcp/cursor/sse/{user_id}" --client cursor`;
+      // Use HTTP v2 transport for Cursor (faster)
+      rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/cursor/{user_id}`;
     } else if (app.id === 'claude code') {
       // Use claude-code as client name (with hyphen, not space) and proper URL quoting
       rawInstallCommand = `npx install-mcp "${MCP_URL}/mcp/claude code/sse/{user_id}" --client claude-code`;

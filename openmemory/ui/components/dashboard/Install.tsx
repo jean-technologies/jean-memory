@@ -102,8 +102,8 @@ export const Install = () => {
       "args": [
         "-y", 
         "supergateway", 
-        "--sse", 
-        `${MCP_URL}/mcp/cursor/sse/${userId}`
+        "--stdio", 
+        `${MCP_URL}/mcp/v2/cursor/${userId}`
       ]
     };
     
@@ -115,7 +115,7 @@ export const Install = () => {
     let manualCommand;
     if (appKey === 'cursor') {
       const MCP_URL = "https://jean-memory-api-virginia.onrender.com";
-      manualCommand = `npx install-mcp "${MCP_URL}/mcp/cursor/sse/${userId}" --client cursor`;
+      manualCommand = `npx -y supergateway --stdio ${MCP_URL}/mcp/v2/cursor/${userId}`;
     } else {
       // Most clients use HTTP (Virginia direct), only specific clients need SSE (Cloudflare Worker)
       const needsSSE = ['vscode', 'chatgpt'].includes(appKey);
