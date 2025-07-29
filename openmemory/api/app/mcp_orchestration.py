@@ -262,7 +262,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
         user_message: str, 
         user_id: str, 
         client_name: str, 
-        is_new_conversation: bool
+        is_new_conversation: bool,
+        interaction_id: str = None
     ) -> str:
         """
         Standard orchestration using the existing AI planning and search approach.
@@ -297,7 +298,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 context_task = self._execute_relevant_context_search(plan, user_id, client_name)
 
             # Step 3: Handle memory saving
-            await self._handle_background_memory_saving_from_plan(plan, user_message, user_id, client_name)
+            await self._handle_background_memory_saving_from_plan(plan, user_message, user_id, client_name, interaction_id)
 
             # Step 4: Execute context retrieval
             context_exec_start_time = time.time()
@@ -363,7 +364,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
         plan: Dict, 
         user_message: str, 
         user_id: str, 
-        client_name: str
+        client_name: str,
+        interaction_id: str = None
     ):
         """Handle memory saving in background for standard orchestration"""
         try:
@@ -375,7 +377,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 logger.warning("AI plan wanted to save memory but content was missing. Saving user message as fallback.")
                 memorable_content = user_message
             
-            if memorable_content:
+            if memorable_content and interaction_id:
                 logger.info(f"💾 [Standard] Adding memory saving to background tasks for content: '{memorable_content[:50]}...'")
 
                 # Get background tasks context
@@ -385,13 +387,16 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 except (LookupError, ImportError):
                     background_tasks = None
                 
+                priority = plan.get("save_with_priority", False)
+
                 if background_tasks:
                     background_tasks.add_task(
-                        self._add_memory_background, 
+                        self._add_memory_with_deduplication, 
                         memorable_content, 
                         user_id, 
                         client_name,
-                        priority=plan.get("save_with_priority", False)
+                        interaction_id,
+                        priority
                     )
                     
                     # Handle understanding enhancement
@@ -405,9 +410,9 @@ Provide rich context that helps understand them deeply, but keep it conversation
                         )
                 else:
                     # Fallback: Add memory asynchronously
-                    asyncio.create_task(self._add_memory_background(
+                    asyncio.create_task(self._add_memory_with_deduplication(
                         memorable_content, user_id, client_name, 
-                        priority=plan.get("save_with_priority", False)
+                        interaction_id, priority=priority
                     ))
                     
                     if plan.get("understanding_enhancement"):
@@ -435,7 +440,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         """
         # Generate unique interaction ID for deduplication
         import hashlib
-        interaction_id = f"{user_id}_{int(time.time())}_{hashlib.md5(user_message.encode()).hexdigest()[:8]}"
+        interaction_id = f"{user_id}_{hashlib.md5(user_message.encode()).hexdigest()}"
         
         logger.info(f"🚀 [Jean Memory] Enhanced orchestration started for user {user_id}. Interaction: {interaction_id}. New convo: {is_new_conversation}")
         
@@ -473,7 +478,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
             else:
                 # CONTINUING CONVERSATION: Use standard orchestration (targeted context)
                 logger.info(f"🔄 [Standard] Using standard orchestration for CONTINUING conversation - user {user_id}")
-                return await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation)
+                return await self._standard_orchestration(user_message, user_id, client_name, is_new_conversation, interaction_id)
             
         except Exception as e:
             logger.error(f"❌ [Jean Memory] Orchestration failed: {e}", exc_info=True)
@@ -1128,10 +1133,10 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 if isinstance(result, Exception):
                     logger.error(f"Error with profile question '{question}': {result}")
                     continue
-                    profile_responses.append({
-                        "question": question,
+                profile_responses.append({
+                    "question": question,
                     "answer": result
-                    })
+                })
             
             return {
                 "profile_responses": profile_responses,
@@ -1665,23 +1670,26 @@ User Message: "what time is it?"
         client_name: str
     ):
         """
-        Runs a deep, AI-powered analysis in the background and saves the
-        synthesized result as a new, high-quality memory.
+        Runs a deep, AI-powered analysis in the background.
+        NOTE: This function should NOT save memories to avoid duplication with the main orchestration flow.
         """
         try:
             logger.info(f"🧠 [Async Analysis BG] Starting deep analysis for user {user_id} on message: '{user_message[:50]}...'")
             
-            # 1. Use the existing standard orchestration to get a deep analysis.
-            # We can reuse this logic as it already contains the AI planning.
-            # This call is now safely in the background, so the timeout is not an issue.
+            # Generate a unique interaction ID to prevent duplicate memory saves
+            import hashlib
+            interaction_id = f"{user_id}_{hashlib.md5(user_message.encode()).hexdigest()}"
+            
+            # Use standard orchestration but with interaction ID to prevent duplicate saves
             analysis_result = await self._standard_orchestration(
                 user_message=user_message,
                 user_id=user_id,
                 client_name=client_name,
-                is_new_conversation=False # Assume not new, as we want deep context
+                is_new_conversation=False,
+                interaction_id=interaction_id  # This prevents duplicate memory saves
             )
 
-            # 2. Analysis complete - no need to save as triage process handles memory saving
+            # Analysis complete - context provided without duplicate memory save
             if analysis_result and "Error" not in analysis_result:
                 logger.info(f"✅ [Async Analysis BG] Deep analysis completed for user {user_id}. Context provided without duplicate memory save.")
             else:
