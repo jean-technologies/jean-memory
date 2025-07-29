@@ -78,16 +78,19 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
             
             if narrative:
                 logger.info("✅ [New Conversation] Found cached narrative.")
-                return f"---\n[Your Life Context]\n{narrative}\n---"
+                narrative_with_context = f"---\n[Your Life Context]\n{narrative}\n---"
+                return orchestrator._append_system_directive(narrative_with_context)
             else:
                 logger.info("🧐 [New Conversation] No cached narrative found. Providing default welcome.")
                 # The background task will generate the narrative for the next time.
-                return "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
+                default_message = "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
+                return orchestrator._append_system_directive(default_message)
 
         # 2. Handle CONTINUING conversations where the client does NOT need context.
         if not needs_context:
             logger.info("✅ [Continuing Conversation] Context not required by client.")
-            return "Context is not required for this query. The user's message will be analyzed for important information in the background."
+            no_context_message = "Context is not required for this query. The user's message will be analyzed for important information in the background."
+            return orchestrator._append_system_directive(no_context_message)
 
         # 3. Handle CONTINUING conversations that DO need context.
         logger.info("🔍 [Continuing Conversation] Using standard orchestration to get context.")
