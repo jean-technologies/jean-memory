@@ -528,6 +528,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
             logger.info("No search queries specified by AI planner - using minimal fallback")
             return {}
         
+        # Set context variables for search tools
+        from app.context import user_id_var, client_name_var
+        user_id_var.set(user_id)
+        client_name_var.set("claude")  # Default since this method doesn't get client_name
+        
         # For new conversations, use large limits to leverage Gemini's massive token capacity
         # Let the AI decide what to search for, not hard-coded categories
         search_limit = 100  # Use Gemini's 1M+ token capacity for comprehensive understanding
@@ -553,6 +558,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
                         
             except (json.JSONDecodeError, TypeError):
                 logger.warning(f"Could not parse AI-guided search result for '{query}': {result}")
+        
+        # Debug logging
+        logger.info(f"📋 [Context Engineering] AI-guided primer collected {len(all_context)} context items")
+        if len(all_context) == 0:
+            logger.warning(f"📋 [Context Engineering] No context collected from queries: {search_queries}")
         
         # Return as unified context - let the formatting layer organize it intelligently
         return {"ai_guided_context": all_context}
@@ -782,7 +792,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 if mem_list:
                     context_parts.append(f"Relevant: {'; '.join(mem_list)}")
             elif ai_context:
-                context_parts.append(f"Relevant: {'; '.join(ai_context[:2])}")
+                # For continuing conversations, show more context for better responses
+                context_parts.append(f"Relevant: {'; '.join(ai_context[:25])}")
 
         if not context_parts:
             logger.warning(f"🎨 [Format] No context parts found! Strategy: {context_strategy}, Context keys: {list(context_results.keys())}")
