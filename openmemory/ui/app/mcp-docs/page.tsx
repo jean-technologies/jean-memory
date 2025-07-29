@@ -62,7 +62,7 @@ const MCPDocsPage = () => {
     return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
   }
 
-  const mcpUrl = `https://api.jeanmemory.com/mcp/claude/sse/${user.id}`;
+  const mcpUrl = `https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/${user.id}`;
   const restApiUrl = `https://api.jeanmemory.com/api/v1/mcp/search_memory`;
 
   return (

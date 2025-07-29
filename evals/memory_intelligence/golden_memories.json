@@ -1,0 +1,505 @@
+{
+  "dataset_info": {
+    "name": "Jean Memory Golden Triage Dataset",
+    "version": "1.0",
+    "description": "Curated dataset of user messages with expert-labeled remember/skip decisions",
+    "created_by": "Jean Memory Team",
+    "total_messages": 50,
+    "distribution": {
+      "remember": 25,
+      "skip": 25
+    }
+  },
+  "memories": [
+    {
+      "message_id": "prof_001",
+      "user_message": "I'm a software engineer at Google working on search algorithms",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "HIGH",
+      "expected_content": "User is a software engineer at Google, works on search algorithms",
+      "reasoning": "Clear professional information that defines user's role and expertise",
+      "tags": ["professional", "factual", "current_job"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "prof_002", 
+      "user_message": "My name is Sarah Chen and I'm a product manager at Stripe",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "HIGH",
+      "expected_content": "User's name is Sarah Chen, works as product manager at Stripe",
+      "reasoning": "Personal identification and professional role information",
+      "tags": ["personal", "professional", "name", "current_job"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "personal_001",
+      "user_message": "I live in San Francisco and I'm originally from Chicago",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User lives in San Francisco, originally from Chicago",
+      "reasoning": "Geographic information about current and past residence",
+      "tags": ["personal", "location", "background"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "personal_002",
+      "user_message": "I have a CS degree from Stanford and graduated in 2018",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User has Computer Science degree from Stanford, graduated 2018",
+      "reasoning": "Educational background information",
+      "tags": ["personal", "education", "factual"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "pref_001",
+      "user_message": "I strongly prefer Python over JavaScript for backend development",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User prefers Python over JavaScript for backend development",
+      "reasoning": "Clear technical preference with specific context",
+      "tags": ["preference", "technical", "programming"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "pref_002",
+      "user_message": "I like direct communication and appreciate concise explanations",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User prefers direct communication and concise explanations",
+      "reasoning": "Communication style preference",
+      "tags": ["preference", "communication", "style"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "goals_001",
+      "user_message": "My goal is to start my own AI company within the next 3 years",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "HIGH",
+      "expected_content": "User's goal is to start AI company within 3 years",
+      "reasoning": "Important life goal with specific timeline",
+      "tags": ["goals", "future", "entrepreneurship", "ai"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "goals_002",  
+      "user_message": "I'm learning machine learning to advance my career",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User is learning machine learning for career advancement",
+      "reasoning": "Current learning activity with career motivation",
+      "tags": ["goals", "learning", "career", "ml"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "explicit_001",
+      "user_message": "Please remember that I prefer to receive detailed code reviews",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "HIGH",
+      "expected_content": "User prefers detailed code reviews",
+      "reasoning": "Explicit request to remember with specific preference",
+      "tags": ["explicit", "preference", "development"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "explicit_002",
+      "user_message": "Important: I have a shellfish allergy, please keep this in mind",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "HIGH",
+      "expected_content": "User has shellfish allergy (important medical info)",
+      "reasoning": "Critical medical information explicitly marked as important",
+      "tags": ["explicit", "medical", "allergy", "safety"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "project_001",
+      "user_message": "I'm currently building a React app for managing personal finances",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User is building React app for personal finance management",
+      "reasoning": "Current project information with technical and domain context",
+      "tags": ["project", "current", "react", "finance"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "project_002",
+      "user_message": "I just launched my side project - a mobile app for habit tracking",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User launched mobile app for habit tracking as side project",
+      "reasoning": "Recent achievement and project completion",
+      "tags": ["project", "achievement", "mobile", "habits"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "interests_001",
+      "user_message": "I'm really passionate about sustainable technology and green energy",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User is passionate about sustainable technology and green energy",
+      "reasoning": "Clear statement of interests and passions",
+      "tags": ["interests", "passion", "sustainability", "energy"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "interests_002",
+      "user_message": "I enjoy hiking and spend most weekends exploring Bay Area trails",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User enjoys hiking Bay Area trails on weekends",
+      "reasoning": "Personal hobby and regular activity",
+      "tags": ["interests", "hobby", "hiking", "weekend"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_001",
+      "user_message": "What time is it?",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Simple factual question with no personal information",
+      "tags": ["question", "factual", "temporal"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_002",
+      "user_message": "How do I install Python on Windows?",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Technical help request without personal context",
+      "tags": ["question", "technical", "help"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_003",
+      "user_message": "Thanks for the help!",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Simple acknowledgment/gratitude without new information",
+      "tags": ["acknowledgment", "gratitude"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_004",
+      "user_message": "That makes sense, got it",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Simple confirmation without new personal information",
+      "tags": ["confirmation", "understanding"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_005",
+      "user_message": "What's the weather like today?",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Temporary situational query, not memorable",
+      "tags": ["question", "weather", "temporal"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_006",
+      "user_message": "Can you explain quantum physics?",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "General knowledge request without personal context",
+      "tags": ["question", "science", "general_knowledge"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_007",
+      "user_message": "Yes, exactly",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Simple agreement without standalone meaning",
+      "tags": ["agreement", "confirmation"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "clear_skip_008",
+      "user_message": "I don't understand this error message",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Problem statement without specific details or personal context",
+      "tags": ["problem", "help_request", "technical"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "ambiguous_001",
+      "user_message": "I'm working on a React project",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User is working on a React project",
+      "reasoning": "Could be current work/project, lean towards remembering",
+      "tags": ["ambiguous", "project", "react"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "ambiguous_002",
+      "user_message": "I really like this approach",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Too vague without context of what 'this approach' refers to",
+      "tags": ["ambiguous", "opinion", "vague"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "ambiguous_003",
+      "user_message": "My meeting went well today",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Temporary event without lasting significance or details",
+      "tags": ["ambiguous", "temporal", "work"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "ambiguous_004",
+      "user_message": "I've been thinking about switching to a Mac",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User is considering switching to Mac",
+      "reasoning": "Potential future decision/preference change worth tracking",
+      "tags": ["ambiguous", "preference", "technology", "consideration"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "ambiguous_005",
+      "user_message": "This coffee shop has great wifi",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Situational observation without strong personal significance",
+      "tags": ["ambiguous", "observation", "location"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "context_dependent_001",
+      "user_message": "Yes, I agree with that completely",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Agreement without knowing what is being agreed with",
+      "tags": ["context_dependent", "agreement"],
+      "difficulty": "hard"
+    },
+    {
+      "message_id": "context_dependent_002",
+      "user_message": "That's exactly my experience too",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Reference to shared experience without context",
+      "tags": ["context_dependent", "experience"],
+      "difficulty": "hard"
+    },
+    {
+      "message_id": "context_dependent_003",
+      "user_message": "I definitely prefer the second option",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Preference without knowing what options are being compared",
+      "tags": ["context_dependent", "preference", "choice"],
+      "difficulty": "hard"
+    },
+    {
+      "message_id": "subtle_remember_001",
+      "user_message": "I usually work late on Tuesdays and Thursdays",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User typically works late on Tuesdays and Thursdays",
+      "reasoning": "Work pattern/schedule that could be useful for context",
+      "tags": ["subtle", "schedule", "work_pattern"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "subtle_remember_002",
+      "user_message": "I tend to be more productive in the morning",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User is more productive in the morning",
+      "reasoning": "Personal productivity pattern/preference",
+      "tags": ["subtle", "productivity", "preference", "timing"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "subtle_remember_003",
+      "user_message": "I've been managing a team of 5 engineers for the past year",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User manages team of 5 engineers for past year",
+      "reasoning": "Professional responsibility and team size",
+      "tags": ["subtle", "management", "team_size", "experience"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "nuanced_001",
+      "user_message": "I'm feeling overwhelmed with my current workload",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE",
+      "expected_content": "",
+      "reasoning": "Temporary emotional state, not a lasting characteristic",
+      "tags": ["nuanced", "emotion", "temporary", "work"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "nuanced_002",
+      "user_message": "I've always struggled with public speaking",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User has difficulty with public speaking",
+      "reasoning": "Ongoing personal challenge that could be relevant",
+      "tags": ["nuanced", "challenge", "skill", "personal"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "nuanced_003",
+      "user_message": "I'm considering taking a sabbatical next year",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User is considering sabbatical next year",
+      "reasoning": "Significant potential life/career change worth tracking",
+      "tags": ["nuanced", "future_plans", "career", "sabbatical"],  
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "edge_case_001",  
+      "user_message": "I was born in 1990",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User was born in 1990",
+      "reasoning": "Factual personal information (age/birth year)",
+      "tags": ["edge_case", "personal", "age", "factual"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "edge_case_002",
+      "user_message": "I broke my leg last year",
+      "expected_decision": "SKIP",
+      "expected_priority": "NONE", 
+      "expected_content": "",
+      "reasoning": "Past medical event, not ongoing condition",
+      "tags": ["edge_case", "medical", "past_event"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "edge_case_003",
+      "user_message": "I'm vegetarian",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User is vegetarian",
+      "reasoning": "Dietary restriction/preference that affects recommendations",
+      "tags": ["edge_case", "dietary", "lifestyle"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "technical_001",
+      "user_message": "I'm experienced with Docker and Kubernetes",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User has experience with Docker and Kubernetes",
+      "reasoning": "Technical skill/experience information",
+      "tags": ["technical", "skills", "devops"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "technical_002",
+      "user_message": "I prefer using VS Code over other editors",
+      "expected_decision": "REMEMBER", 
+      "expected_priority": "LOW",
+      "expected_content": "User prefers VS Code over other editors",
+      "reasoning": "Tool preference that could affect recommendations",
+      "tags": ["technical", "preference", "tools"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "relationship_001",
+      "user_message": "My wife is also a software engineer",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User's wife is also a software engineer",
+      "reasoning": "Family/relationship information with professional context",
+      "tags": ["relationship", "family", "professional"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "relationship_002", 
+      "user_message": "I have two kids, ages 8 and 12",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User has two children, ages 8 and 12",
+      "reasoning": "Family composition information",
+      "tags": ["relationship", "family", "children"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "values_001",
+      "user_message": "I strongly believe in work-life balance",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM", 
+      "expected_content": "User values work-life balance",
+      "reasoning": "Core value/principle that guides decisions",
+      "tags": ["values", "work_life_balance", "principles"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "values_002",
+      "user_message": "I think diversity in tech is really important",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User believes diversity in tech is important",
+      "reasoning": "Personal value/opinion on important topic",
+      "tags": ["values", "diversity", "technology"],
+      "difficulty": "medium"
+    },
+    {
+      "message_id": "learning_001",
+      "user_message": "I'm taking an online course on machine learning",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User is taking online ML course",
+      "reasoning": "Current learning activity with specific subject",
+      "tags": ["learning", "course", "ml"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "learning_002",
+      "user_message": "I want to learn more about system design",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User wants to learn about system design", 
+      "reasoning": "Learning goal/interest for future development",
+      "tags": ["learning", "goals", "system_design"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "constraint_001",
+      "user_message": "I can't work on weekends due to family commitments",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "MEDIUM",
+      "expected_content": "User unavailable weekends due to family commitments",
+      "reasoning": "Schedule constraint that affects availability",
+      "tags": ["constraint", "schedule", "family"],
+      "difficulty": "easy"
+    },
+    {
+      "message_id": "constraint_002",
+      "user_message": "I have a limited budget for tools and subscriptions",
+      "expected_decision": "REMEMBER",
+      "expected_priority": "LOW",
+      "expected_content": "User has limited budget for tools/subscriptions",
+      "reasoning": "Financial constraint affecting recommendations",
+      "tags": ["constraint", "budget", "financial"],
+      "difficulty": "medium"
+    }
+  ]
+}

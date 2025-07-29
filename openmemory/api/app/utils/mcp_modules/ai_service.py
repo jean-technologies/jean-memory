@@ -25,30 +25,47 @@ class MCPAIService:
             self._gemini_service = GeminiService()
         return self._gemini_service
     
-    async def create_context_plan(self, user_message: str, is_new_conversation: bool) -> Dict:
+    async def create_context_plan(self, user_message: str) -> Dict:
         """
-        Uses AI to create a comprehensive context engineering plan.
+        Uses AI to create a comprehensive context engineering plan for continuing conversations.
         This is the core "brain" of the orchestrator - implementing top-down context theory.
         """
         gemini = self._get_gemini()
         
-        # OPTIMIZED: Much more focused, concise prompt for faster processing
-        strategy = 'deep_understanding' if is_new_conversation else 'relevant_context'
-        should_save = str(is_new_conversation or 'remember' in user_message.lower()).lower()
+        # Let the AI determine the appropriate strategy based on the message content
         # Safely handle user message in JSON by escaping quotes
         safe_message = user_message.replace('"', '\\"').replace('\n', '\\n')
-        memorable_content = f'"{safe_message}"' if (is_new_conversation or 'remember' in user_message.lower()) else 'null'
         
-        prompt = f"""Analyze this message for context engineering. Respond with JSON only:
+        prompt = f"""You are the intelligent context orchestrator for a personal memory system. A user has sent this message, and you've been called because there is likely relevant context about this user's life stored in their memory database.
 
-Message: "{user_message}"
-New conversation: {is_new_conversation}
+USER MESSAGE: "{safe_message}"
 
+Your role is to determine the appropriate depth of memory context retrieval needed for AI inference. Think about what level of personal context would be most helpful for understanding and responding to this user intelligently.
+
+Choose the optimal context strategy:
+
+"relevant_context" (Level 2) - Focused memory search
+When the query can be answered with specific, targeted memories. Best for direct questions about known facts, recent events, or specific topics the user has mentioned before.
+
+"deep_understanding" (Level 3) - Broader memory analysis with AI synthesis  
+When the query requires understanding patterns, relationships, or broader context about the user's life, work, or preferences. Use when you need to synthesize multiple aspects of who they are.
+
+"comprehensive_analysis" (Level 4) - Maximum depth with documents and extensive memory
+When the query touches on fundamental aspects of the user's identity, values, beliefs, or requires research-level depth. Use for questions about who they are, what they believe, complex reasoning about their background, or comprehensive exploration of topics.
+
+Consider:
+- What does the user really want to know?
+- How much personal context is needed to respond thoughtfully?
+- Is this about surface facts or deeper understanding?
+
+Also determine if this message contains content worth remembering for future context.
+
+Respond with JSON only:
 {{
-  "context_strategy": "{strategy}",
-  "search_queries": ["1-3 search terms"],
-  "should_save_memory": {should_save},
-  "memorable_content": {memorable_content}
+  "context_strategy": "choose one strategy above",
+  "search_queries": ["1-3 specific search terms for memory retrieval"],
+  "should_save_memory": true/false,
+  "memorable_content": "key content to remember for future context, or null"
 }}"""
 
         try:
@@ -66,27 +83,35 @@ New conversation: {is_new_conversation}
                 return plan
             else:
                 logger.warning("No JSON found in AI response, using fallback")
-                return self._get_fallback_plan(user_message, is_new_conversation)
+                return self._get_fallback_plan(user_message)
                 
         except asyncio.TimeoutError:
             logger.warning(f"⏰ AI planner timed out after 12s, using fallback")
-            return self._get_fallback_plan(user_message, is_new_conversation)
+            return self._get_fallback_plan(user_message)
         except Exception as e:
             logger.error(f"❌ Error creating AI context plan: {e}. Defaulting to simple search.", exc_info=True)
-            return self._get_fallback_plan(user_message, is_new_conversation)
+            return self._get_fallback_plan(user_message)
     
-    def _get_fallback_plan(self, user_message: str, is_new_conversation: bool) -> Dict:
-        """Fast fallback when AI planning fails or times out"""
+    def _get_fallback_plan(self, user_message: str) -> Dict:
+        """Fast fallback when AI planning fails or times out - for continuing conversations only"""
         
-        # Detect if user wants deeper analysis
-        deep_keywords = ['analyze', 'explain', 'understand', 'learn', 'insights', 'patterns']
-        wants_deep_analysis = any(keyword in user_message.lower() for keyword in deep_keywords)
+        # Simple heuristic-based fallback without keywords
+        # Longer, more complex messages likely need deeper context
+        message_length = len(user_message)
+        question_complexity = '?' in user_message and len(user_message.split()) > 5
         
+        if message_length > 100 or question_complexity:
+            strategy = "deep_understanding"  # Default to medium depth for complex queries
+        elif message_length > 20:
+            strategy = "relevant_context"    # Basic search for simple queries
+        else:
+            strategy = "relevant_context"    # Short messages get basic search
+            
         return {
-            "context_strategy": "deep_understanding" if is_new_conversation or wants_deep_analysis else "relevant_context",
+            "context_strategy": strategy,
             "search_queries": [user_message[:50]],  # Simple search using first 50 chars
-            "should_save_memory": is_new_conversation or 'remember' in user_message.lower(),
-            "memorable_content": user_message if is_new_conversation or 'remember' in user_message.lower() else None
+            "should_save_memory": len(user_message) > 30,  # Save substantial messages  
+            "memorable_content": user_message if len(user_message) > 30 else None
         }
     
     async def analyze_memory_content(self, user_message: str) -> Dict:
