@@ -251,17 +251,17 @@ Provide rich context that helps understand them deeply, but keep it conversation
             context_task = None
             if context_strategy == "comprehensive_analysis":
                 logger.info("🔬 [Standard] Executing comprehensive analysis.")
-                context_task = self._execute_comprehensive_analysis(plan, user_id)
+                context_task = self._execute_comprehensive_analysis(plan, user_id, client_name)
             elif context_strategy == "deep_understanding":
                 logger.info("🔥 [Standard] Executing deep understanding context primer.")
                 context_task = self._get_deep_understanding_primer(plan, user_id)
             elif context_strategy == "relevant_context" and plan.get("search_queries"):
                 logger.info("💬 [Standard] Executing relevant context search.")
-                context_task = self._execute_relevant_context_search(plan, user_id)
+                context_task = self._execute_relevant_context_search(plan, user_id, client_name)
             else:
                 # If no context strategy specified, create a no-op task
                 logger.info("📝 [Standard] No specific context strategy, using basic search.")
-                context_task = self._execute_relevant_context_search(plan, user_id)
+                context_task = self._execute_relevant_context_search(plan, user_id, client_name)
 
             # Step 3: Handle memory saving
             await self._handle_background_memory_saving_from_plan(plan, user_message, user_id, client_name)
@@ -518,7 +518,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         # Return as unified context - let the formatting layer organize it intelligently
         return {"ai_guided_context": all_context}
 
-    async def _execute_comprehensive_analysis(self, plan: Dict, user_id: str) -> Dict:
+    async def _execute_comprehensive_analysis(self, plan: Dict, user_id: str, client_name: str) -> Dict:
         """
         Execute comprehensive analysis for deeper queries like "go much deeper".
         This provides immediate detailed information rather than background processing.
@@ -530,6 +530,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
         
         # Use balanced limits for comprehensive analysis with good performance  
         comprehensive_limit = 15
+        
+        # Set context variables for search tools
+        from app.context import user_id_var, client_name_var
+        user_id_var.set(user_id)
+        client_name_var.set(client_name)
         
         # Execute comprehensive searches
         tasks = [self._get_tools()['search_memory'](query=query, limit=comprehensive_limit) for query in search_queries]
@@ -556,7 +561,7 @@ Provide rich context that helps understand them deeply, but keep it conversation
         
         return {"comprehensive_memories": all_memories}
 
-    async def _execute_relevant_context_search(self, plan: Dict, user_id: str) -> Dict:
+    async def _execute_relevant_context_search(self, plan: Dict, user_id: str, client_name: str) -> Dict:
         """
         Execute relevant context search based on specific queries from the AI plan.
         This is for continuing conversations with relevant context needs.
@@ -564,6 +569,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
         search_queries = plan.get("search_queries", [])
         if not search_queries:
             return {}
+
+        # Set context variables for search tools
+        from app.context import user_id_var, client_name_var
+        user_id_var.set(user_id)
+        client_name_var.set(client_name)
 
         tasks = [self._get_tools()['search_memory'](query=q, limit=12) for q in search_queries]
         results = await asyncio.gather(*tasks, return_exceptions=True)
