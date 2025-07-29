@@ -6,7 +6,7 @@ services:
   - type: web
     name: jean-memory-api-dev
     runtime: python
-    repo: https://github.com/jonathan-politzki/your-memory
+    repo: https://github.com/jean-technologies/jean-memory
     branch: dev  # Deploy from dev branch instead of main
     plan: starter
     region: virginia
@@ -137,7 +137,7 @@ services:
   - type: web
     name: jean-memory-ui-dev
     runtime: node
-    repo: https://github.com/jonathan-politzki/your-memory
+    repo: https://github.com/jean-technologies/jean-memory
     branch: dev  # Deploy from dev branch instead of main
     plan: starter
     region: virginia
@@ -178,7 +178,7 @@ services:
   - type: cron
     name: narrative-backfill-dev
     runtime: python
-    repo: https://github.com/jonathan-politzki/your-memory
+    repo: https://github.com/jean-technologies/jean-memory
     branch: dev  # Deploy from dev branch instead of main
     plan: starter
     region: virginia
