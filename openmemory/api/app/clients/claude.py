@@ -68,7 +68,9 @@ class ClaudeProfile(BaseClientProfile):
             agent_id = session_info.get('agent_id', 'unknown')
             
             # Planning tools (available to planner agent only)
+            logger.info(f"🔧 CLAUDE PROFILE DEBUG - Agent ID: '{agent_id}', Session Info: {session_info}")
             if agent_id == 'planner':
+                logger.info("🎯 Adding planner-specific coordination tools")
                 tools.extend([
                     {
                         "name": "analyze_task_conflicts",
@@ -119,6 +121,7 @@ class ClaudeProfile(BaseClientProfile):
                 ])
             
             # Execution coordination tools (available to all agents including planner)
+            logger.info("🛠️ Adding execution coordination tools (available to all agents)")
             tools.extend([
                 {
                     "name": "claim_file_lock",
