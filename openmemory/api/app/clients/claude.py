@@ -63,11 +63,151 @@ class ClaudeProfile(BaseClientProfile):
             }
         ]
 
+        # Add coordination tools for multi-agent sessions
+        if is_multi_agent:
+            agent_id = session_info.get('agent_id', 'unknown')
+            
+            # Planning tools (available to planner agent only)
+            if agent_id == 'planner':
+                tools.extend([
+                    {
+                        "name": "analyze_task_conflicts",
+                        "description": "🎯 PLANNER ONLY: Analyze task conflicts and file dependencies for optimal 2-5 agent distribution. Determines file collision risks and creates scalable agent assignment strategy.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "tasks": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "List of development tasks to analyze for conflicts"
+                                },
+                                "project_files": {
+                                    "type": "array", 
+                                    "items": {"type": "string"},
+                                    "description": "List of file paths that will be modified"
+                                },
+                                "complexity_level": {
+                                    "type": "string",
+                                    "enum": ["simple", "moderate", "complex"],
+                                    "description": "Project complexity to determine optimal agent count",
+                                    "default": "moderate"
+                                }
+                            },
+                            "required": ["tasks", "project_files"]
+                        }
+                    },
+                    {
+                        "name": "create_task_distribution",
+                        "description": "🎯 PLANNER ONLY: Generate terminal-specific prompts and coordination setup for 2-5 implementer agents based on conflict analysis.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "analysis_result": {
+                                    "type": "object",
+                                    "description": "Result from analyze_task_conflicts tool"
+                                },
+                                "preferred_agent_count": {
+                                    "type": "integer",
+                                    "minimum": 2,
+                                    "maximum": 5,
+                                    "description": "Preferred number of implementation agents (2-5)"
+                                }
+                            },
+                            "required": ["analysis_result"]
+                        }
+                    }
+                ])
+            
+            # Execution coordination tools (available to all agents including planner)
+            tools.extend([
+                {
+                    "name": "claim_file_lock",
+                    "description": "🔒 COORDINATION: Create cross-session file locks via database for scalable multi-agent coordination. Prevents file conflicts across 2-5 terminals.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "file_paths": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of file paths to lock for exclusive access"
+                            },
+                            "operation": {
+                                "type": "string",
+                                "enum": ["read", "write", "delete"],
+                                "description": "Type of operation requiring the lock",
+                                "default": "write"
+                            },
+                            "duration_minutes": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 60,
+                                "description": "Lock duration in minutes (auto-expires)",
+                                "default": 15
+                            }
+                        },
+                        "required": ["file_paths"]
+                    }
+                },
+                {
+                    "name": "sync_progress",
+                    "description": "📡 COORDINATION: Broadcast progress updates across all terminals in session. Enables real-time status sync for 2-5 agent coordination.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "task_id": {
+                                "type": "string",
+                                "description": "Unique identifier for the task being updated"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": ["started", "in_progress", "completed", "failed", "blocked"],
+                                "description": "Current status of the task"
+                            },
+                            "progress_percentage": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100,
+                                "description": "Progress percentage (0-100)"
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "Optional status message or details"
+                            },
+                            "affected_files": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Files modified in this update"
+                            }
+                        },
+                        "required": ["task_id", "status"]
+                    }
+                },
+                {
+                    "name": "check_agent_status",
+                    "description": "👥 COORDINATION: Check status of all other agents in the same session. Provides real-time visibility across 2-5 terminals.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "include_inactive": {
+                                "type": "boolean",
+                                "description": "Include agents that haven't been active recently",
+                                "default": false
+                            }
+                        }
+                    }
+                }
+            ])
+
         # Add annotations only for newer protocol versions
         if include_annotations:
             annotations_map = {
                 "jean_memory": {"readOnly": False, "sensitive": True, "destructive": False, "intelligent": True},
                 "store_document": {"readOnly": False, "sensitive": True, "destructive": False},
+                "analyze_task_conflicts": {"readOnly": True, "sensitive": False, "destructive": False, "intelligent": True},
+                "create_task_distribution": {"readOnly": False, "sensitive": False, "destructive": False, "intelligent": True},
+                "claim_file_lock": {"readOnly": False, "sensitive": False, "destructive": False},
+                "sync_progress": {"readOnly": False, "sensitive": False, "destructive": False},
+                "check_agent_status": {"readOnly": True, "sensitive": False, "destructive": False},
             }
             for tool in tools:
                 if tool["name"] in annotations_map:

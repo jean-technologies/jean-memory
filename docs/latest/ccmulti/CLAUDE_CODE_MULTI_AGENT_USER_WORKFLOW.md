@@ -9,6 +9,15 @@
 
 ## Proposed Solution: Coordinated Multi-Agent Workflow
 
+### Multi-Agent vs Single-Agent Mode
+
+**Single-Agent Mode (Existing)**: Standard Jean Memory MCP connection provides individual Claude Code sessions with memory and document tools.
+
+**Multi-Agent Mode (New)**: Coordinated workflow with 2-5 specialized agents working together on complex projects:
+- **Agent Scale**: Flexible 2-5 agent architecture based on project complexity
+- **Coordination**: Cross-session file locking, progress tracking, and conflict prevention
+- **Use Cases**: Complex multi-component features, large refactoring projects, parallel development streams
+
 ### User Workflow Overview
 
 ```
@@ -45,13 +54,19 @@
 - **Human Oversight**: User reviews and approves the distribution plan
 
 #### **Phase 4: Coordinated Execution** (Duration varies)
-- **Multiple Claude Code Agents**: Each executes assigned tasks simultaneously
-- **Real-time Coordination**: Agents equipped with shared memory tools:
-  - `@check_agent_status` - See what other agents are working on
-  - `@claim_file_lock` - Prevent file conflicts  
-  - `@sync_progress` - Share completion status
-- **Collision Prevention**: Before every file edit, agents check for conflicts
-- **Human-in-the-Loop**: Each agent works with user oversight as normal
+- **Scalable Multi-Agent Architecture**: 
+  - **Minimum**: 2 agents (1 planner + 1 implementer) for basic coordination
+  - **Optimal**: 3 agents (1 planner + 2 implementers) for standard complex projects
+  - **Maximum**: 5 agents (1 planner + 4 implementers) for large-scale feature development
+- **Multiple Claude Code Sessions**: Each agent runs in separate terminal/process for maximum context isolation  
+- **True Parallel Processing**: Agents execute tasks simultaneously with full context windows each
+- **Cross-Session Coordination**: Agents equipped with coordination tools:
+  - `@check_agent_status` - See what other agents are working on across terminals
+  - `@claim_file_lock` - Prevent file conflicts between separate sessions
+  - `@sync_progress` - Share completion status across processes
+- **Process-Level Isolation**: Each agent has independent context, monitoring, and debugging
+- **Collision Prevention**: Before every file edit, agents coordinate across terminals to prevent conflicts
+- **Human-in-the-Loop**: Each agent works with user oversight in dedicated terminals
 
 #### **Phase 5: Completion & Sync** (5 minutes)
 - **Progress Tracking**: Real-time dashboard shows all agent progress
@@ -60,20 +75,23 @@
 
 ### Key User Benefits
 
-1. **🚀 Parallel Development**: Multiple complex tasks executed simultaneously
-2. **🛡️ Zero Conflicts**: Intelligent coordination prevents file collisions  
-3. **📊 Visibility**: Real-time progress tracking across all agents
+1. **🚀 Scalable Parallel Development**: 2-5 agent architecture enables flexible task distribution based on project complexity
+2. **🛡️ Zero Conflicts**: Cross-session coordination prevents file collisions between terminals
+3. **📊 Multi-Terminal Visibility**: Real-time progress tracking across dedicated terminals per agent (2-5 terminals)
 4. **🧠 Smart Planning**: Automatic dependency analysis saves planning time
-5. **👥 Familiar Interface**: Each agent works like normal Claude Code session
+5. **👥 Familiar Interface**: Each agent works like normal Claude Code session with full context window
+6. **🔍 Isolated Monitoring**: Each terminal provides dedicated monitoring and debugging for its agent
+7. **📈 Context Scaling**: Each agent gets full context window instead of sharing limited space
 
 ### Technical Implementation (User-Transparent)
 
-- **Native Subagents**: Claude Code's built-in multi-agent system provides instant context isolation and task delegation
-- **Hooks-Based Coordination**: Deterministic conflict prevention and change tracking via Claude Code's hooks system  
-- **Performance**: Instant agent switching and < 1ms coordination operations (vs 2-6s with current system)
-- **Context Isolation**: Native per-subagent contexts separate from user's long-term Jean Memory
-- **Single Connection**: All multi-agent functionality through one Jean Memory MCP connection
-- **Zero Learning Curve**: Uses Claude Code's intended /agents and /hooks commands
+- **Multiple Claude Code Sessions**: Each agent runs as separate process with dedicated terminal and full context window
+- **Cross-Session Coordination**: MCP tools and hooks coordinate between separate Claude Code instances
+- **Performance**: Process-level parallel execution with < 1ms coordination operations (vs 2-6s with current system)
+- **True Context Isolation**: Each session has independent context window and memory space
+- **Session-Aware MCP**: Single Jean Memory backend coordinates multiple Claude Code connections
+- **Process Monitoring**: Each terminal provides isolated debugging and progress tracking
+- **Context Window Scaling**: Total effective context = (context_per_agent × N agents) where N = 2-5 agents
 
 ### Success Metrics
 
@@ -82,6 +100,32 @@
 - **User Satisfaction**: Seamless coordination without complexity overhead
 
 This workflow transforms chaotic multi-session development into an orchestrated, collision-free experience while maintaining the familiar Claude Code interface users already know.
+
+### Agent Scaling Guidelines
+
+**2 Agents** (Minimum):
+- Simple multi-step features
+- Basic coordination needs
+- 1 planner + 1 implementer
+- Example: Add authentication to existing app
+
+**3 Agents** (Optimal):
+- Standard complex features
+- Moderate file interdependencies  
+- 1 planner + 2 implementers
+- Example: Build user dashboard with profile, settings, and notifications
+
+**4-5 Agents** (Maximum):
+- Large-scale feature development
+- Complex system integrations
+- 1 planner + 3-4 implementers
+- Example: E-commerce system with cart, payments, inventory, and admin panels
+
+**Technical Considerations**:
+- Database coordination scales linearly with agent count
+- Human oversight becomes challenging beyond 5 agents
+- Coordination overhead increases with more agents
+- Optimal performance maintained through 5 agents with < 50ms coordination
 
 ### Implementation Insights from Claude Code MCP Integration
 
