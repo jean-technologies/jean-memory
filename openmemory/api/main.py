@@ -25,6 +25,8 @@ from app.settings import config
 from app.db_init import init_database, check_database_health
 from app.routers.agent_mcp import agent_mcp_router
 from app.routers.local_auth import router as local_auth_router
+from app.oauth import oauth_router
+from app.routers.mcp_oauth import router as mcp_oauth_router
 import asyncio
 
 # Configure logging
@@ -312,6 +314,18 @@ app.include_router(agent_mcp_router) # New secure agent endpoint
 app.include_router(migration_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])  # Migration status endpoint
 app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - verified by signature)
 app.include_router(claude_oauth_router)  # Claude OAuth integration (isolated and additive)
+
+# OAuth 2.0 endpoints
+app.include_router(oauth_router)  # OAuth server at /oauth/*
+
+# New unified MCP endpoint with OAuth (no user ID in URL!)
+app.include_router(mcp_oauth_router)  # Universal MCP at /mcp
+
+# OAuth discovery at root level for Claude
+@app.get("/.well-known/oauth-authorization-server")
+async def oauth_discovery_root():
+    """OAuth discovery endpoint at root level"""
+    return await oauth_router.routes[0].endpoint()
 
 
 
