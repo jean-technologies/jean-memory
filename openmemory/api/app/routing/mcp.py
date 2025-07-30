@@ -20,6 +20,15 @@ SERVICE_NAME = os.getenv('RENDER_SERVICE_NAME', 'unknown-service')
 RENDER_REGION = os.getenv('RENDER_REGION', 'unknown-region')
 logger.warning(f"🔧 MCP Router initialized on service: {SERVICE_NAME} in region: {RENDER_REGION}")
 
+# Log route registration for debugging
+logger.warning(f"🛣️ MCP Router registering routes with prefix: {mcp_router.prefix}")
+logger.warning(f"🛣️ Available routes will be:")
+logger.warning(f"   - POST /mcp/v2/{{client_name}}/{{user_id}}")
+logger.warning(f"   - POST /mcp/messages/")
+logger.warning(f"   - GET /mcp/{{client_name}}/sse/{{user_id}}")
+logger.warning(f"   - POST /mcp/{{client_name}}/messages/{{user_id}}")
+logger.warning(f"🛣️ Multi-agent virtual user ID pattern: user__session__session_id__agent_id")
+
 mcp_router = APIRouter(prefix="/mcp")
 
 # Global dictionary to manage SSE connections
@@ -350,6 +359,7 @@ async def handle_http_v2_transport(client_name: str, user_id: str, request: Requ
     - Transport auto-detection
     - Multi-terminal session coordination via virtual user ID
     """
+    logger.warning(f"🎯 MCP v2 ROUTE HIT: client={client_name}, user_id={user_id}")
     try:
         # Parse virtual user ID for multi-terminal session detection
         session_info = parse_virtual_user_id(user_id)
