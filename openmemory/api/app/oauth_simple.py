@@ -507,7 +507,7 @@ async def authorize(
         # Get base URL from environment variable
         base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
         
-        login_url = f"https://app.jeanmemory.com/auth?return_url={base_url}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
+        login_url = f"https://jeanmemory.com/auth?return_url={base_url}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
         
         html = f"""
         <!DOCTYPE html>
