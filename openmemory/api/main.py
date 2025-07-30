@@ -266,6 +266,45 @@ async def download_claude_extension_http():
     """Serve the Jean Memory Claude Desktop Extension file with HTTP transport"""
     return await download_claude_extension(transport="http")
 
+@app.get("/mcp/claude-code/package")
+async def download_claude_code_mcp_package():
+    """Serve the Jean Memory MCP Server package for Claude Code"""
+    import tempfile
+    import tarfile
+    import shutil
+    from pathlib import Path
+    
+    # Create a temporary tar.gz file with the MCP server and dependencies
+    temp_dir = tempfile.mkdtemp()
+    try:
+        # Copy MCP server files from local API directory
+        api_dir = Path(__file__).parent
+        server_file = api_dir / "jean-memory-mcp-server.js"
+        package_file = api_dir / "mcp-package.json"
+        
+        if not server_file.exists():
+            raise HTTPException(status_code=404, detail="MCP server file not found")
+        
+        # Create tar.gz with the necessary files
+        tar_path = Path(temp_dir) / "jean-memory-mcp.tar.gz"
+        with tarfile.open(tar_path, 'w:gz') as tar:
+            tar.add(server_file, arcname="jean-memory-mcp-server.js")
+            if package_file.exists():
+                tar.add(package_file, arcname="package.json")
+        
+        return FileResponse(
+            path=str(tar_path),
+            filename="jean-memory-mcp.tar.gz",
+            media_type="application/gzip",
+            headers={
+                "Content-Disposition": "attachment; filename=jean-memory-mcp.tar.gz",
+                "Content-Description": "Jean Memory MCP Server Package for Claude Code"
+            }
+        )
+    finally:
+        # Clean up temp directory
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
 @app.get("/api/v1/vcard")
 async def serve_vcard(data: str):
     """Serve vCard file for MMS contact cards"""
