@@ -20,6 +20,8 @@ SERVICE_NAME = os.getenv('RENDER_SERVICE_NAME', 'unknown-service')
 RENDER_REGION = os.getenv('RENDER_REGION', 'unknown-region')
 logger.warning(f"🔧 MCP Router initialized on service: {SERVICE_NAME} in region: {RENDER_REGION}")
 
+mcp_router = APIRouter(prefix="/mcp")
+
 # Log route registration for debugging
 logger.warning(f"🛣️ MCP Router registering routes with prefix: {mcp_router.prefix}")
 logger.warning(f"🛣️ Available routes will be:")
@@ -28,8 +30,6 @@ logger.warning(f"   - POST /mcp/messages/")
 logger.warning(f"   - GET /mcp/{{client_name}}/sse/{{user_id}}")
 logger.warning(f"   - POST /mcp/{{client_name}}/messages/{{user_id}}")
 logger.warning(f"🛣️ Multi-agent virtual user ID pattern: user__session__session_id__agent_id")
-
-mcp_router = APIRouter(prefix="/mcp")
 
 # Global dictionary to manage SSE connections
 sse_message_queues: Dict[str, asyncio.Queue] = {}
