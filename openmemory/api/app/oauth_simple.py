@@ -64,11 +64,17 @@ def decode_access_token(token: str) -> Dict:
 @oauth_router.get("/.well-known/oauth-authorization-server")
 async def oauth_discovery():
     """OAuth 2.0 discovery endpoint for Claude Web"""
+    # Determine base URL based on environment
+    if config.IS_PRODUCTION:
+        base_url = "https://api.jeanmemory.com"
+    else:
+        base_url = "http://localhost:8000"
+    
     return {
-        "issuer": config.API_BASE_URL,
-        "authorization_endpoint": f"{config.API_BASE_URL}/oauth/authorize",
-        "token_endpoint": f"{config.API_BASE_URL}/oauth/token",
-        "registration_endpoint": f"{config.API_BASE_URL}/oauth/register",
+        "issuer": base_url,
+        "authorization_endpoint": f"{base_url}/oauth/authorize",
+        "token_endpoint": f"{base_url}/oauth/token",
+        "registration_endpoint": f"{base_url}/oauth/register",
         "response_types_supported": ["code"],
         "grant_types_supported": ["authorization_code"],
         "code_challenge_methods_supported": ["S256"],
@@ -501,7 +507,13 @@ async def authorize(
         """
     else:
         # User not logged in - show login prompt
-        login_url = f"https://app.jeanmemory.com/auth?return_url={config.API_BASE_URL}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
+        # Determine base URL based on environment
+        if config.IS_PRODUCTION:
+            base_url = "https://api.jeanmemory.com"
+        else:
+            base_url = "http://localhost:8000"
+        
+        login_url = f"https://app.jeanmemory.com/auth?return_url={base_url}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
         
         html = f"""
         <!DOCTYPE html>
