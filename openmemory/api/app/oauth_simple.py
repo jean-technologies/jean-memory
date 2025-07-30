@@ -64,11 +64,8 @@ def decode_access_token(token: str) -> Dict:
 @oauth_router.get("/.well-known/oauth-authorization-server")
 async def oauth_discovery():
     """OAuth 2.0 discovery endpoint for Claude Web"""
-    # Determine base URL based on environment
-    if config.IS_PRODUCTION:
-        base_url = "https://api.jeanmemory.com"
-    else:
-        base_url = "http://localhost:8000"
+    # Get base URL from environment variable
+    base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
     
     return {
         "issuer": base_url,
@@ -507,11 +504,8 @@ async def authorize(
         """
     else:
         # User not logged in - show login prompt
-        # Determine base URL based on environment
-        if config.IS_PRODUCTION:
-            base_url = "https://api.jeanmemory.com"
-        else:
-            base_url = "http://localhost:8000"
+        # Get base URL from environment variable
+        base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
         
         login_url = f"https://app.jeanmemory.com/auth?return_url={base_url}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
         
