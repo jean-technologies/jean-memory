@@ -432,34 +432,37 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         
                         {/* MCP Connector */}
                         <div className="space-y-2">
-                            <h4 className="text-xs font-medium text-foreground">🔌 MCP Connector (Claude Desktop/Code)</h4>
-                            <p className="text-xs text-muted-foreground">For MCP connector text box, use this direct server URL:</p>
+                            <h4 className="text-xs font-medium text-foreground">🔌 MCP Connector (Claude Web/Desktop/Code)</h4>
+                            <p className="text-xs text-muted-foreground">For Claude&apos;s MCP connector, use this OAuth-enabled server URL:</p>
                             <div className="relative bg-background border rounded-md p-2 font-mono text-xs break-all">
-                                <div className="pr-12">{MCP_URL}/mcp/v2/claude/{user?.id || ''}</div>
+                                <div className="pr-12">{MCP_URL}/mcp</div>
                                 <Button 
                                     variant="ghost" 
                                     size="sm"
                                     className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                    onClick={() => handleCopy(`${MCP_URL}/mcp/v2/claude/${user?.id || ''}`)}
+                                    onClick={() => handleCopy(`${MCP_URL}/mcp`)}
                                 >
                                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 </Button>
                             </div>
+                            <p className="text-xs text-muted-foreground mt-1">✨ Claude will automatically handle OAuth authentication - no manual setup required!</p>
                         </div>
 
-                        {/* OAuth for Web/Mobile */}
+                        {/* Instructions for Messages API */}
                         <div className="space-y-2">
-                            <h4 className="text-xs font-medium text-foreground">🌐 Web/Mobile OAuth</h4>
-                            <p className="text-xs text-muted-foreground">For Claude Web or Mobile apps:</p>
-                            <Button 
-                                onClick={() => window.open(CLAUDE_OAUTH_URL, '_blank')}
-                                className="w-full"
-                                variant="outline"
-                                size="sm"
-                            >
-                                <Shield className="mr-2 h-4 w-4" />
-                                Connect Claude Web/Mobile
-                            </Button>
+                            <h4 className="text-xs font-medium text-foreground">📱 Messages API (Claude Web/Mobile)</h4>
+                            <p className="text-xs text-muted-foreground">Use the MCP connector in Claude&apos;s Messages API:</p>
+                            <div className="bg-background border rounded-md p-3 font-mono text-xs">
+                                <code className="whitespace-pre-wrap break-words">{`{
+  "mcp_servers": [{
+    "type": "url",
+    "url": "${MCP_URL}/mcp",
+    "name": "jean-memory"
+  }],
+  "anthropic-beta": "mcp-client-2025-04-04"
+}`}</code>
+                            </div>
+                            <p className="text-xs text-muted-foreground">✨ OAuth authentication is handled automatically</p>
                         </div>
                         
                     </div>
@@ -655,17 +658,18 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         <p className="text-xs text-muted-foreground mb-2">Add Jean Memory as an HTTP MCP server:</p>
                         <div className="relative bg-background border rounded-md">
                             <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
-                                <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp/v2/claude/{user?.id || '{your-user-id}'}</code>
+                                <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp</code>
                             </div>
                             <Button 
                                 variant="ghost" 
                                 size="sm"
                                 className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp/v2/claude/${user?.id || '{your-user-id}'}`)}
+                                onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp`)}
                             >
                                 {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-2">✨ OAuth authentication will be handled automatically by Claude</p>
                     </div>
 
                     <div>
