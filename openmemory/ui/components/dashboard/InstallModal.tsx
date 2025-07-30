@@ -161,9 +161,9 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
 
   const appConfig = constants[app.id as keyof typeof constants] || constants.default;
   
-  // Most clients use HTTP (Virginia direct), only specific clients need SSE (Cloudflare Worker)
+  // Most clients use HTTP (actual API URL), only specific clients need SSE (Cloudflare Worker)
   const needsSSE = ['vscode', 'chatgpt'].includes(app.id);
-  const MCP_URL = needsSSE ? "https://api.jeanmemory.com" : "https://jean-memory-api-virginia.onrender.com";
+  const MCP_URL = needsSSE ? "https://api.jeanmemory.com" : (process.env.NEXT_PUBLIC_API_URL || "https://jean-memory-api-dev.onrender.com");
 
   // Define a base command that can be used as a fallback, fixing the regression.
   let rawInstallCommand = app.installCommand;
@@ -172,7 +172,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
       rawInstallCommand = `-y mcp-remote ${MCP_URL}/mcp/${app.id}/sse/{user_id} --header "x-user-id:{user_id}" --header "x-client-name:chorus"`;
     } else if (app.id === 'claude') {
       // Use HTTP v2 transport for Claude (50% faster)
-      rawInstallCommand = `npx -y supergateway --stdio https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/{user_id}`;
+      rawInstallCommand = `npx -y supergateway --stdio ${MCP_URL}/mcp/v2/claude/{user_id}`;
     } else if (app.id === 'cursor') {
       // Use proper npx install-mcp command for Cursor
       rawInstallCommand = `npx install-mcp "${MCP_URL}/mcp/cursor/sse/{user_id}" --client cursor`;
