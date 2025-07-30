@@ -29,9 +29,9 @@ const mainApps = [
 // Additional apps in the dropdown
 const additionalApps = [
   { key: "cline", label: "Cline", icon: "/images/cline.png" },
-  { key: "roocode", label: "Roo Code", icon: "/images/roocline.png" },
-  { key: "witsy", label: "Witsy", icon: "/images/witsy.png" },
-  { key: "enconvo", label: "Enconvo", icon: "/images/enconvo.png" },
+  // { key: "roocode", label: "Roo Code", icon: "/images/roocline.png" },
+  // { key: "witsy", label: "Witsy", icon: "/images/witsy.png" },
+  // { key: "enconvo", label: "Enconvo", icon: "/images/enconvo.png" },
 ];
 
 const colorGradientMap: { [key: string]: string } = {
