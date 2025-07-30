@@ -5,6 +5,7 @@ from typing import Dict, List, Any, Optional
 from sqlalchemy import text
 from app.database import get_db
 from app.context import user_id_var
+from app.mcp_instance import mcp
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +13,10 @@ logger = logging.getLogger(__name__)
 # PLANNING TOOLS (PLANNER AGENT ONLY)
 # ===============================================
 
+@mcp.tool(description="📊 PLANNING: Analyze task conflicts and file dependencies for optimal 2-5 agent distribution. Determines file collision risks and creates scalable agent assignment strategy.")
 async def analyze_task_conflicts(
     tasks: List[str], 
-    project_files: List[str], 
+    project_files: List[str] = [], 
     complexity_level: str = "moderate"
 ) -> Dict[str, Any]:
     """
@@ -110,6 +112,7 @@ async def analyze_task_conflicts(
         }
 
 
+@mcp.tool(description="📋 PLANNING: Generate terminal-specific prompts and coordination setup for 2-5 implementer agents. Creates MCP connection commands and implementation prompts.")
 async def create_task_distribution(
     analysis_result: Dict[str, Any], 
     preferred_agent_count: Optional[int] = None
@@ -283,6 +286,7 @@ You are implementation agent `{agent_id}` in a {agent_count}-agent development t
 # EXECUTION COORDINATION TOOLS (ALL AGENTS)
 # ===============================================
 
+@mcp.tool(description="🔒 COORDINATION: Create cross-session file locks via database for scalable multi-agent coordination. Prevents file conflicts across 2-5 terminals.")
 async def claim_file_lock(
     file_paths: List[str], 
     operation: str = "write", 
@@ -454,6 +458,7 @@ async def claim_file_lock(
                 pass
 
 
+@mcp.tool(description="📢 COORDINATION: Broadcast progress updates across all terminals in session. Enables real-time coordination for 2-5 agents.")
 async def sync_progress(
     task_id: str, 
     status: str, 
@@ -597,6 +602,7 @@ async def sync_progress(
                 pass
 
 
+@mcp.tool(description="👥 COORDINATION: Check status of all other agents in the same session. Provides real-time visibility across 2-5 terminals.")
 async def check_agent_status(include_inactive: bool = False) -> Dict[str, Any]:
     """
     Check status of all other agents in the same session.
