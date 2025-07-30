@@ -74,9 +74,9 @@ const availableApps: AvailableApp[] = [
   { id: 'windsurf', name: 'Windsurf', description: 'AI-powered code editor', priority: 5, category: 'Development', trustScore: 94 },
   { id: 'mcp-generic', name: 'MCP Link', description: 'Connect to any mcp', priority: -2, category: 'Integration', trustScore: 91 },
   { id: 'cline', name: 'Cline', description: 'Command line interface tool', priority: 3, category: 'Development', trustScore: 92 },
-  { id: 'roocode', name: 'RooCode', description: 'Code review and collaboration', priority: 2, category: 'Development', trustScore: 90 },
-  { id: 'witsy', name: 'Witsy', description: 'Smart productivity assistant', priority: 1, category: 'Productivity', trustScore: 88 },
-  { id: 'enconvo', name: 'Enconvo', description: 'Environment configuration tool', priority: 0, category: 'Development', trustScore: 86 },
+  // { id: 'roocode', name: 'RooCode', description: 'Code review and collaboration', priority: 2, category: 'Development', trustScore: 90 },
+  // { id: 'witsy', name: 'Witsy', description: 'Smart productivity assistant', priority: 1, category: 'Productivity', trustScore: 88 },
+  // { id: 'enconvo', name: 'Enconvo', description: 'Environment configuration tool', priority: 0, category: 'Development', trustScore: 86 },
   {
     id: 'chorus',
     name: 'Chorus',

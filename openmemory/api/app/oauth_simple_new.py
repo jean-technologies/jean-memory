@@ -203,7 +203,10 @@ async def authorize(
             
             return RedirectResponse(url=redirect_url)
     
-    # Show login/authorization page
+    # Show login/authorization page with preserved OAuth session
+    # Store the session_id in the URL so we can retrieve it after login
+    oauth_session_param = f"oauth_session={session_id}"
+    
     html = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -388,7 +391,7 @@ async def authorize(
                     const {{ data, error: signInError }} = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
-                            redirectTo: window.location.href
+                            redirectTo: window.location.href + '&{oauth_session_param}'
                         }}
                     }});
                     

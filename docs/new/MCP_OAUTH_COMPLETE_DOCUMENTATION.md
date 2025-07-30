@@ -35,30 +35,65 @@ Claude → OAuth Discovery → Client Registration → Authorization → Token E
 5. MCP Requests:  Authorization: Bearer <jwt_token>
 ```
 
-## Key Implementation
+## Current Implementation Status (July 30, 2025)
 
-### Core Files Modified
+### What Changed
+1. **Created new OAuth implementation:** `oauth_simple_new.py` with standalone Supabase login page
+2. **Fixed deployment crash:** Replaced broken `oauth_simple.py` with stub
+3. **Updated imports:** Main app now uses `oauth_simple_new.py`
 
-**`/openmemory/api/app/auth.py`** - Added OAuth-specific authentication:
-```python
-async def get_oauth_user(request: Request) -> Optional[SupabaseUser]:
-    """OAuth-specific user detection via browser cookies (not API headers)"""
-    # Parse multiple cookie formats: sb-access-token, sb-session, etc.
-    # Validate with Supabase and return authenticated user
-```
-
-**`/openmemory/api/app/oauth_simple.py`** - Complete OAuth 2.1 server:
+### What's Actually Running Now
+**`/openmemory/api/app/oauth_simple_new.py`** - NEW standalone OAuth server:
 ```python
 @oauth_router.get("/authorize")
 async def authorize(request, client_id, redirect_uri, ...):
-    if oauth_complete == "true":
-        # Stage 2: Cookie detection after Jean Memory auth
-        current_user = await get_oauth_user(request)  # NEW: was get_current_supa_user
-        # Auto-approve Claude, generate auth code, redirect back
+    # Try OAuth-specific authentication
+    current_user = await get_oauth_user(request)
+    
+    if current_user:
+        # User authenticated - auto-approve Claude immediately
+        # Generate auth code and redirect back to Claude
     else:
-        # Stage 1: Redirect to Jean Memory for authentication
-        return RedirectResponse(f"https://jeanmemory.com/auth?return_url={oauth_url}")
+        # Show standalone login page with Supabase JavaScript SDK
+        return HTMLResponse(supabase_login_page)
 ```
+
+### Key Difference from Previous Approach
+- **OLD:** Redirected to `https://jeanmemory.com/auth` (external site)
+- **NEW:** Shows standalone OAuth page with direct Supabase integration
+
+### Current Issue Analysis
+From the logs, Claude is still hitting the same problem:
+```
+INFO: Authorization request: client_id=claude-OiAex4vGSSA
+INFO: Auto-registered Claude client: claude-OiAex4vGSSA  
+INFO: No OAuth access token found in any cookie
+INFO: ❌ No authenticated user found
+```
+
+**The issue:** User gets the login page but the OAuth flow doesn't complete successfully.
+
+## Root Cause Identified
+
+The current implementation has a **fundamental flaw**:
+
+1. **User sees login page** ✅
+2. **User clicks "Continue with Google"** ✅  
+3. **Supabase OAuth completes** ✅
+4. **Page reloads** ✅
+5. **BUT: OAuth session state is lost** ❌
+
+**Problem:** When the page reloads after Supabase authentication, the original OAuth session (with `client_id`, `redirect_uri`, `state`, etc.) is gone because it was stored in the authorization endpoint's local scope, not in a persistent session.
+
+## Required Fix
+
+The OAuth implementation needs to:
+1. **Store OAuth session parameters** before showing login page
+2. **Retrieve OAuth session parameters** after login completes  
+3. **Generate authorization code** with proper session data
+4. **Redirect back to Claude** with the authorization code
+
+**Current code missing:** Session persistence between login page display and post-authentication callback.
 
 ### PKCE & JWT Security
 
