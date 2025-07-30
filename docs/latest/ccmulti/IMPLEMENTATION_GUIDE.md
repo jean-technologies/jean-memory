@@ -131,18 +131,20 @@ class ClaudeProfile(BaseClientProfile):
 
 ### Connection URLs
 ```bash
-# Standard Mode (unchanged)
-npx install-mcp https://api.jeanmemory.com/mcp/v2/claude%20code/{user_id}
+# Standard Mode (updated based on implementation findings)
+claude mcp add --transport http jean-memory https://api.jeanmemory.com/mcp/v2/claude/{user_id}
 
 # Multi-Agent Session Mode  
-npx install-mcp https://api.jeanmemory.com/mcp/v2/claude%20code/{user_id}__session__{session_name}__{agent_id}
+claude mcp add --transport http jean-memory-{agent_id} https://api.jeanmemory.com/mcp/v2/claude/{user_id}__session__{session_name}__{agent_id}
 
 # Example: Research Agent
-npx install-mcp https://api.jeanmemory.com/mcp/v2/claude%20code/user123__session__webscraper__research
+claude mcp add --transport http jean-memory-research https://api.jeanmemory.com/mcp/v2/claude/user123__session__webscraper__research
 
 # Example: Implementation Agent  
-npx install-mcp https://api.jeanmemory.com/mcp/v2/claude%20code/user123__session__webscraper__implementation
+claude mcp add --transport http jean-memory-implementation https://api.jeanmemory.com/mcp/v2/claude/user123__session__webscraper__implementation
 ```
+
+**Implementation Note**: Based on our Claude Code MCP testing, the `claude mcp add --transport http` command is more reliable than `npx install-mcp`. The HTTP transport provides better performance and stability.
 
 ### Workflow Integration
 
@@ -240,5 +242,12 @@ def test_coordination_speed():
 - Standard Claude Code mode unchanged  
 - Session tools only appear in multi-agent mode
 - < 100ms response time for all coordination operations
+
+### Implementation Lessons from Claude Code MCP
+Based on our recent implementation experience:
+1. **Protocol Compliance**: Ensure MCP initialize response includes proper capabilities object - critical for tool discovery
+2. **Transport Selection**: HTTP transport is significantly more reliable than stdio/SSE approaches
+3. **URL Structure**: Direct user ID in URL works immediately; OAuth adds complexity but improves security
+4. **Testing Strategy**: Test with actual Claude Code client early - protocol compliance issues aren't always visible in unit tests
 
 This implementation guide ensures the technical architecture directly supports the user workflow while maintaining system stability and performance.

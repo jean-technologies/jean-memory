@@ -157,3 +157,37 @@ CREATE TABLE claude_code_agents (
 - **User experience**: Seamless workflow from task input to completion
 
 This architecture directly supports the user workflow while providing the technical foundation for collision-free multi-agent development.
+
+## Implementation Updates from Claude Code MCP
+
+### Connection Architecture
+Based on our successful Claude Code MCP implementation:
+
+```python
+# HTTP v2 Transport Endpoint (proven to work)
+@mcp_router.post("/v2/{client_name}/{user_id}")
+async def handle_http_v2_transport(client_name: str, user_id: str, request: Request):
+    # Direct backend routing - 50-75% faster than SSE
+    # Parse session info from user_id for multi-agent support
+```
+
+### Protocol Considerations
+1. **Transport**: Always use HTTP transport with `--transport http` flag
+2. **URL Pattern**: `/mcp/v2/claude/{user_id}` for direct backend connection
+3. **Capabilities**: Must advertise tool support in initialize response
+4. **Authentication**: User ID in URL is simpler than OAuth for initial implementation
+
+### Multi-Agent Connection Commands
+```bash
+# Standard single agent
+claude mcp add --transport http jean-memory https://api.jeanmemory.com/mcp/v2/claude/{user_id}
+
+# Multi-agent with session info
+claude mcp add --transport http jean-memory-planner https://api.jeanmemory.com/mcp/v2/claude/{user_id}__session__project__planner
+claude mcp add --transport http jean-memory-impl https://api.jeanmemory.com/mcp/v2/claude/{user_id}__session__project__implementation
+```
+
+### Testing Considerations
+- Test with actual Claude Code client early - protocol issues aren't always visible in unit tests
+- Verify tools appear with `/mcp` command, not just connection status
+- HTTP transport eliminates need for stdio bridges or SSE complexity

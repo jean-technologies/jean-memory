@@ -62,6 +62,11 @@ CREATE TABLE claude_code_agents (
 - **Virtual user ID pattern** for session detection
 - **Leverage working connection patterns** that already function
 
+**🎯 Update from Claude Code MCP Implementation**:
+- **HTTP transport with `--transport http` flag works perfectly** - no stdio/SSE needed
+- **Direct backend URL pattern `/mcp/v2/claude/{user_id}` is reliable**
+- **Supergateway bridges are unnecessary** - direct HTTP is simpler and faster
+
 ### ❌ Blocker 2: Tool Loading Failures  
 **Issue**: Claude Code detects server but doesn't load Jean Memory tools
 **Problem**: Communication layer gap between Claude Code and API
@@ -70,6 +75,11 @@ CREATE TABLE claude_code_agents (
 - **Focus on existing working tools** (`jean_memory`, `store_document`)
 - **Add session coordination conditionally** within existing tool framework
 - **Test with manual verification** before full integration
+
+**🎯 Update from Claude Code MCP Implementation**:
+- **Root cause found**: MCP initialize response must properly advertise tool capabilities
+- **Fix**: Ensure `capabilities: {"tools": {}}` is included in response
+- **Critical**: Without this, tools won't appear even if everything else works
 
 ### ❌ Blocker 3: Real-time Coordination Complexity
 **Issue**: Multi-agent state management across Claude Code instances  
@@ -252,3 +262,28 @@ Based on previous failures, avoid these complexity traps:
 - **Zero learning curve** - leverages existing Claude Code knowledge
 
 This lessons learned document ensures we avoid previous pitfalls while implementing a minimal, robust solution that directly supports the user workflow.
+
+## Additional Insights from Claude Code MCP Implementation
+
+### Connection Command Evolution
+```bash
+# What didn't work
+npx supergateway --stdio {url}  # Unreliable stdio transport
+npx install-mcp {url}           # Incompatible with Claude Code
+
+# What works perfectly
+claude mcp add --transport http jean-memory {url}
+```
+
+### Key Implementation Findings
+1. **Transport Layer**: HTTP transport is the only reliable option for Claude Code
+2. **Protocol Compliance**: MCP initialize response capabilities are critical
+3. **URL Structure**: Direct backend URLs work better than proxy/SSE approaches
+4. **Authentication**: Simple user ID in URL works; OAuth adds complexity
+5. **Performance**: Direct HTTP is 50-75% faster than SSE/Cloudflare proxy
+
+### Testing Strategy That Works
+1. Test protocol compliance with simple Node.js script first
+2. Use actual Claude Code client early in development
+3. Verify tool discovery with `/mcp` command in Claude Code
+4. Check both connection status AND tool availability

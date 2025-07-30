@@ -80,3 +80,12 @@
 - **User Satisfaction**: Seamless coordination without complexity overhead
 
 This workflow transforms chaotic multi-session development into an orchestrated, collision-free experience while maintaining the familiar Claude Code interface users already know.
+
+### Implementation Insights from Claude Code MCP Integration
+
+Based on our recent Claude Code MCP implementation experience:
+
+1. **Transport Considerations**: The multi-agent coordination will need to use HTTP transport (`--transport http`) as we discovered it's more reliable than stdio/SSE approaches
+2. **Tool Discovery**: Ensure proper MCP capabilities advertisement in the initialize response - without this fix, coordination tools won't appear in Claude Code
+3. **Authentication**: Consider whether to use direct user ID URLs or OAuth - our testing showed direct URLs work immediately while OAuth adds complexity
+4. **Performance**: Direct HTTP connections to backend are 50-75% faster than SSE/Cloudflare proxy approaches
