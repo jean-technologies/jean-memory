@@ -3,13 +3,15 @@ import json
 import asyncio
 import datetime
 import os
-from typing import Dict
+from typing import Dict, Optional, Tuple
+import uuid
 
 from fastapi import APIRouter, Request, Response, BackgroundTasks
 from fastapi.responses import JSONResponse
 
 from app.clients import get_client_profile, get_client_name
 from app.context import user_id_var, client_name_var, background_tasks_var
+from app.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,169 @@ sse_message_queues: Dict[str, asyncio.Queue] = {}
 
 # Session-based ID mapping for ChatGPT
 chatgpt_session_mappings: Dict[str, Dict[str, str]] = {}
+
+# ===============================================
+# MULTI-AGENT SESSION MANAGEMENT
+# ===============================================
+
+def parse_virtual_user_id(user_id: str) -> Dict[str, any]:
+    """
+    Parse virtual user ID for multi-terminal session detection.
+    
+    Pattern: {user_id}__session__{session_id}__{agent_id}
+    Returns: Dict with session info or single-user info
+    """
+    if "__session__" in user_id:
+        try:
+            parts = user_id.split("__session__")
+            if len(parts) != 2:
+                logger.warning(f"Invalid virtual user ID format: {user_id}")
+                return {"is_multi_agent": False, "real_user_id": user_id}
+            
+            real_user_id = parts[0]
+            session_agent = parts[1].split("__")
+            
+            if len(session_agent) != 2:
+                logger.warning(f"Invalid session/agent format in user ID: {user_id}")
+                return {"is_multi_agent": False, "real_user_id": user_id}
+            
+            session_id = session_agent[0]
+            agent_id = session_agent[1]
+            
+            logger.info(f"🔄 Multi-agent session detected - User: {real_user_id}, Session: {session_id}, Agent: {agent_id}")
+            
+            return {
+                "is_multi_agent": True,
+                "real_user_id": real_user_id,
+                "session_id": session_id,
+                "agent_id": agent_id,
+                "virtual_user_id": user_id
+            }
+        except Exception as e:
+            logger.error(f"Error parsing virtual user ID {user_id}: {e}")
+            return {"is_multi_agent": False, "real_user_id": user_id}
+    
+    return {"is_multi_agent": False, "real_user_id": user_id}
+
+async def register_agent_connection(session_id: str, agent_id: str, real_user_id: str, connection_url: str) -> bool:
+    """
+    Register agent connection in database for multi-terminal coordination.
+    Auto-creates session if it doesn't exist.
+    """
+    try:
+        from sqlalchemy import text
+        db = next(get_db())
+        
+        # Check if session exists, create if not
+        session_result = db.execute(
+            text("SELECT id FROM claude_code_sessions WHERE id = :session_id"),
+            {"session_id": session_id}
+        ).fetchone()
+        
+        if not session_result:
+            # Create new session
+            db.execute(
+                text("""
+                    INSERT INTO claude_code_sessions (id, name, description, user_id, status, created_at)
+                    VALUES (:session_id, :name, :description, :user_id, :status, :created_at)
+                """),
+                {
+                    "session_id": session_id,
+                    "name": f"Multi-Agent Session {session_id[:8]}",
+                    "description": f"Multi-terminal coordination session for {real_user_id}",
+                    "user_id": real_user_id,
+                    "status": "active",
+                    "created_at": datetime.datetime.now(datetime.timezone.utc)
+                }
+            )
+            logger.info(f"📋 Created new session: {session_id} for user {real_user_id}")
+        
+        # Register or update agent (use last_activity instead of updated_at)
+        unique_agent_id = f"{session_id}__{agent_id}"
+        now = datetime.datetime.now(datetime.timezone.utc)
+        
+        # Try to update existing agent first
+        update_result = db.execute(
+            text("""
+                UPDATE claude_code_agents 
+                SET status = :status, connection_url = :connection_url, last_activity = :last_activity
+                WHERE id = :agent_id
+            """),
+            {
+                "agent_id": unique_agent_id,
+                "status": "connected",
+                "connection_url": connection_url,
+                "last_activity": now
+            }
+        )
+        
+        # If no rows were updated, insert new agent
+        if update_result.rowcount == 0:
+            db.execute(
+                text("""
+                    INSERT INTO claude_code_agents (id, session_id, name, connection_url, status, last_activity, created_at)
+                    VALUES (:agent_id, :session_id, :name, :connection_url, :status, :last_activity, :created_at)
+                """),
+                {
+                    "agent_id": unique_agent_id,
+                    "session_id": session_id,
+                    "name": agent_id,
+                    "connection_url": connection_url,
+                    "status": "connected",
+                    "last_activity": now,
+                    "created_at": now
+                }
+            )
+        
+        db.commit()
+        logger.info(f"🤖 Registered agent connection: {agent_id} in session {session_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error registering agent connection: {e}", exc_info=True)
+        if 'db' in locals():
+            db.rollback()
+        return False
+    finally:
+        if 'db' in locals():
+            db.close()
+
+async def get_session_agents(session_id: str) -> list:
+    """
+    Get all agents in a session for coordination.
+    """
+    try:
+        from sqlalchemy import text
+        db = next(get_db())
+        
+        results = db.execute(
+            text("""
+                SELECT id, name, connection_url, status, last_activity
+                FROM claude_code_agents 
+                WHERE session_id = :session_id
+                ORDER BY last_activity DESC
+            """),
+            {"session_id": session_id}
+        ).fetchall()
+        
+        agents = []
+        for row in results:
+            agents.append({
+                "id": row[0],
+                "name": row[1], 
+                "connection_url": row[2],
+                "status": row[3],
+                "last_activity": row[4].isoformat() if row[4] else None
+            })
+        
+        return agents
+        
+    except Exception as e:
+        logger.error(f"Error getting session agents: {e}", exc_info=True)
+        return []
+    finally:
+        if 'db' in locals():
+            db.close()
 
 async def handle_request_logic(request: Request, body: dict, background_tasks: BackgroundTasks):
     """Unified logic to handle an MCP request, abstracted from the transport."""
@@ -44,11 +209,22 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
     if not user_id_from_header or not client_name_from_header:
         return JSONResponse(status_code=400, content={"error": "Missing user authentication details"})
 
+    # 1.5. Parse session information from user ID
+    session_info = parse_virtual_user_id(user_id_from_header)
+    real_user_id = session_info["real_user_id"]
+
     # 2. Set Context and Get Client Profile
-    logger.info(f"🔧 [MCP Context] Setting context variables for user: {user_id_from_header}, client: {client_name_from_header}")
-    user_token = user_id_var.set(user_id_from_header)
+    logger.info(f"🔧 [MCP Context] Setting context variables for user: {real_user_id}, client: {client_name_from_header}")
+    if session_info["is_multi_agent"]:
+        logger.info(f"🔧 [MCP Context] Multi-agent session: {session_info['session_id']}, agent: {session_info['agent_id']}")
+    
+    user_token = user_id_var.set(real_user_id)  # Use real user ID for authentication
     client_token = client_name_var.set(client_name_from_header)
     tasks_token = background_tasks_var.set(background_tasks)
+    
+    # Store session info in request state for client profile access
+    request.state.session_info = session_info
+    
     logger.info(f"🔧 [MCP Context] Context variables set - background_tasks: {background_tasks is not None}")
     
     request_id = body.get("id") # Get request_id early for error reporting
@@ -92,18 +268,24 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
         elif method_name == "tools/list":
             client_version = params.get("protocolVersion", "2024-11-05")
-            tools_schema = client_profile.get_tools_schema(include_annotations=(client_version == "2025-03-26"))
-            logger.info(f"🔍 TOOLS/LIST DEBUG - Client: {client_key}, Schema: {json.dumps(tools_schema, indent=2)}")
+            # Pass session info to client profile for multi-agent awareness
+            tools_schema = client_profile.get_tools_schema(
+                include_annotations=(client_version == "2025-03-26"),
+                session_info=session_info
+            )
+            logger.info(f"🔍 TOOLS/LIST DEBUG - Client: {client_key}, Session: {session_info.get('session_id', 'single')}, Schema: {json.dumps(tools_schema, indent=2)}")
             return JSONResponse(content={"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id})
 
         elif method_name == "tools/call":
             tool_name = params.get("name")
             tool_args = params.get("arguments", {})
-            logger.info(f"🔧 [MCP Tool Call] Tool: {tool_name}, User: {user_id_from_header}, Client: {client_key}")
+            logger.info(f"🔧 [MCP Tool Call] Tool: {tool_name}, User: {real_user_id}, Client: {client_key}")
+            if session_info["is_multi_agent"]:
+                logger.info(f"🔧 [MCP Tool Call] Multi-agent context - Session: {session_info['session_id']}, Agent: {session_info['agent_id']}")
             logger.info(f"🔧 [MCP Tool Call] Background tasks context: {background_tasks is not None}")
             try:
                 # Use the profile to handle the tool call, which encapsulates client-specific logic
-                result = await client_profile.handle_tool_call(tool_name, tool_args, user_id_from_header)
+                result = await client_profile.handle_tool_call(tool_name, tool_args, real_user_id)
                 # Use the profile to format the response
                 logger.info(f"🔧 [MCP Tool Call] Tool {tool_name} completed successfully")
                 return JSONResponse(content=client_profile.format_tool_response(result, request_id))
@@ -159,15 +341,35 @@ async def handle_http_v2_transport(client_name: str, user_id: str, request: Requ
     - Better debugging and logging
     - Simplified infrastructure
     - Transport auto-detection
+    - Multi-terminal session coordination via virtual user ID
     """
     try:
-        # Set headers for context (similar to Cloudflare Worker)
-        request.headers.__dict__['_list'].append((b'x-user-id', user_id.encode()))
+        # Parse virtual user ID for multi-terminal session detection
+        session_info = parse_virtual_user_id(user_id)
+        real_user_id = session_info["real_user_id"]
+        
+        # Set headers for context (use real user ID for authentication)
+        request.headers.__dict__['_list'].append((b'x-user-id', real_user_id.encode()))
         request.headers.__dict__['_list'].append((b'x-client-name', client_name.encode()))
         
         body = await request.json()
         method = body.get('method')
-        logger.warning(f"🚀 HTTP v2 Transport: {client_name}/{user_id} - Method: {method} - Service: {SERVICE_NAME} ({RENDER_REGION})")
+        
+        # Enhanced logging with session info
+        if session_info["is_multi_agent"]:
+            logger.warning(f"🔄 Multi-Terminal Transport: {client_name}/{user_id} - Method: {method} - Session: {session_info['session_id']} - Agent: {session_info['agent_id']} - Service: {SERVICE_NAME} ({RENDER_REGION})")
+            
+            # Register agent connection on initialize method
+            if method == "initialize":
+                connection_url = f"{request.url.scheme}://{request.url.netloc}{request.url.path}"
+                await register_agent_connection(
+                    session_info["session_id"],
+                    session_info["agent_id"], 
+                    real_user_id,
+                    connection_url
+                )
+        else:
+            logger.warning(f"🚀 HTTP v2 Transport: {client_name}/{user_id} - Method: {method} - Service: {SERVICE_NAME} ({RENDER_REGION})")
         
         # Use the same unified logic as SSE transport
         response = await handle_request_logic(request, body, background_tasks)

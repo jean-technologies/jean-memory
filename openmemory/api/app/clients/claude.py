@@ -5,20 +5,44 @@ from .base import BaseClientProfile
 class ClaudeProfile(BaseClientProfile):
     """Client profile for Claude desktop and other standard clients."""
 
-    def get_tools_schema(self, include_annotations: bool = False) -> List[Dict[str, Any]]:
+    def _is_multi_agent_session(self) -> bool:
+        """Check if current request is from a multi-agent session"""
+        try:
+            from starlette.concurrency import run_in_threadpool
+            from contextvars import copy_context
+            import asyncio
+            
+            # Try to get current request context (this may not always work)
+            # For now, return False - we'll enhance this later
+            return False
+        except:
+            return False
+
+    def get_tools_schema(self, include_annotations: bool = False, session_info: dict = None) -> List[Dict[str, Any]]:
         """
         Returns the JSON schema for the original tools, which is the default for Claude.
+        Enhanced for multi-agent session awareness.
         """
+        # Determine if this is a multi-agent session
+        is_multi_agent = session_info and session_info.get("is_multi_agent", False)
+        
+        # Base tool description
+        jean_memory_description = "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations."
+        
+        # Add multi-agent session context if applicable
+        if is_multi_agent:
+            jean_memory_description += f"\n\n🔄 MULTI-AGENT SESSION ACTIVE:\n• Session: {session_info.get('session_id', 'unknown')}\n• Agent: {session_info.get('agent_id', 'unknown')}\n• Cross-terminal coordination enabled for collision-free development"
+        
         tools = [
             {
                 "name": "jean_memory",
-                "description": "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.",
+                "description": jean_memory_description,
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "user_message": {"type": "string", "description": "The user's complete message or question"},
                         "is_new_conversation": {"type": "boolean", "description": "Set to true only for the very first message in a new chat session, otherwise false."},
-                        "needs_context": {"type": "boolean", "description": "Whether personal context retrieval is needed for this query. Set to false for generic knowledge questions (science, definitions, general concepts). Set to true for questions that would benefit from the user's personal memories, experiences, or previous conversations.", "default": True}
+                        "needs_context": {"type": "boolean", "description": "Whether personal context retrieval is needed for this query. Set to false for generic knowledge questions (science, definitions, general concepts). Set to true for questions that would benefit from the user's personal context, memories, or previous conversations.", "default": True}
                     },
                     "required": ["user_message", "is_new_conversation"]
                 }
@@ -48,6 +72,7 @@ class ClaudeProfile(BaseClientProfile):
             for tool in tools:
                 if tool["name"] in annotations_map:
                     tool["annotations"] = annotations_map[tool["name"]]
+        
         return tools
 
     async def handle_tool_call(
