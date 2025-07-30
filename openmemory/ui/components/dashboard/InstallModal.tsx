@@ -423,7 +423,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     <div className="mt-3 space-y-3">
                         <p className="text-xs text-muted-foreground">For Claude Web or Mobile, use OAuth connection:</p>
                         <Button 
-                            onClick={() => window.open('https://jean-memory-api-dev.onrender.com/oauth/authorize?client_id=unknown_oRV4P34GULT7dfs1eI3Qqw&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&scope=read+write&state=claude-web-connection', '_blank')}
+                            onClick={() => window.open('https://jean-memory-api-dev.onrender.com/oauth/authorize?client_id=claude-ai&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&scope=read+write&state=claude-connection', '_blank')}
                             className="w-full"
                             variant="outline"
                             size="sm"
@@ -431,7 +431,23 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                             <Shield className="mr-2 h-4 w-4" />
                             Connect Claude Web/Mobile
                         </Button>
-                        <p className="text-xs text-muted-foreground">Opens OAuth authorization for Claude Web and Mobile apps.</p>
+                        
+                        <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Or copy this URL for Claude's MCP connector:</p>
+                            <div className="relative bg-background border rounded-md p-2 font-mono text-xs break-all">
+                                <div className="pr-12">https://jean-memory-api-dev.onrender.com/oauth/authorize?client_id=claude-ai&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&scope=read+write&state=claude-connection</div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                    onClick={() => handleCopy('https://jean-memory-api-dev.onrender.com/oauth/authorize?client_id=claude-ai&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&scope=read+write&state=claude-connection')}
+                                >
+                                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground">Works with Claude Web, Mobile, and MCP connectors.</p>
                     </div>
                 </details>
             </div>
