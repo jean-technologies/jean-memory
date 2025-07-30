@@ -431,12 +431,20 @@ async def authorize(
             );
             
             async function signInWithGoogle() {{
+                console.log('🔍 DEBUG - signInWithGoogle function called');
                 const button = document.getElementById('loginBtn');
                 const error = document.getElementById('error');
+                
+                if (!button) {{
+                    console.error('❌ DEBUG - Login button not found!');
+                    return;
+                }}
                 
                 button.disabled = true;
                 button.textContent = 'Signing in...';
                 error.style.display = 'none';
+                
+                console.log('🔍 DEBUG - Button updated, starting OAuth flow');
                 
                 try {{
                     // Build redirect URL with session preservation
@@ -451,12 +459,16 @@ async def authorize(
                     const baseUrl = currentUrl.origin;
                     const callbackUrl = baseUrl + '/oauth/callback?oauth_session={session_id}';
                     
+                    console.log('🔍 DEBUG - About to call Supabase OAuth with redirect:', callbackUrl);
+                    
                     const result = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
                             redirectTo: callbackUrl
                         }}
                     }});
+                    
+                    console.log('🔍 DEBUG - Supabase OAuth result:', result);
                     
                     if (result.error) {{
                         throw result.error;
