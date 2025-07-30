@@ -423,39 +423,45 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </ol>
                 </div>
                 
-                {/* Web/Mobile OAuth Option */}
+                {/* Alternative Connection Methods */}
                 <details className="group">
                     <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                        Using Claude Web or Mobile instead?
+                        Other Claude connection methods
                     </summary>
-                    <div className="mt-3 space-y-3">
-                        <p className="text-xs text-muted-foreground">For Claude Web or Mobile, use OAuth connection:</p>
-                        <Button 
-                            onClick={() => window.open(CLAUDE_OAUTH_URL, '_blank')}
-                            className="w-full"
-                            variant="outline"
-                            size="sm"
-                        >
-                            <Shield className="mr-2 h-4 w-4" />
-                            Connect Claude Web/Mobile
-                        </Button>
+                    <div className="mt-3 space-y-4">
                         
+                        {/* MCP Connector */}
                         <div className="space-y-2">
-                            <p className="text-xs text-muted-foreground">Or copy this URL for Claude's MCP connector:</p>
+                            <h4 className="text-xs font-medium text-foreground">🔌 MCP Connector (Claude Desktop/Code)</h4>
+                            <p className="text-xs text-muted-foreground">For MCP connector text box, use this direct server URL:</p>
                             <div className="relative bg-background border rounded-md p-2 font-mono text-xs break-all">
-                                <div className="pr-12">{CLAUDE_OAUTH_URL}</div>
+                                <div className="pr-12">{MCP_URL}/mcp/v2/claude/{user?.id || ''}</div>
                                 <Button 
                                     variant="ghost" 
                                     size="sm"
                                     className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                    onClick={() => handleCopy(CLAUDE_OAUTH_URL)}
+                                    onClick={() => handleCopy(`${MCP_URL}/mcp/v2/claude/${user?.id || ''}`)}
                                 >
                                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>
+
+                        {/* OAuth for Web/Mobile */}
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-medium text-foreground">🌐 Web/Mobile OAuth</h4>
+                            <p className="text-xs text-muted-foreground">For Claude Web or Mobile apps:</p>
+                            <Button 
+                                onClick={() => window.open(CLAUDE_OAUTH_URL, '_blank')}
+                                className="w-full"
+                                variant="outline"
+                                size="sm"
+                            >
+                                <Shield className="mr-2 h-4 w-4" />
+                                Connect Claude Web/Mobile
+                            </Button>
+                        </div>
                         
-                        <p className="text-xs text-muted-foreground">Works with Claude Web, Mobile, and MCP connectors.</p>
                     </div>
                 </details>
             </div>
