@@ -100,6 +100,7 @@ async def register_client(request: Request):
 
 @oauth_router.get("/authorize")
 async def authorize(
+    request: Request,
     client_id: str,
     redirect_uri: str,
     response_type: str,
@@ -108,7 +109,7 @@ async def authorize(
     code_challenge: Optional[str] = None,
     code_challenge_method: Optional[str] = "S256"
 ):
-    """OAuth authorization endpoint - redirects to existing Jean Memory UI"""
+    """OAuth authorization endpoint - shows approval page with Supabase integration"""
     
     # Validate client
     if client_id not in registered_clients:
@@ -131,43 +132,150 @@ async def authorize(
         "created_at": time.time()
     }
     
-    # Redirect to existing Jean Memory login with return URL
-    jean_memory_login_url = "https://app.jeanmemory.com/auth"
-    return_url = f"{config.API_BASE_URL}/oauth/callback?session_id={session_id}"
-    redirect_url = f"{jean_memory_login_url}?return_url={return_url}"
+    # Try to get current user from Supabase session
+    current_user = None
+    try:
+        from app.auth import get_current_supa_user
+        current_user = await get_current_supa_user(request)
+    except:
+        pass
     
-    return RedirectResponse(url=redirect_url)
+    # Show authorization page
+    client_name = client_info.get("client_name", "Unknown App")
+    
+    if current_user:
+        # User is logged in - show approval form
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Connect {client_name} to Jean Memory</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
+                .container {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 100%; }}
+                .logo {{ text-align: center; margin-bottom: 30px; }}
+                .logo h1 {{ color: #333; margin: 0; font-size: 24px; }}
+                .user-info {{ background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+                .user-info strong {{ color: #495057; }}
+                .permissions {{ margin: 20px 0; }}
+                .permissions h3 {{ color: #333; font-size: 16px; margin-bottom: 10px; }}
+                .permissions ul {{ list-style: none; padding: 0; }}
+                .permissions li {{ padding: 8px 0; color: #666; border-bottom: 1px solid #eee; }}
+                .permissions li:last-child {{ border-bottom: none; }}
+                .permissions li::before {{ content: "✓"; color: #28a745; font-weight: bold; margin-right: 10px; }}
+                .buttons {{ display: flex; gap: 10px; margin-top: 30px; }}
+                .button {{ flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; text-decoration: none; text-align: center; }}
+                .approve {{ background: #007bff; color: white; }}
+                .approve:hover {{ background: #0056b3; }}
+                .deny {{ background: #6c757d; color: white; }}
+                .deny:hover {{ background: #545b62; }}
+                .app-info {{ text-align: center; margin-bottom: 20px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">
+                    <h1>🧠 Jean Memory</h1>
+                </div>
+                
+                <div class="app-info">
+                    <strong>{client_name}</strong> wants to connect to your Jean Memory account
+                </div>
+                
+                <div class="user-info">
+                    <strong>Logged in as:</strong> {current_user.email}
+                </div>
+                
+                <div class="permissions">
+                    <h3>This will allow {client_name} to:</h3>
+                    <ul>
+                        <li>Access your memories and conversations</li>
+                        <li>Store new memories from your interactions</li>
+                        <li>Search your existing knowledge base</li>
+                        <li>Provide personalized context and insights</li>
+                    </ul>
+                </div>
+                
+                <div class="buttons">
+                    <form method="post" action="/oauth/approve" style="flex: 1;">
+                        <input type="hidden" name="session_id" value="{session_id}">
+                        <button type="submit" class="button approve">Allow</button>
+                    </form>
+                    <form method="post" action="/oauth/deny" style="flex: 1;">
+                        <input type="hidden" name="session_id" value="{session_id}">
+                        <button type="submit" class="button deny">Deny</button>
+                    </form>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    else:
+        # User not logged in - show login prompt
+        login_url = f"https://app.jeanmemory.com/auth?return_url={config.API_BASE_URL}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Connect {client_name} to Jean Memory</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
+                .container {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 100%; text-align: center; }}
+                .logo {{ margin-bottom: 30px; }}
+                .logo h1 {{ color: #333; margin: 0; font-size: 24px; }}
+                .message {{ color: #666; margin-bottom: 30px; line-height: 1.5; }}
+                .login-button {{ display: inline-block; background: #007bff; color: white; padding: 15px 30px; border-radius: 6px; text-decoration: none; font-size: 16px; }}
+                .login-button:hover {{ background: #0056b3; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">
+                    <h1>🧠 Jean Memory</h1>
+                </div>
+                
+                <div class="message">
+                    <strong>{client_name}</strong> wants to connect to your Jean Memory account.
+                    <br><br>
+                    Please log in to continue.
+                </div>
+                
+                <a href="{login_url}" class="login-button">
+                    Log in to Jean Memory
+                </a>
+            </div>
+        </body>
+        </html>
+        """
+    
+    return HTMLResponse(content=html)
 
 
-@oauth_router.get("/callback")
-async def oauth_callback(request: Request, session_id: str):
-    """Handle callback from Jean Memory login"""
+@oauth_router.post("/approve")
+async def approve_authorization(request: Request, session_id: str = Form(...)):
+    """User approved the authorization request"""
     
     # Get session
     session = auth_sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=400, detail="Invalid session")
     
-    # Get user info from Supabase session (same way your existing endpoints do)
+    # Get current user from Supabase
     try:
         from app.auth import get_current_supa_user
-        
-        # Try to get authenticated user from request
         user = await get_current_supa_user(request)
         
         if not user:
-            # If no user session, show error
             raise HTTPException(status_code=401, detail="Not authenticated")
         
         user_id = str(user.user_id)
         email = user.email
         
     except Exception as e:
-        # If auth fails, redirect back to login
-        jean_memory_login_url = "https://app.jeanmemory.com/auth"
-        return_url = f"{config.API_BASE_URL}/oauth/callback?session_id={session_id}"
-        redirect_url = f"{jean_memory_login_url}?return_url={return_url}"
-        return RedirectResponse(url=redirect_url)
+        raise HTTPException(status_code=401, detail="Authentication failed")
     
     # Generate authorization code
     auth_code = secrets.token_urlsafe(32)
@@ -184,9 +292,32 @@ async def oauth_callback(request: Request, session_id: str):
     # Clean up session
     del auth_sessions[session_id]
     
-    # Redirect back to Claude
+    # Redirect back to Claude with auth code
     params = {
         "code": auth_code,
+        "state": session["state"]
+    }
+    redirect_url = f"{session['redirect_uri']}?{urlencode(params)}"
+    
+    return RedirectResponse(url=redirect_url)
+
+
+@oauth_router.post("/deny")
+async def deny_authorization(session_id: str = Form(...)):
+    """User denied the authorization request"""
+    
+    # Get session
+    session = auth_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=400, detail="Invalid session")
+    
+    # Clean up session
+    del auth_sessions[session_id]
+    
+    # Redirect back to Claude with error
+    params = {
+        "error": "access_denied",
+        "error_description": "User denied the request",
         "state": session["state"]
     }
     redirect_url = f"{session['redirect_uri']}?{urlencode(params)}"

@@ -6,7 +6,6 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer
 from app.database import engine, Base, SessionLocal
-from app.mcp_server import setup_mcp_server
 from app.routers import memories_router, apps_router, stats_router, integrations_router, profile_router, webhooks_router
 from app.routers import keys as keys_router
 from app.routers.admin import router as admin_router
@@ -399,8 +398,6 @@ async def oauth_discovery_root():
 
 
 
-# Setup MCP server after routers but outside of lifespan to ensure it doesn't block health checks
-setup_mcp_server(app)
 
 # add_pagination(app) # Keep if used
 
