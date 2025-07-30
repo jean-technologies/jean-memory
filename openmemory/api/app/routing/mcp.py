@@ -75,6 +75,7 @@ async def register_agent_connection(session_id: str, agent_id: str, real_user_id
     """
     Register agent connection in database for multi-terminal coordination.
     Auto-creates session if it doesn't exist.
+    Gracefully handles database errors to avoid breaking standard functionality.
     """
     try:
         from sqlalchemy import text
@@ -146,17 +147,20 @@ async def register_agent_connection(session_id: str, agent_id: str, real_user_id
         return True
         
     except Exception as e:
-        logger.error(f"Error registering agent connection: {e}", exc_info=True)
-        if 'db' in locals():
-            db.rollback()
+        logger.warning(f"Could not register agent connection (non-critical): {e}")
+        # Don't re-raise the exception - this is optional functionality
         return False
     finally:
         if 'db' in locals():
-            db.close()
+            try:
+                db.close()
+            except:
+                pass
 
 async def get_session_agents(session_id: str) -> list:
     """
     Get all agents in a session for coordination.
+    Returns empty list if database is unavailable.
     """
     try:
         from sqlalchemy import text
@@ -185,11 +189,14 @@ async def get_session_agents(session_id: str) -> list:
         return agents
         
     except Exception as e:
-        logger.error(f"Error getting session agents: {e}", exc_info=True)
+        logger.warning(f"Could not get session agents (non-critical): {e}")
         return []
     finally:
         if 'db' in locals():
-            db.close()
+            try:
+                db.close()
+            except:
+                pass
 
 async def handle_request_logic(request: Request, body: dict, background_tasks: BackgroundTasks):
     """Unified logic to handle an MCP request, abstracted from the transport."""
@@ -359,15 +366,18 @@ async def handle_http_v2_transport(client_name: str, user_id: str, request: Requ
         if session_info["is_multi_agent"]:
             logger.warning(f"🔄 Multi-Terminal Transport: {client_name}/{user_id} - Method: {method} - Session: {session_info['session_id']} - Agent: {session_info['agent_id']} - Service: {SERVICE_NAME} ({RENDER_REGION})")
             
-            # Register agent connection on initialize method
+            # Register agent connection on initialize method (non-blocking)
             if method == "initialize":
-                connection_url = f"{request.url.scheme}://{request.url.netloc}{request.url.path}"
-                await register_agent_connection(
-                    session_info["session_id"],
-                    session_info["agent_id"], 
-                    real_user_id,
-                    connection_url
-                )
+                try:
+                    connection_url = f"{request.url.scheme}://{request.url.netloc}{request.url.path}"
+                    await register_agent_connection(
+                        session_info["session_id"],
+                        session_info["agent_id"], 
+                        real_user_id,
+                        connection_url
+                    )
+                except Exception as e:
+                    logger.warning(f"Agent registration failed (non-critical): {e}")
         else:
             logger.warning(f"🚀 HTTP v2 Transport: {client_name}/{user_id} - Method: {method} - Service: {SERVICE_NAME} ({RENDER_REGION})")
         
