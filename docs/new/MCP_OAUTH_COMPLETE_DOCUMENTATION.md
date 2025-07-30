@@ -509,6 +509,136 @@ INFO: 34.162.142.92:0 - "POST /mcp HTTP/1.1" 401 Unauthorized
 
 **Status:** OAuth 2.1 MCP implementation should now be fully functional.
 
+## CRITICAL ISSUE DISCOVERED (July 30, 2025 - Late Evening)
+
+### Problem: OAuth Success But Claude Connection Not Persisting
+
+**Root Cause Analysis:** Despite successful OAuth flow completion (confirmed by server logs showing MCP requests being processed), Claude Web shows the MCP server as disconnected and unusable.
+
+**Evidence from Production Logs:**
+```
+2025-07-30 23:44:52,235 - app.routing.mcp - INFO - 🔧 [MCP Context] Setting context variables for user: 7c14eba4-221e-4e43-830b-aa7ec1e17501, client: claude
+2025-07-30 23:44:52,235 - app.routing.mcp - INFO - 🔧 [MCP Context] Context variables set - background_tasks: True
+2025-07-30 23:44:52,235 - app.routing.mcp - INFO - Handling MCP method 'resources/list' for client 'claude'
+INFO:     2a06:98c0:3600::103:0 - "POST /mcp/messages/ HTTP/1.1" 200 OK
+```
+
+**Status:**
+- ✅ OAuth Discovery working (`.well-known/oauth-authorization-server`)
+- ✅ Client Registration working (Dynamic Client Registration)
+- ✅ Authorization flow working (login page displays correctly)
+- ✅ Token exchange working (PKCE validation successful)
+- ✅ **MCP requests being processed successfully** (resources/list method handled)
+- ❌ **Claude Web UI shows server as disconnected**
+
+### Research Findings from Community Issues (2025)
+
+**Common MCP OAuth Issues Identified:**
+
+1. **Production vs Preview Deployment Failures**
+   - Claude's OAuth proxy (`claude.ai/api/organizations/.../mcp/start-auth/`) fails with `step=start_error` for production deployments
+   - Same code works perfectly in preview/development environments
+   - Issue appears to be within Claude's internal OAuth handling, not MCP server implementation
+
+2. **OAuth Proxy Communication Issues**
+   - Claude Web may complete OAuth but fail to establish persistent MCP connection
+   - Token exchange succeeds but connection status doesn't update in UI
+   - MCP server receives and processes requests correctly
+
+3. **Dynamic Client Registration Edge Cases**
+   - Claude requires DCR (RFC 7591) compliance
+   - Some implementations work with MCP Inspector but fail with Claude Web
+   - Client authentication may succeed but connection fails to persist
+
+### Potential Root Causes
+
+**Based on community research and our evidence:**
+
+1. **Claude's OAuth Proxy Bug**: Our server logs show successful OAuth and MCP processing, but Claude's UI doesn't reflect the connection
+2. **Transport Protocol Mismatch**: Claude Web may expect specific transport protocols or headers
+3. **Session Persistence Issue**: OAuth completes but Claude doesn't save the connection state
+4. **Health Check Failures**: Claude may perform additional health checks that our server doesn't handle
+
+### Proposed Solutions (Directional Fixes)
+
+#### Solution 1: Add MCP Health Check Endpoint
+**Problem**: Claude may require specific health check endpoints to confirm connection
+**Implementation**:
+```python
+@app.get("/mcp/health")
+async def mcp_health_check():
+    return {
+        "status": "healthy",
+        "protocol": "MCP",
+        "oauth": "enabled",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+```
+
+#### Solution 2: Implement MCP Capabilities Endpoint
+**Problem**: Claude may need to verify MCP capabilities after OAuth
+**Implementation**:
+```python
+@mcp_router.post("/capabilities")
+async def mcp_capabilities():
+    return {
+        "capabilities": {
+            "resources": {},
+            "tools": {},
+            "prompts": {},
+            "logging": {}
+        },
+        "protocolVersion": "2024-11-05",
+        "serverInfo": {
+            "name": "jean-memory",
+            "version": "1.0.0"
+        }
+    }
+```
+
+#### Solution 3: Add CORS Headers for Claude Web
+**Problem**: Claude Web may require specific CORS headers for persistent connections
+**Implementation**:
+```python
+# Add to CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        # ... existing origins ...
+        "https://claude.ai",
+        "https://api.claude.ai",
+        "https://*.claude.ai"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["*"]
+)
+```
+
+#### Solution 4: Transport Protocol Verification
+**Problem**: Claude Web may require specific transport protocol handling
+**Investigation**: Check if Claude expects SSE, WebSocket, or HTTP streaming protocols
+
+#### Solution 5: MCP Inspector Testing
+**Problem**: Need to isolate if issue is Claude-specific or general MCP compatibility
+**Action**: Test our OAuth MCP server with MCP Inspector tool to verify functionality
+
+### Immediate Next Steps
+
+1. **Add MCP health check and capabilities endpoints**
+2. **Test with MCP Inspector to isolate Claude Web issues**
+3. **Monitor Claude Web network tab during connection attempts**
+4. **Consider alternative transport protocols (SSE/WebSocket)**
+5. **Verify if issue affects Claude Desktop vs Claude Web differently**
+
+### Community Workarounds
+
+**From 2025 MCP community reports:**
+- Some developers report success using `mcp-remote` adapter as intermediary
+- Others suggest ensuring proper OAuth 2.1 compliance with all required headers
+- Production deployment issues may require specific domain/SSL configurations
+
 ## Key Learnings (Updated)
 
 1. **Cross-Domain Cookie Security** - Browser security prevents cookie sharing across domains
@@ -520,3 +650,6 @@ INFO: 34.162.142.92:0 - "POST /mcp HTTP/1.1" 401 Unauthorized
 7. **User UUID Mapping Critical** - JWT tokens must contain internal User.id, not Supabase UUID
 8. **Supabase Redirect Configuration Critical** - OAuth flows fail if Supabase redirects to wrong domain
 9. **Production Flow Preservation** - OAuth implementations must not break existing authentication flows
+10. **OAuth Success ≠ Connection Persistence** - Successful OAuth and MCP processing doesn't guarantee Claude UI shows connection
+11. **Claude Web OAuth Proxy Issues** - Community reports suggest Claude's internal OAuth proxy has production deployment bugs
+12. **MCP Inspector Testing Essential** - Isolate Claude-specific issues from general MCP compatibility problems

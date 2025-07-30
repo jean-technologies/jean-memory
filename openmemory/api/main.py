@@ -155,6 +155,10 @@ app.add_middleware(
         "https://jean-memory-ui-virginia.onrender.com", # Render.com frontend URL (Virginia)
         "https://api.jeanmemory.com", # API domain used by some components
         "https://platform.openai.com", # OpenAI API Playground
+        "https://claude.ai", # Claude Web
+        "https://api.claude.ai", # Claude API
+        "https://app.claude.ai", # Claude App
+        "https://*.claude.ai", # Claude subdomains
     ],  
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], # Added PATCH
