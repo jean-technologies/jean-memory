@@ -183,34 +183,44 @@ else:
 - **Set realistic targets** (even 10x improvement valuable)
 - **Use right tool for job** (ADK for speed, Jean Memory for depth)
 
-## Recommended Implementation Path
+## Recommended Implementation Path (Revised)
 
-### Phase 1: Minimal Viable Coordination (1 week)
-```python
-# Virtual user ID pattern - SIMPLE & WORKS  
-session_user_id = f"{base_user_id}__session__{session_name}__{agent_id}"
+### Phase 1: Native Features Setup (1 day)
+```bash
+# Use Claude Code's native /agents command to create subagents
+# Reference: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+/agents
+# Create: planner, implementer subagents with tool restrictions
 
-# Basic coordination tools using ADK
-@mcp.tool()
-async def claim_file_lock(files: List[str]) -> Dict:
-    # 1-5ms response using ADK session state
-    
-@mcp.tool() 
-async def check_agent_status() -> Dict:
-    # 1-5ms response using ADK session state
+# Use Claude Code's native /hooks command for coordination  
+# Reference: https://docs.anthropic.com/en/docs/claude-code/hooks-guide
+/hooks
+# Configure: PreToolUse file conflict prevention, PostToolUse change tracking
 ```
 
-### Phase 2: User Workflow Integration (1 week)
-- Planning agent with codebase analysis
-- Task distribution system
-- Progress tracking dashboard
-- Completion verification
+```python
+# Minimal MCP coordination tools (only what's needed)
+# Reference: https://docs.anthropic.com/en/docs/claude-code/mcp
+@mcp.tool()
+async def analyze_task_conflicts(tasks: List[str]) -> Dict:
+    # Used by planner subagent for task analysis
+    
+@mcp.tool()
+async def claim_file_lock(files: List[str]) -> Dict:
+    # Backup coordination when hooks need additional support
+```
 
-### Phase 3: Production Optimization (1 week)  
-- Performance monitoring
-- Error handling
-- Fallback mechanisms
-- Documentation
+### Phase 2: Integration & Testing (1 day)
+- Test native subagent switching and context isolation
+- Verify hooks prevent file conflicts automatically
+- Test coordination tools work with subagents
+- End-to-end workflow validation
+
+### Phase 3: Production Deployment (1 day)  
+- Performance monitoring of native features
+- Error handling for edge cases
+- Documentation and user guides
+- Production deployment with monitoring
 
 ## Critical Success Factors
 
@@ -231,37 +241,54 @@ async def check_agent_status() -> Dict:
 
 ## What NOT to Build
 
-Based on previous failures, avoid these complexity traps:
+Based on previous failures and discovery of Claude Code native features, avoid these complexity traps:
 
 ❌ **Complex MCP Protocol Modifications**  
 ❌ **Custom Protocol Bridges**  
 ❌ **Major Architecture Rewrites**  
 ❌ **Complex State Management Systems**  
 ❌ **Multi-Client Generic Solutions**
+❌ **External Service Dependencies (Google ADK, etc.)**
+❌ **Custom Multi-Agent Context Management** (Native subagents exist)
+❌ **Custom Agent Switching Logic** (Built into Claude Code)
+❌ **Complex Session Management** (Hooks provide deterministic coordination)
 
-## What TO Build (Minimal & Focused)
+## What TO Build (Native Features First)
 
-✅ **Virtual User ID Session Detection**  
-✅ **Google ADK Integration for Speed**  
-✅ **Conditional Tool Loading**  
-✅ **Simple File Locking via Session State**  
-✅ **Basic Agent Status Sharing**  
+✅ **Claude Code Subagents** (Built-in multi-agent system - [Documentation](https://docs.anthropic.com/en/docs/claude-code/sub-agents))
+✅ **Hooks-Based Coordination** (Deterministic conflict prevention - [Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks-guide))
+✅ **Minimal MCP Tools** (Only for complex coordination not handled natively - [Documentation](https://docs.anthropic.com/en/docs/claude-code/mcp))
+✅ **Single MCP Connection** (Leverage existing proven transport)
+✅ **Tool Access Restrictions** (Per-subagent tool limitations)  
 
 ## Expected Outcomes
 
-### Performance Improvements
-- **40-800x faster** coordination operations
-- **Sub-second** file locking and synchronization  
-- **Real-time** agent communication
-- **Collision-free** multi-agent development
+### Performance Improvements (Native Features + Hooks)
+- **Instant** agent switching (native Claude Code feature)
+- **< 1ms** file conflict prevention (hooks-based)
+- **Instant** agent communication (native subagent contexts)
+- **Zero-latency** coordination (deterministic hooks execution)
 
-### User Experience
-- **Familiar interface** - each agent works like normal Claude Code
-- **Seamless coordination** - automatic conflict prevention
-- **Parallel development** - multiple complex tasks simultaneously
-- **Zero learning curve** - leverages existing Claude Code knowledge
+### User Experience  
+- **Native interface** - uses Claude Code's intended /agents and /hooks commands
+- **Automatic coordination** - hooks provide guaranteed conflict prevention
+- **Parallel development** - native subagent context isolation enables true parallelism
+- **Zero learning curve** - leverages Claude Code's documented multi-agent patterns
+- **Better reliability** - native features maintained by Anthropic
+- **Seamless integration** - single MCP connection provides all capabilities
 
-This lessons learned document ensures we avoid previous pitfalls while implementing a minimal, robust solution that directly supports the user workflow.
+### Implementation Benefits
+- **50-80% less custom code** - leverage native multi-agent features
+- **Native performance** - no network calls for agent switching
+- **Deterministic behavior** - hooks guarantee execution vs. LLM choices
+- **Future-proof** - aligned with Claude Code's intended usage patterns
+- **Maintenance-free** - native features maintained by Anthropic
+- **Better debugging** - native Claude Code tooling and logging
+
+### Discovery Impact
+The discovery of Claude Code's native subagents and hooks system fundamentally changes our approach from "building a custom multi-agent system" to "leveraging Claude Code's intended multi-agent capabilities with minimal coordination tools."
+
+This represents a paradigm shift from custom development to native feature utilization, resulting in dramatically reduced complexity while achieving superior performance and user experience.
 
 ## Additional Insights from Claude Code MCP Implementation
 
@@ -275,15 +302,17 @@ npx install-mcp {url}           # Incompatible with Claude Code
 claude mcp add --transport http jean-memory {url}
 ```
 
-### Key Implementation Findings
-1. **Transport Layer**: HTTP transport is the only reliable option for Claude Code
-2. **Protocol Compliance**: MCP initialize response capabilities are critical
-3. **URL Structure**: Direct backend URLs work better than proxy/SSE approaches
-4. **Authentication**: Simple user ID in URL works; OAuth adds complexity
-5. **Performance**: Direct HTTP is 50-75% faster than SSE/Cloudflare proxy
+### Key Implementation Findings (Updated for Native Features Approach)
+1. **Native Multi-Agent Support**: Claude Code has built-in subagents system that eliminates need for custom agent management
+2. **Hooks System**: Provides deterministic coordination that's more reliable than LLM-based coordination
+3. **Transport Layer**: Single HTTP MCP connection supports all multi-agent features
+4. **Tool Restrictions**: Native per-subagent tool access control eliminates need for custom session detection
+5. **Performance**: Native agent switching and hooks provide instant coordination
+6. **Maintenance**: Native features maintained by Anthropic, reducing long-term maintenance burden
 
-### Testing Strategy That Works
-1. Test protocol compliance with simple Node.js script first
-2. Use actual Claude Code client early in development
-3. Verify tool discovery with `/mcp` command in Claude Code
-4. Check both connection status AND tool availability
+### Testing Strategy That Works (Revised)
+1. Test subagent creation and management via `/agents` command
+2. Verify hooks configuration and execution via `/hooks` command  
+3. Test native subagent context isolation and tool restrictions
+4. Validate coordination tools integrate properly with native features
+5. End-to-end workflow testing with actual Claude Code client

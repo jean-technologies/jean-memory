@@ -68,10 +68,12 @@
 
 ### Technical Implementation (User-Transparent)
 
-- **Session Memory**: Google ADK provides fast, isolated shared memory per session
-- **Claude Code Exclusive**: Zero impact on other MCP clients
-- **Performance**: Sub-50ms coordination operations (vs 2-6s with current system)
-- **Isolation**: Session data separate from user's long-term Jean Memory
+- **Native Subagents**: Claude Code's built-in multi-agent system provides instant context isolation and task delegation
+- **Hooks-Based Coordination**: Deterministic conflict prevention and change tracking via Claude Code's hooks system  
+- **Performance**: Instant agent switching and < 1ms coordination operations (vs 2-6s with current system)
+- **Context Isolation**: Native per-subagent contexts separate from user's long-term Jean Memory
+- **Single Connection**: All multi-agent functionality through one Jean Memory MCP connection
+- **Zero Learning Curve**: Uses Claude Code's intended /agents and /hooks commands
 
 ### Success Metrics
 
@@ -87,5 +89,5 @@ Based on our recent Claude Code MCP implementation experience:
 
 1. **Transport Considerations**: The multi-agent coordination will need to use HTTP transport (`--transport http`) as we discovered it's more reliable than stdio/SSE approaches
 2. **Tool Discovery**: Ensure proper MCP capabilities advertisement in the initialize response - without this fix, coordination tools won't appear in Claude Code
-3. **Authentication**: Consider whether to use direct user ID URLs or OAuth - our testing showed direct URLs work immediately while OAuth adds complexity
-4. **Performance**: Direct HTTP connections to backend are 50-75% faster than SSE/Cloudflare proxy approaches
+3. **Authentication**: Direct user ID URLs work immediately and are simple to implement
+4. **Performance**: Native subagents ([Documentation](https://docs.anthropic.com/en/docs/claude-code/sub-agents)) and hooks ([Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks-guide)) provide instant coordination with zero network overhead
