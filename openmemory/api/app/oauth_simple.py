@@ -166,11 +166,42 @@ async def authorize(
     try:
         from app.auth import get_current_supa_user
         current_user = await get_current_supa_user(request)
-    except:
-        pass
+        logger.info(f"Found authenticated user: {current_user.email}")
+    except Exception as e:
+        logger.info(f"No authenticated user found: {e}")
     
     # Show authorization page
     client_name = client_info.get("client_name", "Unknown App")
+    
+    if current_user:
+        # User is already authenticated - auto-approve for Claude
+        if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
+            logger.info(f"Auto-approving Claude client for authenticated user: {current_user.email}")
+            
+            # Generate authorization code immediately
+            auth_code = secrets.token_urlsafe(32)
+            
+            # Store auth code with user info
+            auth_sessions[auth_code] = {
+                **session,
+                "user_id": str(current_user.id),
+                "email": current_user.email,
+                "code": auth_code,
+                "authorized_at": time.time()
+            }
+            
+            # Clean up session
+            del auth_sessions[session_id]
+            
+            # Redirect back to Claude with auth code
+            params = {
+                "code": auth_code,
+                "state": session["state"]
+            }
+            redirect_url = f"{session['redirect_uri']}?{urlencode(params)}"
+            logger.info(f"Redirecting to Claude with auth code: {redirect_url}")
+            
+            return RedirectResponse(url=redirect_url)
     
     if current_user:
         # User is logged in - show approval form
@@ -846,6 +877,11 @@ async def token_exchange(
     code_verifier: Optional[str] = Form(None)
 ):
     """Exchange authorization code for access token"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"Token exchange request: grant_type={grant_type}, client_id={client_id}, code={code[:8]}...")
+    logger.info(f"Available auth codes: {list(auth_sessions.keys())}")
     
     if grant_type != "authorization_code":
         raise HTTPException(status_code=400, detail="Unsupported grant type")
@@ -853,10 +889,12 @@ async def token_exchange(
     # Get auth data
     auth_data = auth_sessions.get(code)
     if not auth_data or "user_id" not in auth_data:
+        logger.error(f"Invalid authorization code: {code}")
         raise HTTPException(status_code=400, detail="Invalid authorization code")
     
     # Validate client - also handle auto-registration for Claude
     if auth_data["client_id"] != client_id:
+        logger.error(f"Client mismatch: expected {auth_data['client_id']}, got {client_id}")
         raise HTTPException(status_code=400, detail="Client mismatch")
     
     # Ensure client still exists in registered_clients (in case of server restart)
@@ -870,6 +908,22 @@ async def token_exchange(
             "scope": "read write",
             "token_endpoint_auth_method": "none"
         }
+        logger.info(f"Re-registered Claude client after server restart: {client_id}")
+    
+    # Validate PKCE if provided
+    if code_verifier and "code_challenge" in auth_data:
+        import hashlib
+        import base64
+        
+        # Verify PKCE challenge
+        verifier_hash = hashlib.sha256(code_verifier.encode()).digest()
+        verifier_challenge = base64.urlsafe_b64encode(verifier_hash).decode().rstrip('=')
+        
+        if verifier_challenge != auth_data["code_challenge"]:
+            logger.error("PKCE verification failed")
+            raise HTTPException(status_code=400, detail="Invalid code verifier")
+        
+        logger.info("PKCE verification successful")
     
     # Create access token
     access_token = create_access_token(
@@ -877,6 +931,8 @@ async def token_exchange(
         email=auth_data["email"],
         client_name="claude"
     )
+    
+    logger.info(f"Created access token for user {auth_data['email']}")
     
     # Clean up auth code
     del auth_sessions[code]
