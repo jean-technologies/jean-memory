@@ -32,7 +32,7 @@ chatgpt_session_mappings: Dict[str, Dict[str, str]] = {}
 # MULTI-AGENT SESSION MANAGEMENT
 # ===============================================
 
-def parse_virtual_user_id(user_id: str) -> Dict[str, any]:
+def parse_virtual_user_id(user_id: str) -> Dict[str, Any]:
     """
     Parse virtual user ID for multi-terminal session detection.
     
