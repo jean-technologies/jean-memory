@@ -607,31 +607,66 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
         ) : app.id === 'claude code' ? (
             <div className="py-2 space-y-4 text-left">
                 <p className="text-muted-foreground text-sm mb-4">
-                    Add Jean Memory as an MCP server to Claude Code for persistent memory across all your coding sessions.
+                    Jean Memory tracks your projects and builds a working memory.
+                </p>
+                <p className="text-muted-foreground text-sm mb-4">
+                    Add Jean Memory as an MCP server to Claude Code using our stdio-based implementation for maximum reliability.
                 </p>
                 
                 <div className="space-y-4">
                     <div>
-                        <h3 className="font-medium text-foreground mb-2">1. Add MCP Server</h3>
-                        <p className="text-xs text-muted-foreground mb-2">Run this command in your terminal:</p>
+                        <h3 className="font-medium text-foreground mb-2">1. Install Dependencies</h3>
+                        <p className="text-xs text-muted-foreground mb-2">First, download our MCP server package:</p>
                         <div className="relative bg-background border rounded-md">
                             <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
-                                <code className="whitespace-pre-wrap break-words">{installCommand}</code>
+                                <code className="whitespace-pre-wrap break-words">curl -o jean-memory-mcp.tar.gz https://jean-memory-api-dev.onrender.com/mcp/claude-code/package</code>
                             </div>
                             <Button 
                                 variant="ghost" 
                                 size="sm"
                                 className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(installCommand)}
+                                onClick={() => handleCopy("curl -o jean-memory-mcp.tar.gz https://jean-memory-api-dev.onrender.com/mcp/claude-code/package")}
                             >
                                 {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">Then extract:</p>
+                        <div className="relative bg-background border rounded-md">
+                            <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                <code>tar -xzf jean-memory-mcp.tar.gz</code>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                onClick={() => handleCopy("tar -xzf jean-memory-mcp.tar.gz")}
+                            >
+                                <Copy className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
 
                     <div>
-                        <h3 className="font-medium text-foreground mb-2">2. Verify Installation</h3>
-                        <p className="text-xs text-muted-foreground mb-2">Check that the server is active:</p>
+                        <h3 className="font-medium text-foreground mb-2">2. Add MCP Server</h3>
+                        <p className="text-xs text-muted-foreground mb-2">Run this command to add Jean Memory to Claude Code:</p>
+                        <div className="relative bg-background border rounded-md">
+                            <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                <code className="whitespace-pre-wrap break-words">claude mcp add jean-memory -- node ./jean-memory-mcp-server.js --user-id {user?.id || '3237d468-429b-4ab6-9380-988f26131ffb'}</code>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                onClick={() => handleCopy(`claude mcp add jean-memory -- node ./jean-memory-mcp-server.js --user-id ${user?.id || '3237d468-429b-4ab6-9380-988f26131ffb'}`)}
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="font-medium text-foreground mb-2">3. Verify Installation</h3>
+                        <p className="text-xs text-muted-foreground mb-2">Check that Jean Memory is active:</p>
                         <div className="relative bg-background border rounded-md">
                             <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
                                 <code>claude mcp list</code>
@@ -645,6 +680,26 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                                 <Copy className="h-4 w-4" />
                             </Button>
                         </div>
+                    </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 border border-blue-200 dark:border-blue-800">
+                    <p className="text-blue-800 dark:text-blue-200 text-xs font-medium mb-1">Your User ID</p>
+                    <p className="text-blue-700 dark:text-blue-300 text-xs mb-2">
+                        Keep this ID for the installation command above:
+                    </p>
+                    <div className="relative bg-white dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-md">
+                        <div className="overflow-x-auto p-2 pr-10 font-mono text-xs text-blue-900 dark:text-blue-100">
+                            <code>{user?.id || '3237d468-429b-4ab6-9380-988f26131ffb'}</code>
+                        </div>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0" 
+                            onClick={() => handleCopy(user?.id || '3237d468-429b-4ab6-9380-988f26131ffb')}
+                        >
+                            <Copy className="h-3 w-3" />
+                        </Button>
                     </div>
                 </div>
 

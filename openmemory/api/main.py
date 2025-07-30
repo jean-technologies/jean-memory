@@ -273,24 +273,47 @@ async def download_claude_code_mcp_package():
     import tarfile
     import shutil
     from pathlib import Path
+    import logging
     
-    # Create a temporary tar.gz file with the MCP server and dependencies
-    temp_dir = tempfile.mkdtemp()
+    logger = logging.getLogger(__name__)
+    
     try:
-        # Copy MCP server files from local API directory
+        # Get API directory and check for MCP server files
         api_dir = Path(__file__).parent
         server_file = api_dir / "jean-memory-mcp-server.js"
         package_file = api_dir / "mcp-package.json"
         
-        if not server_file.exists():
-            raise HTTPException(status_code=404, detail="MCP server file not found")
+        logger.info(f"Looking for MCP files in: {api_dir}")
+        logger.info(f"Server file exists: {server_file.exists()}")
+        logger.info(f"Package file exists: {package_file.exists()}")
         
-        # Create tar.gz with the necessary files
+        if not server_file.exists():
+            raise HTTPException(
+                status_code=404, 
+                detail=f"MCP server file not found at {server_file}. Working directory: {Path.cwd()}"
+            )
+        
+        # Create a temporary tar.gz file
+        temp_dir = tempfile.mkdtemp()
         tar_path = Path(temp_dir) / "jean-memory-mcp.tar.gz"
+        
+        logger.info(f"Creating tar file at: {tar_path}")
+        
         with tarfile.open(tar_path, 'w:gz') as tar:
             tar.add(server_file, arcname="jean-memory-mcp-server.js")
             if package_file.exists():
                 tar.add(package_file, arcname="package.json")
+        
+        logger.info(f"Tar file created successfully, size: {tar_path.stat().st_size} bytes")
+        
+        # Use a background task to cleanup the temp directory after response
+        import asyncio
+        
+        async def cleanup():
+            await asyncio.sleep(10)  # Wait 10 seconds before cleanup
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        
+        asyncio.create_task(cleanup())
         
         return FileResponse(
             path=str(tar_path),
@@ -301,9 +324,10 @@ async def download_claude_code_mcp_package():
                 "Content-Description": "Jean Memory MCP Server Package for Claude Code"
             }
         )
-    finally:
-        # Clean up temp directory
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        
+    except Exception as e:
+        logger.error(f"Error creating MCP package: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create package: {str(e)}")
 
 @app.get("/api/v1/vcard")
 async def serve_vcard(data: str):
