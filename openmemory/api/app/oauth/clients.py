@@ -28,15 +28,18 @@ class ClientRegistry:
     def _init_default_clients(self):
         """Initialize known clients"""
         
-        # Claude
-        self.register_client(
+        # Claude - Fixed client ID for well-known client
+        claude_client = OAuthClient(
+            client_id="claude-ai",  # Fixed ID for Claude
             client_name="Claude",
             client_type="claude",
             redirect_uris=[
                 "https://claude.ai/api/mcp/auth_callback",
                 "https://claude.anthropic.com/api/mcp/auth_callback"
-            ]
+            ],
+            allowed_scopes=["read", "write"]
         )
+        self.clients["claude-ai"] = claude_client
         
         # Future: ChatGPT
         # self.register_client(
