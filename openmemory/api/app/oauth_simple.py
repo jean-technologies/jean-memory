@@ -147,65 +147,296 @@ async def authorize(
         # User is logged in - show approval form
         html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
             <title>Connect {client_name} to Jean Memory</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
             <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
-                .container {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 100%; }}
-                .logo {{ text-align: center; margin-bottom: 30px; }}
-                .logo h1 {{ color: #333; margin: 0; font-size: 24px; }}
-                .user-info {{ background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
-                .user-info strong {{ color: #495057; }}
-                .permissions {{ margin: 20px 0; }}
-                .permissions h3 {{ color: #333; font-size: 16px; margin-bottom: 10px; }}
-                .permissions ul {{ list-style: none; padding: 0; }}
-                .permissions li {{ padding: 8px 0; color: #666; border-bottom: 1px solid #eee; }}
-                .permissions li:last-child {{ border-bottom: none; }}
-                .permissions li::before {{ content: "✓"; color: #28a745; font-weight: bold; margin-right: 10px; }}
-                .buttons {{ display: flex; gap: 10px; margin-top: 30px; }}
-                .button {{ flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; text-decoration: none; text-align: center; }}
-                .approve {{ background: #007bff; color: white; }}
-                .approve:hover {{ background: #0056b3; }}
-                .deny {{ background: #6c757d; color: white; }}
-                .deny:hover {{ background: #545b62; }}
-                .app-info {{ text-align: center; margin-bottom: 20px; color: #666; }}
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }}
+                
+                body {{
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    line-height: 1.6;
+                }}
+                
+                .container {{
+                    background: white;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+                    max-width: 480px;
+                    width: 100%;
+                    overflow: hidden;
+                }}
+                
+                .header {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 32px;
+                    text-align: center;
+                }}
+                
+                .logo {{
+                    font-size: 48px;
+                    margin-bottom: 8px;
+                }}
+                
+                .brand {{
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                }}
+                
+                .subtitle {{
+                    font-size: 14px;
+                    opacity: 0.9;
+                    font-weight: 300;
+                }}
+                
+                .content {{
+                    padding: 32px;
+                }}
+                
+                .connection-request {{
+                    text-align: center;
+                    margin-bottom: 24px;
+                    padding: 24px;
+                    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+                    border-radius: 12px;
+                    border: 1px solid #e6e8ff;
+                }}
+                
+                .client-name {{
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #4a5568;
+                    margin-bottom: 8px;
+                }}
+                
+                .request-text {{
+                    color: #718096;
+                    font-size: 14px;
+                }}
+                
+                .user-info {{
+                    background: #f7fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 24px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }}
+                
+                .user-avatar {{
+                    width: 40px;
+                    height: 40px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 600;
+                    font-size: 16px;
+                }}
+                
+                .user-details h4 {{
+                    color: #2d3748;
+                    font-weight: 500;
+                    margin-bottom: 2px;
+                }}
+                
+                .user-details p {{
+                    color: #718096;
+                    font-size: 14px;
+                }}
+                
+                .permissions {{
+                    margin-bottom: 32px;
+                }}
+                
+                .permissions h3 {{
+                    color: #2d3748;
+                    font-size: 16px;
+                    font-weight: 600;
+                    margin-bottom: 16px;
+                }}
+                
+                .permissions-list {{
+                    list-style: none;
+                    space-y: 8px;
+                }}
+                
+                .permissions-list li {{
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 0;
+                    color: #4a5568;
+                    font-size: 14px;
+                    border-bottom: 1px solid #f1f5f9;
+                }}
+                
+                .permissions-list li:last-child {{
+                    border-bottom: none;
+                }}
+                
+                .permission-icon {{
+                    width: 20px;
+                    height: 20px;
+                    background: #48bb78;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 12px;
+                    font-weight: bold;
+                    flex-shrink: 0;
+                }}
+                
+                .actions {{
+                    display: flex;
+                    gap: 16px;
+                }}
+                
+                .btn {{
+                    flex: 1;
+                    padding: 16px 24px;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    text-decoration: none;
+                    text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }}
+                
+                .btn-approve {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                }}
+                
+                .btn-approve:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+                }}
+                
+                .btn-deny {{
+                    background: #f7fafc;
+                    color: #4a5568;
+                    border: 1px solid #e2e8f0;
+                }}
+                
+                .btn-deny:hover {{
+                    background: #edf2f7;
+                    border-color: #cbd5e0;
+                }}
+                
+                .security-note {{
+                    margin-top: 24px;
+                    padding: 16px;
+                    background: #f0fff4;
+                    border: 1px solid #c6f6d5;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    color: #276749;
+                }}
+                
+                @media (max-width: 480px) {{
+                    .container {{
+                        border-radius: 0;
+                        min-height: 100vh;
+                    }}
+                    
+                    .actions {{
+                        flex-direction: column;
+                    }}
+                }}
             </style>
         </head>
         <body>
             <div class="container">
-                <div class="logo">
-                    <h1>🧠 Jean Memory</h1>
+                <div class="header">
+                    <div class="logo">🧠</div>
+                    <div class="brand">Jean Memory</div>
+                    <div class="subtitle">Personal AI Memory System</div>
                 </div>
                 
-                <div class="app-info">
-                    <strong>{client_name}</strong> wants to connect to your Jean Memory account
-                </div>
-                
-                <div class="user-info">
-                    <strong>Logged in as:</strong> {current_user.email}
-                </div>
-                
-                <div class="permissions">
-                    <h3>This will allow {client_name} to:</h3>
-                    <ul>
-                        <li>Access your memories and conversations</li>
-                        <li>Store new memories from your interactions</li>
-                        <li>Search your existing knowledge base</li>
-                        <li>Provide personalized context and insights</li>
-                    </ul>
-                </div>
-                
-                <div class="buttons">
-                    <form method="post" action="/oauth/approve" style="flex: 1;">
-                        <input type="hidden" name="session_id" value="{session_id}">
-                        <button type="submit" class="button approve">Allow</button>
-                    </form>
-                    <form method="post" action="/oauth/deny" style="flex: 1;">
-                        <input type="hidden" name="session_id" value="{session_id}">
-                        <button type="submit" class="button deny">Deny</button>
-                    </form>
+                <div class="content">
+                    <div class="connection-request">
+                        <div class="client-name">{client_name}</div>
+                        <div class="request-text">wants to connect to your Jean Memory account</div>
+                    </div>
+                    
+                    <div class="user-info">
+                        <div class="user-avatar">{current_user.email[0].upper()}</div>
+                        <div class="user-details">
+                            <h4>Signed in as</h4>
+                            <p>{current_user.email}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="permissions">
+                        <h3>This will allow {client_name} to:</h3>
+                        <ul class="permissions-list">
+                            <li>
+                                <div class="permission-icon">✓</div>
+                                Access your memories and conversations
+                            </li>
+                            <li>
+                                <div class="permission-icon">✓</div>
+                                Store new memories from your interactions
+                            </li>
+                            <li>
+                                <div class="permission-icon">✓</div>
+                                Search your existing knowledge base
+                            </li>
+                            <li>
+                                <div class="permission-icon">✓</div>
+                                Provide personalized context and insights
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="actions">
+                        <form method="post" action="/oauth/approve" style="flex: 1;">
+                            <input type="hidden" name="session_id" value="{session_id}">
+                            <button type="submit" class="btn btn-approve">
+                                Allow Access
+                            </button>
+                        </form>
+                        <form method="post" action="/oauth/deny" style="flex: 1;">
+                            <input type="hidden" name="session_id" value="{session_id}">
+                            <button type="submit" class="btn btn-deny">
+                                Cancel
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="security-note">
+                        🔒 Your connection is secure and encrypted. You can revoke access at any time from your Jean Memory settings.
+                    </div>
                 </div>
             </div>
         </body>
@@ -217,35 +448,159 @@ async def authorize(
         
         html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
             <title>Connect {client_name} to Jean Memory</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
             <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
-                .container {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 100%; text-align: center; }}
-                .logo {{ margin-bottom: 30px; }}
-                .logo h1 {{ color: #333; margin: 0; font-size: 24px; }}
-                .message {{ color: #666; margin-bottom: 30px; line-height: 1.5; }}
-                .login-button {{ display: inline-block; background: #007bff; color: white; padding: 15px 30px; border-radius: 6px; text-decoration: none; font-size: 16px; }}
-                .login-button:hover {{ background: #0056b3; }}
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }}
+                
+                body {{
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    line-height: 1.6;
+                }}
+                
+                .container {{
+                    background: white;
+                    border-radius: 20px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+                    max-width: 480px;
+                    width: 100%;
+                    overflow: hidden;
+                    text-align: center;
+                }}
+                
+                .header {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 48px 32px;
+                }}
+                
+                .logo {{
+                    font-size: 64px;
+                    margin-bottom: 16px;
+                }}
+                
+                .brand {{
+                    font-size: 28px;
+                    font-weight: 700;
+                    margin-bottom: 8px;
+                }}
+                
+                .subtitle {{
+                    font-size: 16px;
+                    opacity: 0.9;
+                    font-weight: 300;
+                }}
+                
+                .content {{
+                    padding: 48px 32px;
+                }}
+                
+                .connection-request {{
+                    margin-bottom: 32px;
+                    padding: 32px;
+                    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+                    border-radius: 16px;
+                    border: 1px solid #e6e8ff;
+                }}
+                
+                .client-name {{
+                    font-size: 24px;
+                    font-weight: 600;
+                    color: #4a5568;
+                    margin-bottom: 12px;
+                }}
+                
+                .request-text {{
+                    color: #718096;
+                    font-size: 16px;
+                    margin-bottom: 8px;
+                }}
+                
+                .login-instruction {{
+                    color: #a0aec0;
+                    font-size: 14px;
+                    font-style: italic;
+                }}
+                
+                .login-button {{
+                    display: inline-block;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 18px 36px;
+                    border-radius: 12px;
+                    text-decoration: none;
+                    font-size: 16px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                    transition: all 0.2s ease;
+                    margin-bottom: 24px;
+                }}
+                
+                .login-button:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+                }}
+                
+                .security-note {{
+                    padding: 16px;
+                    background: #f0fff4;
+                    border: 1px solid #c6f6d5;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    color: #276749;
+                }}
+                
+                @media (max-width: 480px) {{
+                    .container {{
+                        border-radius: 0;
+                        min-height: 100vh;
+                    }}
+                    
+                    .content {{
+                        padding: 32px 24px;
+                    }}
+                }}
             </style>
         </head>
         <body>
             <div class="container">
-                <div class="logo">
-                    <h1>🧠 Jean Memory</h1>
+                <div class="header">
+                    <div class="logo">🧠</div>
+                    <div class="brand">Jean Memory</div>
+                    <div class="subtitle">Personal AI Memory System</div>
                 </div>
                 
-                <div class="message">
-                    <strong>{client_name}</strong> wants to connect to your Jean Memory account.
-                    <br><br>
-                    Please log in to continue.
+                <div class="content">
+                    <div class="connection-request">
+                        <div class="client-name">{client_name}</div>
+                        <div class="request-text">wants to connect to your Jean Memory account</div>
+                        <div class="login-instruction">Please sign in to continue</div>
+                    </div>
+                    
+                    <a href="{login_url}" class="login-button">
+                        Sign in to Jean Memory
+                    </a>
+                    
+                    <div class="security-note">
+                        🔒 Your login is secure and encrypted. We'll redirect you back here after authentication.
+                    </div>
                 </div>
-                
-                <a href="{login_url}" class="login-button">
-                    Log in to Jean Memory
-                </a>
             </div>
         </body>
         </html>
@@ -263,19 +618,52 @@ async def approve_authorization(request: Request, session_id: str = Form(...)):
     if not session:
         raise HTTPException(status_code=400, detail="Invalid session")
     
-    # Get current user from Supabase
+    # Get current user from Supabase session cookies
     try:
-        from app.auth import get_current_supa_user
-        user = await get_current_supa_user(request)
+        # For OAuth approval, user might not have Authorization header
+        # Try to get user from session cookies instead
+        from app.auth import supabase_service_client
+        from app.settings import config
         
-        if not user:
-            raise HTTPException(status_code=401, detail="Not authenticated")
+        if config.is_local_development:
+            # Use local dev user
+            from app.local_auth_helper import get_local_dev_user
+            user = await get_local_dev_user(request, supabase_service_client, config)
+            user_id = str(user.id)
+            email = user.email or "dev@example.com"
+        else:
+            # Try to get user from session cookies
+            # First check if there's an access_token cookie
+            access_token = request.cookies.get('sb-access-token') or request.cookies.get('supabase-auth-token')
+            
+            if not access_token:
+                # Try to get from other common cookie names
+                import json
+                # Check for session cookie
+                session_cookie = request.cookies.get('sb-session') or request.cookies.get('supabase.auth.token')
+                if session_cookie:
+                    try:
+                        session_data = json.loads(session_cookie)
+                        access_token = session_data.get('access_token')
+                    except:
+                        pass
+            
+            if not access_token:
+                raise HTTPException(status_code=401, detail="Not authenticated - please log in to Jean Memory first")
+            
+            # Validate token with Supabase
+            auth_response = supabase_service_client.auth.get_user(access_token)
+            if not auth_response or not auth_response.user:
+                raise HTTPException(status_code=401, detail="Invalid session - please log in again")
+            
+            user = auth_response.user
+            user_id = str(user.id)
+            email = user.email
         
-        user_id = str(user.user_id)
-        email = user.email
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=401, detail="Authentication failed")
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
     
     # Generate authorization code
     auth_code = secrets.token_urlsafe(32)
@@ -303,7 +691,7 @@ async def approve_authorization(request: Request, session_id: str = Form(...)):
 
 
 @oauth_router.post("/deny")
-async def deny_authorization(session_id: str = Form(...)):
+async def deny_authorization(request: Request, session_id: str = Form(...)):
     """User denied the authorization request"""
     
     # Get session
@@ -322,7 +710,7 @@ async def deny_authorization(session_id: str = Form(...)):
     }
     redirect_url = f"{session['redirect_uri']}?{urlencode(params)}"
     
-    return RedirectResponse(url=redirect_url)
+    return RedirectResponse(url=redirect_url, status_code=302)
 
 
 @oauth_router.post("/token")
