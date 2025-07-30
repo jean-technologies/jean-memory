@@ -67,7 +67,18 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
             client_version = params.get("protocolVersion", "2024-11-05")
             use_annotations = client_version == "2025-03-26"
             protocol_version = "2025-03-26" if use_annotations else "2024-11-05"
-            capabilities = {"tools": {"listChanged": False}, "logging": {}, "sampling": {}} if use_annotations else {"tools": {}}
+            
+            # Properly advertise tool capabilities
+            if use_annotations:
+                capabilities = {
+                    "tools": {"listChanged": False}, 
+                    "logging": {}, 
+                    "sampling": {}
+                }
+            else:
+                capabilities = {
+                    "tools": {}  # This tells clients that tools are supported
+                }
             
             return JSONResponse(content={
                 "jsonrpc": "2.0",
