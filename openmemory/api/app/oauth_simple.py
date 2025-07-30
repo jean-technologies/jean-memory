@@ -80,7 +80,11 @@ async def oauth_discovery():
 @oauth_router.post("/register")
 async def register_client(request: Request):
     """Dynamic client registration for Claude"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     data = await request.json()
+    logger.info(f"Client registration request: {data}")
     
     client_id = f"claude-{secrets.token_urlsafe(8)}"
     client_info = {
@@ -94,6 +98,7 @@ async def register_client(request: Request):
     }
     
     registered_clients[client_id] = client_info
+    logger.info(f"Registered client: {client_id} with info: {client_info}")
     
     return client_info
 
@@ -110,10 +115,31 @@ async def authorize(
     code_challenge_method: Optional[str] = "S256"
 ):
     """OAuth authorization endpoint - shows approval page with Supabase integration"""
+    import logging
+    logger = logging.getLogger(__name__)
     
-    # Validate client
+    logger.info(f"Authorization request: client_id={client_id}, redirect_uri={redirect_uri}")
+    logger.info(f"Current registered clients: {list(registered_clients.keys())}")
+    
+    # Check if client exists, if not and it's Claude, auto-register it
     if client_id not in registered_clients:
-        raise HTTPException(status_code=400, detail="Invalid client")
+        logger.warning(f"Client {client_id} not found in registered clients")
+        if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
+            # Auto-register Claude client
+            client_info = {
+                "client_id": client_id,
+                "client_name": "Claude Web",
+                "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+                "grant_types": ["authorization_code"],
+                "response_types": ["code"],
+                "scope": "read write",
+                "token_endpoint_auth_method": "none"
+            }
+            registered_clients[client_id] = client_info
+            logger.info(f"Auto-registered Claude client: {client_id}")
+        else:
+            logger.error(f"Invalid client: {client_id} with redirect_uri: {redirect_uri}")
+            raise HTTPException(status_code=400, detail="Invalid client")
     
     # Validate redirect URI
     client_info = registered_clients[client_id]
@@ -731,9 +757,21 @@ async def token_exchange(
     if not auth_data or "user_id" not in auth_data:
         raise HTTPException(status_code=400, detail="Invalid authorization code")
     
-    # Validate client
+    # Validate client - also handle auto-registration for Claude
     if auth_data["client_id"] != client_id:
         raise HTTPException(status_code=400, detail="Client mismatch")
+    
+    # Ensure client still exists in registered_clients (in case of server restart)
+    if client_id not in registered_clients and client_id.startswith("claude-"):
+        registered_clients[client_id] = {
+            "client_id": client_id,
+            "client_name": "Claude Web",
+            "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+            "grant_types": ["authorization_code"],
+            "response_types": ["code"],
+            "scope": "read write",
+            "token_endpoint_auth_method": "none"
+        }
     
     # Create access token
     access_token = create_access_token(
