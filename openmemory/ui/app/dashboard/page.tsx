@@ -456,10 +456,20 @@ export default function Dashboard() {
           </div>
 
           {/* Right Side */}
-          <div className="lg:col-span-1 h-full flex flex-col">
-            <div className="flex-1 flex flex-col">
-                 <AnalysisPanel />
-            </div>
+          <div className="lg:col-span-1 h-full overflow-hidden">
+            {/* Spacer to align with connection status bar on left */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="mb-8"
+            >
+              <div className="bg-transparent rounded-lg p-4">
+                <div className="h-6 mb-2"></div>
+                <div className="h-2"></div>
+              </div>
+            </motion.div>
+            <AnalysisPanel />
           </div>
         </div>
       </div>
