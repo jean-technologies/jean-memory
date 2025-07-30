@@ -147,17 +147,7 @@ app.add_middleware(MemoryMonitorMiddleware)
 # It must be a list of specific origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://localhost:3001", 
-        "https://app.jeanmemory.com",  # Updated to new custom domain
-        "https://jeanmemory.com", # New custom domain
-        "https://www.jeanmemory.com", # New custom domain with www
-        "https://jean-memory-ui-virginia.onrender.com", # Render.com frontend URL (Virginia)
-        "https://jean-memory-ui-dev.onrender.com", # Development frontend URL
-        "https://api.jeanmemory.com", # API domain used by some components
-        "https://platform.openai.com", # OpenAI API Playground
-    ],  
+    allow_origins=config.FRONTEND_URLS,  
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], # Added PATCH
     allow_headers=["*"], # Allow all headers to fix CORS issues

@@ -16,6 +16,7 @@ from twilio.rest import Client
 from twilio.base.exceptions import TwilioException
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+from app.settings import config
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ Text me anything you want to remember. I'm here 24/7!"""
             
             # Use our API to serve the vCard file temporarily
             # This endpoint will be created to serve vCard files
-            vcf_url = f"https://jean-memory-api-virginia.onrender.com/api/v1/vcard?data={urllib.parse.quote(vcf_base64)}"
+            vcf_url = f"{config.API_BASE_URL}/api/v1/vcard?data={urllib.parse.quote(vcf_base64)}"
             
             # Send MMS with contact card
             message = self.client.messages.create(

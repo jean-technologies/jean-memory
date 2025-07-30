@@ -81,6 +81,9 @@ class Config:
         # API Base URL configuration for OAuth and MCP endpoints
         self.API_BASE_URL = self._get_api_base_url()
         
+        # Frontend URL configuration for CORS
+        self.FRONTEND_URLS = self._get_frontend_urls()
+        
         # Neo4j configuration for graph memory
         # Only adding what's needed for Neo4j connectivity testing
         self.NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
@@ -204,6 +207,26 @@ class Config:
         else:
             # Development - use dev server
             return "https://jean-memory-api-dev.onrender.com"
+    
+    def _get_frontend_urls(self) -> list:
+        """Get appropriate frontend URLs for CORS configuration"""
+        base_urls = [
+            "http://localhost:3000", 
+            "http://localhost:3001", 
+            "https://app.jeanmemory.com",
+            "https://jeanmemory.com",
+            "https://www.jeanmemory.com",
+            "https://api.jeanmemory.com",
+            "https://platform.openai.com",  # OpenAI API Playground
+        ]
+        
+        # Add environment-specific URLs
+        if self.IS_PRODUCTION:
+            base_urls.append("https://jean-memory-ui-virginia.onrender.com")
+        else:
+            base_urls.append("https://jean-memory-ui-dev.onrender.com")
+        
+        return base_urls
     
     @property
     def environment_name(self) -> str:

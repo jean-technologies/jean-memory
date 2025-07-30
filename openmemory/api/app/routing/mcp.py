@@ -140,7 +140,7 @@ async def handle_http_v2_transport(client_name: str, user_id: str, request: Requ
     V2 HTTP Transport Endpoint - Direct backend routing (no Cloudflare proxy)
     
     This endpoint supports HTTP transport with supergateway --stdio flag.
-    URL format: https://jean-memory-api-virginia.onrender.com/mcp/v2/{client_name}/{user_id}
+    URL format: {api_base_url}/mcp/v2/{client_name}/{user_id}
     
     Features:
     - Direct connection to backend (no Cloudflare Worker)
