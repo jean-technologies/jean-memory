@@ -221,23 +221,24 @@ async def authorize(
     client_name = client_info.get("client_name", "Unknown App")
     
     if current_user:
-        # User is already authenticated - auto-approve for Claude
+        # User is already authenticated - auto-approve for trusted clients (Claude)
         if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
-            logger.info(f"Auto-approving Claude client for authenticated user: {current_user.email}")
+            logger.info(f"🚀 Auto-approving Claude client for authenticated user: {current_user.email}")
             
             # Generate authorization code immediately
             auth_code = secrets.token_urlsafe(32)
             
-            # Store auth code with user info
+            # Store auth code with user info and PKCE challenge
             auth_sessions[auth_code] = {
                 **session,
                 "user_id": str(current_user.id),
                 "email": current_user.email,
                 "code": auth_code,
-                "authorized_at": time.time()
+                "authorized_at": time.time(),
+                "client_id": client_id
             }
             
-            # Clean up session
+            # Clean up original session
             del auth_sessions[session_id]
             
             # Redirect back to Claude with auth code
@@ -246,9 +247,34 @@ async def authorize(
                 "state": session["state"]
             }
             redirect_url = f"{session['redirect_uri']}?{urlencode(params)}"
-            logger.info(f"Redirecting to Claude with auth code: {redirect_url}")
+            logger.info(f"🎯 Auto-approval complete - redirecting to Claude: {redirect_url}")
             
             return RedirectResponse(url=redirect_url)
+        else:
+            logger.info(f"Manual approval required for non-Claude client: {client_id}")
+    else:
+        # User not authenticated - redirect to Jean Memory login
+        base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+        
+        # Create return URL that will complete the OAuth flow
+        return_params = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "response_type": response_type,
+            "state": state,
+            "scope": scope or "read write"
+        }
+        if code_challenge:
+            return_params["code_challenge"] = code_challenge
+        if code_challenge_method:
+            return_params["code_challenge_method"] = code_challenge_method
+            
+        return_url = f"{base_url}/oauth/authorize?{urlencode(return_params)}"
+        login_url = f"https://jeanmemory.com/auth?return_url={urlencode({'return_url': return_url})}"
+        
+        logger.info(f"🔐 User not authenticated - redirecting to login: {login_url}")
+        
+        return RedirectResponse(url=login_url)
     
     if current_user:
         # User is logged in - show approval form
@@ -968,20 +994,27 @@ async def token_exchange(
         }
         logger.info(f"Re-registered Claude client after server restart: {client_id}")
     
-    # Validate PKCE if provided
-    if code_verifier and "code_challenge" in auth_data:
-        import hashlib
-        import base64
-        
-        # Verify PKCE challenge
-        verifier_hash = hashlib.sha256(code_verifier.encode()).digest()
-        verifier_challenge = base64.urlsafe_b64encode(verifier_hash).decode().rstrip('=')
-        
-        if verifier_challenge != auth_data["code_challenge"]:
-            logger.error("PKCE verification failed")
-            raise HTTPException(status_code=400, detail="Invalid code verifier")
-        
-        logger.info("PKCE verification successful")
+    # Validate PKCE (REQUIRED per MCP spec)
+    if not code_verifier:
+        logger.error("Missing code_verifier - PKCE required")
+        raise HTTPException(status_code=400, detail="code_verifier required")
+    
+    if "code_challenge" not in auth_data:
+        logger.error("Missing code_challenge in stored auth data")
+        raise HTTPException(status_code=400, detail="Invalid authorization code - missing challenge")
+    
+    # Verify PKCE challenge using SHA256
+    import hashlib
+    import base64
+    
+    verifier_hash = hashlib.sha256(code_verifier.encode()).digest()
+    verifier_challenge = base64.urlsafe_b64encode(verifier_hash).decode().rstrip('=')
+    
+    if verifier_challenge != auth_data["code_challenge"]:
+        logger.error(f"PKCE verification failed: expected {auth_data['code_challenge']}, got {verifier_challenge}")
+        raise HTTPException(status_code=400, detail="Invalid code verifier")
+    
+    logger.info("✅ PKCE verification successful")
     
     # Create access token
     access_token = create_access_token(
