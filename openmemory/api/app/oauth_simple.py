@@ -161,14 +161,61 @@ async def authorize(
         "created_at": time.time()
     }
     
-    # Try to get current user from Supabase session
+    # Try to get current user from Supabase session cookies (not headers)
     current_user = None
     try:
-        from app.auth import get_current_supa_user
-        current_user = await get_current_supa_user(request)
-        logger.info(f"Found authenticated user: {current_user.email}")
+        from app.auth import supabase_service_client
+        from app.settings import config
+        
+        if config.is_local_development:
+            # Use local dev user
+            from app.local_auth_helper import get_local_dev_user
+            current_user = await get_local_dev_user(request, supabase_service_client, config)
+            logger.info(f"Found local dev user: {current_user.email}")
+        else:
+            # Try to get user from session cookies (for OAuth flow from external domain)
+            access_token = None
+            
+            # Check common Supabase cookie names
+            cookie_names = [
+                'sb-access-token', 
+                'supabase-auth-token',
+                'sb-session',
+                'supabase.auth.token'
+            ]
+            
+            for cookie_name in cookie_names:
+                cookie_value = request.cookies.get(cookie_name)
+                if cookie_value:
+                    if cookie_name in ['sb-session', 'supabase.auth.token']:
+                        # Parse JSON session cookie
+                        try:
+                            import json
+                            session_data = json.loads(cookie_value)
+                            access_token = session_data.get('access_token')
+                            if access_token:
+                                logger.info(f"Found access token in {cookie_name} cookie")
+                                break
+                        except:
+                            continue
+                    else:
+                        # Direct access token
+                        access_token = cookie_value
+                        logger.info(f"Found access token in {cookie_name} cookie")
+                        break
+            
+            if access_token:
+                # Validate token with Supabase
+                auth_response = supabase_service_client.auth.get_user(access_token)
+                if auth_response and auth_response.user:
+                    current_user = auth_response.user
+                    logger.info(f"Found authenticated user via cookies: {current_user.email}")
+                else:
+                    logger.info("Access token found but invalid/expired")
+            else:
+                logger.info("No access token found in cookies")
     except Exception as e:
-        logger.info(f"No authenticated user found: {e}")
+        logger.info(f"Error checking authentication: {e}")
     
     # Show authorization page
     client_name = client_info.get("client_name", "Unknown App")
@@ -767,10 +814,8 @@ async def approve_authorization(request: Request, session_id: str = Form(...)):
         logger.error(f"Session {session_id} not found in auth_sessions")
         raise HTTPException(status_code=400, detail="Invalid session - please try the OAuth flow again")
     
-    # Get current user from Supabase session cookies
+    # Get current user from Supabase session cookies (same logic as authorize endpoint)
     try:
-        # For OAuth approval, user might not have Authorization header
-        # Try to get user from session cookies instead
         from app.auth import supabase_service_client
         from app.settings import config
         
@@ -781,21 +826,34 @@ async def approve_authorization(request: Request, session_id: str = Form(...)):
             user_id = str(user.id)
             email = user.email or "dev@example.com"
         else:
-            # Try to get user from session cookies
-            # First check if there's an access_token cookie
-            access_token = request.cookies.get('sb-access-token') or request.cookies.get('supabase-auth-token')
+            # Try to get user from session cookies (for OAuth flow from external domain)
+            access_token = None
             
-            if not access_token:
-                # Try to get from other common cookie names
-                import json
-                # Check for session cookie
-                session_cookie = request.cookies.get('sb-session') or request.cookies.get('supabase.auth.token')
-                if session_cookie:
-                    try:
-                        session_data = json.loads(session_cookie)
-                        access_token = session_data.get('access_token')
-                    except:
-                        pass
+            # Check common Supabase cookie names (same as authorize endpoint)
+            cookie_names = [
+                'sb-access-token', 
+                'supabase-auth-token',
+                'sb-session',
+                'supabase.auth.token'
+            ]
+            
+            for cookie_name in cookie_names:
+                cookie_value = request.cookies.get(cookie_name)
+                if cookie_value:
+                    if cookie_name in ['sb-session', 'supabase.auth.token']:
+                        # Parse JSON session cookie
+                        try:
+                            import json
+                            session_data = json.loads(cookie_value)
+                            access_token = session_data.get('access_token')
+                            if access_token:
+                                break
+                        except:
+                            continue
+                    else:
+                        # Direct access token
+                        access_token = cookie_value
+                        break
             
             if not access_token:
                 raise HTTPException(status_code=401, detail="Not authenticated - please log in to Jean Memory first")
