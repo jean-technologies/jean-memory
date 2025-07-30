@@ -166,14 +166,18 @@ async def authorize(
     if oauth_complete == "true":
         logger.info("🔄 Processing OAuth completion after Jean Memory authentication")
         
-        # Try to get current user from Supabase session (should work now within same domain flow)
+        # Try to get current user using OAuth-specific authentication
         current_user = None
         try:
-            from app.auth import get_current_supa_user
-            current_user = await get_current_supa_user(request)
-            logger.info(f"✅ Found authenticated user after login: {current_user.email}")
+            from app.auth import get_oauth_user
+            current_user = await get_oauth_user(request)
+            if current_user:
+                logger.info(f"✅ Found authenticated user after login: {current_user.email}")
+            else:
+                logger.error("❌ OAuth user detection failed - no cookies found")
+                raise HTTPException(status_code=401, detail="Authentication failed - please try again")
         except Exception as e:
-            logger.error(f"❌ Still no authenticated user after login: {e}")
+            logger.error(f"❌ OAuth user detection error: {e}")
             # If still no user, something is wrong - show error
             raise HTTPException(status_code=401, detail="Authentication failed - please try again")
         
@@ -797,56 +801,24 @@ async def approve_authorization(request: Request, session_id: str = Form(...)):
         logger.error(f"Session {session_id} not found in auth_sessions")
         raise HTTPException(status_code=400, detail="Invalid session - please try the OAuth flow again")
     
-    # Get current user from Supabase session cookies (same logic as authorize endpoint)
+    # Get current user using OAuth-specific authentication
     try:
-        from app.auth import supabase_service_client
+        from app.auth import get_oauth_user
         from app.settings import config
         
         if config.is_local_development:
             # Use local dev user
+            from app.auth import supabase_service_client
             from app.local_auth_helper import get_local_dev_user
             user = await get_local_dev_user(request, supabase_service_client, config)
             user_id = str(user.id)
             email = user.email or "dev@example.com"
         else:
-            # Try to get user from session cookies (for OAuth flow from external domain)
-            access_token = None
-            
-            # Check common Supabase cookie names (same as authorize endpoint)
-            cookie_names = [
-                'sb-access-token', 
-                'supabase-auth-token',
-                'sb-session',
-                'supabase.auth.token'
-            ]
-            
-            for cookie_name in cookie_names:
-                cookie_value = request.cookies.get(cookie_name)
-                if cookie_value:
-                    if cookie_name in ['sb-session', 'supabase.auth.token']:
-                        # Parse JSON session cookie
-                        try:
-                            import json
-                            session_data = json.loads(cookie_value)
-                            access_token = session_data.get('access_token')
-                            if access_token:
-                                break
-                        except:
-                            continue
-                    else:
-                        # Direct access token
-                        access_token = cookie_value
-                        break
-            
-            if not access_token:
+            # Use OAuth-specific user detection
+            user = await get_oauth_user(request)
+            if not user:
                 raise HTTPException(status_code=401, detail="Not authenticated - please log in to Jean Memory first")
             
-            # Validate token with Supabase
-            auth_response = supabase_service_client.auth.get_user(access_token)
-            if not auth_response or not auth_response.user:
-                raise HTTPException(status_code=401, detail="Invalid session - please log in again")
-            
-            user = auth_response.user
             user_id = str(user.id)
             email = user.email
         
