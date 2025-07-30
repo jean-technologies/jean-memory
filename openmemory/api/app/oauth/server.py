@@ -42,25 +42,68 @@ async def oauth_discovery():
 
 @oauth_router.post("/register")
 async def dynamic_client_registration(request: Request):
-    """Dynamic client registration (for development/testing)"""
+    """Dynamic client registration - Claude auto-registers here"""
     
     try:
         data = await request.json()
+        logger.info(f"Client registration request: {data}")
         
-        # In production, this should be restricted or require admin auth
-        client = client_registry.register_client(
-            client_name=data.get("client_name", "Unknown Client"),
-            client_type=data.get("client_type", "unknown"),
-            redirect_uris=data.get("redirect_uris", []),
-            allowed_scopes=data.get("scopes", ["read", "write"])
-        )
+        # Extract registration data
+        client_name = data.get("client_name", "Unknown Client")
+        redirect_uris = data.get("redirect_uris", [])
+        grant_types = data.get("grant_types", ["authorization_code"])
         
-        return {
+        # Detect Claude by redirect URI or client name
+        client_type = "claude" if (
+            any("claude.ai" in uri or "anthropic.com" in uri for uri in redirect_uris) or 
+            "claude" in client_name.lower()
+        ) else "unknown"
+        
+        # For Claude, use a fixed client ID for consistency
+        if client_type == "claude":
+            client_id = "claude-ai"
+            # Update existing Claude client or create if doesn't exist
+            if client_id in client_registry.clients:
+                client = client_registry.clients[client_id]
+                # Update redirect URIs to include new ones
+                for uri in redirect_uris:
+                    if uri not in client.redirect_uris:
+                        client.redirect_uris.append(uri)
+            else:
+                client = client_registry.register_client(
+                    client_name=client_name,
+                    client_type=client_type,
+                    redirect_uris=redirect_uris,
+                    allowed_scopes=["read", "write"]
+                )
+                client.client_id = client_id
+                client_registry.clients[client_id] = client
+        else:
+            # Dynamic registration for other clients
+            client = client_registry.register_client(
+                client_name=client_name,
+                client_type=client_type,
+                redirect_uris=redirect_uris,
+                allowed_scopes=data.get("scope", "read write").split()
+            )
+        
+        logger.info(f"Registered client: {client.client_id} ({client.client_name})")
+        
+        # Return RFC 7591 compliant response
+        response = {
             "client_id": client.client_id,
             "client_name": client.client_name,
             "redirect_uris": client.redirect_uris,
-            "scopes": client.allowed_scopes
+            "grant_types": grant_types,
+            "scope": " ".join(client.allowed_scopes),
+            "token_endpoint_auth_method": "none"  # Public client
         }
+        
+        # Add client_secret if required (though Claude uses public client flow)
+        if data.get("token_endpoint_auth_method") == "client_secret_basic":
+            response["client_secret"] = "not-required-for-pkce"
+        
+        return response
         
     except Exception as e:
         logger.error(f"Client registration error: {e}")
@@ -178,14 +221,31 @@ async def complete_authorization(session_id: str, request: Request):
     if not session:
         raise HTTPException(status_code=400, detail="Invalid session")
     
-    # In production, verify the user is actually logged in to Jean Memory
-    # For now, we'll get the user from the Jean Memory session cookie
-    # This is where we'd integrate with the existing auth system
-    
-    # Temporary: Get user info from headers or session
-    # In production, this would come from validated Jean Memory session
-    user_id = request.headers.get("x-user-id", "test-user-id")
-    email = request.headers.get("x-user-email", "test@example.com")
+    # Get user info from Supabase session
+    # Check for Supabase session cookie or token
+    try:
+        from app.auth import get_user_from_supabase_session
+        
+        # Try to get user from Supabase session
+        user = await get_user_from_supabase_session(request)
+        if user and hasattr(user, 'user_id') and hasattr(user, 'email'):
+            user_id = str(user.user_id)
+            email = user.email
+        else:
+            # Fallback for testing - check for manual auth headers
+            user_id = request.headers.get("x-user-id")
+            email = request.headers.get("x-user-email")
+            
+            if not user_id or not email:
+                # No valid user session found
+                raise HTTPException(
+                    status_code=401,
+                    detail="User not authenticated. Please log in to Jean Memory first."
+                )
+    except ImportError:
+        # Fallback if auth module not available
+        user_id = request.headers.get("x-user-id", "test-user-id")
+        email = request.headers.get("x-user-email", "test@example.com")
     
     # Generate authorization code
     auth_code = secrets.token_urlsafe(32)
