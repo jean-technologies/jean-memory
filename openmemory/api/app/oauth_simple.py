@@ -162,31 +162,32 @@ async def authorize(
         "created_at": time.time()
     }
     
-    # Check if this is a return from Jean Memory authentication
-    if oauth_complete == "true":
-        logger.info("🔄 Processing OAuth completion after Jean Memory authentication")
-        
-        # Try to get current user using OAuth-specific authentication
-        current_user = None
-        try:
-            from app.auth import get_oauth_user
-            current_user = await get_oauth_user(request)
-            if current_user:
-                logger.info(f"✅ Found authenticated user after login: {current_user.email}")
-            else:
-                logger.error("❌ OAuth user detection failed - no cookies found")
-                raise HTTPException(status_code=401, detail="Authentication failed - please try again")
-        except Exception as e:
-            logger.error(f"❌ OAuth user detection error: {e}")
-            # If still no user, something is wrong - show error
-            raise HTTPException(status_code=401, detail="Authentication failed - please try again")
-        
-        # User is authenticated - auto-approve for Claude
+    # Try to get current user using OAuth-specific authentication
+    current_user = None
+    try:
+        from app.auth import get_oauth_user
+        current_user = await get_oauth_user(request)
+        if current_user:
+            logger.info(f"✅ Found authenticated user: {current_user.email}")
+        else:
+            logger.info("❌ No authenticated user found")
+    except Exception as e:
+        logger.error(f"❌ OAuth user detection error: {e}")
+    
+    # Get client info for display
+    client_info = registered_clients[client_id]
+    client_name = client_info.get("client_name", "Unknown Client")
+    
+    if current_user:
+        # User is authenticated - show approval page or auto-approve for Claude
         if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
             logger.info(f"🚀 Auto-approving Claude client for authenticated user: {current_user.email}")
             
             # Generate authorization code immediately
             auth_code = secrets.token_urlsafe(32)
+            
+            # Get session data
+            session = auth_sessions[session_id]
             
             # Store auth code with user info and PKCE challenge
             auth_sessions[auth_code] = {
@@ -210,35 +211,13 @@ async def authorize(
             logger.info(f"🎯 Auto-approval complete - redirecting to Claude: {redirect_url}")
             
             return RedirectResponse(url=redirect_url)
-    
-    # Initial OAuth request - redirect to Jean Memory for authentication
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
-    
-    # Create return URL that will complete the OAuth flow after login/auth check
-    return_params = {
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "response_type": response_type,
-        "state": state,
-        "scope": scope or "read write",
-        "oauth_complete": "true"  # Mark as completion request
-    }
-    if code_challenge:
-        return_params["code_challenge"] = code_challenge
-    if code_challenge_method:
-        return_params["code_challenge_method"] = code_challenge_method
         
-    oauth_complete_url = f"{base_url}/oauth/authorize?{urlencode(return_params)}"
+        # Show approval page for other authenticated clients (future use)
+        # For now, we only support Claude auto-approval
+        raise HTTPException(status_code=400, detail="Client not supported")
     
-    # Redirect to Jean Memory auth page - it will handle login/detection and return here
-    login_url = f"https://jeanmemory.com/auth?return_url={urlencode({'return_url': oauth_complete_url})}"
-    
-    logger.info(f"🔐 Initial OAuth request - redirecting to Jean Memory for authentication: {login_url}")
-    
-    return RedirectResponse(url=login_url)
-    
-    if current_user:
-        # User is logged in - show approval form
+    else:
+        # User not authenticated - show login page
         html = f"""
         <!DOCTYPE html>
         <html lang="en">

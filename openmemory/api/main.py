@@ -24,7 +24,7 @@ from app.settings import config
 from app.db_init import init_database, check_database_health
 from app.routers.agent_mcp import agent_mcp_router
 from app.routers.local_auth import router as local_auth_router
-from app.oauth_simple import oauth_router
+from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import mcp_router
 import asyncio
 
@@ -322,7 +322,7 @@ app.include_router(mcp_router)  # Claude MCP server at /mcp (Bearer token)
 @app.get("/.well-known/oauth-authorization-server")
 async def oauth_discovery_root():
     """OAuth Authorization Server Metadata at root level"""
-    from app.oauth_simple import oauth_discovery
+    from app.oauth_simple_new import oauth_discovery
     return await oauth_discovery()
 
 # Setup MCP server after routers but outside of lifespan to ensure it doesn't block health checks
