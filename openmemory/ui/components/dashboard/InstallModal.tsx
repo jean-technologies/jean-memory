@@ -448,22 +448,6 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                             <p className="text-xs text-muted-foreground mt-1">✨ Claude will automatically handle OAuth authentication - no manual setup required!</p>
                         </div>
 
-                        {/* Instructions for Messages API */}
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-medium text-foreground">📱 Messages API (Claude Web/Mobile)</h4>
-                            <p className="text-xs text-muted-foreground">Use the MCP connector in Claude&apos;s Messages API:</p>
-                            <div className="bg-background border rounded-md p-3 font-mono text-xs">
-                                <code className="whitespace-pre-wrap break-words">{`{
-  "mcp_servers": [{
-    "type": "url",
-    "url": "${MCP_URL}/mcp",
-    "name": "jean-memory"
-  }],
-  "anthropic-beta": "mcp-client-2025-04-04"
-}`}</code>
-                            </div>
-                            <p className="text-xs text-muted-foreground">✨ OAuth authentication is handled automatically</p>
-                        </div>
                         
                     </div>
                 </details>

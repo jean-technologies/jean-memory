@@ -25,9 +25,8 @@ from app.settings import config
 from app.db_init import init_database, check_database_health
 from app.routers.agent_mcp import agent_mcp_router
 from app.routers.local_auth import router as local_auth_router
-from app.oauth import oauth_router
-from app.routers.mcp_oauth import router as mcp_oauth_router
-from app.routers.mcp_claude import router as mcp_claude_router
+from app.oauth_simple import oauth_router
+from app.mcp_claude_simple import mcp_router
 import asyncio
 
 # Configure logging
@@ -385,18 +384,18 @@ app.include_router(agent_mcp_router) # New secure agent endpoint
 app.include_router(migration_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])  # Migration status endpoint
 app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - verified by signature)
 
-# OAuth 2.0 endpoints
+# OAuth 2.0 endpoints for Claude Web
 app.include_router(oauth_router)  # OAuth server at /oauth/*
 
-# MCP endpoints with OAuth authentication
-app.include_router(mcp_claude_router)  # Claude MCP server at /mcp (Bearer token)
-app.include_router(mcp_oauth_router)  # Legacy OAuth MCP (keeping for compatibility)
+# MCP server endpoint for Claude Web  
+app.include_router(mcp_router)  # Claude MCP server at /mcp (Bearer token)
 
 # OAuth discovery at root level for Claude
 @app.get("/.well-known/oauth-authorization-server")
 async def oauth_discovery_root():
-    """OAuth discovery endpoint at root level"""
-    return await oauth_router.routes[0].endpoint()
+    """OAuth Authorization Server Metadata at root level"""
+    from app.oauth_simple import oauth_discovery
+    return await oauth_discovery()
 
 
 

@@ -1,12 +1,16 @@
 # Complete OAuth Flow & Connection Deep Dive
 
-## 🎯 TL;DR - The Magic Trick
+## 🎯 TL;DR - Simple Claude Web Integration
 
-**We're NOT changing your existing MCP system at all!** 
+**We built a minimal OAuth implementation that Claude Web expects.**
 
-We're just changing WHERE the user_id comes from:
-- **Before**: `user_id` from URL path (`/mcp/v2/claude/{user_id}`)  
-- **After**: `user_id` from JWT token (`Authorization: Bearer {jwt}`)
+Based on official Anthropic documentation:
+https://help.anthropic.com/en/articles/8996230-getting-started-with-custom-connectors
+
+Key components:
+- **OAuth Discovery**: `/.well-known/oauth-authorization-server`
+- **MCP Server**: `/mcp` with Bearer token authentication  
+- **Same MCP Logic**: Routes to existing `handle_request_logic`
 
 Then we inject it into the SAME headers and use the SAME MCP logic!
 
