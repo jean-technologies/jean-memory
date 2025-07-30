@@ -266,6 +266,23 @@ async def download_claude_extension_http():
     """Serve the Jean Memory Claude Desktop Extension file with HTTP transport"""
     return await download_claude_extension(transport="http")
 
+@app.get("/mcp/claude-code/debug")
+async def debug_mcp_files():
+    """Debug endpoint to check what files are available"""
+    from pathlib import Path
+    import os
+    
+    api_dir = Path(__file__).parent
+    files = list(api_dir.glob("*"))
+    
+    return {
+        "api_dir": str(api_dir),
+        "working_dir": str(Path.cwd()),
+        "files": [str(f) for f in files],
+        "mcp_server_exists": (api_dir / "jean-memory-mcp-server.js").exists(),
+        "mcp_package_exists": (api_dir / "mcp-package.json").exists(),
+    }
+
 @app.get("/mcp/claude-code/package")
 async def download_claude_code_mcp_package():
     """Serve the Jean Memory MCP Server package for Claude Code"""
