@@ -415,24 +415,23 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </ol>
                 </div>
                 
-                {/* Manual Setup Option */}
+                {/* Web/Mobile OAuth Option */}
                 <details className="group">
                     <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                        Need manual terminal setup instead?
+                        Using Claude Web or Mobile instead?
                     </summary>
                     <div className="mt-3 space-y-3">
-                        <div className="relative bg-background border rounded-md p-3 font-mono text-xs break-all">
-                            <div className="pr-12">{installCommand}</div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(installCommand)}
-                            >
-                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Run this command in terminal, then restart Claude Desktop.</p>
+                        <p className="text-xs text-muted-foreground">For Claude Web or Mobile, use OAuth connection:</p>
+                        <Button 
+                            onClick={() => window.open('https://jean-memory-api-dev.onrender.com/oauth/authorize?client_id=unknown_oRV4P34GULT7dfs1eI3Qqw&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&scope=read+write&state=claude-web-connection', '_blank')}
+                            className="w-full"
+                            variant="outline"
+                            size="sm"
+                        >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Connect Claude Web/Mobile
+                        </Button>
+                        <p className="text-xs text-muted-foreground">Opens OAuth authorization for Claude Web and Mobile apps.</p>
                     </div>
                 </details>
             </div>
