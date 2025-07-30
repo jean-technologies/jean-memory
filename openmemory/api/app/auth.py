@@ -246,6 +246,15 @@ async def get_oauth_user(request: Request) -> Optional[SupabaseUser]:
         logger.error("Supabase client not initialized for OAuth user detection")
         return None
     
+    # Enhanced debugging - log ALL request details
+    logger.info(f"🔍 OAuth user detection DEBUG:")
+    logger.info(f"   Request URL: {request.url}")
+    logger.info(f"   Request method: {request.method}")
+    logger.info(f"   Request headers: {dict(request.headers)}")
+    logger.info(f"   Request client: {request.client}")
+    logger.info(f"   Request cookies: {dict(request.cookies)}")
+    logger.info(f"   Total cookies received: {len(request.cookies)}")
+    
     # Try to extract access token from various cookie formats
     access_token = None
     

@@ -178,17 +178,25 @@ async def authorize(
         session_id = oauth_session
         logger.info(f"🔄 Using existing OAuth session: {session_id}")
     
-    # Try to get current user using OAuth-specific authentication
+    # MCP OAuth should be self-contained - don't rely on cross-domain cookies  
+    # Instead, always show the authentication page for new sessions
+    # Only skip authentication if we have a valid oauth_session parameter (post-auth callback)
     current_user = None
-    try:
-        from app.auth import get_oauth_user
-        current_user = await get_oauth_user(request)
-        if current_user:
-            logger.info(f"✅ Found authenticated user: {current_user.email}")
-        else:
-            logger.info("❌ No authenticated user found")
-    except Exception as e:
-        logger.error(f"❌ OAuth user detection error: {e}")
+    
+    if oauth_session:
+        # This is a post-authentication callback - try to detect authentication
+        try:
+            from app.auth import get_oauth_user
+            current_user = await get_oauth_user(request)
+            if current_user:
+                logger.info(f"✅ Post-auth: Found authenticated user: {current_user.email}")
+            else:
+                logger.info("❌ Post-auth: No authenticated user found")
+        except Exception as e:
+            logger.error(f"❌ Post-auth user detection error: {e}")
+    else:
+        # This is an initial OAuth request - always show login page
+        logger.info("🔄 Initial OAuth request - showing login page for self-contained authentication")
     
     client_name = client_info.get("client_name", "Unknown Client")
     
@@ -441,17 +449,17 @@ async def authorize(
                     
                     // Use a specific OAuth callback endpoint that will set cookies properly
                     const baseUrl = currentUrl.origin;
-                    const callbackUrl = `${{baseUrl}}/oauth/callback?oauth_session={session_id}`;
+                    const callbackUrl = baseUrl + '/oauth/callback?oauth_session={session_id}';
                     
-                    const {{ data, error: signInError }} = await supabase.auth.signInWithOAuth({{
+                    const result = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
                             redirectTo: callbackUrl
                         }}
                     }});
                     
-                    if (signInError) {{
-                        throw signInError;
+                    if (result.error) {{
+                        throw result.error;
                     }}
                 }} catch (err) {{
                     console.error('Sign in error:', err);
@@ -474,7 +482,8 @@ async def authorize(
             }});
             
             // Check initial session
-            supabase.auth.getSession().then({{ data: {{ session }} }}) => {{
+            supabase.auth.getSession().then((result) => {{
+                const session = result.data.session;
                 console.log('Initial session check:', session);
                 if (session) {{
                     console.log('Found existing session, redirecting to callback...');
@@ -551,14 +560,27 @@ async def oauth_callback(
                 console.log('Callback: Auth state change:', event, session);
                 if (event === 'SIGNED_IN' && session) {{
                     console.log('Callback: User signed in, setting cookies and redirecting...');
+                    console.log('🔍 DEBUG - Session details:', session);
+                    console.log('🔍 DEBUG - Current URL:', window.location.href);
+                    console.log('🔍 DEBUG - Current domain:', window.location.hostname);
+                    console.log('🔍 DEBUG - Current protocol:', window.location.protocol);
                     
                     // Set the auth token in a cookie with proper settings for OAuth
                     const isSecure = window.location.protocol === 'https:';
                     const secureFlag = isSecure ? '; secure' : '';
                     const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
                     
-                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800${{sameSiteFlag}}${{secureFlag}}`;
+                    const accessTokenCookie = 'sb-access-token=' + session.access_token + '; path=/; max-age=3600' + sameSiteFlag + secureFlag;
+                    const refreshTokenCookie = 'sb-refresh-token=' + session.refresh_token + '; path=/; max-age=604800' + sameSiteFlag + secureFlag;
+                    
+                    console.log('🔍 DEBUG - Setting access token cookie:', accessTokenCookie);
+                    console.log('🔍 DEBUG - Setting refresh token cookie:', refreshTokenCookie);
+                    
+                    document.cookie = accessTokenCookie;
+                    document.cookie = refreshTokenCookie;
+                    
+                    // Verify cookies were set
+                    console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
                     
                     console.log('Callback: Cookies set, redirecting to authorize...');
                     
@@ -569,18 +591,29 @@ async def oauth_callback(
             }});
             
             // Check for existing session
-            supabase.auth.getSession().then(async ({{ data: {{ session }} }}) => {{
+            supabase.auth.getSession().then(async (result) => {{
+                const session = result.data.session;
                 console.log('Callback: Initial session check:', session);
                 if (session) {{
                     console.log('Callback: Found existing session, setting cookies and redirecting...');
+                    console.log('🔍 DEBUG - Existing session details:', session);
+                    console.log('🔍 DEBUG - Current URL:', window.location.href);
+                    console.log('🔍 DEBUG - Current domain:', window.location.hostname);
                     
                     // Set the auth token in a cookie with proper settings for OAuth
                     const isSecure = window.location.protocol === 'https:';
                     const secureFlag = isSecure ? '; secure' : '';
                     const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
                     
-                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800${{sameSiteFlag}}${{secureFlag}}`;
+                    const accessTokenCookie = 'sb-access-token=' + session.access_token + '; path=/; max-age=3600' + sameSiteFlag + secureFlag;
+                    const refreshTokenCookie = 'sb-refresh-token=' + session.refresh_token + '; path=/; max-age=604800' + sameSiteFlag + secureFlag;
+                    
+                    console.log('🔍 DEBUG - Setting cookies:', accessTokenCookie, refreshTokenCookie);
+                    
+                    document.cookie = accessTokenCookie;
+                    document.cookie = refreshTokenCookie;
+                    
+                    console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
                     
                     console.log('Callback: Cookies set, redirecting to authorize...');
                     

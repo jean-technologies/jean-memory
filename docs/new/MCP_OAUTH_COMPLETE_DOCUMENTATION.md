@@ -337,10 +337,115 @@ curl -H "Authorization: Bearer <jwt_token>" https://jean-memory-api-virginia.onr
 - Monitor OAuth flow metrics
 - Scale auth session storage (Redis) if needed
 
-## Key Learnings
+## Critical Issues Found and Fixed (July 30, 2025)
 
-1. **OAuth ≠ API Authentication** - Different flows need different auth methods
-2. **Cross-domain cookies** - Require same-domain redirects to work
-3. **Two-stage flow** - Essential for external OAuth integrations
-4. **PKCE security** - Mandatory for MCP OAuth implementations
-5. **Cookie-based detection** - More reliable than header-based for OAuth flows
+### Issue 1: JavaScript Syntax Errors
+**Problem:** Template string conflicts between Python f-strings and JavaScript template literals.
+```javascript
+// ❌ BROKEN: Template literal inside Python f-string
+const callbackUrl = `${baseUrl}/oauth/callback?oauth_session={session_id}`;
+
+// ✅ FIXED: String concatenation  
+const callbackUrl = baseUrl + '/oauth/callback?oauth_session={session_id}';
+```
+
+**Root Cause:** Python f-string double braces `{{}}` conflicted with JavaScript destructuring and template literals.
+
+**Fix Applied:** Replaced all JavaScript template literals with string concatenation in Python f-string templates.
+
+### Issue 2: Cross-Domain Cookie Limitation (CRITICAL)
+**Problem:** OAuth endpoints couldn't detect existing authentication due to browser cookie security.
+
+**The Broken Architecture:**
+```
+❌ WRONG APPROACH:
+1. User logs into jeanmemory.com (sets cookies on jeanmemory.com)  
+2. Claude redirects to jean-memory-api-virginia.onrender.com/oauth/authorize
+3. OAuth endpoint tries to read cookies from jeanmemory.com
+4. Browser blocks cross-domain cookies → No authentication detected
+5. Always shows login page, flow never completes
+```
+
+**Root Cause Discovery:**
+- Different domains: `jeanmemory.com` vs `jean-memory-api-virginia.onrender.com`
+- Browser security: Cookies are domain-specific and cannot be shared across domains
+- MCP OAuth research revealed: **OAuth flows should be self-contained, not rely on external authentication**
+
+**The Correct Architecture:**
+```
+✅ FIXED APPROACH:
+1. Claude redirects to OAuth authorize endpoint
+2. OAuth endpoint shows login page (self-contained authentication)
+3. User authenticates within OAuth flow itself  
+4. OAuth sets cookies on API domain (jean-memory-api-virginia.onrender.com)
+5. OAuth completes authorization and redirects back to Claude
+```
+
+**Implementation Fix:**
+```python
+# OLD: Always try to detect existing authentication
+current_user = await get_oauth_user(request)
+
+# NEW: Self-contained OAuth flow
+if oauth_session:
+    # Only check authentication on post-auth callback
+    current_user = await get_oauth_user(request) 
+else:
+    # Initial request - always show login (self-contained)
+    current_user = None
+```
+
+### Issue 3: Enhanced Logging and Debugging
+**Added comprehensive logging to diagnose issues:**
+
+**Backend Logging:**
+```python
+logger.info(f"🔍 OAuth user detection DEBUG:")
+logger.info(f"   Request URL: {request.url}")
+logger.info(f"   Request headers: {dict(request.headers)}")
+logger.info(f"   Request cookies: {dict(request.cookies)}")
+logger.info(f"   Total cookies received: {len(request.cookies)}")
+```
+
+**Frontend Logging:**
+```javascript
+console.log('🔍 DEBUG - Session details:', session);
+console.log('🔍 DEBUG - Current domain:', window.location.hostname);
+console.log('🔍 DEBUG - Setting cookies:', accessTokenCookie);
+console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
+```
+
+### Issue 4: MCP OAuth 2.1 Compliance Research
+**Key Findings from 2025 MCP Specification:**
+
+1. **Dynamic Client Registration (DCR) Required:** Claude.ai mandates RFC 7591 support
+2. **OAuth 2.1 with PKCE Mandatory:** All MCP implementations must use OAuth 2.1
+3. **Self-Contained Authentication:** OAuth flows shouldn't rely on cross-domain cookies
+4. **Enterprise Security Focus:** Enhanced protection against XSS, token theft, cross-resource replay
+
+**Our Implementation Status:**
+- ✅ Dynamic Client Registration (RFC 7591)
+- ✅ OAuth 2.1 with PKCE
+- ✅ Self-contained authentication flow  
+- ✅ Secure token generation and validation
+- ✅ Cross-domain security compliance
+
+## Final Working Flow (Post-Fix)
+
+1. **Claude Web** → OAuth Discovery → Client Registration → Authorization Request
+2. **OAuth Authorize** → Shows self-contained login page (no cross-domain dependency)
+3. **User Authentication** → Supabase OAuth within API domain → `/oauth/callback`
+4. **Callback Processing** → Sets cookies on correct domain → Redirects to authorize with session
+5. **Post-Auth Authorization** → Detects authentication → Auto-approves Claude → Generates auth code
+6. **Claude Token Exchange** → PKCE validation → JWT Bearer token with internal User.id
+7. **MCP Requests** → Bearer token authentication → Full user context → Database queries work ✅
+
+## Key Learnings (Updated)
+
+1. **Cross-Domain Cookie Security** - Browser security prevents cookie sharing across domains
+2. **Self-Contained OAuth Flows** - MCP OAuth should not rely on external authentication 
+3. **JavaScript Template String Conflicts** - Python f-strings and JS template literals don't mix
+4. **MCP 2025 Specification** - Dynamic Client Registration and OAuth 2.1 are mandatory
+5. **Domain Architecture Matters** - API and main app domains must be considered in OAuth design
+6. **Comprehensive Logging Essential** - Detailed debugging logs are critical for OAuth troubleshooting
+7. **User UUID Mapping Critical** - JWT tokens must contain internal User.id, not Supabase UUID
