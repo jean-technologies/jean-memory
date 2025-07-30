@@ -203,10 +203,30 @@ async def authorize(
             # Get session data
             session = auth_sessions[session_id]
             
+            # Get the internal Jean Memory User.id from database
+            from app.database import SessionLocal
+            from app.models import User
+            
+            db = SessionLocal()
+            try:
+                # Find internal User record by Supabase user_id
+                internal_user = db.query(User).filter(User.user_id == str(current_user.id)).first()
+                if not internal_user:
+                    logger.error(f"No internal User found for Supabase user_id: {current_user.id}")
+                    raise HTTPException(status_code=500, detail="User not found in database")
+                
+                # Use internal User.id for JWT token (this is what database queries expect)
+                internal_user_id = str(internal_user.id)
+                logger.info(f"Mapped Supabase user {current_user.id} to internal user {internal_user_id}")
+                
+            finally:
+                db.close()
+            
             # Store auth code with user info and PKCE challenge
             auth_sessions[auth_code] = {
                 **session,
-                "user_id": str(current_user.id),
+                "user_id": internal_user_id,  # Use internal Jean Memory User.id
+                "supabase_user_id": str(current_user.id),  # Keep for reference
                 "email": current_user.email,
                 "code": auth_code,
                 "authorized_at": time.time(),

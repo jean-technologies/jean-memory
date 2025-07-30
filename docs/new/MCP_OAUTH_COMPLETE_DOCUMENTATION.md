@@ -108,6 +108,156 @@ if (!currentUrl.searchParams.has('oauth_session')) {
 3. **Post-auth callback** → Retrieves session, detects authenticated user
 4. **Auto-approval** → Generates authorization code, redirects to Claude ✅
 
+## OAuth Callback Endpoint Fix (July 30, 2025 - Final Fix)
+
+### Root Cause: Cookie Not Being Set
+The major breakthrough was realizing that the OAuth flow needed a dedicated callback endpoint (`/oauth/callback`) to properly set authentication cookies before redirecting back to the authorization endpoint.
+
+### Critical Fix: OAuth Callback Endpoint
+**New endpoint added:** `/oauth/callback?oauth_session=<session_id>`
+
+**Purpose:** Handle Supabase authentication and set cookies in the correct format for cross-domain OAuth flows.
+
+### Technical Implementation
+
+**1. Updated JavaScript OAuth Flow:**
+```javascript
+// OLD: Direct redirect to same authorize endpoint
+const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+        redirectTo: currentUrl.toString()  // ❌ Doesn't set cookies properly
+    }
+});
+
+// NEW: Redirect to dedicated callback endpoint
+const callbackUrl = `${baseUrl}/oauth/callback?oauth_session=${session_id}`;
+const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+        redirectTo: callbackUrl  // ✅ Proper cookie handling
+    }
+});
+```
+
+**2. OAuth Callback Endpoint (`/oauth/callback`):**
+```python
+@oauth_router.get("/callback")
+async def oauth_callback(request: Request, oauth_session: str):
+    # Render HTML page with Supabase JavaScript SDK
+    # JavaScript detects authentication and sets cookies
+    # Then redirects back to /oauth/authorize with session
+```
+
+**3. Dynamic Cookie Security Settings:**
+```javascript
+// Automatically adjust cookie security based on protocol
+const isSecure = window.location.protocol === 'https:';
+const secureFlag = isSecure ? '; secure' : '';
+const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
+
+document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+```
+
+### Complete Fixed Flow (Final)
+1. **Claude** → `/oauth/authorize` → Shows login page with "Continue with Google"
+2. **User clicks Google** → Supabase OAuth → `/oauth/callback?oauth_session=xyz`
+3. **Callback page** → JavaScript detects Supabase session → Sets `sb-access-token` cookie
+4. **Callback redirect** → `/oauth/authorize?oauth_session=xyz` 
+5. **OAuth authorize** → `get_oauth_user()` finds `sb-access-token` cookie → ✅ User authenticated
+6. **Auto-approval** → Generates auth code → Redirects to Claude with code
+7. **Claude** → `/oauth/token` → Exchanges code for JWT Bearer token
+8. **MCP requests** → Uses Bearer token → Full access to user's memories ✅
+
+### Key Debugging Logs (After Fix)
+```
+INFO: OAuth callback received for session: xyz123
+INFO: Callback: Found existing session, setting cookies...
+INFO: Authorization request: oauth_session=xyz123
+INFO: Found OAuth access token in sb-access-token cookie
+INFO: OAuth user authenticated successfully: user@example.com
+INFO: Mapped Supabase user abc123-def to internal user xyz789-abc
+INFO: Auto-approving Claude client for authenticated user
+INFO: Token exchange with PKCE - SUCCESS
+```
+
+## Critical User UUID Mapping Fix (July 30, 2025)
+
+### Problem: Dual User ID System
+Jean Memory uses two different user identification systems:
+1. **Supabase `user_id`** - External authentication UUID (`SupabaseUser.id`)
+2. **Internal `User.id`** - Database primary key UUID (`users.id` column)
+
+### Issue Discovery
+The OAuth JWT tokens were using **Supabase UUIDs** but database queries expected **internal UUIDs**, causing MCP requests to fail.
+
+**Broken Flow:**
+```
+Supabase User.id (abc123) → JWT sub field → x-user-id header → Database query FAILS
+```
+
+**Fixed Flow:**
+```
+Supabase User.id (abc123) → Database lookup → Internal User.id (xyz789) → JWT sub field → x-user-id header → Database query SUCCESS
+```
+
+### Technical Fix Applied
+
+**OAuth Authorization Code Generation:**
+```python
+# OLD: Used Supabase UUID directly
+auth_sessions[auth_code] = {
+    "user_id": str(current_user.id),  # ❌ Supabase UUID
+    "email": current_user.email,
+    # ...
+}
+
+# NEW: Look up internal User.id from database
+from app.models import User
+internal_user = db.query(User).filter(User.user_id == str(current_user.id)).first()
+auth_sessions[auth_code] = {
+    "user_id": str(internal_user.id),  # ✅ Internal Jean Memory UUID
+    "supabase_user_id": str(current_user.id),  # Keep for reference
+    "email": current_user.email,
+    # ...
+}
+```
+
+### JWT Token Payload (Fixed)
+```json
+{
+  "sub": "xyz789-abc-def",  // ✅ Internal User.id (database primary key)
+  "email": "user@example.com",
+  "client": "claude",
+  "scope": "read write",
+  "exp": 1748903101
+}
+```
+
+### Database Schema Relationship
+```sql
+-- users table structure
+CREATE TABLE users (
+    id UUID PRIMARY KEY,           -- ✅ Internal UUID (used in JWT)
+    user_id VARCHAR UNIQUE,        -- Supabase UUID (for auth lookups)
+    email VARCHAR,
+    -- ... other fields
+);
+
+-- All other tables reference users.id
+CREATE TABLE memories (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),  -- ✅ Uses internal UUID
+    -- ...
+);
+```
+
+### Why This Matters
+- **MCP Memory Queries**: Need correct `user_id` to filter user's memories
+- **User Context**: All API endpoints expect internal `User.id` 
+- **Data Isolation**: Prevents users from accessing other users' data
+- **Database Performance**: Proper indexing on internal UUID relationships
+
 ## Security Implementation
 
 **Authorization Code with PKCE:**
