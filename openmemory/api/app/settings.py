@@ -81,6 +81,9 @@ class Config:
         # API Base URL configuration for OAuth and MCP endpoints
         self.API_BASE_URL = self._get_api_base_url()
         
+        # SMS service always uses production (Twilio only configured there)
+        self.SMS_SERVICE_URL = "https://jean-memory-api-virginia.onrender.com"
+        
         # Frontend URL configuration for CORS
         self.FRONTEND_URLS = self._get_frontend_urls()
         
