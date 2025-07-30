@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:jean-memory-api-virginia.onrender.com)",
-      "Bash(grep:*)"
-    ],
-    "deny": []
-  }
-}
