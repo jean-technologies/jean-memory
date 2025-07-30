@@ -624,22 +624,21 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                 
                 <div className="space-y-4">
                     <div>
-                        <h3 className="font-medium text-foreground mb-2">1. Import from Claude Desktop</h3>
-                        <p className="text-xs text-muted-foreground mb-2">Since Jean Memory is already working in Claude Desktop, import it directly:</p>
+                        <h3 className="font-medium text-foreground mb-2">1. Add MCP Server</h3>
+                        <p className="text-xs text-muted-foreground mb-2">Add Jean Memory as a stdio MCP server (same as your Claude Desktop extension):</p>
                         <div className="relative bg-background border rounded-md">
                             <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
-                                <code>claude mcp add-from-claude-desktop</code>
+                                <code className="whitespace-pre-wrap break-words">claude mcp add jean-memory -- npx -y supergateway --stdio https://jean-memory-api-dev.onrender.com/mcp/v2/claude/{user?.id || '3237d468-429b-4ab6-9380-988f26131ffb'}</code>
                             </div>
                             <Button 
                                 variant="ghost" 
                                 size="sm"
                                 className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy("claude mcp add-from-claude-desktop")}
+                                onClick={() => handleCopy(`claude mcp add jean-memory -- npx -y supergateway --stdio https://jean-memory-api-dev.onrender.com/mcp/v2/claude/${user?.id || '3237d468-429b-4ab6-9380-988f26131ffb'}`)}
                             >
                                 {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">Select "jean-memory" from the interactive dialog.</p>
                     </div>
 
                     <div>
@@ -662,10 +661,10 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </div>
 
                     <div className="bg-green-50 dark:bg-green-950/30 rounded-md p-3 border border-green-200 dark:border-green-800">
-                        <h4 className="font-medium text-green-800 dark:text-green-200 text-xs mb-2">💡 Why This Works</h4>
+                        <h4 className="font-medium text-green-800 dark:text-green-200 text-xs mb-2">✅ Same as Claude Desktop</h4>
                         <p className="text-green-700 dark:text-green-300 text-xs">
-                            This command copies your existing Claude Desktop MCP configuration to Claude Code, 
-                            ensuring identical functionality without manual setup.
+                            This command creates the exact same configuration as your working Claude Desktop extension, 
+                            ensuring identical functionality and API endpoints.
                         </p>
                     </div>
                 </div>
