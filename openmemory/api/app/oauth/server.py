@@ -20,7 +20,7 @@ oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
 # Temporary storage (use Redis in production)
 auth_sessions: Dict[str, Dict] = {}
 
-BASE_URL = os.getenv("API_BASE_URL", "https://api.jeanmemory.com")
+BASE_URL = os.getenv("API_BASE_URL", "https://jean-memory-api-virginia.onrender.com")
 
 
 @oauth_router.get("/.well-known/oauth-authorization-server")
