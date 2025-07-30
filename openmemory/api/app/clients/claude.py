@@ -93,7 +93,7 @@ class ClaudeProfile(BaseClientProfile):
                                     "default": "moderate"
                                 }
                             },
-                            "required": ["tasks", "project_files"]
+                            "required": ["tasks"]
                         }
                     },
                     {
