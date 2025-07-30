@@ -106,69 +106,233 @@ async def authorize(
         "created_at": time.time()
     }
     
-    # Return simple authorization page
+    # Return professional authorization page
     html = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Connect Claude to Jean Memory</title>
         <style>
+            * {{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }}
+            
             body {{
-                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                min-height: 100vh;
-                margin: 0;
-                background: #f5f5f5;
+                padding: 1rem;
             }}
+            
             .container {{
-                background: white;
-                padding: 2rem;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                max-width: 400px;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                padding: 3rem;
+                max-width: 420px;
                 width: 100%;
+                animation: slideIn 0.3s ease-out;
             }}
-            h2 {{ margin: 0 0 1rem 0; }}
+            
+            @keyframes slideIn {{
+                from {{
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }}
+                to {{
+                    opacity: 1;
+                    transform: translateY(0);
+                }}
+            }}
+            
+            .logo-section {{
+                text-align: center;
+                margin-bottom: 2rem;
+            }}
+            
+            .logo {{
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 15px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 1rem;
+                font-size: 28px;
+            }}
+            
+            h1 {{
+                color: #1a202c;
+                font-size: 24px;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+            }}
+            
+            .subtitle {{
+                color: #718096;
+                font-size: 14px;
+                margin-bottom: 2rem;
+            }}
+            
+            .claude-info {{
+                background: #f7fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 1rem;
+                margin-bottom: 2rem;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }}
+            
+            .claude-icon {{
+                width: 40px;
+                height: 40px;
+                background: #f4b643;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }}
+            
+            .form-group {{
+                margin-bottom: 1.5rem;
+            }}
+            
+            label {{
+                display: block;
+                color: #4a5568;
+                font-size: 14px;
+                font-weight: 500;
+                margin-bottom: 0.5rem;
+            }}
+            
             input {{
                 width: 100%;
-                padding: 0.75rem;
-                margin: 0.5rem 0 1rem 0;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-sizing: border-box;
+                padding: 0.75rem 1rem;
+                border: 2px solid #e2e8f0;
+                border-radius: 10px;
+                font-size: 16px;
+                transition: all 0.2s;
+                background: #fff;
             }}
+            
+            input:focus {{
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }}
+            
             button {{
                 width: 100%;
-                padding: 0.75rem;
-                background: #007bff;
+                padding: 1rem;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
                 cursor: pointer;
-                font-size: 1rem;
+                transition: all 0.2s;
+                position: relative;
+                overflow: hidden;
             }}
-            button:hover {{ background: #0056b3; }}
-            .info {{ color: #666; font-size: 0.875rem; margin-top: 1rem; }}
+            
+            button:hover {{
+                transform: translateY(-1px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            }}
+            
+            button:active {{
+                transform: translateY(0);
+            }}
+            
+            .info {{
+                text-align: center;
+                margin-top: 2rem;
+                padding-top: 2rem;
+                border-top: 1px solid #e2e8f0;
+            }}
+            
+            .info a {{
+                color: #667eea;
+                text-decoration: none;
+                font-weight: 500;
+                transition: color 0.2s;
+            }}
+            
+            .info a:hover {{
+                color: #764ba2;
+            }}
+            
+            .note {{
+                background: #fef5e7;
+                border: 1px solid #fdeaa8;
+                border-radius: 8px;
+                padding: 1rem;
+                margin-top: 1.5rem;
+                font-size: 13px;
+                color: #744210;
+            }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h2>🧠 Connect Claude to Jean Memory</h2>
-            <p>Enter your Jean Memory API key to authorize Claude:</p>
+            <div class="logo-section">
+                <div class="logo">🧠</div>
+                <h1>Connect to Jean Memory</h1>
+                <p class="subtitle">Authorize Claude to access your memories</p>
+            </div>
+            
+            <div class="claude-info">
+                <div class="claude-icon">🤖</div>
+                <div>
+                    <strong>Claude</strong> wants to access your Jean Memory
+                    <div style="font-size: 12px; color: #718096; margin-top: 4px;">
+                        Read and write memories on your behalf
+                    </div>
+                </div>
+            </div>
+            
             <form method="post" action="/oauth/callback">
                 <input type="hidden" name="session_id" value="{session_id}">
-                <label for="api_key">API Key:</label>
-                <input type="password" name="api_key" id="api_key" 
-                       placeholder="jean_sk_..." required 
-                       pattern="jean_sk_.*">
-                <button type="submit">Authorize</button>
+                
+                <div class="form-group">
+                    <label for="api_key">API Key</label>
+                    <input 
+                        type="password" 
+                        name="api_key" 
+                        id="api_key" 
+                        placeholder="jean_sk_..." 
+                        required 
+                        pattern="jean_sk_.*"
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <button type="submit">Authorize Claude</button>
             </form>
-            <p class="info">
+            
+            <div class="note">
+                💡 We're working on email/password login. For now, please use your API key.
+            </div>
+            
+            <div class="info">
                 Get your API key from 
-                <a href="https://jeanmemory.com/settings" target="_blank">Jean Memory Settings</a>
-            </p>
+                <a href="https://app.jeanmemory.com/settings" target="_blank">
+                    Jean Memory Settings
+                </a>
+            </div>
         </div>
     </body>
     </html>
