@@ -378,30 +378,40 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
             </div>
         ) : app.id === 'claude' ? (
             <div className="py-2 space-y-6">
-                {/* OAuth Connection Button */}
+                {/* Download Button */}
                 <Button 
-                    onClick={() => window.open('https://jean-memory-api-dev.onrender.com/oauth/authorize?client_id=unknown_oRV4P34GULT7dfs1eI3Qqw&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&scope=read+write&state=claude-connection', '_blank')}
+                    onClick={handleDownloadExtension}
                     className="w-full"
-                    variant="default"
+                    variant="secondary"
                 >
-                    <Shield className="mr-2 h-4 w-4" />
-                    Connect to Claude
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Desktop Extension
                 </Button>
                 
-                {/* Connection Instructions */}
+                {/* User ID */}
                 <div className="space-y-2">
-                    <h3 className="font-medium text-foreground">OAuth Connection</h3>
-                    <p className="text-sm text-muted-foreground">Click the button above to authorize Claude to access your Jean Memory data securely.</p>
+                    <h3 className="font-medium text-foreground">Your User ID</h3>
+                    <p className="text-sm text-muted-foreground">Copy this ID to configure the extension:</p>
+                    <div className="relative bg-background border rounded-md p-3 font-mono text-sm break-all">
+                        <div className="pr-12">{user?.id || ''}</div>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2" 
+                            onClick={() => handleCopy(user?.id || '')}
+                        >
+                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </div>
                 
                 {/* Simple Steps */}
                 <div className="space-y-2">
                     <h3 className="font-medium text-foreground">Setup Steps</h3>
                     <ol className="text-sm text-muted-foreground space-y-1">
-                        <li>1. Click "Connect to Claude" above</li>
-                        <li>2. Sign in with your Jean Memory account</li>
-                        <li>3. Authorize Claude to access your memories</li>
-                        <li>4. Start using Jean Memory in Claude!</li>
+                        <li>1. Download and install the extension</li>
+                        <li>2. Enter your User ID when prompted</li>
+                        <li>3. Start using Jean Memory in Claude Desktop</li>
                     </ol>
                 </div>
                 
