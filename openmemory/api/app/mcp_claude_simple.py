@@ -10,7 +10,7 @@ This endpoint:
 
 import logging
 from fastapi import APIRouter, Request, Depends, BackgroundTasks
-from app.oauth_simple import get_current_user
+from app.oauth_simple_new import get_current_user
 from app.routing.mcp import handle_request_logic
 from starlette.datastructures import MutableHeaders
 
