@@ -444,29 +444,23 @@ async def authorize(
             
             // Check if user is already signed in when page loads
             supabase.auth.onAuthStateChange((event, session) => {{
+                console.log('Auth state change:', event, session);
                 if (event === 'SIGNED_IN' && session) {{
-                    // User is signed in, ensure session parameter is preserved and reload
-                    const currentUrl = new URL(window.location.href);
-                    if (!currentUrl.searchParams.has('oauth_session')) {{
-                        currentUrl.searchParams.set('oauth_session', '{session_id}');
-                        window.location.href = currentUrl.toString();
-                    }} else {{
-                        window.location.reload();
-                    }}
+                    console.log('User signed in, redirecting to callback...');
+                    // User is signed in, redirect to callback to set cookies
+                    const callbackUrl = `/oauth/callback?oauth_session={session_id}`;
+                    window.location.href = callbackUrl;
                 }}
             }});
             
             // Check initial session
             supabase.auth.getSession().then({{ data: {{ session }} }}) => {{
+                console.log('Initial session check:', session);
                 if (session) {{
-                    // User is already signed in, ensure session parameter and reload
-                    const currentUrl = new URL(window.location.href);
-                    if (!currentUrl.searchParams.has('oauth_session')) {{
-                        currentUrl.searchParams.set('oauth_session', '{session_id}');
-                        window.location.href = currentUrl.toString();
-                    }} else {{
-                        window.location.reload();
-                    }}
+                    console.log('Found existing session, redirecting to callback...');
+                    // User is already signed in, redirect to callback to set cookies
+                    const callbackUrl = `/oauth/callback?oauth_session={session_id}`;
+                    window.location.href = callbackUrl;
                 }}
             }});
         </script>
@@ -534,12 +528,19 @@ async def oauth_callback(
             
             // Handle the authentication callback and set cookies
             supabase.auth.onAuthStateChange(async (event, session) => {{
+                console.log('Callback: Auth state change:', event, session);
                 if (event === 'SIGNED_IN' && session) {{
-                    console.log('User signed in, setting cookies and redirecting...');
+                    console.log('Callback: User signed in, setting cookies and redirecting...');
                     
-                    // Set the auth token in a cookie
-                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600; samesite=lax; secure`;
-                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800; samesite=lax; secure`;
+                    // Set the auth token in a cookie with proper settings for OAuth
+                    const isSecure = window.location.protocol === 'https:';
+                    const secureFlag = isSecure ? '; secure' : '';
+                    const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
+                    
+                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
+                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800${{sameSiteFlag}}${{secureFlag}}`;
+                    
+                    console.log('Callback: Cookies set, redirecting to authorize...');
                     
                     // Redirect back to the OAuth authorize endpoint with the session
                     const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
@@ -549,18 +550,25 @@ async def oauth_callback(
             
             // Check for existing session
             supabase.auth.getSession().then(async ({{ data: {{ session }} }}) => {{
+                console.log('Callback: Initial session check:', session);
                 if (session) {{
-                    console.log('Found existing session, setting cookies and redirecting...');
+                    console.log('Callback: Found existing session, setting cookies and redirecting...');
                     
-                    // Set the auth token in a cookie
-                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600; samesite=lax; secure`;
-                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800; samesite=lax; secure`;
+                    // Set the auth token in a cookie with proper settings for OAuth
+                    const isSecure = window.location.protocol === 'https:';
+                    const secureFlag = isSecure ? '; secure' : '';
+                    const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
+                    
+                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
+                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800${{sameSiteFlag}}${{secureFlag}}`;
+                    
+                    console.log('Callback: Cookies set, redirecting to authorize...');
                     
                     // Redirect back to the OAuth authorize endpoint with the session
                     const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
                     window.location.href = authorizeUrl;
                 }} else {{
-                    console.log('No session found, redirecting back to authorize');
+                    console.log('Callback: No session found, redirecting back to authorize');
                     // Redirect back without session - will show login page again
                     const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
                     window.location.href = authorizeUrl;
