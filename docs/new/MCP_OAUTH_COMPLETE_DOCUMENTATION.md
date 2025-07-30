@@ -62,40 +62,53 @@ async def authorize(request, client_id, redirect_uri, ...):
 - **OLD:** Redirected to `https://jeanmemory.com/auth` (external site)
 - **NEW:** Shows standalone OAuth page with direct Supabase integration
 
-### Current Issue Analysis
-From the logs, Claude is still hitting the same problem:
+### Session Persistence Fix (July 30, 2025)
+
+### Root Cause: Session State Loss
+The previous implementation lost OAuth session data when the page reloaded after Supabase authentication.
+
+### Solution Implemented
+**Session Persistence via URL Parameters:**
+
+1. **Authorization endpoint** now accepts `oauth_session` parameter
+2. **Session restoration** - retrieves stored OAuth parameters from `auth_sessions[oauth_session]`  
+3. **JavaScript updated** - preserves session ID in redirect URLs
+4. **Auto-approval works** - user authentication triggers immediate authorization code generation
+
+### Technical Changes Made
+
+**Backend (`oauth_simple_new.py`):**
+```python
+@oauth_router.get("/authorize")
+async def authorize(
+    # ... existing parameters ...
+    oauth_session: Optional[str] = None  # NEW: Session ID from post-auth redirect
+):
+    # Check if this is a post-authentication callback with session ID
+    if oauth_session and oauth_session in auth_sessions:
+        # Retrieve stored session data
+        session_data = auth_sessions[oauth_session]
+        client_id = session_data["client_id"]  # Restore all parameters
+        redirect_uri = session_data["redirect_uri"]
+        # ... etc
 ```
-INFO: Authorization request: client_id=claude-OiAex4vGSSA
-INFO: Auto-registered Claude client: claude-OiAex4vGSSA  
-INFO: No OAuth access token found in any cookie
-INFO: ❌ No authenticated user found
+
+**Frontend (JavaScript):**
+```javascript
+// Preserve oauth_session parameter in Supabase redirects
+const currentUrl = new URL(window.location.href);
+if (!currentUrl.searchParams.has('oauth_session')) {
+    currentUrl.searchParams.set('oauth_session', session_id);
+}
 ```
 
-**The issue:** User gets the login page but the OAuth flow doesn't complete successfully.
+### Fixed Flow
+1. **Initial request** → Creates session, stores parameters
+2. **User authentication** → Supabase OAuth with session parameter preserved  
+3. **Post-auth callback** → Retrieves session, detects authenticated user
+4. **Auto-approval** → Generates authorization code, redirects to Claude ✅
 
-## Root Cause Identified
-
-The current implementation has a **fundamental flaw**:
-
-1. **User sees login page** ✅
-2. **User clicks "Continue with Google"** ✅  
-3. **Supabase OAuth completes** ✅
-4. **Page reloads** ✅
-5. **BUT: OAuth session state is lost** ❌
-
-**Problem:** When the page reloads after Supabase authentication, the original OAuth session (with `client_id`, `redirect_uri`, `state`, etc.) is gone because it was stored in the authorization endpoint's local scope, not in a persistent session.
-
-## Required Fix
-
-The OAuth implementation needs to:
-1. **Store OAuth session parameters** before showing login page
-2. **Retrieve OAuth session parameters** after login completes  
-3. **Generate authorization code** with proper session data
-4. **Redirect back to Claude** with the authorization code
-
-**Current code missing:** Session persistence between login page display and post-authentication callback.
-
-### PKCE & JWT Security
+## Security Implementation
 
 **Authorization Code with PKCE:**
 - SHA256 challenge/verifier validation

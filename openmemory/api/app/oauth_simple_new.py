@@ -113,13 +113,31 @@ async def authorize(
     state: str,
     scope: Optional[str] = "read write",
     code_challenge: Optional[str] = None,
-    code_challenge_method: Optional[str] = "S256"
+    code_challenge_method: Optional[str] = "S256",
+    oauth_session: Optional[str] = None  # Session ID from post-auth redirect
 ):
     """OAuth authorization endpoint - shows login/authorization page"""
     import logging
     logger = logging.getLogger(__name__)
     
-    logger.info(f"Authorization request: client_id={client_id}, redirect_uri={redirect_uri}")
+    logger.info(f"Authorization request: client_id={client_id}, redirect_uri={redirect_uri}, oauth_session={oauth_session}")
+    
+    # Check if this is a post-authentication callback with session ID
+    if oauth_session and oauth_session in auth_sessions:
+        logger.info(f"🔄 Post-authentication callback with session: {oauth_session}")
+        
+        # Retrieve stored session data
+        session_data = auth_sessions[oauth_session]
+        
+        # Use stored session data instead of URL parameters
+        client_id = session_data["client_id"]
+        redirect_uri = session_data["redirect_uri"]
+        state = session_data["state"]
+        scope = session_data["scope"]
+        code_challenge = session_data["code_challenge"]
+        code_challenge_method = session_data["code_challenge_method"]
+        
+        logger.info(f"📋 Restored session data: client_id={client_id}, redirect_uri={redirect_uri}")
     
     # Check if client exists, if not and it's Claude, auto-register it
     if client_id not in registered_clients:
@@ -143,17 +161,22 @@ async def authorize(
     if redirect_uri not in client_info["redirect_uris"]:
         raise HTTPException(status_code=400, detail="Invalid redirect URI")
     
-    # Create auth session
-    session_id = secrets.token_urlsafe(32)
-    auth_sessions[session_id] = {
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "state": state,
-        "scope": scope,
-        "code_challenge": code_challenge,
-        "code_challenge_method": code_challenge_method,
-        "created_at": time.time()
-    }
+    # Create or update auth session
+    if not oauth_session:
+        session_id = secrets.token_urlsafe(32)
+        auth_sessions[session_id] = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "state": state,
+            "scope": scope,
+            "code_challenge": code_challenge,
+            "code_challenge_method": code_challenge_method,
+            "created_at": time.time()
+        }
+        logger.info(f"🆕 Created new OAuth session: {session_id}")
+    else:
+        session_id = oauth_session
+        logger.info(f"🔄 Using existing OAuth session: {session_id}")
     
     # Try to get current user using OAuth-specific authentication
     current_user = None
@@ -388,10 +411,18 @@ async def authorize(
                 error.style.display = 'none';
                 
                 try {{
+                    // Build redirect URL with session preservation
+                    const currentUrl = new URL(window.location.href);
+                    
+                    // Add oauth_session parameter if not already present
+                    if (!currentUrl.searchParams.has('oauth_session')) {{
+                        currentUrl.searchParams.set('oauth_session', '{session_id}');
+                    }}
+                    
                     const {{ data, error: signInError }} = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
-                            redirectTo: window.location.href + '&{oauth_session_param}'
+                            redirectTo: currentUrl.toString()
                         }}
                     }});
                     
@@ -410,16 +441,28 @@ async def authorize(
             // Check if user is already signed in when page loads
             supabase.auth.onAuthStateChange((event, session) => {{
                 if (event === 'SIGNED_IN' && session) {{
-                    // User is signed in, reload the page to trigger auto-approval
-                    window.location.reload();
+                    // User is signed in, ensure session parameter is preserved and reload
+                    const currentUrl = new URL(window.location.href);
+                    if (!currentUrl.searchParams.has('oauth_session')) {{
+                        currentUrl.searchParams.set('oauth_session', '{session_id}');
+                        window.location.href = currentUrl.toString();
+                    }} else {{
+                        window.location.reload();
+                    }}
                 }}
             }});
             
             // Check initial session
             supabase.auth.getSession().then({{ data: {{ session }} }}) => {{
                 if (session) {{
-                    // User is already signed in, reload to trigger auto-approval
-                    window.location.reload();
+                    // User is already signed in, ensure session parameter and reload
+                    const currentUrl = new URL(window.location.href);
+                    if (!currentUrl.searchParams.has('oauth_session')) {{
+                        currentUrl.searchParams.set('oauth_session', '{session_id}');
+                        window.location.href = currentUrl.toString();
+                    }} else {{
+                        window.location.reload();
+                    }}
                 }}
             }});
         </script>
