@@ -460,11 +460,16 @@ async def authorize(
                     const callbackUrl = baseUrl + '/oauth/callback?oauth_session={session_id}';
                     
                     console.log('🔍 DEBUG - About to call Supabase OAuth with redirect:', callbackUrl);
+                    console.log('🔍 DEBUG - Current URL:', window.location.href);
+                    console.log('🔍 DEBUG - Session ID:', '{session_id}');
                     
                     const result = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
-                            redirectTo: callbackUrl
+                            redirectTo: callbackUrl,
+                            queryParams: {{
+                                oauth_session: '{session_id}'
+                            }}
                         }}
                     }});
                     

@@ -440,6 +440,75 @@ console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
 6. **Claude Token Exchange** → PKCE validation → JWT Bearer token with internal User.id
 7. **MCP Requests** → Bearer token authentication → Full user context → Database queries work ✅
 
+## CRITICAL ISSUE DISCOVERED (July 30, 2025 - Evening)
+
+### Problem: Supabase Redirect Configuration Conflict
+
+**Root Cause:** The OAuth flow fails because Supabase project settings redirect OAuth to `https://jeanmemory.com` instead of our API callback URL.
+
+**Evidence from Production Logs:**
+```
+2025-07-30 23:20:02,711 - Authorization request: client_id=claude-OiAex4vGSSA
+2025-07-30 23:20:02,711 - Auto-registered Claude client: claude-OiAex4vGSSA  
+2025-07-30 23:20:02,711 - Created new OAuth session: XUlqDWtF...
+[User authenticates successfully with Supabase]
+INFO: Authentication successful for user 66d3d5d1-fc48-44a7-bbc0-1efa2e164fad
+[BUT OAuth flow never completes - user lands on Jean Memory dashboard]
+INFO: 34.162.142.92:0 - "POST /mcp HTTP/1.1" 401 Unauthorized
+```
+
+**Flow Breakdown:**
+1. ✅ Claude requests OAuth authorization  
+2. ✅ User sees OAuth login page
+3. ✅ User clicks "Continue with Google"  
+4. ❌ **Supabase redirects to main app instead of OAuth callback**
+5. ❌ OAuth session never completes
+6. ❌ Claude never receives authorization code
+7. ❌ MCP requests fail with 401
+
+### Critical Constraint: CANNOT BREAK EXISTING AUTH FLOW
+
+**Existing Production Flow (MUST PRESERVE):**
+- Users visit `https://jeanmemory.com` → Login → Dashboard access
+- Uses same Supabase project with redirect to `https://jeanmemory.com`
+- **This flow is production-critical and cannot be disrupted**
+
+### Proposed Solutions (Safe Implementation)
+
+#### Option 1: Supabase Configuration Update (RECOMMENDED)
+**Action:** Add OAuth callback URL to Supabase project settings
+**Implementation:**
+1. Go to Supabase Dashboard → Authentication → URL Configuration
+2. Add to "Redirect URLs": `https://jean-memory-api-virginia.onrender.com/oauth/callback`  
+3. Keep existing `https://jeanmemory.com` redirect (preserves main app flow)
+4. Update OAuth JavaScript to explicitly specify the callback URL
+
+**Pros:** Minimal code changes, preserves existing flow
+**Cons:** Requires Supabase dashboard access
+
+#### Option 2: Dual Supabase Client Approach
+**Action:** Create OAuth-specific Supabase client with separate configuration
+**Implementation:** Use different Supabase anon key for OAuth vs main app
+**Pros:** Complete isolation between flows  
+**Cons:** Requires additional Supabase project or configuration
+
+#### Option 3: Bridge Page Solution
+**Action:** Create `https://jeanmemory.com/oauth-bridge` that communicates with OAuth flow
+**Implementation:** PostMessage API to pass tokens between domains
+**Pros:** No Supabase configuration changes needed
+**Cons:** More complex implementation, additional page to maintain
+
+### ✅ RESOLUTION IMPLEMENTED (July 30, 2025 - Evening)
+
+**FIXED:** Added `https://jean-memory-api-virginia.onrender.com/oauth/callback` to Supabase project redirect URLs.
+
+**Supabase Configuration Updated:**
+- Site URL: `https://jeanmemory.com` (preserved for main app)
+- Redirect URLs: Added OAuth callback while keeping existing URLs
+- **Result:** OAuth flow can now redirect to API domain without breaking main app flow
+
+**Status:** OAuth 2.1 MCP implementation should now be fully functional.
+
 ## Key Learnings (Updated)
 
 1. **Cross-Domain Cookie Security** - Browser security prevents cookie sharing across domains
@@ -449,3 +518,5 @@ console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
 5. **Domain Architecture Matters** - API and main app domains must be considered in OAuth design
 6. **Comprehensive Logging Essential** - Detailed debugging logs are critical for OAuth troubleshooting
 7. **User UUID Mapping Critical** - JWT tokens must contain internal User.id, not Supabase UUID
+8. **Supabase Redirect Configuration Critical** - OAuth flows fail if Supabase redirects to wrong domain
+9. **Production Flow Preservation** - OAuth implementations must not break existing authentication flows
