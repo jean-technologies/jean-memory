@@ -386,71 +386,62 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
             </div>
         ) : app.id === 'claude' ? (
             <div className="py-2 space-y-6">
-                {/* Download Button */}
-                <Button 
-                    onClick={handleDownloadExtension}
-                    className="w-full"
-                    variant="secondary"
-                >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Desktop Extension
-                </Button>
-                
-                {/* User ID */}
-                <div className="space-y-2">
-                    <h3 className="font-medium text-foreground">Your User ID</h3>
-                    <p className="text-sm text-muted-foreground">Copy this ID to configure the extension:</p>
+                {/* MCP Connector - Most Important */}
+                <div className="space-y-3">
+                    <h3 className="font-medium text-foreground text-lg">🔌 MCP Connector</h3>
+                    <p className="text-sm text-muted-foreground">For Claude Web, Desktop, and Code - OAuth authentication handled automatically</p>
                     <div className="relative bg-background border rounded-md p-3 font-mono text-sm break-all">
-                        <div className="pr-12">{user?.id || ''}</div>
+                        <div className="pr-12">{MCP_URL}/mcp</div>
                         <Button 
                             variant="ghost" 
                             size="sm"
                             className="absolute right-1 top-1/2 -translate-y-1/2" 
-                            onClick={() => handleCopy(user?.id || '')}
+                            onClick={() => handleCopy(`${MCP_URL}/mcp`)}
                         >
                             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                         </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground">No manual setup required - Claude handles OAuth authentication automatically</p>
                 </div>
-                
-                {/* Simple Steps */}
-                <div className="space-y-2">
-                    <h3 className="font-medium text-foreground">Setup Steps</h3>
-                    <ol className="text-sm text-muted-foreground space-y-1">
-                        <li>1. Download and install the extension</li>
-                        <li>2. Enter your User ID when prompted</li>
-                        <li>3. Start using Jean Memory in Claude Desktop</li>
-                    </ol>
-                </div>
-                
-                {/* Alternative Connection Methods */}
-                <details className="group">
-                    <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                        Other Claude connection methods
-                    </summary>
-                    <div className="mt-3 space-y-4">
-                        
-                        {/* MCP Connector */}
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-medium text-foreground">🔌 MCP Connector (Claude Web/Desktop/Code)</h4>
-                            <p className="text-xs text-muted-foreground">For Claude&apos;s MCP connector, use this OAuth-enabled server URL:</p>
-                            <div className="relative bg-background border rounded-md p-2 font-mono text-xs break-all">
-                                <div className="pr-12">{MCP_URL}/mcp</div>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                    onClick={() => handleCopy(`${MCP_URL}/mcp`)}
-                                >
-                                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">✨ Claude will automatically handle OAuth authentication - no manual setup required!</p>
-                        </div>
 
-                        
+                {/* Download Extension - Alternative */}
+                <div className="space-y-3 pt-4 border-t border-muted">
+                    <h3 className="font-medium text-foreground">Desktop Extension (Alternative)</h3>
+                    <Button 
+                        onClick={handleDownloadExtension}
+                        className="w-full"
+                        variant="outline"
+                    >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Desktop Extension
+                    </Button>
+                    
+                    {/* User ID */}
+                    <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Your User ID for extension setup:</p>
+                        <div className="relative bg-background border rounded-md p-3 font-mono text-sm break-all">
+                            <div className="pr-12">{user?.id || ''}</div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                onClick={() => handleCopy(user?.id || '')}
+                            >
+                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
                     </div>
-                </details>
+                    
+                    {/* Simple Steps */}
+                    <div className="space-y-2">
+                        <h4 className="font-medium text-foreground text-sm">Setup Steps</h4>
+                        <ol className="text-sm text-muted-foreground space-y-1 ml-4">
+                            <li>1. Download and install the extension</li>
+                            <li>2. Enter your User ID when prompted</li>
+                            <li>3. Start using Jean Memory in Claude Desktop</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         ) : app.id === 'vscode' ? (
             <div className="py-2 space-y-4 text-left">
@@ -653,7 +644,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                                 {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">✨ OAuth authentication will be handled automatically by Claude</p>
+                        <p className="text-xs text-muted-foreground mt-2">OAuth authentication will be handled automatically by Claude</p>
                     </div>
 
                     <div>

@@ -176,145 +176,168 @@ async def authorize(
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>Connect {client_name} to Jean Memory</title>
+            <title>Authorize {client_name}</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
             <style>
                 * {{
+                    box-sizing: border-box;
                     margin: 0;
                     padding: 0;
-                    box-sizing: border-box;
                 }}
                 
                 body {{
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    background: #f8fafc;
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding: 20px;
-                    line-height: 1.6;
+                    padding: 16px;
+                    line-height: 1.5;
                 }}
                 
                 .container {{
                     background: white;
-                    border-radius: 20px;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-                    max-width: 480px;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    max-width: 400px;
                     width: 100%;
-                    overflow: hidden;
                 }}
                 
                 .header {{
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 32px;
+                    padding: 32px 32px 24px;
                     text-align: center;
+                    border-bottom: 1px solid #f1f5f9;
                 }}
                 
                 .logo {{
-                    font-size: 48px;
-                    margin-bottom: 8px;
-                }}
-                
-                .brand {{
+                    width: 48px;
+                    height: 48px;
+                    background: #3b82f6;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 16px;
+                    color: white;
                     font-size: 24px;
                     font-weight: 600;
-                    margin-bottom: 8px;
                 }}
                 
-                .subtitle {{
+                .company-name {{
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #1e293b;
+                    margin-bottom: 4px;
+                }}
+                
+                .tagline {{
                     font-size: 14px;
-                    opacity: 0.9;
-                    font-weight: 300;
+                    color: #64748b;
                 }}
                 
                 .content {{
-                    padding: 32px;
+                    padding: 24px 32px 32px;
                 }}
                 
-                .connection-request {{
-                    text-align: center;
-                    margin-bottom: 24px;
-                    padding: 24px;
-                    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-                    border-radius: 12px;
-                    border: 1px solid #e6e8ff;
-                }}
-                
-                .client-name {{
-                    font-size: 20px;
+                .auth-title {{
+                    font-size: 18px;
                     font-weight: 600;
-                    color: #4a5568;
+                    color: #1e293b;
                     margin-bottom: 8px;
                 }}
                 
-                .request-text {{
-                    color: #718096;
+                .auth-subtitle {{
                     font-size: 14px;
+                    color: #64748b;
+                    margin-bottom: 24px;
                 }}
                 
-                .user-info {{
-                    background: #f7fafc;
+                .client-info {{
+                    background: #f8fafc;
                     border: 1px solid #e2e8f0;
-                    border-radius: 12px;
-                    padding: 20px;
+                    border-radius: 6px;
+                    padding: 16px;
                     margin-bottom: 24px;
                     display: flex;
                     align-items: center;
                     gap: 12px;
                 }}
                 
-                .user-avatar {{
-                    width: 40px;
-                    height: 40px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 50%;
+                .client-logo {{
+                    width: 32px;
+                    height: 32px;
+                    background: #6366f1;
+                    border-radius: 4px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     color: white;
                     font-weight: 600;
-                    font-size: 16px;
-                }}
-                
-                .user-details h4 {{
-                    color: #2d3748;
-                    font-weight: 500;
-                    margin-bottom: 2px;
-                }}
-                
-                .user-details p {{
-                    color: #718096;
                     font-size: 14px;
                 }}
                 
-                .permissions {{
-                    margin-bottom: 32px;
+                .client-details {{
+                    flex: 1;
                 }}
                 
-                .permissions h3 {{
-                    color: #2d3748;
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin-bottom: 16px;
+                .client-name {{
+                    font-weight: 500;
+                    color: #1e293b;
+                    font-size: 14px;
+                }}
+                
+                .client-desc {{
+                    font-size: 12px;
+                    color: #64748b;
+                }}
+                
+                .user-info {{
+                    background: #fafbfc;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 6px;
+                    padding: 12px 16px;
+                    margin-bottom: 24px;
+                }}
+                
+                .user-label {{
+                    font-size: 12px;
+                    color: #6b7280;
+                    margin-bottom: 4px;
+                }}
+                
+                .user-email {{
+                    font-size: 14px;
+                    color: #1f2937;
+                    font-weight: 500;
+                }}
+                
+                .permissions {{
+                    margin-bottom: 24px;
+                }}
+                
+                .permissions-title {{
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #1e293b;
+                    margin-bottom: 12px;
                 }}
                 
                 .permissions-list {{
                     list-style: none;
-                    space-y: 8px;
                 }}
                 
                 .permissions-list li {{
                     display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 12px 0;
-                    color: #4a5568;
-                    font-size: 14px;
+                    align-items: flex-start;
+                    gap: 8px;
+                    padding: 8px 0;
+                    font-size: 13px;
+                    color: #4b5563;
                     border-bottom: 1px solid #f1f5f9;
                 }}
                 
@@ -322,77 +345,83 @@ async def authorize(
                     border-bottom: none;
                 }}
                 
-                .permission-icon {{
-                    width: 20px;
-                    height: 20px;
-                    background: #48bb78;
-                    border-radius: 50%;
+                .permission-check {{
+                    width: 16px;
+                    height: 16px;
+                    background: #22c55e;
+                    border-radius: 2px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     color: white;
-                    font-size: 12px;
-                    font-weight: bold;
+                    font-size: 10px;
                     flex-shrink: 0;
+                    margin-top: 1px;
                 }}
                 
                 .actions {{
                     display: flex;
-                    gap: 16px;
+                    gap: 12px;
                 }}
                 
                 .btn {{
                     flex: 1;
-                    padding: 16px 24px;
-                    border: none;
-                    border-radius: 12px;
-                    font-size: 16px;
-                    font-weight: 600;
+                    padding: 12px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
                     cursor: pointer;
-                    transition: all 0.2s ease;
-                    text-decoration: none;
+                    transition: all 0.15s ease;
                     text-align: center;
+                    text-decoration: none;
+                    border: none;
+                }}
+                
+                .btn-primary {{
+                    background: #3b82f6;
+                    color: white;
+                }}
+                
+                .btn-primary:hover {{
+                    background: #2563eb;
+                }}
+                
+                .btn-secondary {{
+                    background: white;
+                    color: #374151;
+                    border: 1px solid #d1d5db;
+                }}
+                
+                .btn-secondary:hover {{
+                    background: #f9fafb;
+                    border-color: #9ca3af;
+                }}
+                
+                .footer {{
+                    padding: 16px 32px;
+                    border-top: 1px solid #f1f5f9;
+                    text-align: center;
+                }}
+                
+                .security-text {{
+                    font-size: 11px;
+                    color: #6b7280;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    gap: 4px;
                 }}
                 
-                .btn-approve {{
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-                }}
-                
-                .btn-approve:hover {{
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-                }}
-                
-                .btn-deny {{
-                    background: #f7fafc;
-                    color: #4a5568;
-                    border: 1px solid #e2e8f0;
-                }}
-                
-                .btn-deny:hover {{
-                    background: #edf2f7;
-                    border-color: #cbd5e0;
-                }}
-                
-                .security-note {{
-                    margin-top: 24px;
-                    padding: 16px;
-                    background: #f0fff4;
-                    border: 1px solid #c6f6d5;
-                    border-radius: 8px;
+                .security-icon {{
                     font-size: 12px;
-                    color: #276749;
                 }}
                 
                 @media (max-width: 480px) {{
                     .container {{
+                        margin: 0;
                         border-radius: 0;
                         min-height: 100vh;
+                        border: none;
                     }}
                     
                     .actions {{
@@ -404,64 +433,66 @@ async def authorize(
         <body>
             <div class="container">
                 <div class="header">
-                    <div class="logo">🧠</div>
-                    <div class="brand">Jean Memory</div>
-                    <div class="subtitle">Personal AI Memory System</div>
+                    <div class="logo">JM</div>
+                    <div class="company-name">Jean Memory</div>
+                    <div class="tagline">Personal AI Memory System</div>
                 </div>
                 
                 <div class="content">
-                    <div class="connection-request">
-                        <div class="client-name">{client_name}</div>
-                        <div class="request-text">wants to connect to your Jean Memory account</div>
-                    </div>
+                    <div class="auth-title">Authorize {client_name}</div>
+                    <div class="auth-subtitle">{client_name} is requesting access to your Jean Memory account</div>
                     
-                    <div class="user-info">
-                        <div class="user-avatar">{current_user.email[0].upper()}</div>
-                        <div class="user-details">
-                            <h4>Signed in as</h4>
-                            <p>{current_user.email}</p>
+                    <div class="client-info">
+                        <div class="client-logo">C</div>
+                        <div class="client-details">
+                            <div class="client-name">{client_name}</div>
+                            <div class="client-desc">AI Assistant</div>
                         </div>
                     </div>
                     
+                    <div class="user-info">
+                        <div class="user-label">Signed in as</div>
+                        <div class="user-email">{current_user.email}</div>
+                    </div>
+                    
                     <div class="permissions">
-                        <h3>This will allow {client_name} to:</h3>
+                        <div class="permissions-title">This will allow {client_name} to:</div>
                         <ul class="permissions-list">
                             <li>
-                                <div class="permission-icon">✓</div>
-                                Access your memories and conversations
+                                <div class="permission-check">✓</div>
+                                <span>Access your memories and conversations</span>
                             </li>
                             <li>
-                                <div class="permission-icon">✓</div>
-                                Store new memories from your interactions
+                                <div class="permission-check">✓</div>
+                                <span>Store new memories from interactions</span>
                             </li>
                             <li>
-                                <div class="permission-icon">✓</div>
-                                Search your existing knowledge base
+                                <div class="permission-check">✓</div>
+                                <span>Search your knowledge base</span>
                             </li>
                             <li>
-                                <div class="permission-icon">✓</div>
-                                Provide personalized context and insights
+                                <div class="permission-check">✓</div>
+                                <span>Provide personalized insights</span>
                             </li>
                         </ul>
                     </div>
                     
                     <div class="actions">
-                        <form method="post" action="/oauth/approve" style="flex: 1;">
-                            <input type="hidden" name="session_id" value="{session_id}">
-                            <button type="submit" class="btn btn-approve">
-                                Allow Access
-                            </button>
-                        </form>
                         <form method="post" action="/oauth/deny" style="flex: 1;">
                             <input type="hidden" name="session_id" value="{session_id}">
-                            <button type="submit" class="btn btn-deny">
-                                Cancel
-                            </button>
+                            <button type="submit" class="btn btn-secondary">Cancel</button>
+                        </form>
+                        <form method="post" action="/oauth/approve" style="flex: 1;">
+                            <input type="hidden" name="session_id" value="{session_id}">
+                            <button type="submit" class="btn btn-primary">Authorize</button>
                         </form>
                     </div>
-                    
-                    <div class="security-note">
-                        🔒 Your connection is secure and encrypted. You can revoke access at any time from your Jean Memory settings.
+                </div>
+                
+                <div class="footer">
+                    <div class="security-text">
+                        <span class="security-icon">🔒</span>
+                        <span>Secured by OAuth 2.0 • Revoke access anytime</span>
                     </div>
                 </div>
             </div>
@@ -477,129 +508,170 @@ async def authorize(
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>Connect {client_name} to Jean Memory</title>
+            <title>Sign in - Jean Memory</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
             <style>
                 * {{
+                    box-sizing: border-box;
                     margin: 0;
                     padding: 0;
-                    box-sizing: border-box;
                 }}
                 
                 body {{
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    background: #f8fafc;
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding: 20px;
-                    line-height: 1.6;
+                    padding: 16px;
+                    line-height: 1.5;
                 }}
                 
                 .container {{
                     background: white;
-                    border-radius: 20px;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-                    max-width: 480px;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    max-width: 400px;
                     width: 100%;
-                    overflow: hidden;
                     text-align: center;
                 }}
                 
                 .header {{
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 48px 32px;
+                    padding: 32px 32px 24px;
+                    border-bottom: 1px solid #f1f5f9;
                 }}
                 
                 .logo {{
-                    font-size: 64px;
-                    margin-bottom: 16px;
+                    width: 48px;
+                    height: 48px;
+                    background: #3b82f6;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 16px;
+                    color: white;
+                    font-size: 24px;
+                    font-weight: 600;
                 }}
                 
-                .brand {{
-                    font-size: 28px;
-                    font-weight: 700;
-                    margin-bottom: 8px;
+                .company-name {{
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #1e293b;
+                    margin-bottom: 4px;
                 }}
                 
-                .subtitle {{
-                    font-size: 16px;
-                    opacity: 0.9;
-                    font-weight: 300;
+                .tagline {{
+                    font-size: 14px;
+                    color: #64748b;
                 }}
                 
                 .content {{
-                    padding: 48px 32px;
+                    padding: 24px 32px 32px;
                 }}
                 
-                .connection-request {{
-                    margin-bottom: 32px;
-                    padding: 32px;
-                    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-                    border-radius: 16px;
-                    border: 1px solid #e6e8ff;
-                }}
-                
-                .client-name {{
-                    font-size: 24px;
+                .sign-in-title {{
+                    font-size: 18px;
                     font-weight: 600;
-                    color: #4a5568;
-                    margin-bottom: 12px;
-                }}
-                
-                .request-text {{
-                    color: #718096;
-                    font-size: 16px;
+                    color: #1e293b;
                     margin-bottom: 8px;
                 }}
                 
-                .login-instruction {{
-                    color: #a0aec0;
+                .sign-in-subtitle {{
                     font-size: 14px;
-                    font-style: italic;
+                    color: #64748b;
+                    margin-bottom: 24px;
+                }}
+                
+                .client-info {{
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 16px;
+                    margin-bottom: 24px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }}
+                
+                .client-logo {{
+                    width: 32px;
+                    height: 32px;
+                    background: #6366f1;
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 600;
+                    font-size: 14px;
+                }}
+                
+                .client-details {{
+                    flex: 1;
+                    text-align: left;
+                }}
+                
+                .client-name {{
+                    font-weight: 500;
+                    color: #1e293b;
+                    font-size: 14px;
+                }}
+                
+                .client-desc {{
+                    font-size: 12px;
+                    color: #64748b;
                 }}
                 
                 .login-button {{
                     display: inline-block;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: #3b82f6;
                     color: white;
-                    padding: 18px 36px;
-                    border-radius: 12px;
+                    padding: 12px 24px;
+                    border-radius: 6px;
                     text-decoration: none;
-                    font-size: 16px;
-                    font-weight: 600;
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-                    transition: all 0.2s ease;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: all 0.15s ease;
                     margin-bottom: 24px;
+                    width: 100%;
+                    text-align: center;
                 }}
                 
                 .login-button:hover {{
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+                    background: #2563eb;
                 }}
                 
-                .security-note {{
-                    padding: 16px;
-                    background: #f0fff4;
-                    border: 1px solid #c6f6d5;
-                    border-radius: 8px;
+                .footer {{
+                    padding: 16px 32px;
+                    border-top: 1px solid #f1f5f9;
+                }}
+                
+                .security-text {{
+                    font-size: 11px;
+                    color: #6b7280;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 4px;
+                }}
+                
+                .security-icon {{
                     font-size: 12px;
-                    color: #276749;
                 }}
                 
                 @media (max-width: 480px) {{
                     .container {{
+                        margin: 0;
                         border-radius: 0;
                         min-height: 100vh;
-                    }}
-                    
-                    .content {{
-                        padding: 32px 24px;
+                        border: none;
                     }}
                 }}
             </style>
@@ -607,24 +679,32 @@ async def authorize(
         <body>
             <div class="container">
                 <div class="header">
-                    <div class="logo">🧠</div>
-                    <div class="brand">Jean Memory</div>
-                    <div class="subtitle">Personal AI Memory System</div>
+                    <div class="logo">JM</div>
+                    <div class="company-name">Jean Memory</div>
+                    <div class="tagline">Personal AI Memory System</div>
                 </div>
                 
                 <div class="content">
-                    <div class="connection-request">
-                        <div class="client-name">{client_name}</div>
-                        <div class="request-text">wants to connect to your Jean Memory account</div>
-                        <div class="login-instruction">Please sign in to continue</div>
+                    <div class="sign-in-title">Sign in required</div>
+                    <div class="sign-in-subtitle">Please sign in to authorize {client_name}</div>
+                    
+                    <div class="client-info">
+                        <div class="client-logo">C</div>
+                        <div class="client-details">
+                            <div class="client-name">{client_name}</div>
+                            <div class="client-desc">wants to connect to your account</div>
+                        </div>
                     </div>
                     
                     <a href="{login_url}" class="login-button">
                         Sign in to Jean Memory
                     </a>
-                    
-                    <div class="security-note">
-                        🔒 Your login is secure and encrypted. We'll redirect you back here after authentication.
+                </div>
+                
+                <div class="footer">
+                    <div class="security-text">
+                        <span class="security-icon">🔒</span>
+                        <span>Secure authentication • We'll redirect you back</span>
                     </div>
                 </div>
             </div>
@@ -638,11 +718,17 @@ async def authorize(
 @oauth_router.post("/approve")
 async def approve_authorization(request: Request, session_id: str = Form(...)):
     """User approved the authorization request"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"Approve request: session_id={session_id}")
+    logger.info(f"Available sessions: {list(auth_sessions.keys())}")
     
     # Get session
     session = auth_sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=400, detail="Invalid session")
+        logger.error(f"Session {session_id} not found in auth_sessions")
+        raise HTTPException(status_code=400, detail="Invalid session - please try the OAuth flow again")
     
     # Get current user from Supabase session cookies
     try:
@@ -719,11 +805,17 @@ async def approve_authorization(request: Request, session_id: str = Form(...)):
 @oauth_router.post("/deny")
 async def deny_authorization(request: Request, session_id: str = Form(...)):
     """User denied the authorization request"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"Deny request: session_id={session_id}")
+    logger.info(f"Available sessions: {list(auth_sessions.keys())}")
     
     # Get session
     session = auth_sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=400, detail="Invalid session")
+        logger.error(f"Session {session_id} not found in auth_sessions")
+        raise HTTPException(status_code=400, detail="Invalid session - please try the OAuth flow again")
     
     # Clean up session
     del auth_sessions[session_id]
