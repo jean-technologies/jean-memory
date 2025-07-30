@@ -419,10 +419,14 @@ async def authorize(
                         currentUrl.searchParams.set('oauth_session', '{session_id}');
                     }}
                     
+                    // Use a specific OAuth callback endpoint that will set cookies properly
+                    const baseUrl = currentUrl.origin;
+                    const callbackUrl = `${{baseUrl}}/oauth/callback?oauth_session={session_id}`;
+                    
                     const {{ data, error: signInError }} = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
-                            redirectTo: currentUrl.toString()
+                            redirectTo: callbackUrl
                         }}
                     }});
                     
@@ -463,6 +467,103 @@ async def authorize(
                     }} else {{
                         window.location.reload();
                     }}
+                }}
+            }});
+        </script>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(content=html)
+
+
+@oauth_router.get("/callback")
+async def oauth_callback(
+    request: Request,
+    oauth_session: str
+):
+    """OAuth callback endpoint to handle Supabase authentication and set cookies"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"OAuth callback received for session: {oauth_session}")
+    
+    # Check if the session exists
+    if oauth_session not in auth_sessions:
+        logger.error(f"Invalid OAuth session: {oauth_session}")
+        raise HTTPException(status_code=400, detail="Invalid OAuth session")
+    
+    # The user should now be authenticated via Supabase cookies
+    # Extract the session from URL fragments (Supabase sets them)
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Processing Authentication...</title>
+        <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #f8fafc;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }}
+            .container {{
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                padding: 32px;
+                max-width: 400px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Completing authentication...</h2>
+            <p>Please wait while we finalize your connection.</p>
+        </div>
+        
+        <script>
+            const supabase = window.supabase.createClient(
+                'https://masapxpxcwvsjpuymbmd.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w'
+            );
+            
+            // Handle the authentication callback and set cookies
+            supabase.auth.onAuthStateChange(async (event, session) => {{
+                if (event === 'SIGNED_IN' && session) {{
+                    console.log('User signed in, setting cookies and redirecting...');
+                    
+                    // Set the auth token in a cookie
+                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600; samesite=lax; secure`;
+                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800; samesite=lax; secure`;
+                    
+                    // Redirect back to the OAuth authorize endpoint with the session
+                    const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
+                    window.location.href = authorizeUrl;
+                }}
+            }});
+            
+            // Check for existing session
+            supabase.auth.getSession().then(async ({{ data: {{ session }} }}) => {{
+                if (session) {{
+                    console.log('Found existing session, setting cookies and redirecting...');
+                    
+                    // Set the auth token in a cookie
+                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600; samesite=lax; secure`;
+                    document.cookie = `sb-refresh-token=${{session.refresh_token}}; path=/; max-age=604800; samesite=lax; secure`;
+                    
+                    // Redirect back to the OAuth authorize endpoint with the session
+                    const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
+                    window.location.href = authorizeUrl;
+                }} else {{
+                    console.log('No session found, redirecting back to authorize');
+                    // Redirect back without session - will show login page again
+                    const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
+                    window.location.href = authorizeUrl;
                 }}
             }});
         </script>

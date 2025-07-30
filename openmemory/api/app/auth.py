@@ -262,10 +262,11 @@ async def get_oauth_user(request: Request) -> Optional[SupabaseUser]:
     
     # Check multiple cookie sources in order of preference
     cookie_sources = [
-        ('sb-access-token', lambda v: v),  # Direct access token
+        ('sb-access-token', lambda v: v),  # Direct access token (our new format)
         ('supabase-auth-token', lambda v: v),  # Alternative direct token
         ('sb-session', parse_session_cookie),  # JSON session cookie
         ('supabase.auth.token', parse_session_cookie),  # Alternative session cookie
+        ('supabase-auth-token-hash', lambda v: v),  # Hashed token format
     ]
     
     for cookie_name, parser in cookie_sources:
@@ -282,7 +283,9 @@ async def get_oauth_user(request: Request) -> Optional[SupabaseUser]:
                 continue
     
     if not access_token:
-        logger.info("No OAuth access token found in any cookie")
+        # Log all available cookies for debugging
+        cookie_list = [f"{k}: {v[:20]}..." if len(v) > 20 else f"{k}: {v}" for k, v in request.cookies.items()]
+        logger.info(f"No OAuth access token found. Available cookies: {cookie_list}")
         return None
     
     # Validate token with Supabase
