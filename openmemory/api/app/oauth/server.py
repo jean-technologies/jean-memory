@@ -11,7 +11,7 @@ import logging
 
 from .jwt_utils import create_access_token, create_refresh_token, validate_token
 from .clients import client_registry
-from app.auth import get_supabase_client
+from app.auth import supabase_service_client
 
 logger = logging.getLogger(__name__)
 

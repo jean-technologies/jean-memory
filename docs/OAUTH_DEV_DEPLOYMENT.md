@@ -13,8 +13,10 @@ Make sure these are set on the dev Render service:
 
 ```bash
 API_BASE_URL=https://jean-memory-api-dev.onrender.com
-JWT_SECRET_KEY=<use-existing-admin-secret-or-generate-new>
+JWT_SECRET_KEY=your-long-secure-server-secret-here-used-for-signing-all-jwts
 ```
+
+**Note:** `JWT_SECRET_KEY` is a single server-wide secret used to sign ALL JWT tokens. User identity goes INSIDE the JWT payload, not in the signing key.
 
 ## 📋 What's New
 
