@@ -12,6 +12,7 @@ import logging
 from .jwt_utils import create_access_token, create_refresh_token, validate_token
 from .clients import client_registry
 from app.auth import supabase_service_client
+from app.settings import config
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
 # Temporary storage (use Redis in production)
 auth_sessions: Dict[str, Dict] = {}
 
-BASE_URL = os.getenv("API_BASE_URL", "https://jean-memory-api-virginia.onrender.com")
+BASE_URL = config.API_BASE_URL
 
 
 @oauth_router.get("/.well-known/oauth-authorization-server")

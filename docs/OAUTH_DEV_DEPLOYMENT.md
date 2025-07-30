@@ -9,14 +9,26 @@ The clean OAuth implementation has been:
 
 ## 🔧 Environment Variables Required
 
-Make sure these are set on the dev Render service:
+Make sure these are set on your Render services:
 
+### Dev Server (`jean-memory-api-dev`)
 ```bash
-API_BASE_URL=https://jean-memory-api-dev.onrender.com
+ENVIRONMENT=development
 JWT_SECRET_KEY=your-long-secure-server-secret-here-used-for-signing-all-jwts
+# API_BASE_URL will auto-detect to: https://jean-memory-api-dev.onrender.com
 ```
 
-**Note:** `JWT_SECRET_KEY` is a single server-wide secret used to sign ALL JWT tokens. User identity goes INSIDE the JWT payload, not in the signing key.
+### Production Server (`jean-memory-api-virginia`)  
+```bash
+ENVIRONMENT=production
+JWT_SECRET_KEY=your-long-secure-server-secret-here-used-for-signing-all-jwts
+# API_BASE_URL will auto-detect to: https://jean-memory-api-virginia.onrender.com
+```
+
+**Notes:**
+- `JWT_SECRET_KEY` is a single server-wide secret used to sign ALL JWT tokens. User identity goes INSIDE the JWT payload, not in the signing key.
+- `API_BASE_URL` is now auto-detected based on `ENVIRONMENT`. You can override it explicitly if needed.
+- **No more hardcoded "virginia" URLs!** Environment-aware configuration.
 
 ## 📋 What's New
 

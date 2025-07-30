@@ -15,8 +15,12 @@ Then we inject it into the SAME headers and use the SAME MCP logic!
 ### 1. 🚀 User Adds MCP Server in Claude
 ```
 User action: "Add MCP Server" 
-URL entered: https://jean-memory-api-dev.onrender.com/mcp
+URL entered: {{API_BASE_URL}}/mcp
 ```
+
+**Environment-aware URLs:**
+- **Dev**: `https://jean-memory-api-dev.onrender.com/mcp`
+- **Production**: `https://jean-memory-api-virginia.onrender.com/mcp`
 
 ### 2. 🔍 Claude Discovers OAuth (Automatic)
 ```http
