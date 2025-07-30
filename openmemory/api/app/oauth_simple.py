@@ -115,7 +115,8 @@ async def authorize(
     state: str,
     scope: Optional[str] = "read write",
     code_challenge: Optional[str] = None,
-    code_challenge_method: Optional[str] = "S256"
+    code_challenge_method: Optional[str] = "S256",
+    oauth_complete: Optional[str] = None
 ):
     """OAuth authorization endpoint - shows approval page with Supabase integration"""
     import logging
@@ -161,67 +162,22 @@ async def authorize(
         "created_at": time.time()
     }
     
-    # Try to get current user from Supabase session cookies (not headers)
-    current_user = None
-    try:
-        from app.auth import supabase_service_client
-        from app.settings import config
+    # Check if this is a return from Jean Memory authentication
+    if oauth_complete == "true":
+        logger.info("🔄 Processing OAuth completion after Jean Memory authentication")
         
-        if config.is_local_development:
-            # Use local dev user
-            from app.local_auth_helper import get_local_dev_user
-            current_user = await get_local_dev_user(request, supabase_service_client, config)
-            logger.info(f"Found local dev user: {current_user.email}")
-        else:
-            # Try to get user from session cookies (for OAuth flow from external domain)
-            access_token = None
-            
-            # Check common Supabase cookie names
-            cookie_names = [
-                'sb-access-token', 
-                'supabase-auth-token',
-                'sb-session',
-                'supabase.auth.token'
-            ]
-            
-            for cookie_name in cookie_names:
-                cookie_value = request.cookies.get(cookie_name)
-                if cookie_value:
-                    if cookie_name in ['sb-session', 'supabase.auth.token']:
-                        # Parse JSON session cookie
-                        try:
-                            import json
-                            session_data = json.loads(cookie_value)
-                            access_token = session_data.get('access_token')
-                            if access_token:
-                                logger.info(f"Found access token in {cookie_name} cookie")
-                                break
-                        except:
-                            continue
-                    else:
-                        # Direct access token
-                        access_token = cookie_value
-                        logger.info(f"Found access token in {cookie_name} cookie")
-                        break
-            
-            if access_token:
-                # Validate token with Supabase
-                auth_response = supabase_service_client.auth.get_user(access_token)
-                if auth_response and auth_response.user:
-                    current_user = auth_response.user
-                    logger.info(f"Found authenticated user via cookies: {current_user.email}")
-                else:
-                    logger.info("Access token found but invalid/expired")
-            else:
-                logger.info("No access token found in cookies")
-    except Exception as e:
-        logger.info(f"Error checking authentication: {e}")
-    
-    # Show authorization page
-    client_name = client_info.get("client_name", "Unknown App")
-    
-    if current_user:
-        # User is already authenticated - auto-approve for trusted clients (Claude)
+        # Try to get current user from Supabase session (should work now within same domain flow)
+        current_user = None
+        try:
+            from app.auth import get_current_supa_user
+            current_user = await get_current_supa_user(request)
+            logger.info(f"✅ Found authenticated user after login: {current_user.email}")
+        except Exception as e:
+            logger.error(f"❌ Still no authenticated user after login: {e}")
+            # If still no user, something is wrong - show error
+            raise HTTPException(status_code=401, detail="Authentication failed - please try again")
+        
+        # User is authenticated - auto-approve for Claude
         if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
             logger.info(f"🚀 Auto-approving Claude client for authenticated user: {current_user.email}")
             
@@ -250,31 +206,32 @@ async def authorize(
             logger.info(f"🎯 Auto-approval complete - redirecting to Claude: {redirect_url}")
             
             return RedirectResponse(url=redirect_url)
-        else:
-            logger.info(f"Manual approval required for non-Claude client: {client_id}")
-    else:
-        # User not authenticated - redirect to Jean Memory login
-        base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+    
+    # Initial OAuth request - redirect to Jean Memory for authentication
+    base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+    
+    # Create return URL that will complete the OAuth flow after login/auth check
+    return_params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": response_type,
+        "state": state,
+        "scope": scope or "read write",
+        "oauth_complete": "true"  # Mark as completion request
+    }
+    if code_challenge:
+        return_params["code_challenge"] = code_challenge
+    if code_challenge_method:
+        return_params["code_challenge_method"] = code_challenge_method
         
-        # Create return URL that will complete the OAuth flow
-        return_params = {
-            "client_id": client_id,
-            "redirect_uri": redirect_uri,
-            "response_type": response_type,
-            "state": state,
-            "scope": scope or "read write"
-        }
-        if code_challenge:
-            return_params["code_challenge"] = code_challenge
-        if code_challenge_method:
-            return_params["code_challenge_method"] = code_challenge_method
-            
-        return_url = f"{base_url}/oauth/authorize?{urlencode(return_params)}"
-        login_url = f"https://jeanmemory.com/auth?return_url={urlencode({'return_url': return_url})}"
-        
-        logger.info(f"🔐 User not authenticated - redirecting to login: {login_url}")
-        
-        return RedirectResponse(url=login_url)
+    oauth_complete_url = f"{base_url}/oauth/authorize?{urlencode(return_params)}"
+    
+    # Redirect to Jean Memory auth page - it will handle login/detection and return here
+    login_url = f"https://jeanmemory.com/auth?return_url={urlencode({'return_url': oauth_complete_url})}"
+    
+    logger.info(f"🔐 Initial OAuth request - redirecting to Jean Memory for authentication: {login_url}")
+    
+    return RedirectResponse(url=login_url)
     
     if current_user:
         # User is logged in - show approval form
