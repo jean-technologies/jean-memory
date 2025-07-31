@@ -13,7 +13,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const primaryTools = [
   {
     name: "jean_memory",
-    icon: <BrainCircuit className="w-7 h-7 text-blue-600 dark:text-blue-400" />,
     description: "The intelligent memory layer that automatically learns from every conversation and provides relevant context when you need it. Simply use this tool and Jean Memory handles everything else.",
     examples: [
       "jean_memory: 'I just finished my morning workout' (is_new_conversation: true)",
@@ -25,7 +24,6 @@ const primaryTools = [
   },
   {
     name: "store_document",
-    icon: <FileText className="w-6 h-6 text-gray-700 dark:text-gray-300" />,
     description: "Store large documents, files, or lengthy content. Perfect for saving meeting notes, documentation, or articles for future reference.",
     examples: [
       'store_document: { title: "Meeting Notes", content: "..." }'
@@ -37,31 +35,26 @@ const primaryTools = [
 const otherTools = [
   {
     name: "search_memory",
-    icon: <Search className="w-6 h-6 text-gray-500" />,
     description: "Quick keyword search through your memories",
     example: "search_memory: 'project goals'"
   },
   {
     name: "ask_memory", 
-    icon: <BrainCircuit className="w-6 h-6 text-gray-500" />,
     description: "Simple questions about your stored memories",
     example: "ask_memory: 'What are my preferences?'"
   },
   {
     name: "add_memories",
-    icon: <BotMessageSquare className="w-6 h-6 text-gray-500" />,
     description: "Manually store specific information",
     example: "add_memories: 'Met with John about Q3 goals'"
   },
   {
     name: "list_memories",
-    icon: <List className="w-6 h-6 text-gray-500" />,
     description: "Browse through stored memories",
     example: "list_memories"
   },
   {
     name: "deep_memory_query",
-    icon: <Wand2 className="w-6 h-6 text-gray-500" />,
     description: "Complex analysis across all memories",
     example: "Tell me everything about my work patterns"
   }
@@ -75,9 +68,9 @@ export default function HowToUsePage() {
     <ProtectedRoute>
       <div className="relative min-h-screen w-full bg-background">
       <div className="absolute inset-0 z-0 h-full w-full">
-        <ParticleNetwork id="how-to-use-particles" className="h-full w-full" interactive={false} particleCount={120} />
+        <ParticleNetwork id="how-to-use-particles" className="h-full w-full" interactive={true} particleCount={80} />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background z-5" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/80 to-background z-5" />
       
       <div className="relative z-10 container mx-auto px-4 py-16 max-w-4xl">
         <motion.div
@@ -108,27 +101,26 @@ export default function HowToUsePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 * (index + 1) }}
               >
-                <Card className={`${tool.isHighlighted ? 'bg-card border-2 border-blue-200 dark:border-blue-800 shadow-lg' : 'bg-card'} hover:bg-card/80 transition-colors duration-200`}>
+                <Card className={`${tool.isHighlighted ? 'bg-card border-l-4 border-l-foreground/20' : 'bg-card'} hover:bg-card/80 transition-colors duration-200`}>
                   <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <div className={`p-3 ${tool.isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-secondary'} rounded-md`}>{tool.icon}</div>
-                      <div className="flex-1">
-                        <CardTitle className="flex items-center gap-2 font-mono text-lg mb-2">
-                          {tool.name}
-                          <Badge variant={tool.isHighlighted ? "default" : "secondary"} className={`text-xs ${tool.isHighlighted ? 'bg-blue-600 text-white' : ''}`}>
+                    <div>
+                      <CardTitle className="flex items-center gap-2 font-mono text-lg mb-2">
+                        {tool.name}
+                        {tool.badge && (
+                          <Badge variant="outline" className="text-xs">
                             {tool.badge}
                           </Badge>
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">{tool.description}</p>
-                      </div>
+                        )}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">{tool.description}</p>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       <p className="text-xs text-muted-foreground">Examples:</p>
                       {tool.examples.map((example, i) => (
-                        <div key={i} className="bg-muted/50 rounded p-3">
-                          <pre className="text-xs text-foreground/80 overflow-x-auto">
+                        <div key={i} className="bg-muted/30 rounded p-3">
+                          <pre className="text-xs text-foreground/70 overflow-x-auto">
                             <code>{example}</code>
                           </pre>
                         </div>
@@ -148,8 +140,7 @@ export default function HowToUsePage() {
           >
             <Card className="bg-muted/30">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <BrainCircuit className="w-5 h-5 text-foreground" />
+                <CardTitle className="text-lg">
                   How Jean Memory Works
                 </CardTitle>
               </CardHeader>
@@ -206,8 +197,7 @@ export default function HowToUsePage() {
                   {otherTools.map((tool, index) => (
                     <Card key={tool.name} className="bg-card/30 border-dashed">
                       <CardContent className="pt-4">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="p-1 bg-secondary/30 rounded">{tool.icon}</div>
+                        <div className="mb-2">
                           <span className="font-mono text-sm font-medium">{tool.name}</span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">{tool.description}</p>
@@ -238,9 +228,8 @@ export default function HowToUsePage() {
           >
             <Card className="bg-card/50 hover:bg-card/70 transition-colors">
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Lightbulb className="w-5 h-5 text-foreground" />
-                  <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div>
                     <CardTitle className="text-base">
                       Request a Tool or Feature
                     </CardTitle>
