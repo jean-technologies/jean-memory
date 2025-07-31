@@ -72,6 +72,16 @@ async def mcp_oauth_proxy(
         # Parse request body (single message or batch)
         body = await request.json()
         
+        # Log all incoming methods to debug what Claude is calling
+        if isinstance(body, list):
+            methods = [msg.get('method', 'unknown') for msg in body]
+            logger.warning(f"🔍 BATCH REQUEST: Methods: {methods}")
+        else:
+            method = body.get('method', 'unknown')
+            logger.warning(f"🔍 SINGLE REQUEST: Method: {method}")
+            if method == 'tools/list':
+                logger.warning(f"🔥🔥🔥 CLAUDE IS CALLING TOOLS/LIST ON OAUTH PROXY! 🔥🔥🔥")
+        
         # Handle batch requests
         if isinstance(body, list):
             logger.info(f"Processing batch request with {len(body)} messages")
@@ -135,7 +145,13 @@ async def proxy_to_v2_logic(
     # Modify request with user context
     request._headers = headers
     
-    logger.info(f"🔄 Proxying {message.get('method', 'unknown')} to V2 logic for user {user['user_id']}")
+    method = message.get('method', 'unknown')
+    logger.info(f"🔄 Proxying {method} to V2 logic for user {user['user_id']}")
+    
+    # Special logging for tools methods
+    if method.startswith('tools/'):
+        logger.warning(f"🔥 TOOLS METHOD CALLED: {method} - This should enable tools in Claude!")
+        logger.warning(f"🔥 Message params: {message.get('params', {})}")
     
     # Route to the proven V2 logic (same as handle_http_v2_transport uses)
     response = await handle_request_logic(request, message, background_tasks)
@@ -144,7 +160,18 @@ async def proxy_to_v2_logic(
     if hasattr(response, 'body'):
         try:
             response_content = json.loads(response.body)
-            logger.info(f"✅ V2 logic completed for {message.get('method', 'unknown')}")
+            logger.info(f"✅ V2 logic completed for {method}")
+            
+            # Special logging for tools responses
+            if method.startswith('tools/'):
+                if method == 'tools/list':
+                    tools = response_content.get('result', {}).get('tools', [])
+                    logger.warning(f"🔥 TOOLS/LIST RESPONSE: Found {len(tools)} tools")
+                    for tool in tools:
+                        logger.warning(f"🔥   - {tool.get('name')}")
+                else:
+                    logger.warning(f"🔥 TOOLS/{method.split('/')[-1].upper()} RESPONSE: {str(response_content)[:200]}...")
+            
             return response_content
         except (json.JSONDecodeError, AttributeError) as e:
             logger.error(f"Failed to parse V2 response: {e}")
