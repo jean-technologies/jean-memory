@@ -1,22 +1,20 @@
 """
-MCP Streamable HTTP Transport for Claude Web (2025-03-26 specification)
+MCP OAuth Proxy for Claude Web
 
-This endpoint implements the complete MCP Streamable HTTP transport protocol:
-1. OAuth Bearer token authentication with auto-discovery
-2. Streamable HTTP transport (POST/GET/DELETE/OPTIONS)
-3. Proper session management with Mcp-Session-Id headers
-4. Bidirectional communication with Server-Sent Events
-5. Origin validation and security compliance
+This endpoint implements a lean, stateless proxy that:
+1. Authenticates Claude using OAuth Bearer tokens (JWT)
+2. Extracts user_id and client from the JWT
+3. Proxies requests to the proven V2 HTTP transport logic
+4. Returns responses directly without sessions or SSE overhead
+
+This combines OAuth security with V2's superior performance and reliability.
 """
 
 import logging
 import json
-import secrets
-from typing import Dict, Optional
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from starlette.datastructures import MutableHeaders
 
 from app.oauth_simple_new import get_current_user
@@ -24,15 +22,7 @@ from app.routing.mcp import handle_request_logic
 
 logger = logging.getLogger(__name__)
 
-# Session storage for Streamable HTTP (use Redis in production)
-active_sessions: Dict[str, Dict] = {}
-
 oauth_mcp_router = APIRouter(tags=["oauth-mcp"])
-
-
-def generate_session_id() -> str:
-    """Generate a cryptographically secure session ID"""
-    return f"mcp-session-{secrets.token_urlsafe(32)}"
 
 
 def validate_origin(request: Request) -> bool:
@@ -55,30 +45,28 @@ def validate_origin(request: Request) -> bool:
 
 
 @oauth_mcp_router.post("/mcp")
-async def mcp_streamable_post(
+async def mcp_oauth_proxy(
     request: Request,
     background_tasks: BackgroundTasks,
     user: dict = Depends(get_current_user)
 ):
     """
-    MCP Streamable HTTP Transport - POST endpoint
+    MCP OAuth Proxy - Stateless HTTP Transport
     
     URL: https://jean-memory-api-virginia.onrender.com/mcp
     Authentication: OAuth Bearer token (JWT) with auto-discovery
-    Protocol: MCP Streamable HTTP (2025-03-26 specification)
+    Transport: Direct HTTP (no sessions, no SSE)
     
     This is the main endpoint users copy/paste into Claude Web connectors.
+    After OAuth authentication, requests are proxied to the robust V2 logic.
     """
     
-    # Validate Origin header (required by MCP spec)
+    # Validate Origin header (security requirement)
     if not validate_origin(request):
         logger.warning(f"Invalid origin: {request.headers.get('origin')}")
         raise HTTPException(status_code=403, detail="Invalid origin")
     
-    # Check for session ID in headers
-    session_id = request.headers.get("mcp-session-id")
-    
-    logger.info(f"MCP Streamable HTTP request from {user['client']} for user {user['user_id']}, session: {session_id}")
+    logger.info(f"🚀 MCP OAuth Proxy: {user['client']} for user {user['user_id']} ({user['email']})")
     
     try:
         # Parse request body (single message or batch)
@@ -90,9 +78,7 @@ async def mcp_streamable_post(
             responses = []
             
             for message in body:
-                response = await process_single_message(
-                    request, message, background_tasks, user, session_id
-                )
+                response = await proxy_to_v2_logic(request, message, background_tasks, user)
                 if response:  # Only add non-None responses
                     responses.append(response)
             
@@ -100,33 +86,7 @@ async def mcp_streamable_post(
         
         # Handle single message
         else:
-            response = await process_single_message(
-                request, body, background_tasks, user, session_id
-            )
-            
-            # For initialize method, create session and add session header
-            if body.get("method") == "initialize" and response:
-                new_session_id = generate_session_id()
-                
-                # Store session info
-                active_sessions[new_session_id] = {
-                    "user_id": user["user_id"],
-                    "client": user["client"],
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                    "last_activity": datetime.now(timezone.utc).isoformat()
-                }
-                
-                logger.info(f"🎯 INITIALIZE: Created MCP session {new_session_id} for user {user['email']}")
-                logger.info(f"🎯 INITIALIZE: Active sessions count: {len(active_sessions)}")
-                logger.info(f"🎯 INITIALIZE: Response content: {response}")
-                
-                # Create JSON response with session header
-                json_response = JSONResponse(content=response)
-                json_response.headers["mcp-session-id"] = new_session_id
-                
-                logger.info(f"🎯 INITIALIZE: Added session header: mcp-session-id={new_session_id}")
-                return json_response
-            
+            response = await proxy_to_v2_logic(request, body, background_tasks, user)
             return JSONResponse(content=response)
             
     except json.JSONDecodeError as e:
@@ -140,7 +100,7 @@ async def mcp_streamable_post(
             }
         )
     except Exception as e:
-        logger.error(f"Error processing MCP streamable request: {e}", exc_info=True)
+        logger.error(f"Error in MCP OAuth proxy: {e}", exc_info=True)
         return JSONResponse(
             status_code=500,
             content={
@@ -151,130 +111,22 @@ async def mcp_streamable_post(
         )
 
 
-@oauth_mcp_router.get("/mcp")
-async def mcp_streamable_get(
-    request: Request,
-    user: dict = Depends(get_current_user)
-):
-    """
-    MCP Streamable HTTP Transport - GET endpoint
-    
-    Opens Server-Sent Events stream for server-to-client messages
-    according to MCP 2025-03-26 specification
-    """
-    
-    # Validate Origin header
-    if not validate_origin(request):
-        logger.warning(f"Invalid origin: {request.headers.get('origin')}")
-        raise HTTPException(status_code=403, detail="Invalid origin")
-    
-    # Check for required session ID
-    session_id = request.headers.get("mcp-session-id")
-    if not session_id or session_id not in active_sessions:
-        logger.warning(f"Invalid or missing session ID: {session_id}")
-        raise HTTPException(status_code=400, detail="Valid session ID required")
-    
-    # Update session activity
-    active_sessions[session_id]["last_activity"] = datetime.now(timezone.utc).isoformat()
-    
-    logger.info(f"Opening SSE stream for session: {session_id}")
-    
-    async def event_generator():
-        """Generate Server-Sent Events stream"""
-        try:
-            # Send initial connection event
-            yield f"id: {secrets.token_urlsafe(8)}\n"
-            yield f"event: connected\n"
-            yield f"data: {json.dumps({'type': 'connected', 'session': session_id})}\n\n"
-            
-            # Keep connection alive with periodic heartbeats
-            import asyncio
-            while True:
-                try:
-                    # Check if session is still valid
-                    if session_id not in active_sessions:
-                        logger.info(f"Session {session_id} no longer active, closing stream")
-                        break
-                    
-                    # Send heartbeat
-                    yield f"id: {secrets.token_urlsafe(8)}\n"
-                    yield f"event: heartbeat\n"
-                    yield f"data: {json.dumps({'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
-                    
-                    # Wait before next heartbeat
-                    await asyncio.sleep(30)  # 30 second heartbeat
-                    
-                except asyncio.CancelledError:
-                    logger.info(f"SSE stream cancelled for session: {session_id}")
-                    break
-                except Exception as e:
-                    logger.error(f"Error in SSE stream: {e}")
-                    break
-                    
-        except Exception as e:
-            logger.error(f"Error in event generator: {e}")
-        finally:
-            logger.info(f"SSE stream closed for session: {session_id}")
-    
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control, mcp-session-id",
-            "mcp-session-id": session_id
-        }
-    )
-
-
-@oauth_mcp_router.delete("/mcp")
-async def mcp_streamable_delete(
-    request: Request,
-    user: dict = Depends(get_current_user)
-):
-    """
-    MCP Streamable HTTP Transport - DELETE endpoint
-    
-    Terminates session according to MCP 2025-03-26 specification
-    """
-    
-    session_id = request.headers.get("mcp-session-id")
-    if session_id and session_id in active_sessions:
-        del active_sessions[session_id]
-        logger.info(f"Terminated MCP session: {session_id}")
-        return JSONResponse(content={"status": "session_terminated"})
-    
-    return JSONResponse(
-        status_code=400,
-        content={"error": "Invalid or missing session ID"}
-    )
-
-
-async def process_single_message(
+async def proxy_to_v2_logic(
     request: Request,
     message: dict, 
     background_tasks: BackgroundTasks,
-    user: dict,
-    session_id: Optional[str] = None
-) -> Optional[dict]:
-    """Process a single JSON-RPC message with proper MCP handling"""
+    user: dict
+) -> dict:
+    """
+    Proxy a single JSON-RPC message to the V2 HTTP transport logic
     
-    # Validate session for non-initialize requests
-    if message.get("method") != "initialize":
-        if not session_id or session_id not in active_sessions:
-            logger.warning(f"Invalid session for method {message.get('method')}: {session_id}")
-            return {
-                "jsonrpc": "2.0",
-                "error": {"code": -32602, "message": "Valid session required"},
-                "id": message.get("id")
-            }
-        
-        # Update session activity
-        active_sessions[session_id]["last_activity"] = datetime.now(timezone.utc).isoformat()
+    This function:
+    1. Adds user context to request headers (same as V2 endpoint)
+    2. Calls the proven handle_request_logic function
+    3. Returns the response directly (no session management)
+    """
     
-    # Add user context to headers (same as existing MCP logic)
+    # Add user context to headers (same format as V2 endpoint)
     headers = MutableHeaders(request.headers)
     headers["x-user-id"] = user["user_id"]
     headers["x-user-email"] = user["email"]
@@ -283,26 +135,33 @@ async def process_single_message(
     # Modify request with user context
     request._headers = headers
     
-    # Route to existing MCP logic
+    logger.info(f"🔄 Proxying {message.get('method', 'unknown')} to V2 logic for user {user['user_id']}")
+    
+    # Route to the proven V2 logic (same as handle_http_v2_transport uses)
     response = await handle_request_logic(request, message, background_tasks)
     
     # Extract JSON content from response
     if hasattr(response, 'body'):
         try:
             response_content = json.loads(response.body)
-            
-            # For initialize method, preserve the response structure for session header logic
-            if message.get("method") == "initialize":
-                logger.info(f"Initialize method response: {response_content}")
-                return response_content
-            
+            logger.info(f"✅ V2 logic completed for {message.get('method', 'unknown')}")
             return response_content
-        except (json.JSONDecodeError, AttributeError):
-            return None
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.error(f"Failed to parse V2 response: {e}")
+            return {
+                "jsonrpc": "2.0",
+                "error": {"code": -32603, "message": "Response parsing error"},
+                "id": message.get("id")
+            }
     elif isinstance(response, dict):
         return response
     else:
-        return None
+        logger.error(f"Unexpected response type from V2 logic: {type(response)}")
+        return {
+            "jsonrpc": "2.0",
+            "error": {"code": -32603, "message": "Unexpected response format"},
+            "id": message.get("id")
+        }
 
 
 @oauth_mcp_router.get("/mcp/health")  
@@ -313,6 +172,7 @@ async def mcp_health(user: dict = Depends(get_current_user)):
         "status": "healthy",
         "user": user["email"],
         "client": user["client"],
+        "transport": "oauth-proxy",
         "protocol": "MCP"
     }
 
@@ -323,8 +183,8 @@ async def mcp_status():
     
     return {
         "status": "online",
-        "transport": "streamable-http",
-        "protocol_version": "2025-03-26",
+        "transport": "oauth-proxy",
+        "protocol_version": "2024-11-05",
         "protocol": "MCP",
         "oauth": "enabled",
         "serverInfo": {
@@ -341,8 +201,8 @@ async def mcp_options():
         content={"status": "ok"},
         headers={
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS, HEAD",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, mcp-session-id, Origin",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS, HEAD",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, Origin",
             "Access-Control-Max-Age": "3600"
         }
     )
@@ -351,93 +211,12 @@ async def mcp_options():
 @oauth_mcp_router.head("/mcp")
 async def mcp_head():
     """Handle HEAD requests for MCP endpoint discovery"""
-    from fastapi import Response
     return Response(
         status_code=200,
         headers={
             "Content-Type": "application/json",
-            "X-MCP-Protocol": "2025-03-26",
+            "X-MCP-Protocol": "2024-11-05",
             "X-OAuth-Supported": "true",
             "Access-Control-Allow-Origin": "*"
         }
     )
-
-
-@oauth_mcp_router.post("/mcp/initialize")
-async def mcp_initialize(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    user: dict = Depends(get_current_user)
-):
-    """MCP initialize method - required for protocol handshake"""
-    
-    logger.info(f"MCP initialize request from {user['client']} for user {user['user_id']}")
-    
-    try:
-        body = await request.json()
-    except Exception as e:
-        logger.error(f"Failed to parse JSON: {e}")
-        return {
-            "jsonrpc": "2.0",
-            "error": {"code": -32700, "message": "Parse error"},
-            "id": body.get("id") if 'body' in locals() else None
-        }
-    
-    # Add user context to headers
-    headers = MutableHeaders(request.headers)
-    headers["x-user-id"] = user["user_id"]
-    headers["x-user-email"] = user["email"]  
-    headers["x-client-name"] = user["client"]
-    request._headers = headers
-    
-    # Route to existing MCP logic
-    response = await handle_request_logic(request, body, background_tasks)
-    
-    logger.info(f"MCP initialize completed for {user['email']}")
-    return response
-
-
-@oauth_mcp_router.post("/mcp/capabilities")
-async def mcp_capabilities(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    user: dict = Depends(get_current_user)
-):
-    """MCP capabilities method - handled via JSON-RPC"""
-    
-    logger.info(f"MCP capabilities request from {user['client']} for user {user['user_id']}")
-    
-    try:
-        body = await request.json()
-    except Exception as e:
-        logger.error(f"Failed to parse JSON: {e}")
-        return {
-            "jsonrpc": "2.0",
-            "error": {"code": -32700, "message": "Parse error"},
-            "id": None
-        }
-    
-    # Add user context to headers
-    headers = MutableHeaders(request.headers)
-    headers["x-user-id"] = user["user_id"]
-    headers["x-user-email"] = user["email"]  
-    headers["x-client-name"] = user["client"]
-    request._headers = headers
-    
-    # Route to existing MCP logic
-    response = await handle_request_logic(request, body, background_tasks)
-    
-    logger.info(f"MCP capabilities completed for {user['email']}")
-    return response
-
-
-@oauth_mcp_router.options("/mcp")
-async def mcp_options():
-    """Handle OPTIONS requests for CORS"""
-    return {"status": "ok"}
-
-
-@oauth_mcp_router.options("/mcp/initialize") 
-async def mcp_initialize_options():
-    """Handle OPTIONS requests for CORS"""
-    return {"status": "ok"}
