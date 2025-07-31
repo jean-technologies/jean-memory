@@ -80,7 +80,7 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
                 }
             else:
                 capabilities = {
-                    "tools": {}  # Correct for 2024-11-05 spec
+                    "tools": {"listChanged": True}  # Signal tools are available for discovery
                 }
             
             return JSONResponse(content={
