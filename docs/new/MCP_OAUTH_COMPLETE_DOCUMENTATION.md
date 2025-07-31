@@ -1356,4 +1356,57 @@ This demonstrates the importance of **systematic debugging** and **not assuming 
 | **Connection Persistence** | ✅ **SHOULD WORK** | Session header fix deployed |
 | **Claude Web Integration** | 🧪 **READY FOR TEST** | All technical requirements met |
 
-**Status:** Ready for production testing with Claude Web integration.
+## 🚨 CRITICAL ISSUE CONFIRMED: SUPABASE REDIRECT HIJACKING
+
+**Date:** July 31, 2025  
+**Status:** OAuth flow technically complete but **BLOCKED BY SUPABASE REDIRECT CONFIGURATION**
+
+### NUCLEAR FIX ATTEMPT - RESULTS
+
+**What we tried:**
+1. ✅ Enhanced universal redirect handler with multiple detection methods
+2. ✅ Bridge page solution for OAuth flow routing  
+3. ✅ Direct auth endpoint bypassing redirect issues
+4. ✅ Comprehensive logging and debugging
+
+**What we confirmed:**
+- ✅ OAuth discovery working perfectly (Claude finds all endpoints)
+- ✅ OAuth authorization page loads successfully  
+- ✅ User authentication completes successfully
+- ❌ **CRITICAL FAILURE:** Supabase redirects to main app instead of our API
+
+**Evidence from logs:**
+```
+2025-07-31 02:32:50,634 - app.oauth_simple_new - INFO - 🆕 Created new OAuth session: _ALyHj-6wdJvq9Hnow8UtUuqXr0NHlcO5V2i2Awo4Fo
+2025-07-31 02:33:04,099 - app.auth - INFO - Authentication successful for user 66d3d5d1-fc48-44a7-bbc0-1efa2e164fad (jonathan@jeantechnologies.com)
+# ❌ NO LOGS FOR: "🔄 Universal auth redirect received" or "OAuth callback received"
+```
+
+**ROOT CAUSE CONFIRMED:** 
+Supabase project-level redirect URL setting (`https://jeanmemory.com`) **overrides** JavaScript `redirectTo` parameters, causing all OAuth flows to land on main app regardless of our code.
+
+### DEAD ENDS CONFIRMED ❌
+
+1. **JavaScript redirectTo Parameter** - Ignored by Supabase when project Site URL is set
+2. **Universal Redirect Handler** - Never reached because Supabase doesn't redirect to API
+3. **Bridge Page Solution** - Requires deploying to main app domain  
+4. **Enhanced Detection Logic** - Irrelevant if requests never reach our API
+5. **Nuclear Code Fixes** - Cannot solve infrastructure configuration issues
+
+### VIABLE SOLUTIONS REMAINING 🎯
+
+**Option 1: Bridge Page (RECOMMENDED)**
+- Deploy `oauth-bridge.html` to `https://jeanmemory.com/oauth-bridge.html`
+- Update Supabase Site URL to `https://jeanmemory.com/oauth-bridge.html`  
+- Bridge page detects OAuth flows and redirects to API callback
+
+**Option 2: Supabase Site URL Override**
+- Change Supabase Site URL to `https://jean-memory-api-virginia.onrender.com/oauth/auth-redirect`
+- ⚠️ Risk: May break main app login functionality
+
+**Option 3: Separate Supabase Project**  
+- Create dedicated Supabase project for MCP OAuth only
+- Configure with API domain as Site URL
+- Update OAuth implementation to use new project credentials
+
+**Status:** Reverting nuclear fixes. Infrastructure configuration required to proceed.
