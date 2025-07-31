@@ -67,13 +67,15 @@ def parse_virtual_user_id(user_id: str) -> Dict[str, Any]:
             
             logger.info(f"🔄 Multi-agent session detected - User: {real_user_id}, Session: {session_id}, Agent: {agent_id}")
             
-            return {
+            result = {
                 "is_multi_agent": True,
                 "real_user_id": real_user_id,
                 "session_id": session_id,
                 "agent_id": agent_id,
                 "virtual_user_id": user_id
             }
+            logger.info(f"🔄 parse_virtual_user_id returning: {result}")
+            return result
         except Exception as e:
             logger.error(f"Error parsing virtual user ID {user_id}: {e}")
             return {"is_multi_agent": False, "real_user_id": user_id}
@@ -227,6 +229,7 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
     # 1.5. Parse session information from user ID
     session_info = parse_virtual_user_id(user_id_from_header)
+    logger.info(f"🔄 Session info created: {session_info}")
     real_user_id = session_info["real_user_id"]
 
     # 2. Set Context and Get Client Profile
@@ -287,6 +290,7 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
             # Pass session info and client name to client profile for multi-agent awareness
             enhanced_session_info = session_info.copy()
             enhanced_session_info["client_name"] = client_name_from_header
+            logger.info(f"🔄 Enhanced session info being passed to client profile: {enhanced_session_info}")
             tools_schema = client_profile.get_tools_schema(
                 include_annotations=(client_version == "2025-03-26"),
                 session_info=enhanced_session_info
