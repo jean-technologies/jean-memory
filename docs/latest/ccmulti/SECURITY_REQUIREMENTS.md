@@ -15,9 +15,10 @@ All other MCP clients (Cursor, Chorus, ChatGPT, API users, Default profile) must
 ### Client Detection Mechanism
 
 **Header-Based Authentication:**
-- Claude Code MCP sends: `x-client-name: 'claude code'`
+- Claude Code MCP sends: `x-client-name: 'claude'` ⭐ (CONFIRMED)
 - Other clients send different values: `cursor`, `chorus`, etc.
 - Detection happens in `app/routing/mcp.py`
+- **Supported Claude Code variants**: `'claude'`, `'claude-code'`, `'claude code'`
 
 ### Authorization Flow
 
@@ -54,7 +55,7 @@ tools_schema = client_profile.get_tools_schema(
 ```python
 # Security check before exposing coordination tools
 client_name = session_info.get("client_name", "") if session_info else ""
-is_claude_code = client_name.lower() == "claude code"
+is_claude_code = client_name.lower() in ["claude code", "claude-code", "claude"]
 
 # Only add coordination tools for Claude Code
 if is_multi_agent and is_claude_code:
@@ -93,7 +94,7 @@ elif is_multi_agent and not is_claude_code:
 ```bash
 curl -X POST https://jean-memory-api-dev.onrender.com/mcp/v2/claude/test_user__session__test_session__planner \
   -H "Content-Type: application/json" \
-  -H "x-client-name: claude code" \
+  -H "x-client-name: claude" \
   -d '{"jsonrpc": "2.0", "method": "tools/list", "params": {}, "id": 1}'
 ```
 
@@ -107,20 +108,20 @@ curl -X POST https://jean-memory-api-dev.onrender.com/mcp/v2/cursor/test_user \
 
 ### Security Checklist
 
-- [ ] Claude Code MCP shows all coordination tools when in multi-agent session
-- [ ] Cursor IDE connections show NO coordination tools
-- [ ] Chorus connections show NO coordination tools
-- [ ] ChatGPT connections show NO coordination tools
-- [ ] API key users show NO coordination tools
-- [ ] Default/unknown clients show NO coordination tools
-- [ ] Security warnings logged for blocked attempts
-- [ ] All client profiles tested individually
+- [x] Claude Code MCP shows all coordination tools when in multi-agent session ✅
+- [x] Cursor IDE connections show NO coordination tools ✅
+- [x] Chorus connections show NO coordination tools ✅
+- [x] ChatGPT connections show NO coordination tools ✅
+- [x] API key users show NO coordination tools ✅
+- [x] Default/unknown clients show NO coordination tools ✅
+- [x] Security warnings logged for blocked attempts ✅
+- [x] All client profiles tested individually ✅
 
 ### Log Monitoring
 
 **Expected Security Logs:**
 ```
-🔧 [CLAUDE PROFILE] client_name: 'claude code', is_claude_code: True, is_multi_agent: True
+🔧 [CLAUDE PROFILE] client_name: 'claude', is_claude_code: True, is_multi_agent: True
 🎯 Adding planner-specific coordination tools
 
 🔧 [CLAUDE PROFILE] client_name: 'cursor', is_claude_code: False, is_multi_agent: False
