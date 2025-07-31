@@ -77,6 +77,21 @@ async def mcp_health(user: dict = Depends(get_current_user)):
     }
 
 
+@mcp_router.get("/mcp/status")
+async def mcp_status():
+    """Public MCP server status - no auth required for testing"""
+    
+    return {
+        "status": "online",
+        "protocol": "MCP",
+        "oauth": "enabled",
+        "serverInfo": {
+            "name": "jean-memory",
+            "version": "1.0.0"
+        }
+    }
+
+
 @mcp_router.post("/mcp/initialize")
 async def mcp_initialize(
     request: Request,
@@ -111,36 +126,38 @@ async def mcp_initialize(
     return response
 
 
-@mcp_router.get("/mcp/capabilities")
-async def mcp_capabilities(user: dict = Depends(get_current_user)):
-    """MCP capabilities endpoint - shows what server supports"""
+@mcp_router.post("/mcp/capabilities")
+async def mcp_capabilities(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user: dict = Depends(get_current_user)
+):
+    """MCP capabilities method - handled via JSON-RPC"""
     
     logger.info(f"MCP capabilities request from {user['client']} for user {user['user_id']}")
     
-    return {
-        "jsonrpc": "2.0",
-        "result": {
-            "capabilities": {
-                "resources": {
-                    "subscribe": True,
-                    "listChanged": True
-                },
-                "tools": {
-                    "listChanged": True
-                },
-                "prompts": {
-                    "listChanged": True
-                },
-                "logging": {}
-            },
-            "protocolVersion": "2024-11-05",
-            "serverInfo": {
-                "name": "jean-memory",
-                "version": "1.0.0"
-            }
-        },
-        "id": "capabilities"
-    }
+    try:
+        body = await request.json()
+    except Exception as e:
+        logger.error(f"Failed to parse JSON: {e}")
+        return {
+            "jsonrpc": "2.0",
+            "error": {"code": -32700, "message": "Parse error"},
+            "id": None
+        }
+    
+    # Add user context to headers
+    headers = MutableHeaders(request.headers)
+    headers["x-user-id"] = user["user_id"]
+    headers["x-user-email"] = user["email"]  
+    headers["x-client-name"] = user["client"]
+    request._headers = headers
+    
+    # Route to existing MCP logic
+    response = await handle_request_logic(request, body, background_tasks)
+    
+    logger.info(f"MCP capabilities completed for {user['email']}")
+    return response
 
 
 @mcp_router.options("/mcp")
