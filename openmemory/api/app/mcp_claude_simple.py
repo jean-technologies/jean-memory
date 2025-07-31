@@ -43,13 +43,27 @@ async def handle_mcp_request(
     client_profile = get_client_profile(client_name)
 
     if method_name == "initialize":
-        protocol_version = "2025-03-26"
-        tools_schema = client_profile.get_tools_schema(include_annotations=True)
-        capabilities = {
-            "tools": {"list": tools_schema, "listChanged": False},
-            "logging": {},
-            "sampling": {}
-        }
+        # Use client's exact protocol version to avoid version mismatch issues
+        client_protocol_version = params.get("protocolVersion", "2024-11-05")
+        protocol_version = client_protocol_version
+        logger.warning(f"🔥 CLIENT REQUESTED PROTOCOL: {client_protocol_version}")
+        
+        # For newer protocols, include tools directly in initialize response
+        if client_protocol_version in ["2025-06-18", "2025-03-26"]:
+            tools_schema = client_profile.get_tools_schema(include_annotations=True)
+            capabilities = {
+                "tools": {"list": tools_schema, "listChanged": False},
+                "logging": {},
+                "sampling": {}
+            }
+            logger.warning(f"🔥 SENDING {len(tools_schema)} TOOLS IN INITIALIZE RESPONSE")
+        else:
+            # Older protocols use separate tools/list call
+            capabilities = {
+                "tools": {"listChanged": True},
+                "logging": {},
+                "sampling": {}
+            }
         return {
             "jsonrpc": "2.0",
             "result": {
