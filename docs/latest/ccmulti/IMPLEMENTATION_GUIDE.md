@@ -51,11 +51,42 @@ This guide provides a practical roadmap for implementing the Claude Code multi-a
 ## Implementation Strategy: Native Features First
 
 ### Core Principles
-1. **Native Claude Code Features** - Use built-in subagents and hooks system
-2. **Minimal Custom Development** - 50-80% less code than pure custom approach
-3. **User Workflow Focused** - Align with the 5-phase user experience
-4. **Instant Performance** - Native agent switching and hooks-based coordination
-5. **Zero Learning Curve** - Uses Claude Code's intended multi-agent patterns
+1. **Security First** - Coordination tools ONLY for Claude Code MCP (`x-client-name: 'claude code'`)
+2. **Client Isolation** - Never expose coordination tools to Cursor, Chorus, ChatGPT, or other MCP clients
+3. **Native Claude Code Features** - Use built-in subagents and hooks system
+4. **Minimal Custom Development** - 50-80% less code than pure custom approach
+5. **User Workflow Focused** - Align with the 5-phase user experience
+6. **Instant Performance** - Native agent switching and hooks-based coordination
+7. **Zero Learning Curve** - Uses Claude Code's intended multi-agent patterns
+
+## 🔒 Security Requirements
+
+### Critical Client Isolation
+- **ONLY Claude Code MCP** should receive coordination tools
+- **Blocked clients**: Cursor, Chorus, ChatGPT, API users, Default profile
+- **Detection mechanism**: `x-client-name: 'claude code'` header verification
+- **Implementation**: Client detection in `ClaudeProfile.get_tools_schema()`
+
+### Security Implementation Details
+```python
+# In claude.py - Security check before exposing coordination tools
+client_name = session_info.get("client_name", "") if session_info else ""
+is_claude_code = client_name.lower() == "claude code"
+
+# Only add coordination tools for Claude Code
+if is_multi_agent and is_claude_code:
+    # Add coordination tools
+elif is_multi_agent and not is_claude_code:
+    logger.warning(f"🚨 SECURITY: Coordination tools blocked for: '{client_name}'")
+```
+
+### Security Validation Checklist
+- [ ] Coordination tools only appear in Claude Code MCP tools list
+- [ ] Cursor IDE shows only standard tools (no coordination)
+- [ ] Chorus shows only standard tools (no coordination)  
+- [ ] ChatGPT shows only search/fetch tools
+- [ ] API users show only API-specific tools
+- [ ] Security warnings logged for blocked attempts
 
 ## Phase-by-Phase Implementation
 

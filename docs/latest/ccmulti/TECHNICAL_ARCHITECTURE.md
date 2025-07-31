@@ -32,6 +32,32 @@ This document outlines the technical architecture for implementing the Claude Co
 
 ## Core Technical Requirements
 
+### 🔒 Security Architecture (CRITICAL)
+
+**Client Isolation Model:**
+- **ONLY Claude Code MCP** connections receive coordination tools
+- **Header-based authentication**: `x-client-name: 'claude code'` requirement
+- **Profile inheritance protection**: Cursor, Chorus, Default profiles blocked from coordination tools
+- **Fail-safe design**: Default to blocking coordination tools unless explicitly authorized
+
+**Security Implementation:**
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
+│   Claude Code   │────│  Coordination    │────│  ✅ AUTHORIZED      │
+│   MCP Client    │    │  Tools Check     │    │  Multi-Agent Tools  │
+└─────────────────┘    └──────────────────┘    └─────────────────────┘
+
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
+│ Cursor/Chorus/  │────│  Coordination    │────│  ❌ BLOCKED         │
+│ Other MCP       │    │  Tools Check     │    │  Standard Tools Only│
+└─────────────────┘    └──────────────────┘    └─────────────────────┘
+```
+
+**Security Enforcement Points:**
+1. `app/routing/mcp.py` - Client name detection and session info passing
+2. `app/clients/claude.py` - Client authorization before tool schema generation
+3. Security logging - Unauthorized coordination tool requests tracked
+
 ### Performance Requirements (Multi-Terminal Coordination)
 - **Cross-session coordination**: < 50ms (database-backed)
 - **Context isolation**: True process-level isolation per terminal

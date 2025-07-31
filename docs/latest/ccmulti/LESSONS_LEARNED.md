@@ -141,6 +141,13 @@ CREATE TABLE claude_code_agents (
 - Tool schema transmission from server to Claude Code client
 - **Supergateway bridges are unnecessary** - direct HTTP is simpler and faster
 
+**🔒 SECURITY ISSUE DISCOVERED & FIXED (January 2025):**
+- **Critical vulnerability found**: Coordination tools were being exposed to ALL clients inheriting from ClaudeProfile
+- **Affected clients**: Cursor, Chorus, Default profile - would have received coordination tools
+- **Security fix implemented**: Client detection logic now restricts coordination tools to `x-client-name: 'claude code'` only
+- **Fail-safe mechanism**: Security warning logged when coordination tools blocked for unauthorized clients
+- **Current status**: All non-Claude Code clients properly isolated from coordination tools
+
 ### ❌ Blocker 2: Tool Loading Failures  
 **Issue**: Claude Code detects server but doesn't load Jean Memory tools
 **Problem**: Communication layer gap between Claude Code and API
@@ -233,17 +240,24 @@ vs Current Jean Memory:
 
 ## Key Implementation Lessons
 
-### 1. Start with What Works
+### 1. Security First: Client Isolation
+- **CRITICAL**: Coordination tools must ONLY be exposed to Claude Code MCP clients
+- **Never expose coordination tools** to other MCP clients (Cursor, Chorus, ChatGPT, etc.)
+- **Client detection required**: Use `x-client-name: 'claude code'` header for authorization
+- **Fail-safe approach**: Default to blocking coordination tools unless explicitly Claude Code
+- **Security logging**: Always log when coordination tools are blocked for unauthorized clients
+
+### 2. Start with What Works
 - **Don't rebuild MCP protocol** - use existing successful patterns
 - **Don't modify core memory system** - add coordination layer
 - **Don't break existing clients** - make changes additive only
 
-### 2. Focus on User Workflow  
+### 3. Focus on User Workflow  
 - **Task Input → Planning → Distribution → Execution → Completion**
 - **Every technical decision** should support this workflow
 - **Performance requirements** derived from user experience needs
 
-### 3. Minimal Risk Strategy
+### 4. Minimal Risk Strategy
 ```python
 # Smart routing pattern (WORKS)
 if is_multi_agent_session(context):
@@ -252,7 +266,7 @@ else:
     return await handle_standard_memory(request)  # UNCHANGED
 ```
 
-### 4. Performance-First Approach
+### 5. Performance-First Approach
 - **Measure current bottlenecks first** (2-6s operations)
 - **Set realistic targets** (even 10x improvement valuable)
 - **Use right tool for job** (ADK for speed, Jean Memory for depth)

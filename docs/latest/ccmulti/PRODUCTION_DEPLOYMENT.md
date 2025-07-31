@@ -18,7 +18,37 @@ This document outlines the production deployment requirements for merging the Cl
 
 ## Production Deployment Checklist
 
-### 1. Code Changes Summary
+### 1. 🔒 Security Validation (CRITICAL)
+
+**Client Isolation Requirements:**
+- [ ] Coordination tools ONLY appear for Claude Code MCP connections
+- [ ] Cursor IDE connections show NO coordination tools
+- [ ] Chorus connections show NO coordination tools  
+- [ ] ChatGPT connections show NO coordination tools
+- [ ] API key users show NO coordination tools
+- [ ] Default/unknown clients show NO coordination tools
+
+**Security Testing Commands:**
+```bash
+# Test Claude Code (should show coordination tools)
+curl -X POST https://jean-memory-api-dev.onrender.com/mcp/v2/claude/test_user__session__test_session__planner \
+  -H "Content-Type: application/json" \
+  -H "x-client-name: claude code" \
+  -d '{"jsonrpc": "2.0", "method": "tools/list", "params": {}, "id": 1}'
+
+# Test Cursor (should NOT show coordination tools)  
+curl -X POST https://jean-memory-api-dev.onrender.com/mcp/v2/cursor/test_user \
+  -H "Content-Type: application/json" \
+  -H "x-client-name: cursor" \
+  -d '{"jsonrpc": "2.0", "method": "tools/list", "params": {}, "id": 1}'
+```
+
+**Security Implementation Verified:**
+- [ ] Client detection logic in `claude.py` restricts tools to `x-client-name: 'claude code'`
+- [ ] Security warnings logged for unauthorized coordination tool requests
+- [ ] All inheritance chains (Cursor, Chorus, Default) properly isolated
+
+### 2. Code Changes Summary
 
 **Files Added:**
 ```
@@ -30,17 +60,18 @@ jean-memory/claude-code-multi-agent-kickoff-prompt.md # Project documentation
 
 **Files Modified:**
 ```
-openmemory/api/app/clients/claude.py              # Tool schema definitions
+openmemory/api/app/clients/claude.py              # Tool schema definitions + SECURITY: Client isolation
+openmemory/api/app/routing/mcp.py                 # SECURITY: Client name passing to profiles
 openmemory/api/app/tool_registry.py               # Tool registration
 openmemory/api/app/mcp_instance.py                # Module imports for tool registration
 openmemory/api/docs/latest/ccmulti/*.md           # Updated documentation
 ```
 
 **Files Unchanged (No Production Risk):**
-- Core routing logic in `/app/routing/mcp.py` (only debug logging added)
 - Database connection and authentication systems
-- Existing MCP endpoints and client profiles
 - User-facing API endpoints
+- Core memory and document processing systems
+- Existing client functionality (ChatGPT, API, etc.)
 
 ### 2. Database Migration Requirements
 
