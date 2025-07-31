@@ -12,9 +12,22 @@ from typing import Dict, Any
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 
-from fastmcp import FastMCP
-from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType
+# Optional imports - gracefully handle missing dependencies
+try:
+    from fastmcp import FastMCP
+    FASTMCP_AVAILABLE = True
+except ImportError:
+    FastMCP = None
+    FASTMCP_AVAILABLE = False
+
+try:
+    from mcpauth import MCPAuth
+    from mcpauth.config import AuthServerType
+    MCPAUTH_AVAILABLE = True
+except ImportError:
+    MCPAuth = None
+    AuthServerType = None
+    MCPAUTH_AVAILABLE = False
 
 from app.settings import config
 from app.database import get_db
@@ -60,6 +73,12 @@ def create_fastmcp_oauth_server() -> FastAPI:
     """
     logger.info("🚀 Initializing FastMCP OAuth server...")
     
+    # Check if FastMCP dependencies are available
+    if not FASTMCP_AVAILABLE:
+        logger.warning("⚠️ FastMCP not available - using fallback implementation")
+    if not MCPAUTH_AVAILABLE:
+        logger.warning("⚠️ MCPAuth not available - using basic OAuth endpoints")
+    
     # Create base FastAPI app
     base_app = FastAPI(
         title="Jean Memory MCP Server",
@@ -100,27 +119,28 @@ def create_fastmcp_oauth_server() -> FastAPI:
     
     # Now try to initialize MCPAuth (but don't fail if it doesn't work)
     mcp_auth = None
-    try:
-        from mcpauth.config import AuthServerConfig, AuthorizationServerMetadata
-        
-        metadata = AuthorizationServerMetadata(
-            issuer=os.getenv("API_BASE_URL", "https://jean-memory-api-virginia.onrender.com"),
-            authorization_endpoint=f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/oauth/authorize",
-            token_endpoint=f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/oauth/token",
-            registration_endpoint=f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/oauth/register"
-        )
-        
-        server_config = AuthServerConfig(
-            metadata=metadata,
-            type=AuthServerType.OAUTH
-        )
-        
-        mcp_auth = MCPAuth(server=server_config)
-        logger.info("✅ MCPAuth initialized successfully")
-        
-    except Exception as e:
-        logger.warning(f"⚠️ MCPAuth initialization failed, using fallback: {e}")
-        # Continue without MCPAuth for now
+    if MCPAUTH_AVAILABLE:
+        try:
+            from mcpauth.config import AuthServerConfig, AuthorizationServerMetadata
+            
+            metadata = AuthorizationServerMetadata(
+                issuer=os.getenv("API_BASE_URL", "https://jean-memory-api-virginia.onrender.com"),
+                authorization_endpoint=f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/oauth/authorize",
+                token_endpoint=f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/oauth/token",
+                registration_endpoint=f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/oauth/register"
+            )
+            
+            server_config = AuthServerConfig(
+                metadata=metadata,
+                type=AuthServerType.OAUTH
+            )
+            
+            mcp_auth = MCPAuth(server=server_config)
+            logger.info("✅ MCPAuth initialized successfully")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ MCPAuth initialization failed, using fallback: {e}")
+            # Continue without MCPAuth for now
     
     # For now, just return the base app with OAuth discovery
     # We'll incrementally add FastMCP features

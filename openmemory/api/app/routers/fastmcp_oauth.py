@@ -17,22 +17,38 @@ fastmcp_router = APIRouter(prefix="/fastmcp", tags=["fastmcp-oauth"])
 @fastmcp_router.get("/status")
 async def fastmcp_status():
     """Status endpoint for FastMCP OAuth implementation"""
-    return {
-        "status": "ready",
-        "implementation": "fastmcp + mcpauth",
-        "oauth_version": "2.1",
-        "specs": [
-            "RFC 7591 - Dynamic Client Registration",
-            "RFC 9728 - Protected Resource Metadata", 
-            "RFC 8707 - Resource Indicators",
-            "OAuth 2.1 with PKCE"
-        ],
-        "endpoints": {
-            "oauth_discovery": "/.well-known/oauth-authorization-server",
-            "protected_resource": "/.well-known/oauth-protected-resource",
-            "mcp_endpoint": "/mcp"
+    try:
+        # Check if dependencies are available
+        from app.mcp_fastmcp_oauth import FASTMCP_AVAILABLE, MCPAUTH_AVAILABLE
+        
+        status = "ready" if (FASTMCP_AVAILABLE and MCPAUTH_AVAILABLE) else "partial"
+        implementation = "fastmcp + mcpauth" if (FASTMCP_AVAILABLE and MCPAUTH_AVAILABLE) else "fallback"
+        
+        return {
+            "status": status,
+            "implementation": implementation,
+            "oauth_version": "2.1",
+            "fastmcp_available": FASTMCP_AVAILABLE,
+            "mcpauth_available": MCPAUTH_AVAILABLE,
+            "specs": [
+                "RFC 7591 - Dynamic Client Registration",
+                "RFC 9728 - Protected Resource Metadata", 
+                "RFC 8707 - Resource Indicators",
+                "OAuth 2.1 with PKCE"
+            ],
+            "endpoints": {
+                "oauth_discovery": "/.well-known/oauth-authorization-server",
+                "protected_resource": "/.well-known/oauth-protected-resource",
+                "mcp_endpoint": "/mcp"
+            }
         }
-    }
+    except Exception as e:
+        logger.error(f"FastMCP status check failed: {e}")
+        return {
+            "status": "error",
+            "implementation": "unknown",
+            "error": str(e)
+        }
 
 @fastmcp_router.get("/test-oauth")
 async def test_oauth_config():

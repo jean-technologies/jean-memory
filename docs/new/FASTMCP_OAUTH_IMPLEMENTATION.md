@@ -181,12 +181,76 @@ Transport: HTTP (Streamable HTTP)
 | **OAuth 2.1** | ✅ **COMPLIANT** | PKCE, security best practices |
 | **MCP 2025-06-18** | ✅ **COMPLIANT** | Latest MCP specification |
 
+## Production Deployment Status
+
+### Current Status: 🔧 FIXING DEPENDENCIES
+
+**Issue:** Production deployment failed with `ModuleNotFoundError: No module named 'fastmcp'`
+
+**Root Cause:** Missing dependencies in requirements.txt
+
+**Fix Applied:**
+1. ✅ Added `fastmcp>=0.1.0` and `mcpauth>=0.1.0` to requirements.txt
+2. ✅ Made imports optional with graceful fallback handling
+3. ✅ Updated status endpoints to show dependency availability
+
+### Deployment Strategy - Updated
+
+**Phase 1: Fix Dependencies** 🔧 (Current)
+- ✅ **Add missing dependencies** to requirements.txt
+- ✅ **Graceful fallback** - app won't crash if dependencies unavailable  
+- ✅ **Status monitoring** - `/fastmcp/status` shows dependency status
+- 🚀 **Ready for deployment**
+
+**Phase 2: Deploy and Test**
+1. **Deploy to production** - with new dependencies
+2. **Verify endpoints** - check `/fastmcp/status` for dependency status
+3. **Test OAuth discovery** - validate RFC compliance
+4. **Test with Claude Web** - use new FastMCP endpoints
+
+**Phase 3: Validate and Monitor**
+1. **Monitor logs** - track OAuth flow completion
+2. **Validate connection persistence** - ensure UI shows "connected"
+3. **Document success** - update implementation status
+
+### Deployment Commands
+
+```bash
+# Check status after deployment
+curl https://jean-memory-api-virginia.onrender.com/fastmcp/status
+
+# Expected response with dependencies installed:
+{
+  "status": "ready",
+  "implementation": "fastmcp + mcpauth", 
+  "fastmcp_available": true,
+  "mcpauth_available": true,
+  "oauth_version": "2.1"
+}
+
+# Test OAuth discovery
+curl https://jean-memory-api-virginia.onrender.com/.well-known/oauth-authorization-server
+```
+
+### Troubleshooting
+
+**If FastMCP dependencies are missing:**
+- Status will show `"status": "partial"` and `"implementation": "fallback"`
+- OAuth endpoints still work but without full FastMCP integration
+- Check production logs for import warnings
+
+**If deployment still fails:**
+- Verify requirements.txt includes `fastmcp>=0.1.0` and `mcpauth>=0.1.0`
+- Check pip install logs for dependency resolution issues
+- Consider pinning specific versions if conflicts occur
+
 ## Next Steps
 
-1. **Deploy to Production** ✅ (Ready)
-2. **Test with Claude Web** 🧪 (Ready for testing)
-3. **Monitor GitHub Issue #3515** 👁️ (Track Claude Web production bug)
-4. **Document success** 📝 (After validation)
+1. **Deploy to Production** 🔧 (Fixing dependencies)
+2. **Verify FastMCP Status** 🧪 (Check `/fastmcp/status`)
+3. **Test with Claude Web** 🧪 (After dependencies confirmed)
+4. **Monitor GitHub Issue #3515** 👁️ (Track Claude Web production bug)
+5. **Document success** 📝 (After validation)
 
 ## Key Learnings
 
