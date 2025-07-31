@@ -164,6 +164,26 @@ async def proxy_to_v2_logic(
         }
 
 
+@oauth_mcp_router.get("/mcp")
+async def mcp_get_not_supported(user: dict = Depends(get_current_user)):
+    """
+    Handle GET requests to /mcp endpoint
+    
+    This transport uses direct HTTP POST only (no SSE streams).
+    Return a clear message to indicate this is not a streaming transport.
+    """
+    return JSONResponse(
+        status_code=200,
+        content={
+            "transport": "oauth-proxy",
+            "protocol": "MCP",
+            "message": "This endpoint uses direct HTTP transport only. Send POST requests for MCP operations.",
+            "streaming": False,
+            "user": user["email"]
+        }
+    )
+
+
 @oauth_mcp_router.get("/mcp/health")  
 async def mcp_health(user: dict = Depends(get_current_user)):
     """Health check for MCP server with auth"""
@@ -216,6 +236,7 @@ async def mcp_head():
         headers={
             "Content-Type": "application/json",
             "X-MCP-Protocol": "2024-11-05",
+            "X-MCP-Transport": "http",
             "X-OAuth-Supported": "true",
             "Access-Control-Allow-Origin": "*"
         }
