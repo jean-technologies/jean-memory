@@ -65,34 +65,17 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
         logger.info(f"Handling MCP method '{method_name}' for client '{client_key}'")
 
         if method_name == "initialize":
-            client_version = params.get("protocolVersion", "2024-11-05")
-            
-            # WORKAROUND: If client requests the buggy '2024-11-05' protocol,
-            # upgrade to '2025-03-26' and send the tool list immediately.
-            if client_version == "2024-11-05":
-                protocol_version = "2025-03-26"
-                tools_schema = client_profile.get_tools_schema(include_annotations=True)
-                capabilities = {
-                    "tools": {"list": tools_schema, "listChanged": False},
-                    "logging": {},
-                    "sampling": {}
-                }
-            else:
-                # For newer, compliant clients, respect their requested protocol.
-                protocol_version = client_version
-                use_annotations = protocol_version == "2025-03-26"
-                if use_annotations:
-                    tools_schema = client_profile.get_tools_schema(include_annotations=True)
-                    capabilities = {
-                        "tools": {"list": tools_schema, "listChanged": False},
-                        "logging": {},
-                        "sampling": {}
-                    }
-                else:
-                    # Fallback for future protocol versions we don't fully support yet.
-                    capabilities = {
-                        "tools": {"listChanged": True}
-                    }
+            # WORKAROUND: Force protocol version 2025-03-26 to bypass a bug in the Claude Web client
+            # where it does not call `tools/list`. Logs show the client reports '2025-06-18' but still
+            # exhibits this buggy behavior. Sending the tool schema in the `initialize` response
+            # is the most reliable workaround.
+            protocol_version = "2025-03-26"
+            tools_schema = client_profile.get_tools_schema(include_annotations=True)
+            capabilities = {
+                "tools": {"list": tools_schema, "listChanged": False},
+                "logging": {},
+                "sampling": {}
+            }
 
             return JSONResponse(content={
                 "jsonrpc": "2.0",
