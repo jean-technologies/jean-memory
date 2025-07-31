@@ -456,7 +456,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Side */}
-          <div className="lg:col-span-1 h-full flex flex-col">
+          <div className="lg:col-span-1 h-full overflow-hidden">
             <AnalysisPanel />
           </div>
         </div>
