@@ -2295,13 +2295,46 @@ if method_name == "initialize":
 3. ✅ Show tools as "enabled" in Claude Web UI
 4. ✅ Make jean_memory and store_document tools available
 
-### Final Status: ✅ **ISSUE RESOLVED**
+### Final Status: ❌ **CRITICAL DEPLOYMENT ISSUE**
 
 **Root Cause:** MCP protocol version `2025-06-18` handling was incomplete
-**Solution:** Include tools list directly in initialize response for newer protocols
-**Status:** Fix deployed and ready for testing
+**Solution:** Include tools list directly in initialize response for newer protocols  
+**Status:** ❌ **FIX IMPLEMENTED BUT NOT EXECUTING IN PRODUCTION**
 
-**Final Action Plan:**
-1. **Test Claude Web connection** - Should now show tools as enabled
-2. **Verify jean_memory tools are available** in Claude Web conversation
-3. **Document successful resolution** for future reference
+### 🚨 URGENT: Deployment Problem Discovered (July 31, 2025)
+
+**Despite implementing the fix in `/routing/mcp.py` lines 67-88, production logs show:**
+
+❌ **Expected Response:**
+```json
+{
+  "capabilities": {
+    "tools": {
+      "list": [...tools_schema...],
+      "listChanged": false
+    }
+  }
+}
+```
+
+❌ **Actual Production Response:**
+```json
+{
+  "capabilities": {
+    "tools": {"listChanged": true}  // Missing tools schema!
+  }
+}
+```
+
+### Immediate Action Required
+
+**The MCP protocol fix exists in the codebase but is not being executed in production.**
+
+**Next Engineer Must:**
+1. **Verify Deployment** - Confirm routing/mcp.py changes are deployed to production server
+2. **Debug Initialize Method** - Add logging to confirm lines 67-88 are being executed  
+3. **Check Tools Schema Generation** - Verify `client_profile.get_tools_schema()` returns data
+4. **Test Production Response** - Confirm initialize response includes tools list after fix
+
+**Expected Result After Deployment Fix:**
+Claude Web should receive tools list in initialize response and show tools as enabled.

@@ -15,14 +15,89 @@ import json
 
 from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks, HTTPException
 from fastapi.responses import JSONResponse
-from starlette.datastructures import MutableHeaders
 
+from app.clients import get_client_profile
+from app.context import user_id_var, client_name_var, background_tasks_var
 from app.oauth_simple_new import get_current_user
-from app.routing.mcp import handle_request_logic
 
 logger = logging.getLogger(__name__)
 
 oauth_mcp_router = APIRouter(tags=["oauth-mcp"])
+
+
+async def handle_mcp_request(
+    message: dict,
+    user: dict,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Handles a single JSON-RPC message directly.
+    """
+    method_name = message.get("method")
+    params = message.get("params", {})
+    request_id = message.get("id")
+    client_name = user["client"]
+
+    logger.info(f"Handling MCP method '{method_name}' for client '{client_name}'")
+
+    client_profile = get_client_profile(client_name)
+
+    if method_name == "initialize":
+        protocol_version = "2025-03-26"
+        tools_schema = client_profile.get_tools_schema(include_annotations=True)
+        capabilities = {
+            "tools": {"list": tools_schema, "listChanged": False},
+            "logging": {},
+            "sampling": {}
+        }
+        return {
+            "jsonrpc": "2.0",
+            "result": {
+                "protocolVersion": protocol_version,
+                "capabilities": capabilities,
+                "serverInfo": {"name": "Jean Memory", "version": "1.0.0"}
+            },
+            "id": request_id
+        }
+
+    elif method_name == "tools/list":
+        tools_schema = client_profile.get_tools_schema(include_annotations=True)
+        return {"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id}
+
+    elif method_name == "tools/call":
+        tool_name = params.get("name")
+        tool_args = params.get("arguments", {})
+        try:
+            result = await client_profile.handle_tool_call(tool_name, tool_args, user["user_id"])
+            return client_profile.format_tool_response(result, request_id)
+        except Exception as e:
+            logger.error(f"Error calling tool '{tool_name}': {e}", exc_info=True)
+            return {
+                "jsonrpc": "2.0",
+                "error": {"code": -32603, "message": str(e)},
+                "id": request_id
+            }
+
+    elif method_name in ["notifications/initialized", "notifications/cancelled"]:
+        logger.info(f"Received notification '{method_name}'")
+        # For notifications, a response isn't strictly required, but we can acknowledge.
+        # However, the proxy was returning None, so we do that here as well for single messages.
+        # For batch, it was skipped. Let's return a special value to indicate no response.
+        return None
+
+
+    elif method_name in ["resources/list", "prompts/list"]:
+        return {"jsonrpc": "2.0", "result": {method_name.split('/')[0]: []}, "id": request_id}
+
+    elif method_name == "resources/templates/list":
+        return {"jsonrpc": "2.0", "result": {"templates": []}, "id": request_id}
+
+    else:
+        return {
+            "jsonrpc": "2.0",
+            "error": {"code": -32601, "message": f"Method not found: {method_name}"},
+            "id": request_id
+        }
 
 
 def validate_origin(request: Request) -> bool:
@@ -68,6 +143,11 @@ async def mcp_oauth_proxy(
     
     logger.info(f"🚀 MCP OAuth Proxy: {user['client']} for user {user['user_id']} ({user['email']})")
     
+    # Set context variables for the duration of this request
+    user_token = user_id_var.set(user["user_id"])
+    client_token = client_name_var.set(user["client"])
+    tasks_token = background_tasks_var.set(background_tasks)
+
     try:
         # Parse request body (single message or batch)
         body = await request.json()
@@ -93,7 +173,7 @@ async def mcp_oauth_proxy(
             responses = []
             
             for message in body:
-                response = await proxy_to_v2_logic(request, message, background_tasks, user)
+                response = await handle_mcp_request(message, user, background_tasks)
                 if response:  # Only add non-None responses
                     responses.append(response)
             
@@ -101,7 +181,10 @@ async def mcp_oauth_proxy(
         
         # Handle single message
         else:
-            response = await proxy_to_v2_logic(request, body, background_tasks, user)
+            response = await handle_mcp_request(body, user, background_tasks)
+            if response is None:
+                # For notifications, no response is sent back to the client.
+                return Response(status_code=204)
             return JSONResponse(content=response)
             
     except json.JSONDecodeError as e:
@@ -124,80 +207,11 @@ async def mcp_oauth_proxy(
                 "id": None
             }
         )
-
-
-async def proxy_to_v2_logic(
-    request: Request,
-    message: dict, 
-    background_tasks: BackgroundTasks,
-    user: dict
-) -> dict:
-    """
-    Proxy a single JSON-RPC message to the V2 HTTP transport logic
-    
-    This function:
-    1. Adds user context to request headers (same as V2 endpoint)
-    2. Calls the proven handle_request_logic function
-    3. Returns the response directly (no session management)
-    """
-    
-    # Add user context to headers (same format as V2 endpoint)
-    headers = MutableHeaders(request.headers)
-    headers["x-user-id"] = user["user_id"]
-    headers["x-user-email"] = user["email"]
-    headers["x-client-name"] = user["client"]
-    
-    # Modify request with user context
-    request._headers = headers
-    
-    method = message.get('method', 'unknown')
-    logger.info(f"🔄 Proxying {method} to V2 logic for user {user['user_id']}")
-    
-    # Special logging for tools methods
-    if method.startswith('tools/'):
-        logger.warning(f"🔥 TOOLS METHOD CALLED: {method} - This should enable tools in Claude!")
-        logger.warning(f"🔥 Message params: {message.get('params', {})}")
-    
-    # Route to the proven V2 logic (same as handle_http_v2_transport uses)
-    response = await handle_request_logic(request, message, background_tasks)
-    
-    # Extract JSON content from response
-    if hasattr(response, 'body'):
-        try:
-            response_content = json.loads(response.body)
-            logger.info(f"✅ V2 logic completed for {method}")
-            
-            # Special logging for initialize response
-            if method == 'initialize':
-                logger.warning(f"🔥 INITIALIZE RESPONSE: {str(response_content)[:500]}...")
-            
-            # Special logging for tools responses
-            if method.startswith('tools/'):
-                if method == 'tools/list':
-                    tools = response_content.get('result', {}).get('tools', [])
-                    logger.warning(f"🔥 TOOLS/LIST RESPONSE: Found {len(tools)} tools")
-                    for tool in tools:
-                        logger.warning(f"🔥   - {tool.get('name')}")
-                else:
-                    logger.warning(f"🔥 TOOLS/{method.split('/')[-1].upper()} RESPONSE: {str(response_content)[:200]}...")
-            
-            return response_content
-        except (json.JSONDecodeError, AttributeError) as e:
-            logger.error(f"Failed to parse V2 response: {e}")
-            return {
-                "jsonrpc": "2.0",
-                "error": {"code": -32603, "message": "Response parsing error"},
-                "id": message.get("id")
-            }
-    elif isinstance(response, dict):
-        return response
-    else:
-        logger.error(f"Unexpected response type from V2 logic: {type(response)}")
-        return {
-            "jsonrpc": "2.0",
-            "error": {"code": -32603, "message": "Unexpected response format"},
-            "id": message.get("id")
-        }
+    finally:
+        # Ensure context variables are reset
+        user_id_var.reset(user_token)
+        client_name_var.reset(client_token)
+        background_tasks_var.reset(tasks_token)
 
 
 @oauth_mcp_router.get("/mcp")

@@ -1,20 +1,20 @@
 # MCP Claude Web Integration - Engineering Handoff
 
 **Date:** July 31, 2025  
-**Status:** ❌ **STILL BROKEN - FIX NOT WORKING**  
-**Issue:** MCP protocol `2025-06-18` fix attempted but server still returns wrong format
+**Status:** ❌ **CRITICAL ISSUE - FIX NOT DEPLOYED**  
+**Issue:** MCP protocol fix implemented but not being executed in production
 
-## 🎯 ISSUE RESOLVED: MCP Protocol Version Mismatch
+## 🎯 ISSUE IDENTIFIED: Code Fix Not Being Executed
 
-**Root Cause Discovered:** Claude Web uses MCP protocol version `2025-06-18`, but our server was only handling `2024-11-05` and `2025-03-26`. For unknown versions, we returned `{'tools': {'listChanged': True}}` instead of the actual tools list.
+**Root Cause Confirmed:** Claude Web uses MCP protocol version `2025-06-18`, but despite implementing the fix in `/routing/mcp.py`, the production server still returns the old format.
 
-**Evidence from logs:**
+**Evidence from production logs:**
 ```
 ✅ OAuth Discovery: All endpoints return 200 OK
 ✅ OAuth Authentication: User authentication successful  
 ✅ MCP Initialize: Claude calls initialize with protocolVersion '2025-06-18'
-✅ BREAKTHROUGH: Claude expects tools in initialize response, not via tools/list call
-✅ FIX APPLIED: Now include tools list directly in initialize response
+❌ PROBLEM: Server still returns {'tools': {'listChanged': True}} instead of tools schema
+❌ DEPLOYMENT ISSUE: Fix in routing/mcp.py lines 67-88 not being executed
 ```
 
 ## ✅ WHAT'S WORKING (SERVER-SIDE)
@@ -34,12 +34,12 @@
 4. **Authentication:** Bearer token authentication working perfectly
 5. **Transport:** Both HTTP POST and SSE streaming implemented
 
-## ✅ WHAT WAS FIXED
+## ⚠️ WHAT WAS ATTEMPTED BUT NOT WORKING
 
-**MCP Protocol Version Handling:**
-- Added support for Claude Web's `2025-06-18` protocol version
-- Include tools list directly in initialize response for newer protocols
-- **RESULT:** Claude Web receives tools immediately, no separate `tools/list` call needed
+**MCP Protocol Version Handling Fix (NOT DEPLOYED):**
+- Code added to support Claude Web's `2025-06-18` protocol version (lines 67-88 in routing/mcp.py)
+- Logic to include tools list directly in initialize response
+- **PROBLEM:** Production server still executes old logic, returning `{'tools': {'listChanged': True}}`
 
 ## 🎯 THE BREAKTHROUGH
 
@@ -49,7 +49,7 @@
 🔥 INITIALIZE RESPONSE: capabilities: {'tools': {'listChanged': True}}  // ❌ MISSING TOOLS
 ```
 
-**Root Cause:** MCP protocol `2025-06-18` expects tools to be included in initialize response, not discovered via separate `tools/list` calls.
+**Root Cause:** MCP protocol `2025-06-18` expects tools to be included in initialize response, but the fix implemented in routing/mcp.py is not being executed in production.
 
 ## 📁 KEY FILES
 
@@ -61,36 +61,52 @@
 
 **Endpoint URL:** `https://jean-memory-api-virginia.onrender.com/mcp`
 
-## 🎯 FOR NEXT ENGINEER
+## 🎯 FOR NEXT ENGINEER - IMMEDIATE ACTION REQUIRED
 
-**✅ ISSUE RESOLVED:**
-The MCP protocol version mismatch has been fixed. Claude Web should now show tools as enabled.
+**❌ CRITICAL DEPLOYMENT ISSUE:**
+The MCP protocol fix exists in the code but is not being executed in production.
 
-**✅ TEST RESULTS EXPECTED:**
-1. **Claude Web Connection** - Should show as "connected" 
-2. **Tools Available** - jean_memory and store_document tools should be enabled
-3. **Full Functionality** - Users can access Jean Memory via Claude Web
+**🔥 IMMEDIATE TASKS:**
+1. **Verify Deployment** - Check if routing/mcp.py changes are deployed to production
+2. **Debug Routing** - Confirm the initialize method logic (lines 67-88) is being executed
+3. **Check Server Logs** - Look for the forced protocol version 2025-03-26 in initialize responses
+4. **Test Fix** - Production logs should show tools schema instead of `{'tools': {'listChanged': True}}`
 
-**🧪 IF STILL NOT WORKING:**
-1. **Check logs** for any new error patterns
-2. **Verify tools appear in initialize response** 
-3. **Test with different Claude Web sessions**
-4. **Contact Anthropic Support** if behavior unchanged
+**🎯 EXPECTED RESULT AFTER FIX:**
+Initialize response should include:
+```json
+{
+  "capabilities": {
+    "tools": {"list": [...tools_schema...], "listChanged": false}
+  }
+}
+```
+
+**📊 DEBUGGING STEPS:**
+1. Add logging to confirm initialize method is called
+2. Verify tools_schema is populated correctly
+3. Confirm response format matches expected JSON
+4. Test with Claude Web after deployment
 
 ## 📊 STATUS MATRIX
 
 | Component | Status | Next Action |
 |-----------|--------|-------------|
 | **Server OAuth** | ✅ WORKING | None needed |
-| **Server MCP** | ✅ WORKING | None needed |
-| **Protocol Version Support** | ✅ FIXED | Test with Claude Web |
-| **Tools Discovery** | ✅ RESOLVED | Verify tools are enabled |
+| **Server MCP** | ❌ DEPLOYMENT ISSUE | Verify routing/mcp.py is deployed |
+| **Protocol Version Support** | ❌ NOT EXECUTING | Debug why initialize logic isn't running |
+| **Tools Discovery** | ❌ BLOCKED | Fix deployment, then test |
 
-## 🚨 IMPORTANT
+## 🚨 CRITICAL ISSUE - DEPLOYMENT PROBLEM
 
-**The server is production-ready and fully functional. The MCP protocol version issue has been resolved.**
+**The fix exists in the codebase but is not being executed in production.**
 
-**Expected Result:** Claude Web should now show Jean Memory tools as enabled and available for use.
+**Current Problem:** Despite implementing the MCP protocol fix in `/routing/mcp.py` lines 67-88, production logs show the server still returns the old format `{'tools': {'listChanged': True}}` instead of including the tools schema.
 
-**Full technical details and solution documentation:**
+**Immediate Action Required:** 
+1. Verify the routing/mcp.py changes are deployed to production
+2. Debug why the initialize method logic is not being executed
+3. Confirm tools_schema is being included in the initialize response
+
+**Full technical analysis and attempted solutions:**
 `/docs/new/MCP_OAUTH_COMPLETE_DOCUMENTATION.md`
