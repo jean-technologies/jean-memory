@@ -371,8 +371,8 @@ async def handle_http_v2_transport(client_name: str, user_id: str, request: Requ
         session_info = parse_virtual_user_id(user_id)
         real_user_id = session_info["real_user_id"]
         
-        # Set headers for context (use real user ID for authentication)
-        request.headers.__dict__['_list'].append((b'x-user-id', real_user_id.encode()))
+        # Set headers for context (preserve original virtual user ID)
+        request.headers.__dict__['_list'].append((b'x-user-id', user_id.encode()))  # Keep virtual user ID
         request.headers.__dict__['_list'].append((b'x-client-name', client_name.encode()))
         
         body = await request.json()
