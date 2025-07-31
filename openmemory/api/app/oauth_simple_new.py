@@ -114,63 +114,46 @@ async def authorize(
     scope: Optional[str] = "read write",
     code_challenge: Optional[str] = None,
     code_challenge_method: Optional[str] = "S256",
-    oauth_session: Optional[str] = None  # Session ID from post-auth redirect
+    oauth_session: Optional[str] = None
 ):
-    """OAuth authorization endpoint - shows login/authorization page"""
     import logging
     logger = logging.getLogger(__name__)
     
     logger.info(f"Authorization request: client_id={client_id}, redirect_uri={redirect_uri}, oauth_session={oauth_session}")
     
-    # Check if this is a post-authentication callback with session ID
     if oauth_session and oauth_session in auth_sessions:
         logger.info(f"🔄 Post-authentication callback with session: {oauth_session}")
-        
-        # Retrieve stored session data
         session_data = auth_sessions[oauth_session]
-        
-        # Use stored session data instead of URL parameters
         client_id = session_data["client_id"]
         redirect_uri = session_data["redirect_uri"]
         state = session_data["state"]
         scope = session_data["scope"]
         code_challenge = session_data["code_challenge"]
         code_challenge_method = session_data["code_challenge_method"]
-        
         logger.info(f"📋 Restored session data: client_id={client_id}, redirect_uri={redirect_uri}")
     
-    # Check if client exists, if not and it's Claude, auto-register it
     if client_id not in registered_clients:
         if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
             client_info = {
-                "client_id": client_id,
-                "client_name": "Claude Web",
+                "client_id": client_id, "client_name": "Claude Web",
                 "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
-                "grant_types": ["authorization_code"],
-                "response_types": ["code"],
-                "scope": "read write",
-                "token_endpoint_auth_method": "none"
+                "grant_types": ["authorization_code"], "response_types": ["code"],
+                "scope": "read write", "token_endpoint_auth_method": "none"
             }
             registered_clients[client_id] = client_info
             logger.info(f"Auto-registered Claude client: {client_id}")
         else:
             raise HTTPException(status_code=400, detail="Invalid client")
     
-    # Validate redirect URI
     client_info = registered_clients[client_id]
     if redirect_uri not in client_info["redirect_uris"]:
         raise HTTPException(status_code=400, detail="Invalid redirect URI")
     
-    # Create or update auth session
     if not oauth_session:
         session_id = secrets.token_urlsafe(32)
         auth_sessions[session_id] = {
-            "client_id": client_id,
-            "redirect_uri": redirect_uri,
-            "state": state,
-            "scope": scope,
-            "code_challenge": code_challenge,
-            "code_challenge_method": code_challenge_method,
+            "client_id": client_id, "redirect_uri": redirect_uri, "state": state, "scope": scope,
+            "code_challenge": code_challenge, "code_challenge_method": code_challenge_method,
             "created_at": time.time()
         }
         logger.info(f"🆕 Created new OAuth session: {session_id}")
@@ -178,487 +161,63 @@ async def authorize(
         session_id = oauth_session
         logger.info(f"🔄 Using existing OAuth session: {session_id}")
     
-    # MCP OAuth should be self-contained - don't rely on cross-domain cookies  
-    # Instead, always show the authentication page for new sessions
-    # Only skip authentication if we have a valid oauth_session parameter (post-auth callback)
     current_user = None
-    
     if oauth_session:
-        # This is a post-authentication callback - try to detect authentication
         try:
             from app.auth import get_oauth_user
             current_user = await get_oauth_user(request)
-            if current_user:
-                logger.info(f"✅ Post-auth: Found authenticated user: {current_user.email}")
-            else:
-                logger.info("❌ Post-auth: No authenticated user found")
+            if current_user: logger.info(f"✅ Post-auth: Found authenticated user: {current_user.email}")
+            else: logger.info("❌ Post-auth: No authenticated user found")
         except Exception as e:
             logger.error(f"❌ Post-auth user detection error: {e}")
     else:
-        # This is an initial OAuth request - always show login page
         logger.info("🔄 Initial OAuth request - showing login page for self-contained authentication")
     
     client_name = client_info.get("client_name", "Unknown Client")
     
     if current_user:
-        # User is authenticated - auto-approve for Claude
         if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
             logger.info(f"🚀 Auto-approving Claude client for authenticated user: {current_user.email}")
-            
-            # Generate authorization code immediately
             auth_code = secrets.token_urlsafe(32)
-            
-            # Get session data
             session = auth_sessions[session_id]
-            
-            # Get the internal Jean Memory User.id from database
             from app.database import SessionLocal
             from app.models import User
-            
             db = SessionLocal()
             try:
-                # Find internal User record by Supabase user_id
                 internal_user = db.query(User).filter(User.user_id == str(current_user.id)).first()
                 if not internal_user:
                     logger.error(f"No internal User found for Supabase user_id: {current_user.id}")
                     raise HTTPException(status_code=500, detail="User not found in database")
-                
-                # Use internal User.id for JWT token (this is what database queries expect)
                 internal_user_id = str(internal_user.id)
                 logger.info(f"Mapped Supabase user {current_user.id} to internal user {internal_user_id}")
-                
             finally:
                 db.close()
             
-            # Store auth code with user info and PKCE challenge
             auth_sessions[auth_code] = {
-                **session,
-                "user_id": internal_user_id,  # Use internal Jean Memory User.id
-                "supabase_user_id": str(current_user.id),  # Keep for reference
-                "email": current_user.email,
-                "code": auth_code,
-                "authorized_at": time.time(),
-                "client_id": client_id
+                **session, "user_id": internal_user_id, "supabase_user_id": str(current_user.id),
+                "email": current_user.email, "code": auth_code, "authorized_at": time.time(), "client_id": client_id
             }
-            
-            # Clean up original session
             del auth_sessions[session_id]
-            
-            # Redirect back to Claude with auth code
-            params = {
-                "code": auth_code,
-                "state": session["state"]
-            }
+            params = {"code": auth_code, "state": session["state"]}
             redirect_url = f"{session['redirect_uri']}?{urlencode(params)}"
             logger.info(f"🎯 Auto-approval complete - redirecting to Claude: {redirect_url}")
             
             return RedirectResponse(url=redirect_url)
     
-    # Show login/authorization page with preserved OAuth session
-    # Store the session_id in the URL so we can retrieve it after login
-    oauth_session_param = f"oauth_session={session_id}"
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Sign in to Jean Memory</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-        <style>
-            * {{
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }}
-            
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #f8fafc;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 16px;
-            }}
-            
-            .container {{
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                max-width: 400px;
-                width: 100%;
-                padding: 32px;
-                text-align: center;
-            }}
-            
-            .logo {{
-                width: 48px;
-                height: 48px;
-                background: #3b82f6;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin: 0 auto 24px;
-                color: white;
-                font-size: 24px;
-                font-weight: 600;
-            }}
-            
-            h1 {{
-                font-size: 24px;
-                font-weight: 600;
-                color: #1e293b;
-                margin-bottom: 8px;
-            }}
-            
-            p {{
-                color: #64748b;
-                margin-bottom: 32px;
-            }}
-            
-            .client-info {{
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 16px;
-                margin-bottom: 32px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                text-align: left;
-            }}
-            
-            .client-logo {{
-                width: 32px;
-                height: 32px;
-                background: #6366f1;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 600;
-                font-size: 14px;
-            }}
-            
-            .client-name {{
-                font-weight: 500;
-                color: #1e293b;
-            }}
-            
-            .client-desc {{
-                font-size: 12px;
-                color: #64748b;
-            }}
-            
-            .login-button {{
-                background: #3b82f6;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 12px 24px;
-                font-size: 16px;
-                font-weight: 500;
-                cursor: pointer;
-                width: 100%;
-                margin-bottom: 16px;
-                transition: background 0.2s;
-            }}
-            
-            .login-button:hover {{
-                background: #2563eb;
-            }}
-            
-            .login-button:disabled {{
-                background: #94a3b8;
-                cursor: not-allowed;
-            }}
-            
-            .security-text {{
-                font-size: 12px;
-                color: #64748b;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 4px;
-            }}
-            
-            .error {{
-                background: #fef2f2;
-                border: 1px solid #fecaca;
-                color: #dc2626;
-                padding: 12px;
-                border-radius: 6px;
-                margin-bottom: 16px;
-                display: none;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="logo">JM</div>
-            <h1>Sign in to Jean Memory</h1>
-            <p>To connect with {client_name}</p>
-            
-            <div class="client-info">
-                <div class="client-logo">C</div>
-                <div>
-                    <div class="client-name">{client_name}</div>
-                    <div class="client-desc">AI Assistant</div>
-                </div>
-            </div>
-            
-            <div class="error" id="error"></div>
-            
-            <button class="login-button" onclick="signInWithGoogle()" id="loginBtn">
-                Continue with Google
-            </button>
-            
-            <div class="security-text">
-                <span>🔒</span>
-                <span>Secure OAuth 2.0 authentication</span>
-            </div>
-        </div>
-        
-        <script>
-            // Initialize Supabase with RESEARCH-BACKED PKCE configuration
-            const supabase = window.supabase.createClient(
-                'https://masapxpxcwvsjpuymbmd.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w',
-                {{
-                    auth: {{
-                        detectSessionInUrl: true,    // ✅ CRITICAL: Auto-exchange auth codes for sessions
-                        flowType: 'pkce',           // ✅ REQUIRED: PKCE flow for OAuth 2.1
-                        storage: {{                  // ✅ Custom storage for cross-domain compatibility
-                            getItem: (key) => {{
-                                // Parse cookies to find the key
-                                return document.cookie
-                                    .split('; ')
-                                    .find(row => row.startsWith(key + '='))
-                                    ?.split('=')[1];
-                            }},
-                            setItem: (key, value) => {{
-                                // Set cookie with proper security attributes
-                                const isSecure = window.location.protocol === 'https:';
-                                const secureFlag = isSecure ? '; secure' : '';
-                                const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                                document.cookie = `${{key}}=${{value}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                                console.log('🔍 STORAGE - Set cookie:', key, '=', value.substring(0, 20) + '...');
-                            }},
-                            removeItem: (key) => {{
-                                document.cookie = `${{key}}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-                                console.log('🔍 STORAGE - Removed cookie:', key);
-                            }}
-                        }}
-                    }}
-                }}
-            );
-            
-            // RESEARCH-BACKED: Manual code exchange implementation
-            const handleManualCodeExchange = async () => {{
-                const urlParams = new URLSearchParams(window.location.search);
-                const code = urlParams.get('code');
-                
-                if (code) {{
-                    console.log('🔍 MANUAL - Found auth code, attempting exchange:', code);
-                    
-                    try {{
-                        const {{ data, error }} = await supabase.auth.exchangeCodeForSession(code);
-                        
-                        if (error) {{
-                            console.error('🔍 MANUAL - Code exchange failed:', error);
-                            return null;
-                        }}
-                        
-                        if (data.session) {{
-                            console.log('🔍 MANUAL - Code exchange successful:', data.session);
-                            // Set cookies and continue OAuth flow
-                            setCookiesFromSession(data.session);
-                            return data.session;
-                        }}
-                    }} catch (error) {{
-                        console.error('🔍 MANUAL - Code exchange error:', error);
-                    }}
-                }}
-                
-                return null;
-            }};
-            
-            // RESEARCH-BACKED: Helper function to set cookies from session
-            const setCookiesFromSession = (session) => {{
-                if (session && session.access_token) {{
-                    const isSecure = window.location.protocol === 'https:';
-                    const secureFlag = isSecure ? '; secure' : '';
-                    const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                    
-                    // Set multiple cookie formats for compatibility
-                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                    document.cookie = `supabase-auth-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                    
-                    console.log('🔍 COOKIES - Set access token cookies');
-                    console.log('🔍 COOKIES - Domain:', window.location.hostname);
-                    console.log('🔍 COOKIES - Secure:', isSecure);
-                    console.log('🔍 COOKIES - All cookies:', document.cookie);
-                }}
-            }};
-            
-            // RESEARCH-BACKED: Auth state change monitoring
-            const setupAuthStateMonitoring = () => {{
-                supabase.auth.onAuthStateChange((event, session) => {{
-                    console.log('🔍 AUTH STATE CHANGE:', event, session);
-                    
-                    if (event === 'SIGNED_IN' && session) {{
-                        console.log('🔍 AUTH STATE - Sign in detected, setting cookies');
-                        setCookiesFromSession(session);
-                        
-                        // Continue OAuth flow - redirect to callback with session
-                        console.log('🚀 AUTH STATE - Redirecting to OAuth callback');
-                        const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
-                        window.location.replace(callbackUrl);
-                    }}
-                }});
-            }};
-            
-            // Initialize auth state monitoring
-            setupAuthStateMonitoring();
-            
-            async function signInWithGoogle() {{
-                console.log('🔍 DEBUG - signInWithGoogle function called');
-                const button = document.getElementById('loginBtn');
-                const error = document.getElementById('error');
-                
-                if (!button) {{
-                    console.error('❌ DEBUG - Login button not found!');
-                    return;
-                }}
-                
-                button.disabled = true;
-                button.textContent = 'Signing in...';
-                error.style.display = 'none';
-                
-                console.log('🔍 DEBUG - Button updated, starting OAuth flow');
-                
-                try {{
-                    // Build redirect URL with session preservation
-                    const currentUrl = new URL(window.location.href);
-                    
-                    // Add oauth_session parameter if not already present
-                    if (!currentUrl.searchParams.has('oauth_session')) {{
-                        currentUrl.searchParams.set('oauth_session', '{session_id}');
-                    }}
-                    
-                    // Use a specific OAuth callback endpoint that will set cookies properly
-                    const baseUrl = currentUrl.origin;
-                    const bridgeUrl = `https://jeanmemory.com/oauth-bridge.html?oauth_session={session_id}&flow=mcp_oauth`;
-                    
-                    console.log('🔍 DEBUG - Setting up forced MCP OAuth callback');
-                    
-                    // Ensure we're using the exact redirect URL that's configured in Supabase
-                    console.log('🔍 DEBUG - Base URL:', baseUrl);
-                    console.log('🔍 DEBUG - Full bridge URL:', bridgeUrl);
-                    
-                    console.log('🔍 DEBUG - About to call Supabase OAuth with redirect:', bridgeUrl);
-                    console.log('🔍 DEBUG - Current URL:', window.location.href);
-                    console.log('🔍 DEBUG - Session ID:', '{session_id}');
-                    
-                    const result = await supabase.auth.signInWithOAuth({{
-                        provider: 'google',
-                        options: {{
-                            redirectTo: bridgeUrl,
-                            queryParams: {{
-                                oauth_session: '{session_id}',
-                                flow: 'mcp_oauth'
-                            }},
-                            skipBrowserRedirect: false
-                        }}
-                    }});
-                    
-                    // If OAuth redirect fails, Supabase might redirect to main app
-                    // So we add a fallback mechanism to detect this and redirect properly
-                    
-                    console.log('🔍 DEBUG - Supabase OAuth result:', result);
-                    
-                    if (result.error) {{
-                        throw result.error;
-                    }}
-                }} catch (err) {{
-                    console.error('Sign in error:', err);
-                    error.textContent = 'Sign in failed. Please try again.';
-                    error.style.display = 'block';
-                    button.disabled = false;
-                    button.textContent = 'Continue with Google';
-                }}
-            }}
-            
-            // RESEARCH-BACKED: Page load session detection with multiple approaches
-            document.addEventListener('DOMContentLoaded', async function() {{
-                console.log('🔍 PAGE LOAD - Starting comprehensive session detection');
-                
-                // Approach 1: Try manual code exchange if URL has auth code
-                const manualSession = await handleManualCodeExchange();
-                if (manualSession) {{
-                    console.log('🔍 PAGE LOAD - Manual code exchange successful, redirecting');
-                    const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
-                    window.location.replace(callbackUrl);
-                    return;
-                }}
-                
-                // Approach 2: Check for existing session with getSession()
-                const {{ data: {{ session }}, error }} = await supabase.auth.getSession();
-                console.log('🔍 PAGE LOAD - Initial session check:', session, error);
-                
-                if (session) {{
-                    console.log('🔍 PAGE LOAD - Found existing session, setting cookies and redirecting');
-                    setCookiesFromSession(session);
-                    const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
-                    window.location.replace(callbackUrl);
-                    return;
-                }}
-                
-                console.log('🔍 PAGE LOAD - No existing session found, user needs to authenticate');
-            }});
-            
-            // EMERGENCY FALLBACK: If auth doesn't work after 5 seconds, force callback
-            setTimeout(function() {{
-                supabase.auth.getSession().then((result) => {{
-                    const session = result.data.session;
-                    if (session) {{
-                        console.log('⚡ EMERGENCY FALLBACK: Forcing callback after 5s delay');
-                        const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
-                        window.location.replace(callbackUrl);
-                    }} else {{
-                        console.log('⚠️ EMERGENCY FALLBACK: No session found after 5s, trying force-complete');
-                        // Try the emergency force complete endpoint
-                        const forceCompleteUrl = `/oauth/force-complete?oauth_session={session_id}`;
-                        window.location.replace(forceCompleteUrl);
-                    }}
-                }});
-            }}, 5000);
-            
-            // NUCLEAR OPTION: If still no progress after 10 seconds, show manual button
-            setTimeout(function() {{
-                console.log('🚨 NUCLEAR OPTION: Showing manual completion button');
-                const button = document.getElementById('loginBtn');
-                if (button) {{
-                    button.textContent = 'Complete OAuth Manually';
-                    button.onclick = function() {{
-                        window.location.href = `/oauth/force-complete?oauth_session={session_id}`;
-                    }};
-                    button.disabled = false;
-                    button.style.backgroundColor = '#dc2626';
-                }}
-            }}, 10000);
-        </script>
-    </body>
-    </html>
-    """
-    
-    return HTMLResponse(content=html)
+    # Show login/authorization page using the new static template
+    try:
+        with open("app/static/oauth_authorize.html", "r") as f:
+            html_template = f.read()
+    except FileNotFoundError:
+        logger.error("FATAL: oauth_authorize.html template not found!")
+        raise HTTPException(status_code=500, detail="Server misconfiguration: missing OAuth template.")
 
-
+    # Replace placeholders with actual values
+    html_content = html_template.replace("{{CLIENT_NAME}}", client_name)
+    html_content = html_content.replace("{{SESSION_ID}}", session_id)
+    
+    return HTMLResponse(content=html_content)
+    
 @oauth_router.get("/auth-redirect")
 async def universal_auth_redirect(request: Request):
     """Universal auth redirect handler that routes to correct destination based on parameters"""

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign in to Jean Memory</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 400px; width: 100%; padding: 32px; text-align: center; }
+        h1 { font-size: 24px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        p { color: #64748b; margin-bottom: 32px; }
+        .login-button { background: #3b82f6; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 16px; font-weight: 500; cursor: pointer; width: 100%; transition: background 0.2s; }
+        .login-button:hover { background: #2563eb; }
+        .login-button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px; border-radius: 6px; margin-bottom: 16px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sign in to Jean Memory</h1>
+        <p>To connect with {{CLIENT_NAME}}</p>
+        <div class="error" id="error"></div>
+        <button class="login-button" onclick="signInWithGoogle()" id="loginBtn">Continue with Google</button>
+    </div>
+    <script>
+        const session_id = "{{SESSION_ID}}";
+        const supabase = window.supabase.createClient(
+            "https://masapxpxcwvsjpuymbmd.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w",
+            {
+                auth: {
+                    detectSessionInUrl: true,
+                    flowType: 'pkce',
+                }
+            }
+        );
+        async function signInWithGoogle() {
+            const button = document.getElementById('loginBtn');
+            const error = document.getElementById('error');
+            button.disabled = true;
+            button.textContent = 'Signing in...';
+            error.style.display = 'none';
+            const bridgeUrl = `https://jeanmemory.com/oauth-bridge.html?oauth_session=${session_id}&flow=mcp_oauth`;
+            const { error: signInError } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: bridgeUrl,
+                    queryParams: {
+                        oauth_session: session_id,
+                        flow: 'mcp_oauth'
+                    }
+                }
+            });
+            if (signInError) {
+                console.error('Sign in error:', signInError);
+                error.textContent = 'Sign in failed. Please try again.';
+                error.style.display = 'block';
+                button.disabled = false;
+                button.textContent = 'Continue with Google';
+            }
+        }
+    </script>
+</body>
+</html> 
