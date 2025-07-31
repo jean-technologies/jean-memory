@@ -954,176 +954,85 @@ async def oauth_callback(
             <h2>Completing authentication...</h2>
             <p>Please wait while we finalize your connection.</p>
         </div>
-        
-        <script>
-            const supabase = window.supabase.createClient(
-                'https://masapxpxcwvsjpuymbmd.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w',
-                {{
-                    auth: {{
-                        detectSessionInUrl: true,    // ✅ CRITICAL: Auto-exchange auth codes for sessions
-                        flowType: 'pkce',           // ✅ REQUIRED: PKCE flow for OAuth 2.1
-                        storage: {{                  // ✅ Custom storage for cross-domain compatibility
-                            getItem: (key) => {{
-                                return document.cookie
-                                    .split('; ')
-                                    .find(row => row.startsWith(key + '='))
-                                    ?.split('=')[1];
-                            }},
-                            setItem: (key, value) => {{
-                                const isSecure = window.location.protocol === 'https:';
-                                const secureFlag = isSecure ? '; secure' : '';
-                                const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                                document.cookie = `${{key}}=${{value}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                                console.log('🔍 CALLBACK STORAGE - Set cookie:', key);
-                            }},
-                            removeItem: (key) => {{
-                                document.cookie = `${{key}}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-                                console.log('🔍 CALLBACK STORAGE - Removed cookie:', key);
-                            }}
-                        }}
-                    }}
-                }}
-            );
-            
-            // RESEARCH-BACKED: Enhanced session detection with multiple approaches
-            const handleComprehensiveSessionDetection = async () => {{
-                console.log('🔍 CALLBACK - Starting comprehensive session detection');
-                
-                // Approach 1: Manual code exchange if URL has auth code
-                const urlParams = new URLSearchParams(window.location.search);
-                const code = urlParams.get('code');
-                
-                if (code) {{
-                    console.log('🔍 CALLBACK - Found auth code in URL, attempting manual exchange:', code);
-                    
-                    try {{
-                        const {{ data, error }} = await supabase.auth.exchangeCodeForSession(code);
-                        
-                        if (error) {{
-                            console.error('🔍 CALLBACK - Manual code exchange failed:', error);
-                        }} else if (data.session) {{
-                            console.log('🔍 CALLBACK - Manual code exchange successful!');
-                            setCookiesFromSession(data.session);
-                            return data.session;
-                        }}
-                    }} catch (error) {{
-                        console.error('🔍 CALLBACK - Code exchange error:', error);
-                    }}
-                }}
-                
-                // Approach 2: Check existing session
-                try {{
-                    const {{ data: {{ session }}, error }} = await supabase.auth.getSession();
-                    console.log('🔍 CALLBACK - getSession result:', session, error);
-                    
-                    if (session && session.access_token) {{
-                        console.log('🔍 CALLBACK - Found existing session');
-                        setCookiesFromSession(session);
-                        return session;
-                    }}
-                }} catch (error) {{
-                    console.error('🔍 CALLBACK - getSession error:', error);
-                }}
-                
-                console.log('🔍 CALLBACK - No session found through any method');
-                return null;
-            }};
-            
-            // RESEARCH-BACKED: Helper function to set cookies from session
-            const setCookiesFromSession = (session) => {{
-                if (session && session.access_token) {{
+
+        <script type="module">
+            import { createClient } from 'https://unpkg.com/@supabase/supabase-js@2';
+
+            const SUPABASE_URL = '{SUPABASE_URL}';
+            const SUPABASE_ANON_KEY = '{SUPABASE_ANON_KEY}';
+
+            const cookieStorageAdapter = {{
+                getItem: key => document.cookie.split('; ').find(row => row.startsWith(key + '='))?.split('=')[1] || null,
+                setItem: (key, value) => {{
                     const isSecure = window.location.protocol === 'https:';
                     const secureFlag = isSecure ? '; secure' : '';
                     const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                    
-                    // Set multiple cookie formats for compatibility
-                    document.cookie = `sb-access-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                    document.cookie = `supabase-auth-token=${{session.access_token}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                    
-                    console.log('🔍 CALLBACK - Set access token cookies');
-                    console.log('🔍 CALLBACK - Domain:', window.location.hostname);
-                    console.log('🔍 CALLBACK - All cookies:', document.cookie);
+                    document.cookie = `${{key}}=${{value}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
+                }},
+                removeItem: key => document.cookie = `${{key}}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+            }};
+
+            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {{
+                auth: {{
+                    detectSessionInUrl: true,
+                    flowType: 'pkce',
+                    storage: cookieStorageAdapter
                 }}
+            }});
+
+            const setCookiesAndRedirect = (session) => {{
+                if (session && session.access_token) {{
+                    console.log('✅ Session found. Setting cookies and redirecting.', session);
+                    cookieStorageAdapter.setItem('sb-access-token', session.access_token);
+                    if (session.refresh_token) {{
+                        cookieStorageAdapter.setItem('sb-refresh-token', session.refresh_token);
+                    }}
+                    window.location.replace(`{complete_authorize_url}`);
+                    return true;
+                }}
+                return false;
             }};
             
-            // RESEARCH-BACKED: Complete OAuth flow with session
-            const completeOAuthFlow = async (session) => {{
-                if (!session || !session.access_token) {{
-                    console.error('🔍 CALLBACK - No valid session for OAuth completion');
-                    return false;
-                }}
+            const handleAuth = async () => {{
+                console.log('🔍 Starting robust auth handling...');
                 
-                console.log('🚀 CALLBACK - Completing OAuth with session...');
-                
-                try {{
-                    const response = await fetch('/oauth/complete-auth', {{
-                        method: 'POST',
-                        headers: {{
-                            'Content-Type': 'application/json',
-                        }},
-                        body: JSON.stringify({{
-                            access_token: session.access_token,
-                            oauth_session: '{oauth_session}'
-                        }})
-                    }});
-                    
-                    const result = await response.json();
-                    console.log('🔍 CALLBACK - Server response:', result);
-                    
-                    if (response.ok && result.redirect_url) {{
-                        console.log('🎯 CALLBACK - Redirecting to Claude:', result.redirect_url);
-                        window.location.replace(result.redirect_url);
-                        return true;
-                    }} else {{
-                        console.error('❌ CALLBACK - Server error:', result);
-                        return false;
+                // Fallback listener in case direct methods fail
+                let signedIn = false;
+                supabase.auth.onAuthStateChange((event, session) => {{
+                    if (event === 'SIGNED_IN' && !signedIn) {{
+                        signedIn = true;
+                        console.log('✅ Caught SIGNED_IN event.');
+                        setCookiesAndRedirect(session);
                     }}
-                }} catch (error) {{
-                    console.error('❌ CALLBACK - Network error:', error);
-                    return false;
+                }});
+
+                // Give the listener a moment to fire if detectSessionInUrl works
+                await new Promise(resolve => setTimeout(resolve, 250));
+                if (signedIn) return;
+                
+                // Manual Code Exchange
+                const code = new URLSearchParams(window.location.search).get('code');
+                if (code) {{
+                    console.log('🔍 Found code. Attempting manual exchange...');
+                    const {{ data, error }} = await supabase.auth.exchangeCodeForSession(code);
+                    if (data && data.session) {{
+                        console.log('✅ Manual exchange successful.');
+                        if (setCookiesAndRedirect(data.session)) return;
+                    }}
                 }}
+
+                // Final check with getSession
+                console.log('🔍 Checking with getSession()...');
+                const {{ data }} = await supabase.auth.getSession();
+                if (data && data.session) {{
+                    console.log('✅ Found session with getSession().');
+                    if (setCookiesAndRedirect(data.session)) return;
+                }}
+                
+                console.error('❌ Could not establish session after all methods.');
             }};
-            
-            // RESEARCH-BACKED: Auth state change handler with enhanced detection
-            supabase.auth.onAuthStateChange(async (event, session) => {{
-                console.log('🔍 CALLBACK - Auth state change:', event, session);
-                
-                if (event === 'SIGNED_IN' && session) {{
-                    console.log('🔍 CALLBACK - Sign in event detected');
-                    setCookiesFromSession(session);
-                    await completeOAuthFlow(session);
-                }}
-            }});
-            
-            // RESEARCH-BACKED: Primary session detection using comprehensive approach
-            document.addEventListener('DOMContentLoaded', async function() {{
-                console.log('🔍 CALLBACK - Page loaded, starting comprehensive session detection');
-                
-                const session = await handleComprehensiveSessionDetection();
-                
-                if (session) {{
-                    console.log('🚀 CALLBACK - Session detected, completing OAuth flow');
-                    const success = await completeOAuthFlow(session);
-                    
-                    if (!success) {{
-                        console.log('🔍 CALLBACK - OAuth completion failed, redirecting to authorize');
-                        const authorizeUrl = '{complete_authorize_url}';
-                        window.location.replace(authorizeUrl);
-                    }}
-                }} else {{
-                    console.log('🔍 CALLBACK - No session found, redirecting to authorize page');
-                    const authorizeUrl = '{complete_authorize_url}';
-                    window.location.replace(authorizeUrl);
-                }}
-            }});
-            
-            // Add overall error handler
-            window.addEventListener('error', function(e) {{
-                console.error('🔍 CALLBACK - JavaScript error:', e.error);
-            }});
-            
-            console.log('🔍 CALLBACK - Script initialization complete');
+
+            handleAuth();
         </script>
     </body>
     </html>
