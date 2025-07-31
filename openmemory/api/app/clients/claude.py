@@ -217,7 +217,7 @@ class ClaudeProfile(BaseClientProfile):
                             "include_inactive": {
                                 "type": "boolean",
                                 "description": "Include agents that haven't been active recently",
-                                "default": false
+                                "default": False
                             }
                         }
                     }
