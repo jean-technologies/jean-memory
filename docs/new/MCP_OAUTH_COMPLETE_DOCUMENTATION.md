@@ -639,7 +639,121 @@ app.add_middleware(
 - Others suggest ensuring proper OAuth 2.1 compliance with all required headers
 - Production deployment issues may require specific domain/SSL configurations
 
-## Key Learnings (Updated)
+## FINAL DEBUGGING SESSION (July 30, 2025 - Late Night)
+
+### Problem Statement: Claude Web Connector Must Work
+
+**User's Critical Point:** "There's simply no way that this is just a Claude Web issue. People must have figured this shit out. Why would they have an option for a custom web connector for MCP if that wasn't the case?"
+
+**This is absolutely correct.** Claude Web's custom MCP connector option exists because it works. The issue must be in our implementation, not in Claude's system.
+
+### Current Status Analysis
+
+**What We Know Works:**
+```
+✅ OAuth Discovery: /.well-known/oauth-authorization-server → 200 OK
+✅ Client Registration: POST /oauth/register → Auto-registration successful  
+✅ Authorization Flow: GET /oauth/authorize → Login page displays
+✅ Token Exchange: POST /oauth/token → PKCE validation successful
+✅ MCP Request Processing: POST /mcp → Server processes resources/list method
+✅ HTTP Transport: Claude is using HTTP (not SSE) as expected
+```
+
+**What's Broken:**
+```
+❌ Claude Web UI Connection Status: Shows "disconnected" despite everything working
+❌ MCP Tools Unavailable: User cannot access Jean Memory tools in Claude Web
+❌ Connection Persistence: OAuth completes but connection doesn't stick
+```
+
+### Deep Dive: What Are We Missing?
+
+**Evidence from Logs:**
+```
+2025-07-30 23:44:52,235 - 🎯 [CLAUDE CONNECTION] Method: resources/list - User: 7c14eba4... - Client: claude - OAuth: True
+INFO: 2a06:98c0:3600::103:0 - "POST /mcp/messages/ HTTP/1.1" 200 OK
+```
+
+**This shows Claude IS successfully:**
+1. Making authenticated OAuth requests
+2. Calling MCP methods (resources/list)
+3. Getting successful 200 responses
+
+**But the UI still shows disconnected. This suggests:**
+
+### Theory 1: Missing MCP Protocol Handshake
+
+**Problem:** Claude may require a specific MCP initialization handshake that we're not completing properly.
+
+**Evidence:** Community reports mention that MCP servers need to respond to `initialize` method calls with specific capability advertisements.
+
+**Our Current Initialize Response:** We route to existing MCP logic, but maybe it's not returning the exact format Claude Web expects.
+
+### Theory 2: Connection State Management Issue
+
+**Problem:** Claude Web may require persistent connection state that gets lost after OAuth.
+
+**Evidence:** OAuth works, single requests work, but the connection doesn't persist in the UI.
+
+**Potential Issue:** After OAuth completion, Claude Web may need to establish a persistent connection that we're not maintaining.
+
+### Theory 3: Response Format Mismatch
+
+**Problem:** Our MCP responses may not match exactly what Claude Web expects.
+
+**Evidence:** Server processes requests successfully but Claude UI doesn't reflect the connection.
+
+**Investigation Needed:** Compare our responses with working MCP server implementations.
+
+### Theory 4: Transport Protocol Configuration
+
+**Problem:** Claude Web may require specific HTTP transport configuration or headers.
+
+**Evidence:** Community mentions different transport protocols and configuration requirements.
+
+**Potential Fix:** Ensure we're implementing HTTP transport exactly as Claude Web expects.
+
+### Immediate Action Plan
+
+**Phase 1: MCP Protocol Compliance Verification**
+1. **Test with MCP Inspector** - Isolate if this is Claude-specific
+2. **Compare Initialize Response** - Ensure exact MCP protocol compliance
+3. **Verify Response Formats** - Check all MCP method responses match spec
+
+**Phase 2: Connection State Investigation**
+1. **Monitor Claude Web Network Tab** - See exactly what requests fail
+2. **Test Connection Persistence** - Check if connection drops after OAuth
+3. **Review MCP Session Management** - Ensure proper session handling
+
+**Phase 3: Working Implementation Research**
+1. **Find Working Examples** - Research successful Claude Web MCP implementations
+2. **Protocol Specification Review** - Deep dive into MCP spec requirements
+3. **Community Solution Search** - Find others who solved this exact issue
+
+### Updated Implementation Strategy
+
+**Instead of assuming this is a Claude Web bug, we need to:**
+
+1. **Assume our implementation has a gap** - Something is missing that prevents proper connection
+2. **Find working examples** - Research successful Claude Web MCP OAuth implementations  
+3. **Test incrementally** - Use MCP Inspector to isolate the issue
+4. **Protocol compliance first** - Ensure 100% MCP spec compliance before blaming Claude
+
+### Next Steps (Ordered by Priority)
+
+1. **🔬 MCP Inspector Testing** - Test our server with Inspector to verify MCP protocol compliance
+2. **📋 Response Format Audit** - Compare our responses with MCP specification examples
+3. **🔍 Working Implementation Research** - Find examples of successful Claude Web MCP OAuth servers
+4. **🌐 Network Traffic Analysis** - Monitor Claude Web's network requests during connection attempts
+5. **⚡ Protocol Handshake Review** - Ensure proper MCP initialization and capability negotiation
+
+### Key Insight
+
+**The user is absolutely right.** Claude Web wouldn't have a custom MCP connector option if it didn't work reliably. The issue is in our implementation - we're missing something that prevents the connection from being properly established and maintained in Claude Web's UI.
+
+**Our OAuth and MCP processing work, but we're not completing the full connection establishment protocol that Claude Web requires.**
+
+## Key Learnings (Updated - Final)
 
 1. **Cross-Domain Cookie Security** - Browser security prevents cookie sharing across domains
 2. **Self-Contained OAuth Flows** - MCP OAuth should not rely on external authentication 
@@ -651,5 +765,7 @@ app.add_middleware(
 8. **Supabase Redirect Configuration Critical** - OAuth flows fail if Supabase redirects to wrong domain
 9. **Production Flow Preservation** - OAuth implementations must not break existing authentication flows
 10. **OAuth Success ≠ Connection Persistence** - Successful OAuth and MCP processing doesn't guarantee Claude UI shows connection
-11. **Claude Web OAuth Proxy Issues** - Community reports suggest Claude's internal OAuth proxy has production deployment bugs
-12. **MCP Inspector Testing Essential** - Isolate Claude-specific issues from general MCP compatibility problems
+11. **Claude Web Connector DOES Work** - If Claude offers it, there are working implementations
+12. **Protocol Compliance Gap** - Our implementation is missing something for proper connection establishment
+13. **MCP Inspector Testing Critical** - Must verify protocol compliance before assuming Claude Web issues
+14. **Working Examples Exist** - Other developers have solved this - we need to find their solutions

@@ -108,7 +108,7 @@ export function AnalysisPanel() {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-card/20 backdrop-blur-sm border border-border rounded-xl flex flex-col h-full"
+      className="bg-card/20 backdrop-blur-sm border border-border rounded-xl flex flex-col h-full min-h-0"
     >
       {/* Sticky Header */}
       <div className="px-6 pt-6 pb-4 border-b border-border/50 flex-shrink-0">
