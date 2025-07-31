@@ -1,5 +1,8 @@
+import logging
 from typing import Dict, Any, List
 from .base import BaseClientProfile
+
+logger = logging.getLogger(__name__)
 
 
 class ClaudeProfile(BaseClientProfile):
@@ -23,8 +26,20 @@ class ClaudeProfile(BaseClientProfile):
         Returns the JSON schema for the original tools, which is the default for Claude.
         Enhanced for multi-agent session awareness.
         """
+        logger.info(f"🔧 [CLAUDE PROFILE] get_tools_schema called with session_info: {session_info}")
+        
         # Determine if this is a multi-agent session
         is_multi_agent = session_info and session_info.get("is_multi_agent", False)
+        
+        logger.info(f"🔧 [CLAUDE PROFILE] is_multi_agent: {is_multi_agent}")
+        
+        # Debug: Check if we can access MCP registered tools
+        try:
+            from app.mcp_instance import mcp
+            mcp_tools = getattr(mcp._mcp_server, 'request_handlers', {}).get('tools/call', {})
+            logger.info(f"🔧 [CLAUDE PROFILE] MCP registered tools: {list(mcp_tools.keys()) if isinstance(mcp_tools, dict) else 'Not accessible'}")
+        except Exception as e:
+            logger.error(f"🔧 [CLAUDE PROFILE] Error accessing MCP tools: {e}")
         
         # Base tool description
         jean_memory_description = "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations."
@@ -69,6 +84,8 @@ class ClaudeProfile(BaseClientProfile):
             
             # Planning tools (available to planner agent only)
             logger.info(f"🔧 CLAUDE PROFILE DEBUG - Agent ID: '{agent_id}', Session Info: {session_info}")
+            logger.info(f"🔧 CLAUDE PROFILE DEBUG - Agent ID type: {type(agent_id)}, value repr: {repr(agent_id)}")
+            logger.info(f"🔧 CLAUDE PROFILE DEBUG - Checking if agent_id == 'planner': {agent_id == 'planner'}")
             if agent_id == 'planner':
                 logger.info("🎯 Adding planner-specific coordination tools")
                 tools.extend([
@@ -216,6 +233,7 @@ class ClaudeProfile(BaseClientProfile):
                 if tool["name"] in annotations_map:
                     tool["annotations"] = annotations_map[tool["name"]]
         
+        logger.info(f"🔧 [CLAUDE PROFILE] Returning {len(tools)} tools: {[tool['name'] for tool in tools]}")
         return tools
 
     async def handle_tool_call(
