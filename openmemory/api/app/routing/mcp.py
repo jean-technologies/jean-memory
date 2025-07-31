@@ -284,10 +284,12 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
         elif method_name == "tools/list":
             client_version = params.get("protocolVersion", "2024-11-05")
-            # Pass session info to client profile for multi-agent awareness
+            # Pass session info and client name to client profile for multi-agent awareness
+            enhanced_session_info = session_info.copy()
+            enhanced_session_info["client_name"] = client_name_from_header
             tools_schema = client_profile.get_tools_schema(
                 include_annotations=(client_version == "2025-03-26"),
-                session_info=session_info
+                session_info=enhanced_session_info
             )
             logger.info(f"🔍 TOOLS/LIST DEBUG - Client: {client_key}, Session: {session_info.get('session_id', 'single')}, Schema: {json.dumps(tools_schema, indent=2)}")
             return JSONResponse(content={"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id})

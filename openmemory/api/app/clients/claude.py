@@ -28,10 +28,14 @@ class ClaudeProfile(BaseClientProfile):
         """
         logger.info(f"🔧 [CLAUDE PROFILE] get_tools_schema called with session_info: {session_info}")
         
-        # Determine if this is a multi-agent session
-        is_multi_agent = session_info and session_info.get("is_multi_agent", False)
+        # Get client name from session info
+        client_name = session_info.get("client_name", "") if session_info else ""
         
-        logger.info(f"🔧 [CLAUDE PROFILE] is_multi_agent: {is_multi_agent}")
+        # Determine if this is a multi-agent session AND specifically Claude Code
+        is_multi_agent = session_info and session_info.get("is_multi_agent", False)
+        is_claude_code = client_name.lower() == "claude code"
+        
+        logger.info(f"🔧 [CLAUDE PROFILE] client_name: '{client_name}', is_claude_code: {is_claude_code}, is_multi_agent: {is_multi_agent}")
         
         # Debug: Check if we can access MCP registered tools
         try:
@@ -44,8 +48,8 @@ class ClaudeProfile(BaseClientProfile):
         # Base tool description
         jean_memory_description = "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations."
         
-        # Add multi-agent session context if applicable
-        if is_multi_agent:
+        # Add multi-agent session context if applicable (only for Claude Code)
+        if is_multi_agent and is_claude_code:
             jean_memory_description += f"\n\n🔄 MULTI-AGENT SESSION ACTIVE:\n• Session: {session_info.get('session_id', 'unknown')}\n• Agent: {session_info.get('agent_id', 'unknown')}\n• Cross-terminal coordination enabled for collision-free development"
         
         tools = [
@@ -78,8 +82,10 @@ class ClaudeProfile(BaseClientProfile):
             }
         ]
 
-        # Add coordination tools for multi-agent sessions
-        if is_multi_agent:
+        # Add coordination tools for multi-agent sessions (Claude Code only)
+        if is_multi_agent and not is_claude_code:
+            logger.warning(f"🚨 SECURITY: Multi-agent coordination tools blocked for non-Claude Code client: '{client_name}'. Only Claude Code is authorized for coordination tools.")
+        elif is_multi_agent and is_claude_code:
             agent_id = session_info.get('agent_id', 'unknown')
             
             # Planning tools (available to planner agent only)
