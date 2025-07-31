@@ -19,6 +19,7 @@ from app.tools.debug import (
     debug_get_qdrant_payload,
 )
 from app.tools.coordination import (
+    setup_multi_agent_coordination,
     analyze_task_conflicts,
     create_task_distribution,
     claim_file_lock,
@@ -44,6 +45,7 @@ tool_registry = {
     "get_memory_details": get_memory_details,
     "debug_get_qdrant_payload": debug_get_qdrant_payload,
     # Multi-agent coordination tools
+    "setup_multi_agent_coordination": setup_multi_agent_coordination,
     "analyze_task_conflicts": analyze_task_conflicts,
     "create_task_distribution": create_task_distribution,
     "claim_file_lock": claim_file_lock,
