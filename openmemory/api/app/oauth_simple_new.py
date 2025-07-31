@@ -920,125 +920,23 @@ async def oauth_callback(
         authorize_params["code_challenge_method"] = session_data.get("code_challenge_method", "S256")
     
     # Build the complete authorize URL
-    complete_authorize_url = f"/oauth/authorize?{urlencode(authorize_params)}"
-    logger.info(f"🎯 Complete authorize URL with all parameters: {complete_authorize_url}")
+    authorize_url_with_params = f"/oauth/authorize?{urlencode(authorize_params)}"
+    logger.info(f"🎯 Complete authorize URL with all parameters: {authorize_url_with_params}")
     
-    # RESEARCH-BACKED: Enhanced session detection with multiple approaches
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Processing Authentication...</title>
-        <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #f8fafc;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-            }}
-            .container {{
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                padding: 32px;
-                max-width: 400px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>Completing authentication...</h2>
-            <p>Please wait while we finalize your connection.</p>
-        </div>
+    # Read the HTML template from the file
+    try:
+        with open("app/static/oauth_callback.html", "r") as f:
+            html_template = f.read()
+    except FileNotFoundError:
+        logger.error("FATAL: oauth_callback.html template not found!")
+        raise HTTPException(status_code=500, detail="Server misconfiguration: missing OAuth template.")
 
-        <script type="module">
-            import { createClient } from 'https://unpkg.com/@supabase/supabase-js@2';
-
-            const SUPABASE_URL = '{SUPABASE_URL}';
-            const SUPABASE_ANON_KEY = '{SUPABASE_ANON_KEY}';
-
-            const cookieStorageAdapter = {{
-                getItem: key => document.cookie.split('; ').find(row => row.startsWith(key + '='))?.split('=')[1] || null,
-                setItem: (key, value) => {{
-                    const isSecure = window.location.protocol === 'https:';
-                    const secureFlag = isSecure ? '; secure' : '';
-                    const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                    document.cookie = `${{key}}=${{value}}; path=/; max-age=3600${{sameSiteFlag}}${{secureFlag}}`;
-                }},
-                removeItem: key => document.cookie = `${{key}}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
-            }};
-
-            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {{
-                auth: {{
-                    detectSessionInUrl: true,
-                    flowType: 'pkce',
-                    storage: cookieStorageAdapter
-                }}
-            }});
-
-            const setCookiesAndRedirect = (session) => {{
-                if (session && session.access_token) {{
-                    console.log('✅ Session found. Setting cookies and redirecting.', session);
-                    cookieStorageAdapter.setItem('sb-access-token', session.access_token);
-                    if (session.refresh_token) {{
-                        cookieStorageAdapter.setItem('sb-refresh-token', session.refresh_token);
-                    }}
-                    window.location.replace(`{complete_authorize_url}`);
-                    return true;
-                }}
-                return false;
-            }};
-            
-            const handleAuth = async () => {{
-                console.log('🔍 Starting robust auth handling...');
-                
-                // Fallback listener in case direct methods fail
-                let signedIn = false;
-                supabase.auth.onAuthStateChange((event, session) => {{
-                    if (event === 'SIGNED_IN' && !signedIn) {{
-                        signedIn = true;
-                        console.log('✅ Caught SIGNED_IN event.');
-                        setCookiesAndRedirect(session);
-                    }}
-                }});
-
-                // Give the listener a moment to fire if detectSessionInUrl works
-                await new Promise(resolve => setTimeout(resolve, 250));
-                if (signedIn) return;
-                
-                // Manual Code Exchange
-                const code = new URLSearchParams(window.location.search).get('code');
-                if (code) {{
-                    console.log('🔍 Found code. Attempting manual exchange...');
-                    const {{ data, error }} = await supabase.auth.exchangeCodeForSession(code);
-                    if (data && data.session) {{
-                        console.log('✅ Manual exchange successful.');
-                        if (setCookiesAndRedirect(data.session)) return;
-                    }}
-                }}
-
-                // Final check with getSession
-                console.log('🔍 Checking with getSession()...');
-                const {{ data }} = await supabase.auth.getSession();
-                if (data && data.session) {{
-                    console.log('✅ Found session with getSession().');
-                    if (setCookiesAndRedirect(data.session)) return;
-                }}
-                
-                console.error('❌ Could not establish session after all methods.');
-            }};
-
-            handleAuth();
-        </script>
-    </body>
-    </html>
-    """
+    # Replace placeholders with actual values
+    html_content = html_template.replace("{{SUPABASE_URL}}", config.SUPABASE_URL)
+    html_content = html_content.replace("{{SUPABASE_ANON_KEY}}", config.SUPABASE_ANON_KEY)
+    html_content = html_content.replace("{{AUTHORIZE_URL}}", authorize_url_with_params)
     
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html_content)
 
 
 @oauth_router.post("/token")
