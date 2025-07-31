@@ -162,6 +162,10 @@ async def proxy_to_v2_logic(
             response_content = json.loads(response.body)
             logger.info(f"✅ V2 logic completed for {method}")
             
+            # Special logging for initialize response
+            if method == 'initialize':
+                logger.warning(f"🔥 INITIALIZE RESPONSE: {str(response_content)[:500]}...")
+            
             # Special logging for tools responses
             if method.startswith('tools/'):
                 if method == 'tools/list':
