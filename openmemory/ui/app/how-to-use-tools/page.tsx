@@ -13,16 +13,23 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const primaryTools = [
   {
     name: "jean_memory",
-    icon: <BrainCircuit className="w-6 h-6 text-gray-700 dark:text-gray-300" />,
+    icon: <BrainCircuit className="w-7 h-7 text-blue-600 dark:text-blue-400" />,
     description: "The intelligent memory layer that automatically learns from every conversation and provides relevant context when you need it. Simply use this tool and Jean Memory handles everything else.",
-    example: "jean_memory: 'Working on a new React component today' (is_new_conversation: true)",
-    badge: "Primary"
+    examples: [
+      "jean_memory: 'I just finished my morning workout' (is_new_conversation: true)",
+      "jean_memory: 'What did I work on yesterday?' (needs_context: true)",
+      "jean_memory: 'I prefer dark mode in my apps' (is_new_conversation: false)"
+    ],
+    badge: "Primary",
+    isHighlighted: true
   },
   {
     name: "store_document",
     icon: <FileText className="w-6 h-6 text-gray-700 dark:text-gray-300" />,
     description: "Store large documents, files, or lengthy content. Perfect for saving meeting notes, documentation, or articles for future reference.",
-    example: 'store_document: { title: "Q3 Planning Notes", content: "..." }',
+    examples: [
+      'store_document: { title: "Meeting Notes", content: "..." }'
+    ],
     badge: "Documents"
   }
 ];
@@ -68,9 +75,9 @@ export default function HowToUsePage() {
     <ProtectedRoute>
       <div className="relative min-h-screen w-full bg-background">
       <div className="absolute inset-0 z-0 h-full w-full">
-        <ParticleNetwork id="how-to-use-particles" className="h-full w-full" interactive={false} particleCount={80} />
+        <ParticleNetwork id="how-to-use-particles" className="h-full w-full" interactive={false} particleCount={120} />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/80 to-background z-5" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background z-5" />
       
       <div className="relative z-10 container mx-auto px-4 py-16 max-w-4xl">
         <motion.div
@@ -101,14 +108,14 @@ export default function HowToUsePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 * (index + 1) }}
               >
-                <Card className="bg-card hover:bg-card/80 transition-colors duration-200">
+                <Card className={`${tool.isHighlighted ? 'bg-card border-2 border-blue-200 dark:border-blue-800 shadow-lg' : 'bg-card'} hover:bg-card/80 transition-colors duration-200`}>
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <div className="p-2 bg-secondary rounded-md">{tool.icon}</div>
+                      <div className={`p-3 ${tool.isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-secondary'} rounded-md`}>{tool.icon}</div>
                       <div className="flex-1">
                         <CardTitle className="flex items-center gap-2 font-mono text-lg mb-2">
                           {tool.name}
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant={tool.isHighlighted ? "default" : "secondary"} className={`text-xs ${tool.isHighlighted ? 'bg-blue-600 text-white' : ''}`}>
                             {tool.badge}
                           </Badge>
                         </CardTitle>
@@ -117,11 +124,15 @@ export default function HowToUsePage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="bg-muted/50 rounded p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Example:</p>
-                      <pre className="text-xs text-foreground/80 overflow-x-auto">
-                        <code>{tool.example}</code>
-                      </pre>
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">Examples:</p>
+                      {tool.examples.map((example, i) => (
+                        <div key={i} className="bg-muted/50 rounded p-3">
+                          <pre className="text-xs text-foreground/80 overflow-x-auto">
+                            <code>{example}</code>
+                          </pre>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
