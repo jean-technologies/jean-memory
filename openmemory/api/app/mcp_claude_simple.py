@@ -16,10 +16,10 @@ from starlette.datastructures import MutableHeaders
 
 logger = logging.getLogger(__name__)
 
-mcp_router = APIRouter(tags=["mcp"])
+oauth_mcp_router = APIRouter(tags=["oauth-mcp"])
 
 
-@mcp_router.post("/mcp")
+@oauth_mcp_router.post("/mcp")
 async def mcp_server(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -65,7 +65,7 @@ async def mcp_server(
     return response
 
 
-@mcp_router.get("/mcp/health")  
+@oauth_mcp_router.get("/mcp/health")  
 async def mcp_health(user: dict = Depends(get_current_user)):
     """Health check for MCP server with auth"""
     
@@ -77,7 +77,7 @@ async def mcp_health(user: dict = Depends(get_current_user)):
     }
 
 
-@mcp_router.get("/mcp/status")
+@oauth_mcp_router.get("/mcp/status")
 async def mcp_status():
     """Public MCP server status - no auth required for testing"""
     
@@ -92,7 +92,7 @@ async def mcp_status():
     }
 
 
-@mcp_router.post("/mcp/initialize")
+@oauth_mcp_router.post("/mcp/initialize")
 async def mcp_initialize(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -126,7 +126,7 @@ async def mcp_initialize(
     return response
 
 
-@mcp_router.post("/mcp/capabilities")
+@oauth_mcp_router.post("/mcp/capabilities")
 async def mcp_capabilities(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -160,13 +160,13 @@ async def mcp_capabilities(
     return response
 
 
-@mcp_router.options("/mcp")
+@oauth_mcp_router.options("/mcp")
 async def mcp_options():
     """Handle OPTIONS requests for CORS"""
     return {"status": "ok"}
 
 
-@mcp_router.options("/mcp/initialize") 
+@oauth_mcp_router.options("/mcp/initialize") 
 async def mcp_initialize_options():
     """Handle OPTIONS requests for CORS"""
     return {"status": "ok"}

@@ -46,6 +46,7 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
     # 2. Set Context and Get Client Profile
     logger.info(f"🔧 [MCP Context] Setting context variables for user: {user_id_from_header}, client: {client_name_from_header}")
+    logger.info(f"🎯 [CLAUDE CONNECTION] Method: {body.get('method', 'unknown')} - User: {user_id_from_header} - Client: {client_name_from_header} - OAuth: {not is_api_key_path}")
     user_token = user_id_var.set(user_id_from_header)
     client_token = client_name_var.set(client_name_from_header)
     tasks_token = background_tasks_var.set(background_tasks)
