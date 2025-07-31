@@ -287,15 +287,30 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
         elif method_name == "tools/list":
             client_version = params.get("protocolVersion", "2024-11-05")
+            
+            # DETAILED DEBUG: Log everything about this request
+            logger.warning(f"🚨 TOOLS/LIST FULL REQUEST DEBUG:")
+            logger.warning(f"   📋 Headers: {dict(request.headers)}")
+            logger.warning(f"   📋 Body: {body}")
+            logger.warning(f"   📋 User ID from header: '{user_id_from_header}'")
+            logger.warning(f"   📋 Client name from header: '{client_name_from_header}'")
+            logger.warning(f"   📋 Session info: {session_info}")
+            logger.warning(f"   📋 Client key: '{client_key}'")
+            logger.warning(f"   📋 Client version: '{client_version}'")
+            
             # Pass session info and client name to client profile for multi-agent awareness
             enhanced_session_info = session_info.copy()
             enhanced_session_info["client_name"] = client_name_from_header
-            logger.info(f"🔄 Enhanced session info being passed to client profile: {enhanced_session_info}")
+            logger.warning(f"   📋 Enhanced session info: {enhanced_session_info}")
+            
             tools_schema = client_profile.get_tools_schema(
                 include_annotations=(client_version == "2025-03-26"),
                 session_info=enhanced_session_info
             )
-            logger.info(f"🔍 TOOLS/LIST DEBUG - Client: {client_key}, Session: {session_info.get('session_id', 'single')}, Schema: {json.dumps(tools_schema, indent=2)}")
+            
+            logger.warning(f"   📋 Returned {len(tools_schema)} tools: {[t['name'] for t in tools_schema]}")
+            logger.warning(f"🚨 END TOOLS/LIST DEBUG")
+            
             return JSONResponse(content={"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id})
 
         elif method_name == "tools/call":
