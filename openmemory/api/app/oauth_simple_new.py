@@ -713,6 +713,28 @@ async def oauth_callback(
         logger.error(f"Invalid OAuth session: {oauth_session}")
         raise HTTPException(status_code=400, detail="Invalid OAuth session")
     
+    # Get the session data to build the complete authorize URL
+    session_data = auth_sessions[oauth_session]
+    
+    # Build the complete authorize URL with all original OAuth parameters
+    authorize_params = {
+        "client_id": session_data["client_id"],
+        "redirect_uri": session_data["redirect_uri"],
+        "response_type": "code",
+        "state": session_data["state"],
+        "scope": session_data.get("scope", "read write"),
+        "oauth_session": oauth_session
+    }
+    
+    # Add PKCE parameters if present
+    if session_data.get("code_challenge"):
+        authorize_params["code_challenge"] = session_data["code_challenge"]
+        authorize_params["code_challenge_method"] = session_data.get("code_challenge_method", "S256")
+    
+    # Build the complete authorize URL
+    complete_authorize_url = f"/oauth/authorize?{urlencode(authorize_params)}"
+    logger.info(f"🎯 Complete authorize URL with all parameters: {complete_authorize_url}")
+    
     # The user should now be authenticated via Supabase cookies
     # Extract the session from URL fragments (Supabase sets them)
     html = f"""
@@ -781,9 +803,9 @@ async def oauth_callback(
                     
                     console.log('🚀 CALLBACK - Cookies set, redirecting to authorize...');
                     
-                    // Redirect back to the OAuth authorize endpoint with the session
-                    const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
-                    console.log('🎯 CALLBACK - Final redirect to authorize:', authorizeUrl);
+                    // Redirect to the complete authorize URL with all OAuth parameters
+                    const authorizeUrl = '{complete_authorize_url}';
+                    console.log('🎯 CALLBACK - Final redirect to authorize with all parameters:', authorizeUrl);
                     window.location.replace(authorizeUrl);
                 }}
             }});
@@ -815,14 +837,14 @@ async def oauth_callback(
                     
                     console.log('🚀 CALLBACK - Cookies set, redirecting to authorize...');
                     
-                    // Redirect back to the OAuth authorize endpoint with the session
-                    const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
-                    console.log('🎯 CALLBACK - Final redirect to authorize:', authorizeUrl);
+                    // Redirect to the complete authorize URL with all OAuth parameters
+                    const authorizeUrl = '{complete_authorize_url}';
+                    console.log('🎯 CALLBACK - Final redirect to authorize with all parameters:', authorizeUrl);
                     window.location.replace(authorizeUrl);
                 }} else {{
                     console.log('Callback: No session found, redirecting back to authorize');
-                    // Redirect back without session - will show login page again
-                    const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
+                    // Redirect to the complete authorize URL with all OAuth parameters
+                    const authorizeUrl = '{complete_authorize_url}';
                     window.location.href = authorizeUrl;
                 }}
             }});
