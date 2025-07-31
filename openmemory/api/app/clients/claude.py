@@ -82,6 +82,29 @@ class ClaudeProfile(BaseClientProfile):
             }
         ]
 
+        # Add streamlined multi-agent coordination for Claude Code clients
+        if is_claude_code:
+            tools.append({
+                "name": "setup_multi_agent_coordination",
+                "description": "🚀 STREAMLINED: Automatically detect multi-agent requests and set up complete coordination workflow from single user prompt. Triggers when user mentions 'Jean Memory multi-agent coordination'.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "user_message": {
+                            "type": "string",
+                            "description": "The complete user message containing tasks and multi-agent coordination request"
+                        },
+                        "force_agent_count": {
+                            "type": "integer",
+                            "minimum": 2,
+                            "maximum": 5,
+                            "description": "Force specific number of agents (optional)"
+                        }
+                    },
+                    "required": ["user_message"]
+                }
+            })
+
         # Add coordination tools for multi-agent sessions (Claude Code only)
         if is_multi_agent and not is_claude_code:
             logger.warning(f"🚨 SECURITY: Multi-agent coordination tools blocked for non-Claude Code client: '{client_name}'. Only Claude Code is authorized for coordination tools.")

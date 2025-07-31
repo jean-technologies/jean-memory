@@ -2,7 +2,7 @@
 
 ## Implementation Overview
 
-This guide provides a practical roadmap for implementing the Claude Code multi-agent workflow using **multi-terminal coordination** with database-backed cross-session communication.
+This guide provides a practical roadmap for implementing the Claude Code multi-agent workflow using **enhanced MCP tools with multi-terminal coordination** and database-backed cross-session communication.
 
 ## ✅ Phase 1 Status: COMPLETE (January 2025)
 
