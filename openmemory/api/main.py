@@ -26,6 +26,7 @@ from app.routers.agent_mcp import agent_mcp_router
 from app.routers.local_auth import router as local_auth_router
 from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import oauth_mcp_router
+from app.routers.fastmcp_oauth import fastmcp_router
 import asyncio
 
 # Configure logging
@@ -321,6 +322,8 @@ app.include_router(oauth_router)  # OAuth server at /oauth/*
 
 # MCP server endpoint for Claude Web with Streamable HTTP Transport (2025-03-26)
 app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp with OAuth + Streamable HTTP
+# FastMCP OAuth implementation (RFC 7591 DCR compliant)
+app.include_router(fastmcp_router)  # FastMCP OAuth endpoints at /fastmcp/*
 
 # OAuth discovery at root level for Claude
 @app.get("/.well-known/oauth-authorization-server")
