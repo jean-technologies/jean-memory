@@ -66,23 +66,34 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
         if method_name == "initialize":
             client_version = params.get("protocolVersion", "2024-11-05")
-            use_annotations = client_version == "2025-03-26"
-            protocol_version = "2025-03-26" if use_annotations else "2024-11-05"
             
-            # For the older protocol, just signal tool support.
-            # For the newer protocol, provide the full list.
-            if use_annotations:
+            # WORKAROUND: If client requests the buggy '2024-11-05' protocol,
+            # upgrade to '2025-03-26' and send the tool list immediately.
+            if client_version == "2024-11-05":
+                protocol_version = "2025-03-26"
                 tools_schema = client_profile.get_tools_schema(include_annotations=True)
                 capabilities = {
-                    "tools": {"list": tools_schema, "listChanged": False}, 
-                    "logging": {}, 
+                    "tools": {"list": tools_schema, "listChanged": False},
+                    "logging": {},
                     "sampling": {}
                 }
             else:
-                capabilities = {
-                    "tools": {"listChanged": True}  # Signal tools are available for discovery
-                }
-            
+                # For newer, compliant clients, respect their requested protocol.
+                protocol_version = client_version
+                use_annotations = protocol_version == "2025-03-26"
+                if use_annotations:
+                    tools_schema = client_profile.get_tools_schema(include_annotations=True)
+                    capabilities = {
+                        "tools": {"list": tools_schema, "listChanged": False},
+                        "logging": {},
+                        "sampling": {}
+                    }
+                else:
+                    # Fallback for future protocol versions we don't fully support yet.
+                    capabilities = {
+                        "tools": {"listChanged": True}
+                    }
+
             return JSONResponse(content={
                 "jsonrpc": "2.0",
                 "result": {
