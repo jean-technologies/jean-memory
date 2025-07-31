@@ -42,9 +42,11 @@
         // Use the global `supabase` object provided by the script in the <head>
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
+                // We are intentionally NOT setting a custom storage adapter here.
+                // Supabase's default `localStorage` adapter is required for the
+                // PKCE flow to correctly store and retrieve the code_verifier.
                 detectSessionInUrl: true, 
                 flowType: 'pkce',
-                storage: cookieStorageAdapter,
             },
         });
 
