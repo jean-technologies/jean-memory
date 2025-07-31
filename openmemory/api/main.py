@@ -26,7 +26,6 @@ from app.routers.agent_mcp import agent_mcp_router
 from app.routers.local_auth import router as local_auth_router
 from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import oauth_mcp_router
-from app.mcp_streamable_http import mcp_streamable_router
 import asyncio
 
 # Configure logging
@@ -320,11 +319,8 @@ app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - 
 # OAuth 2.0 endpoints for Claude Web
 app.include_router(oauth_router)  # OAuth server at /oauth/*
 
-# MCP server endpoint for Claude Web  
-app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp (Bearer token)
-
-# MCP Streamable HTTP Transport (2025-03-26 specification)
-app.include_router(mcp_streamable_router)  # Modern Streamable HTTP transport
+# MCP server endpoint for Claude Web with Streamable HTTP Transport (2025-03-26)
+app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp with OAuth + Streamable HTTP
 
 # OAuth discovery at root level for Claude
 @app.get("/.well-known/oauth-authorization-server")

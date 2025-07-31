@@ -18,10 +18,10 @@ def test_streamable_http_transport():
     print("🧪 Testing MCP Streamable HTTP Transport (2025-03-26)")
     print("=" * 60)
     
-    # Test 1: Check new endpoint availability
-    print("1. Testing Streamable HTTP endpoint availability...")
+    # Test 1: Check upgraded endpoint availability
+    print("1. Testing upgraded /mcp endpoint with Streamable HTTP...")
     try:
-        response = requests.get(f"{API_BASE}/mcp-stream/status", timeout=10)
+        response = requests.get(f"{API_BASE}/mcp/status", timeout=10)
         if response.status_code == 200:
             status = response.json()
             print("✅ Streamable HTTP endpoint is available")
@@ -60,7 +60,7 @@ def test_streamable_http_transport():
     }
     
     try:
-        response = requests.post(f"{API_BASE}/mcp-stream", 
+        response = requests.post(f"{API_BASE}/mcp", 
                                json=initialize_request, 
                                headers=headers, 
                                timeout=10)
@@ -83,7 +83,7 @@ def test_streamable_http_transport():
     }
     
     try:
-        response = requests.get(f"{API_BASE}/mcp-stream", 
+        response = requests.get(f"{API_BASE}/mcp", 
                               headers=get_headers, 
                               timeout=5)
         
@@ -101,7 +101,7 @@ def test_streamable_http_transport():
     print("\n4. Testing CORS support...")
     
     try:
-        response = requests.options(f"{API_BASE}/mcp-stream", 
+        response = requests.options(f"{API_BASE}/mcp", 
                                   headers={"Origin": "https://claude.ai"}, 
                                   timeout=10)
         
@@ -143,7 +143,7 @@ def test_streamable_http_transport():
     ]
     
     try:
-        response = requests.post(f"{API_BASE}/mcp-stream",
+        response = requests.post(f"{API_BASE}/mcp",
                                json=batch_request,
                                headers=headers,
                                timeout=10)
@@ -209,11 +209,11 @@ def main():
         print("   1. Deploy updated implementation to production")
         print("   2. Test Claude Web connection with new /mcp-stream endpoint")
         print("   3. Monitor connection persistence in Claude Web UI")
-        print("   4. Use URL: https://jean-memory-api-virginia.onrender.com/mcp-stream")
+        print("   4. Use URL: https://jean-memory-api-virginia.onrender.com/mcp")
         print()
         print("🔗 CLAUDE WEB SETUP:")
         print("   Add as remote MCP server with OAuth:")
-        print("   Server URL: https://jean-memory-api-virginia.onrender.com/mcp-stream")
+        print("   Server URL: https://jean-memory-api-virginia.onrender.com/mcp")
         print("   Transport: Streamable HTTP")
         print("   Authentication: OAuth 2.1")
         
