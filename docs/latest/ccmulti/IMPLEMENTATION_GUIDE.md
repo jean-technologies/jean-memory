@@ -13,9 +13,38 @@ This guide provides a practical roadmap for implementing the Claude Code multi-a
 - Multi-terminal MCP connections via HTTP v2 transport
 - Tested with planner and implementer agents in separate terminals
 
-**Minor Issues Identified:**
-- Database schema missing `updated_at` column (using `last_activity` instead)
-- Enhanced tool descriptions not fully displaying multi-agent context
+## 🚧 Phase 2 Status: IN PROGRESS (January 2025)
+
+**✅ Completed Implementation:**
+- All 5 coordination tools implemented in `/app/tools/coordination.py`:
+  - `analyze_task_conflicts` - Task analysis and agent distribution planning
+  - `create_task_distribution` - Terminal command and prompt generation
+  - `claim_file_lock` - Cross-session file locking
+  - `sync_progress` - Progress broadcasting across terminals
+  - `check_agent_status` - Agent monitoring
+- Tools registered in `tool_registry.py`
+- Claude profile schema updated with coordination tool definitions
+- Database schema deployed to Supabase with 4 coordination tables
+- MCP decorators added to all coordination functions
+- Multi-terminal MCP connections tested (3 terminals: planner + 2 implementers)
+
+**❌ Current Blocking Issue:**
+- **Tools Not Appearing in MCP Interface**: Despite being implemented and registered, coordination tools are not showing up in Claude Code's tools list
+- **Root Cause**: Unknown - tools are properly defined in Claude profile schema and registered in tool registry
+- **Debug Status**: Added logging to diagnose agent_id parsing and tool schema generation
+
+**🔍 Investigation Results:**
+- Tools schema contains all 5 coordination tools with proper MCP schemas
+- Agent ID parsing logic appears correct for virtual user ID pattern
+- MCP connections established successfully but only show 2 tools (`jean_memory`, `store_document`)
+- Tool registry contains all coordination functions
+- No obvious filtering or conditional logic preventing tool exposure
+
+**Next Steps to Unblock:**
+1. **Debug Deployment**: Check server logs for tool schema generation errors
+2. **MCP Protocol Investigation**: Verify if tools are being filtered during MCP protocol transmission
+3. **Schema Validation**: Ensure tool schemas pass MCP validation requirements
+4. **Alternative Approach**: Consider bypassing tool schema and using direct function calls if MCP exposure fails
 
 This guide provides a practical roadmap for implementing the Claude Code multi-agent workflow leveraging **native Claude Code subagents and hooks** with minimal custom development required.
 

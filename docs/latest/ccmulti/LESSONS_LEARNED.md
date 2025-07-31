@@ -98,6 +98,47 @@ CREATE TABLE claude_code_agents (
 **🎯 Update from Claude Code MCP Implementation**:
 - **HTTP transport with `--transport http` flag works perfectly** - no stdio/SSE needed
 - **Direct backend URL pattern `/mcp/v2/claude/{user_id}` is reliable**
+
+## 🚧 Phase 2: Current Debugging Insights (January 2025)
+
+### ❌ Current Challenge: MCP Tool Schema Not Exposing Coordination Tools
+
+**🔍 What We've Discovered:**
+1. **Implementation is Complete**: All 5 coordination tools fully implemented with proper function signatures
+2. **Schema Definition Working**: Tools properly defined in Claude profile `get_tools_schema()` method
+3. **Tool Registry Functional**: All coordination functions registered and callable via `tool_registry`
+4. **MCP Connections Stable**: Multi-terminal connections establish successfully
+5. **Virtual User ID Parsing Correct**: Agent ID and session ID parsing logic validated
+
+**❌ The Problem:**
+- Despite complete implementation, coordination tools don't appear in Claude Code's MCP tools list
+- Only baseline tools (`jean_memory`, `store_document`) are exposed to Claude Code sessions
+- Tool schema contains 7 tools but MCP interface only shows 2
+
+**🔧 Debugging Attempts Made:**
+1. **Added MCP Decorators**: Applied `@mcp.tool` decorators to all coordination functions (redundant but attempted)
+2. **Ensured Module Import**: Added explicit import of coordination module to register decorators
+3. **Fixed Required Parameters**: Made `project_files` optional in `analyze_task_conflicts` schema
+4. **Added Debug Logging**: Inserted logging to trace agent_id parsing and tool schema generation
+5. **Verified Tool Registry**: Confirmed all coordination tools present in centralized registry
+
+**🎯 Leading Theories:**
+1. **MCP Protocol Filtering**: Claude Code MCP client may be filtering tools based on schema validation
+2. **Schema Validation Issues**: Tool schemas may contain errors preventing exposure
+3. **Session Context Bugs**: Agent ID detection (`if agent_id == 'planner'`) may be failing
+4. **Tool Schema Size Limits**: Large tool schemas might be truncated during MCP transmission
+
+**✅ What's Working:**
+- Multi-terminal MCP connections establish without errors
+- Virtual user ID parsing correctly extracts session and agent information
+- Database coordination tables created and accessible
+- Tool implementation logic tested and functional
+- Base MCP tools (`jean_memory`, `store_document`) working perfectly
+
+**❌ What's Not Working:**
+- Coordination tools not appearing in Claude Code MCP tools list
+- Agent-specific tool filtering (planner vs implementer tools)
+- Tool schema transmission from server to Claude Code client
 - **Supergateway bridges are unnecessary** - direct HTTP is simpler and faster
 
 ### ❌ Blocker 2: Tool Loading Failures  
