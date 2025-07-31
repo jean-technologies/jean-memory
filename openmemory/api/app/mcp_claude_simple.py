@@ -76,11 +76,16 @@ async def mcp_oauth_proxy(
         if isinstance(body, list):
             methods = [msg.get('method', 'unknown') for msg in body]
             logger.warning(f"🔍 BATCH REQUEST: Methods: {methods}")
+            # Check for tools/list in batch
+            if any('tools/list' in method for method in methods):
+                logger.warning(f"🔥🔥🔥 CLAUDE CALLED TOOLS/LIST IN BATCH! Methods: {methods} 🔥🔥🔥")
         else:
             method = body.get('method', 'unknown')
             logger.warning(f"🔍 SINGLE REQUEST: Method: {method}")
             if method == 'tools/list':
                 logger.warning(f"🔥🔥🔥 CLAUDE IS CALLING TOOLS/LIST ON OAUTH PROXY! 🔥🔥🔥")
+            elif method == 'initialize':
+                logger.warning(f"🔥 INITIALIZE REQUEST: params={body.get('params', {})}")
         
         # Handle batch requests
         if isinstance(body, list):
@@ -196,21 +201,64 @@ async def proxy_to_v2_logic(
 
 
 @oauth_mcp_router.get("/mcp")
-async def mcp_get_not_supported(user: dict = Depends(get_current_user)):
+async def mcp_streaming_endpoint(user: dict = Depends(get_current_user)):
     """
-    Handle GET requests to /mcp endpoint
+    Handle GET requests to /mcp endpoint for Server-Sent Events streaming
     
-    This transport uses direct HTTP POST only (no SSE streams).
-    Return a clear message to indicate this is not a streaming transport.
+    Claude Web may require SSE streaming for proper connection persistence.
+    This provides a streaming endpoint to maintain connection state.
     """
-    return JSONResponse(
-        status_code=200,
-        content={
-            "transport": "oauth-proxy",
-            "protocol": "MCP",
-            "message": "This endpoint uses direct HTTP transport only. Send POST requests for MCP operations.",
-            "streaming": False,
-            "user": user["email"]
+    from fastapi.responses import StreamingResponse
+    import asyncio
+    import json
+    import datetime
+    
+    logger.warning(f"🔥 SSE STREAM REQUESTED by {user['email']} - Claude may need streaming connection")
+    
+    async def event_generator():
+        try:
+            # Send initial connection event
+            yield f"event: connection\ndata: {json.dumps({'status': 'connected', 'user': user['email']})}\n\n"
+            
+            # Send capabilities immediately to signal tools are available
+            capabilities_event = {
+                "event": "capabilities",
+                "capabilities": {
+                    "tools": {"listChanged": True},
+                    "resources": {},
+                    "prompts": {}
+                },
+                "protocolVersion": "2024-11-05",
+                "serverInfo": {"name": "Jean Memory", "version": "1.0.0"}
+            }
+            yield f"event: capabilities\ndata: {json.dumps(capabilities_event)}\n\n"
+            
+            # Keep connection alive with periodic heartbeats
+            while True:
+                try:
+                    await asyncio.sleep(30)  # 30 second heartbeat
+                    heartbeat = {
+                        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+                        "status": "alive",
+                        "user": user["email"]
+                    }
+                    yield f"event: heartbeat\ndata: {json.dumps(heartbeat)}\n\n"
+                except asyncio.CancelledError:
+                    logger.info(f"SSE connection closed for {user['email']}")
+                    break
+                    
+        except Exception as e:
+            logger.error(f"SSE stream error for {user['email']}: {e}")
+            yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control",
         }
     )
 
