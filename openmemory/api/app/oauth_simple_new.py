@@ -552,22 +552,22 @@ async def authorize(
                     
                     // Use a specific OAuth callback endpoint that will set cookies properly
                     const baseUrl = currentUrl.origin;
-                    const callbackUrl = baseUrl + '/oauth/auth-redirect?oauth_session={session_id}&flow=mcp_oauth';
+                    const bridgeUrl = `https://jeanmemory.com/oauth-bridge.html?oauth_session={session_id}&flow=mcp_oauth`;
                     
                     console.log('🔍 DEBUG - Setting up forced MCP OAuth callback');
                     
                     // Ensure we're using the exact redirect URL that's configured in Supabase
                     console.log('🔍 DEBUG - Base URL:', baseUrl);
-                    console.log('🔍 DEBUG - Full callback URL:', callbackUrl);
+                    console.log('🔍 DEBUG - Full bridge URL:', bridgeUrl);
                     
-                    console.log('🔍 DEBUG - About to call Supabase OAuth with redirect:', callbackUrl);
+                    console.log('🔍 DEBUG - About to call Supabase OAuth with redirect:', bridgeUrl);
                     console.log('🔍 DEBUG - Current URL:', window.location.href);
                     console.log('🔍 DEBUG - Session ID:', '{session_id}');
                     
                     const result = await supabase.auth.signInWithOAuth({{
                         provider: 'google',
                         options: {{
-                            redirectTo: callbackUrl,
+                            redirectTo: bridgeUrl,
                             queryParams: {{
                                 oauth_session: '{session_id}',
                                 flow: 'mcp_oauth'
