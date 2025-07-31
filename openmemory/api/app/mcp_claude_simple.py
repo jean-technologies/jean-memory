@@ -116,11 +116,15 @@ async def mcp_streamable_post(
                     "last_activity": datetime.now(timezone.utc).isoformat()
                 }
                 
-                logger.info(f"Created MCP session: {new_session_id} for user {user['email']}")
+                logger.info(f"🎯 INITIALIZE: Created MCP session {new_session_id} for user {user['email']}")
+                logger.info(f"🎯 INITIALIZE: Active sessions count: {len(active_sessions)}")
+                logger.info(f"🎯 INITIALIZE: Response content: {response}")
                 
                 # Create JSON response with session header
                 json_response = JSONResponse(content=response)
                 json_response.headers["mcp-session-id"] = new_session_id
+                
+                logger.info(f"🎯 INITIALIZE: Added session header: mcp-session-id={new_session_id}")
                 return json_response
             
             return JSONResponse(content=response)
@@ -285,7 +289,14 @@ async def process_single_message(
     # Extract JSON content from response
     if hasattr(response, 'body'):
         try:
-            return json.loads(response.body)
+            response_content = json.loads(response.body)
+            
+            # For initialize method, preserve the response structure for session header logic
+            if message.get("method") == "initialize":
+                logger.info(f"Initialize method response: {response_content}")
+                return response_content
+            
+            return response_content
         except (json.JSONDecodeError, AttributeError):
             return None
     elif isinstance(response, dict):
