@@ -69,11 +69,10 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
             use_annotations = client_version == "2025-03-26"
             protocol_version = "2025-03-26" if use_annotations else "2024-11-05"
             
-            # Get the tools schema to include in the capabilities
-            tools_schema = client_profile.get_tools_schema(include_annotations=use_annotations)
-            
-            # Properly advertise tool capabilities, including the schema directly
+            # For the older protocol, just signal tool support.
+            # For the newer protocol, provide the full list.
             if use_annotations:
+                tools_schema = client_profile.get_tools_schema(include_annotations=True)
                 capabilities = {
                     "tools": {"list": tools_schema, "listChanged": False}, 
                     "logging": {}, 
@@ -81,7 +80,7 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
                 }
             else:
                 capabilities = {
-                    "tools": tools_schema
+                    "tools": {}  # Correct for 2024-11-05 spec
                 }
             
             return JSONResponse(content={
