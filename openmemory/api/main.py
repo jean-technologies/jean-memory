@@ -317,8 +317,8 @@ app.include_router(agent_mcp_router) # New secure agent endpoint
 app.include_router(migration_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])  # Migration status endpoint
 app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - verified by signature)
 
-# OAuth 2.0 endpoints for Claude Web
-app.include_router(oauth_router)  # OAuth server at /oauth/*
+# OAuth 2.0 endpoints for Claude Web - RE-ENABLED FOR FASTMCP
+app.include_router(oauth_router)  # OAuth server at /oauth/* - NEED THIS FOR OAUTH ENDPOINTS
 
 # MCP server endpoint for Claude Web with Streamable HTTP Transport (2025-03-26)
 app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp with OAuth + Streamable HTTP

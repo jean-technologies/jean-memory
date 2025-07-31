@@ -584,6 +584,27 @@ async def universal_auth_redirect(request: Request):
         # This is MCP OAuth, redirect to our callback
         callback_url = f"/oauth/callback?oauth_session={oauth_session}&flow=mcp_oauth"
         return RedirectResponse(url=callback_url)
+    elif flow == "mcp_oauth":
+        # MCP OAuth flow but missing session - try to find active session
+        logger.info("🔍 MCP OAuth flow detected but missing session - checking for active sessions")
+        
+        # Find the most recent OAuth session
+        if auth_sessions:
+            # Get the most recent session (sessions are created with timestamp)
+            recent_sessions = [(session_id, session_data) for session_id, session_data in auth_sessions.items() 
+                             if 'created_at' in session_data and not session_data.get('code')]
+            
+            if recent_sessions:
+                # Sort by creation time and get the most recent
+                recent_sessions.sort(key=lambda x: x[1]['created_at'], reverse=True)
+                most_recent_session = recent_sessions[0][0]
+                
+                logger.info(f"🔄 Using most recent OAuth session: {most_recent_session}")
+                callback_url = f"/oauth/callback?oauth_session={most_recent_session}&flow=mcp_oauth"
+                return RedirectResponse(url=callback_url)
+        
+        logger.warning("⚠️ MCP OAuth flow but no active sessions found")
+        return RedirectResponse(url="https://jeanmemory.com")
     else:
         logger.info("🔄 Regular app login detected - redirecting to main app")
         # This is regular app login, redirect to main app
