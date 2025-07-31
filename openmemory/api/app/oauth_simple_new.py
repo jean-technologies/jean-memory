@@ -871,9 +871,12 @@ async def oauth_callback(
             // Handle the authentication callback - send session to server
             supabase.auth.onAuthStateChange(async (event, session) => {{
                 console.log('🔍 CALLBACK DEBUG - Auth state change:', event, session);
+                console.log('🔍 CALLBACK DEBUG - Event type:', event);
+                console.log('🔍 CALLBACK DEBUG - Session exists:', !!session);
                 if (event === 'SIGNED_IN' && session) {{
                     console.log('🚀 CALLBACK - User signed in, sending session to server...');
                     console.log('🔍 CALLBACK DEBUG - Session access token:', session.access_token?.substring(0, 20) + '...');
+                    console.log('🔍 CALLBACK DEBUG - About to call /oauth/complete-auth');
                     
                     try {{
                         // Send the access token to our server to complete OAuth
@@ -909,13 +912,18 @@ async def oauth_callback(
                 }}
             }});
             
-            // Check for existing session
+            // Check for existing session - PRIMARY PATH
+            console.log('🔍 CALLBACK - Starting session check...');
             supabase.auth.getSession().then(async (result) => {{
                 const session = result.data.session;
-                console.log('Callback: Initial session check:', session);
-                if (session) {{
-                    console.log('Callback: Found existing session, sending to server...');
-                    console.log('🔍 DEBUG - Existing session access token:', session.access_token?.substring(0, 20) + '...');
+                console.log('🔍 CALLBACK - Initial session check result:', result);
+                console.log('🔍 CALLBACK - Session data:', session);
+                console.log('🔍 CALLBACK - Session exists:', !!session);
+                
+                if (session && session.access_token) {{
+                    console.log('🚀 CALLBACK - Found existing session, sending to server...');
+                    console.log('🔍 CALLBACK - Session access token:', session.access_token?.substring(0, 20) + '...');
+                    console.log('🔍 CALLBACK - About to call /oauth/complete-auth');
                     
                     try {{
                         // Send the access token to our server to complete OAuth
@@ -949,12 +957,25 @@ async def oauth_callback(
                         window.location.replace(authorizeUrl);
                     }}
                 }} else {{
-                    console.log('Callback: No session found, redirecting back to authorize');
+                    console.log('🔍 CALLBACK - No session found in getSession()');
+                    console.log('🔍 CALLBACK - Will redirect back to authorize page');
                     // Redirect to the complete authorize URL with all OAuth parameters
                     const authorizeUrl = '{complete_authorize_url}';
                     window.location.href = authorizeUrl;
                 }}
+            }}).catch(error => {{
+                console.error('🔍 CALLBACK - Error in getSession():', error);
+                // Fallback to authorize page
+                const authorizeUrl = '{complete_authorize_url}';
+                window.location.href = authorizeUrl;
             }});
+            
+            // Add overall error handler
+            window.addEventListener('error', function(e) {{
+                console.error('🔍 CALLBACK - JavaScript error:', e.error);
+            }});
+            
+            console.log('🔍 CALLBACK - Script initialization complete');
         </script>
     </body>
     </html>
