@@ -690,6 +690,100 @@ async def force_oauth_completion(request: Request, oauth_session: str):
         raise HTTPException(status_code=500, detail=f"OAuth completion failed: {str(e)}")
 
 
+@oauth_router.post("/complete-auth")
+async def complete_oauth_with_token(request: Request):
+    """Complete OAuth flow using Supabase access token from client"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = await request.json()
+        access_token = data.get('access_token')
+        oauth_session = data.get('oauth_session')
+        
+        logger.info(f"🔄 OAuth completion with token for session: {oauth_session}")
+        
+        if not access_token or not oauth_session:
+            logger.error("❌ Missing access_token or oauth_session")
+            return {"error": "Missing required parameters"}
+        
+        if oauth_session not in auth_sessions:
+            logger.error(f"❌ Invalid OAuth session: {oauth_session}")
+            return {"error": "Invalid OAuth session"}
+        
+        # Get user info from Supabase using the access token
+        from app.auth import get_service_client
+        supabase = await get_service_client()
+        
+        # Use the access token to get user info
+        try:
+            user_response = supabase.auth.get_user(access_token)
+            if not user_response.user:
+                logger.error("❌ Invalid Supabase token")
+                return {"error": "Invalid authentication token"}
+            
+            current_user = user_response.user
+            logger.info(f"✅ Retrieved user from token: {current_user.email}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get user from token: {e}")
+            return {"error": "Failed to validate authentication token"}
+        
+        # Get session data
+        session_data = auth_sessions[oauth_session]
+        client_id = session_data["client_id"]
+        redirect_uri = session_data["redirect_uri"]
+        state = session_data["state"]
+        
+        # Generate authorization code
+        auth_code = secrets.token_urlsafe(32)
+        
+        # Get the internal User.id from database
+        from app.database import SessionLocal
+        from app.models import User
+        
+        db = SessionLocal()
+        try:
+            internal_user = db.query(User).filter(User.user_id == str(current_user.id)).first()
+            if not internal_user:
+                logger.error(f"❌ No internal User found for Supabase user_id: {current_user.id}")
+                return {"error": "User not found in database"}
+            
+            internal_user_id = str(internal_user.id)
+            logger.info(f"✅ Mapped Supabase user {current_user.id} to internal user {internal_user_id}")
+            
+        finally:
+            db.close()
+        
+        # Store auth code with user info and PKCE challenge
+        auth_sessions[auth_code] = {
+            **session_data,
+            "user_id": internal_user_id,
+            "supabase_user_id": str(current_user.id),
+            "email": current_user.email,
+            "code": auth_code,
+            "authorized_at": time.time(),
+            "client_id": client_id
+        }
+        
+        # Clean up original session
+        del auth_sessions[oauth_session]
+        
+        # Build redirect URL back to Claude
+        params = {
+            "code": auth_code,
+            "state": state
+        }
+        redirect_url = f"{redirect_uri}?{urlencode(params)}"
+        logger.info(f"🎯 OAuth completion successful - redirecting to Claude: {redirect_url}")
+        
+        return {"redirect_url": redirect_url}
+        
+    except Exception as e:
+        logger.error(f"❌ OAuth completion failed: {e}")
+        return {"error": f"OAuth completion failed: {str(e)}"}
+
+
 @oauth_router.get("/callback")
 async def oauth_callback(
     request: Request,
@@ -774,39 +868,44 @@ async def oauth_callback(
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w'
             );
             
-            // Handle the authentication callback and set cookies
+            // Handle the authentication callback - send session to server
             supabase.auth.onAuthStateChange(async (event, session) => {{
                 console.log('🔍 CALLBACK DEBUG - Auth state change:', event, session);
                 if (event === 'SIGNED_IN' && session) {{
-                    console.log('🚀 CALLBACK - User signed in, setting cookies and redirecting...');
-                    console.log('🔍 CALLBACK DEBUG - Session details:', session);
-                    console.log('🔍 CALLBACK DEBUG - Current URL:', window.location.href);
-                    console.log('🔍 CALLBACK DEBUG - Current domain:', window.location.hostname);
-                    console.log('🔍 CALLBACK DEBUG - Current protocol:', window.location.protocol);
+                    console.log('🚀 CALLBACK - User signed in, sending session to server...');
+                    console.log('🔍 CALLBACK DEBUG - Session access token:', session.access_token?.substring(0, 20) + '...');
                     
-                    // Set the auth token in a cookie with proper settings for OAuth
-                    const isSecure = window.location.protocol === 'https:';
-                    const secureFlag = isSecure ? '; secure' : '';
-                    const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                    
-                    const accessTokenCookie = 'sb-access-token=' + session.access_token + '; path=/; max-age=3600' + sameSiteFlag + secureFlag;
-                    const refreshTokenCookie = 'sb-refresh-token=' + session.refresh_token + '; path=/; max-age=604800' + sameSiteFlag + secureFlag;
-                    
-                    console.log('🔍 DEBUG - Setting access token cookie:', accessTokenCookie);
-                    console.log('🔍 DEBUG - Setting refresh token cookie:', refreshTokenCookie);
-                    
-                    document.cookie = accessTokenCookie;
-                    document.cookie = refreshTokenCookie;
-                    
-                    // Verify cookies were set
-                    console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
-                    
-                    console.log('🚀 CALLBACK - Cookies set, redirecting to authorize...');
-                    
-                    // Redirect to the complete authorize URL with all OAuth parameters
-                    const authorizeUrl = '{complete_authorize_url}';
-                    console.log('🎯 CALLBACK - Final redirect to authorize with all parameters:', authorizeUrl);
-                    window.location.replace(authorizeUrl);
+                    try {{
+                        // Send the access token to our server to complete OAuth
+                        const response = await fetch('/oauth/complete-auth', {{
+                            method: 'POST',
+                            headers: {{
+                                'Content-Type': 'application/json',
+                            }},
+                            body: JSON.stringify({{
+                                access_token: session.access_token,
+                                oauth_session: '{oauth_session}'
+                            }})
+                        }});
+                        
+                        const result = await response.json();
+                        console.log('🔍 CALLBACK - Server response:', result);
+                        
+                        if (response.ok && result.redirect_url) {{
+                            console.log('🎯 CALLBACK - Redirecting to:', result.redirect_url);
+                            window.location.replace(result.redirect_url);
+                        }} else {{
+                            console.error('❌ CALLBACK - Server error:', result);
+                            // Fallback to showing login page again
+                            const authorizeUrl = '{complete_authorize_url}';
+                            window.location.replace(authorizeUrl);
+                        }}
+                    }} catch (error) {{
+                        console.error('❌ CALLBACK - Network error:', error);
+                        // Fallback to showing login page again
+                        const authorizeUrl = '{complete_authorize_url}';
+                        window.location.replace(authorizeUrl);
+                    }}
                 }}
             }});
             
@@ -815,32 +914,40 @@ async def oauth_callback(
                 const session = result.data.session;
                 console.log('Callback: Initial session check:', session);
                 if (session) {{
-                    console.log('Callback: Found existing session, setting cookies and redirecting...');
-                    console.log('🔍 DEBUG - Existing session details:', session);
-                    console.log('🔍 DEBUG - Current URL:', window.location.href);
-                    console.log('🔍 DEBUG - Current domain:', window.location.hostname);
+                    console.log('Callback: Found existing session, sending to server...');
+                    console.log('🔍 DEBUG - Existing session access token:', session.access_token?.substring(0, 20) + '...');
                     
-                    // Set the auth token in a cookie with proper settings for OAuth
-                    const isSecure = window.location.protocol === 'https:';
-                    const secureFlag = isSecure ? '; secure' : '';
-                    const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
-                    
-                    const accessTokenCookie = 'sb-access-token=' + session.access_token + '; path=/; max-age=3600' + sameSiteFlag + secureFlag;
-                    const refreshTokenCookie = 'sb-refresh-token=' + session.refresh_token + '; path=/; max-age=604800' + sameSiteFlag + secureFlag;
-                    
-                    console.log('🔍 DEBUG - Setting cookies:', accessTokenCookie, refreshTokenCookie);
-                    
-                    document.cookie = accessTokenCookie;
-                    document.cookie = refreshTokenCookie;
-                    
-                    console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
-                    
-                    console.log('🚀 CALLBACK - Cookies set, redirecting to authorize...');
-                    
-                    // Redirect to the complete authorize URL with all OAuth parameters
-                    const authorizeUrl = '{complete_authorize_url}';
-                    console.log('🎯 CALLBACK - Final redirect to authorize with all parameters:', authorizeUrl);
-                    window.location.replace(authorizeUrl);
+                    try {{
+                        // Send the access token to our server to complete OAuth
+                        const response = await fetch('/oauth/complete-auth', {{
+                            method: 'POST',
+                            headers: {{
+                                'Content-Type': 'application/json',
+                            }},
+                            body: JSON.stringify({{
+                                access_token: session.access_token,
+                                oauth_session: '{oauth_session}'
+                            }})
+                        }});
+                        
+                        const result = await response.json();
+                        console.log('🔍 CALLBACK - Server response:', result);
+                        
+                        if (response.ok && result.redirect_url) {{
+                            console.log('🎯 CALLBACK - Redirecting to:', result.redirect_url);
+                            window.location.replace(result.redirect_url);
+                        }} else {{
+                            console.error('❌ CALLBACK - Server error:', result);
+                            // Fallback to showing login page again
+                            const authorizeUrl = '{complete_authorize_url}';
+                            window.location.replace(authorizeUrl);
+                        }}
+                    }} catch (error) {{
+                        console.error('❌ CALLBACK - Network error:', error);
+                        // Fallback to showing login page again  
+                        const authorizeUrl = '{complete_authorize_url}';
+                        window.location.replace(authorizeUrl);
+                    }}
                 }} else {{
                     console.log('Callback: No session found, redirecting back to authorize');
                     // Redirect to the complete authorize URL with all OAuth parameters
