@@ -33,7 +33,7 @@ class ClaudeProfile(BaseClientProfile):
         
         # Determine if this is a multi-agent session AND specifically Claude Code
         is_multi_agent = session_info and session_info.get("is_multi_agent", False)
-        is_claude_code = client_name.lower() == "claude code"
+        is_claude_code = client_name.lower() in ["claude code", "claude-code"]
         
         logger.info(f"🔧 [CLAUDE PROFILE] client_name: '{client_name}', is_claude_code: {is_claude_code}, is_multi_agent: {is_multi_agent}")
         
