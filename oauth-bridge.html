@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Bridge - Redirecting...</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 32px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>Completing authentication...</h1>
+        <p>Redirecting you back to Claude...</p>
+    </div>
+
+    <script>
+        // This page handles the case where Supabase redirects to the main app
+        // instead of our OAuth callback. It detects the OAuth session and redirects properly.
+        
+        console.log('OAuth Bridge: Starting...');
+        console.log('Current URL:', window.location.href);
+        
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(
+            'https://masapxpxcwvsjpuymbmd.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w'
+        );
+        
+        // Check URL parameters for oauth_session
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthSession = urlParams.get('oauth_session') || urlParams.get('callback_type');
+        
+        console.log('OAuth Bridge: URL params:', Object.fromEntries(urlParams));
+        console.log('OAuth Bridge: OAuth session:', oauthSession);
+        
+        // Check if we have an active Supabase session
+        supabase.auth.getSession().then(async (result) => {
+            const session = result.data.session;
+            console.log('OAuth Bridge: Supabase session:', session);
+            
+            if (session && oauthSession) {
+                console.log('OAuth Bridge: Found session and oauth_session, redirecting to API callback...');
+                
+                // Redirect to the correct OAuth callback with the session
+                const callbackUrl = `https://jean-memory-api-virginia.onrender.com/oauth/callback?oauth_session=${oauthSession}`;
+                console.log('OAuth Bridge: Redirecting to:', callbackUrl);
+                
+                window.location.href = callbackUrl;
+            } else if (session && !oauthSession) {
+                console.log('OAuth Bridge: Found session but no oauth_session parameter');
+                console.log('This might be a normal app login, not OAuth flow');
+                
+                // Check if this looks like an OAuth redirect
+                const fragment = window.location.hash;
+                if (fragment.includes('access_token') || fragment.includes('refresh_token')) {
+                    console.log('OAuth Bridge: Detected OAuth tokens in fragment, this might be OAuth');
+                    // Could try to extract oauth_session from somewhere else
+                }
+            } else {
+                console.log('OAuth Bridge: No session found or no oauth_session parameter');
+                console.log('This page was loaded incorrectly - should only be used for OAuth bridges');
+            }
+        }).catch(error => {
+            console.error('OAuth Bridge: Error checking session:', error);
+        });
+        
+        // Fallback: if we don't redirect within 5 seconds, show error
+        setTimeout(() => {
+            document.querySelector('.container').innerHTML = `
+                <h1>OAuth Authentication Issue</h1>
+                <p>There was a problem completing your authentication.</p>
+                <p>Please return to Claude and try connecting again.</p>
+                <button onclick="window.close()" style="
+                    background: #3b82f6;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 12px 24px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    margin-top: 16px;
+                ">Close Window</button>
+            `;
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -457,7 +457,11 @@ async def authorize(
                     
                     // Use a specific OAuth callback endpoint that will set cookies properly
                     const baseUrl = currentUrl.origin;
-                    const callbackUrl = baseUrl + '/oauth/callback?oauth_session={session_id}';
+                    const callbackUrl = baseUrl + '/oauth/auth-redirect?oauth_session={session_id}&flow=mcp_oauth';
+                    
+                    // Ensure we're using the exact redirect URL that's configured in Supabase
+                    console.log('🔍 DEBUG - Base URL:', baseUrl);
+                    console.log('🔍 DEBUG - Full callback URL:', callbackUrl);
                     
                     console.log('🔍 DEBUG - About to call Supabase OAuth with redirect:', callbackUrl);
                     console.log('🔍 DEBUG - Current URL:', window.location.href);
@@ -468,10 +472,15 @@ async def authorize(
                         options: {{
                             redirectTo: callbackUrl,
                             queryParams: {{
-                                oauth_session: '{session_id}'
-                            }}
+                                oauth_session: '{session_id}',
+                                flow: 'mcp_oauth'
+                            }},
+                            skipBrowserRedirect: false
                         }}
                     }});
+                    
+                    // If OAuth redirect fails, Supabase might redirect to main app
+                    // So we add a fallback mechanism to detect this and redirect properly
                     
                     console.log('🔍 DEBUG - Supabase OAuth result:', result);
                     
@@ -517,18 +526,50 @@ async def authorize(
     return HTMLResponse(content=html)
 
 
+@oauth_router.get("/auth-redirect")
+async def universal_auth_redirect(request: Request):
+    """Universal auth redirect handler that routes to correct destination based on parameters"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Get all query parameters
+    params = dict(request.query_params)
+    logger.info(f"Universal auth redirect received with params: {params}")
+    
+    # Check if this is an MCP OAuth flow
+    oauth_session = params.get('oauth_session')
+    flow = params.get('flow')
+    
+    if flow == "mcp_oauth" and oauth_session:
+        logger.info(f"MCP OAuth flow detected - redirecting to callback with session: {oauth_session}")
+        # This is MCP OAuth, redirect to our callback
+        callback_url = f"/oauth/callback?oauth_session={oauth_session}&flow=mcp_oauth"
+        return RedirectResponse(url=callback_url)
+    else:
+        logger.info("Regular app login detected - redirecting to main app")
+        # This is regular app login, redirect to main app
+        return RedirectResponse(url="https://jeanmemory.com")
+
+
 @oauth_router.get("/callback")
 async def oauth_callback(
     request: Request,
-    oauth_session: str
+    oauth_session: str,
+    flow: Optional[str] = None
 ):
     """OAuth callback endpoint to handle Supabase authentication and set cookies"""
     import logging
     logger = logging.getLogger(__name__)
     
-    logger.info(f"OAuth callback received for session: {oauth_session}")
+    logger.info(f"OAuth callback received for session: {oauth_session}, flow: {flow}")
     
-    # Check if the session exists
+    # Handle different auth flows
+    if flow != "mcp_oauth":
+        # This is a regular app login, redirect to main app
+        logger.info("Regular app login detected - redirecting to main app")
+        return RedirectResponse(url="https://jeanmemory.com")
+    
+    # Check if the session exists (MCP OAuth flow)
     if oauth_session not in auth_sessions:
         logger.error(f"Invalid OAuth session: {oauth_session}")
         raise HTTPException(status_code=400, detail="Invalid OAuth session")
