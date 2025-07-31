@@ -459,6 +459,8 @@ async def authorize(
                     const baseUrl = currentUrl.origin;
                     const callbackUrl = baseUrl + '/oauth/auth-redirect?oauth_session={session_id}&flow=mcp_oauth';
                     
+                    console.log('🔍 DEBUG - Setting up forced MCP OAuth callback');
+                    
                     // Ensure we're using the exact redirect URL that's configured in Supabase
                     console.log('🔍 DEBUG - Base URL:', baseUrl);
                     console.log('🔍 DEBUG - Full callback URL:', callbackUrl);
@@ -498,26 +500,63 @@ async def authorize(
             
             // Check if user is already signed in when page loads
             supabase.auth.onAuthStateChange((event, session) => {{
-                console.log('Auth state change:', event, session);
+                console.log('🔍 DEBUG - Auth state change:', event, session);
                 if (event === 'SIGNED_IN' && session) {{
-                    console.log('User signed in, redirecting to callback...');
-                    // User is signed in, redirect to callback to set cookies
-                    const callbackUrl = `/oauth/callback?oauth_session={session_id}`;
-                    window.location.href = callbackUrl;
+                    console.log('🚀 User signed in, FORCING OAuth callback redirect...');
+                    // CRITICAL: Force redirect to OAuth callback for MCP flow
+                    const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
+                    console.log('🎯 FORCING callback URL:', callbackUrl);
+                    
+                    // Use replace to prevent back button issues
+                    window.location.replace(callbackUrl);
                 }}
             }});
             
             // Check initial session
             supabase.auth.getSession().then((result) => {{
                 const session = result.data.session;
-                console.log('Initial session check:', session);
+                console.log('🔍 DEBUG - Initial session check:', session);
                 if (session) {{
-                    console.log('Found existing session, redirecting to callback...');
-                    // User is already signed in, redirect to callback to set cookies
-                    const callbackUrl = `/oauth/callback?oauth_session={session_id}`;
-                    window.location.href = callbackUrl;
+                    console.log('🚀 Found existing session, FORCING OAuth callback redirect...');
+                    // CRITICAL: Force redirect to OAuth callback for MCP flow
+                    const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
+                    console.log('🎯 FORCING callback URL:', callbackUrl);
+                    
+                    // Use replace to prevent back button issues
+                    window.location.replace(callbackUrl);
                 }}
             }});
+            
+            // EMERGENCY FALLBACK: If auth doesn't work after 5 seconds, force callback
+            setTimeout(function() {{
+                supabase.auth.getSession().then((result) => {{
+                    const session = result.data.session;
+                    if (session) {{
+                        console.log('⚡ EMERGENCY FALLBACK: Forcing callback after 5s delay');
+                        const callbackUrl = `/oauth/callback?oauth_session={session_id}&flow=mcp_oauth`;
+                        window.location.replace(callbackUrl);
+                    }} else {{
+                        console.log('⚠️ EMERGENCY FALLBACK: No session found after 5s, trying force-complete');
+                        // Try the emergency force complete endpoint
+                        const forceCompleteUrl = `/oauth/force-complete?oauth_session={session_id}`;
+                        window.location.replace(forceCompleteUrl);
+                    }}
+                }});
+            }}, 5000);
+            
+            // NUCLEAR OPTION: If still no progress after 10 seconds, show manual button
+            setTimeout(function() {{
+                console.log('🚨 NUCLEAR OPTION: Showing manual completion button');
+                const button = document.getElementById('loginBtn');
+                if (button) {{
+                    button.textContent = 'Complete OAuth Manually';
+                    button.onclick = function() {{
+                        window.location.href = `/oauth/force-complete?oauth_session={session_id}`;
+                    }};
+                    button.disabled = false;
+                    button.style.backgroundColor = '#dc2626';
+                }}
+            }}, 10000);
         </script>
     </body>
     </html>
@@ -534,21 +573,100 @@ async def universal_auth_redirect(request: Request):
     
     # Get all query parameters
     params = dict(request.query_params)
-    logger.info(f"Universal auth redirect received with params: {params}")
+    logger.info(f"🔍 Universal auth redirect received with params: {params}")
     
     # Check if this is an MCP OAuth flow
     oauth_session = params.get('oauth_session')
     flow = params.get('flow')
     
     if flow == "mcp_oauth" and oauth_session:
-        logger.info(f"MCP OAuth flow detected - redirecting to callback with session: {oauth_session}")
+        logger.info(f"🚀 MCP OAuth flow detected - redirecting to callback with session: {oauth_session}")
         # This is MCP OAuth, redirect to our callback
         callback_url = f"/oauth/callback?oauth_session={oauth_session}&flow=mcp_oauth"
         return RedirectResponse(url=callback_url)
     else:
-        logger.info("Regular app login detected - redirecting to main app")
+        logger.info("🔄 Regular app login detected - redirecting to main app")
         # This is regular app login, redirect to main app
         return RedirectResponse(url="https://jeanmemory.com")
+
+
+@oauth_router.get("/force-complete")
+async def force_oauth_completion(request: Request, oauth_session: str):
+    """Emergency OAuth completion endpoint that bypasses Supabase redirects"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"🚨 FORCE COMPLETE: Emergency OAuth completion for session: {oauth_session}")
+    
+    # Check if session exists
+    if oauth_session not in auth_sessions:
+        logger.error(f"❌ FORCE COMPLETE: Invalid OAuth session: {oauth_session}")
+        raise HTTPException(status_code=400, detail="Invalid OAuth session")
+    
+    # Try to get current user from session/cookies
+    try:
+        from app.auth import get_oauth_user
+        current_user = await get_oauth_user(request)
+        
+        if not current_user:
+            logger.error("❌ FORCE COMPLETE: No authenticated user found")
+            raise HTTPException(status_code=401, detail="User not authenticated")
+        
+        logger.info(f"✅ FORCE COMPLETE: Found authenticated user: {current_user.email}")
+        
+        # Get session data
+        session_data = auth_sessions[oauth_session]
+        client_id = session_data["client_id"]
+        redirect_uri = session_data["redirect_uri"]
+        state = session_data["state"]
+        
+        # Generate authorization code immediately
+        auth_code = secrets.token_urlsafe(32)
+        
+        # Get the internal User.id from database
+        from app.database import SessionLocal
+        from app.models import User
+        
+        db = SessionLocal()
+        try:
+            internal_user = db.query(User).filter(User.user_id == str(current_user.id)).first()
+            if not internal_user:
+                logger.error(f"❌ FORCE COMPLETE: No internal User found for Supabase user_id: {current_user.id}")
+                raise HTTPException(status_code=500, detail="User not found in database")
+            
+            internal_user_id = str(internal_user.id)
+            logger.info(f"✅ FORCE COMPLETE: Mapped Supabase user {current_user.id} to internal user {internal_user_id}")
+            
+        finally:
+            db.close()
+        
+        # Store auth code with user info
+        auth_sessions[auth_code] = {
+            **session_data,
+            "user_id": internal_user_id,
+            "supabase_user_id": str(current_user.id),
+            "email": current_user.email,
+            "code": auth_code,
+            "authorized_at": time.time(),
+            "client_id": client_id
+        }
+        
+        # Clean up original session
+        del auth_sessions[oauth_session]
+        
+        # Redirect back to Claude with auth code
+        params = {
+            "code": auth_code,
+            "state": state
+        }
+        redirect_url = f"{redirect_uri}?{urlencode(params)}"
+        logger.info(f"🎯 FORCE COMPLETE: Redirecting to Claude: {redirect_url}")
+        
+        return RedirectResponse(url=redirect_url)
+        
+    except Exception as e:
+        logger.error(f"❌ FORCE COMPLETE: Failed to complete OAuth: {e}")
+        raise HTTPException(status_code=500, detail=f"OAuth completion failed: {str(e)}")
 
 
 @oauth_router.get("/callback")
@@ -615,13 +733,13 @@ async def oauth_callback(
             
             // Handle the authentication callback and set cookies
             supabase.auth.onAuthStateChange(async (event, session) => {{
-                console.log('Callback: Auth state change:', event, session);
+                console.log('🔍 CALLBACK DEBUG - Auth state change:', event, session);
                 if (event === 'SIGNED_IN' && session) {{
-                    console.log('Callback: User signed in, setting cookies and redirecting...');
-                    console.log('🔍 DEBUG - Session details:', session);
-                    console.log('🔍 DEBUG - Current URL:', window.location.href);
-                    console.log('🔍 DEBUG - Current domain:', window.location.hostname);
-                    console.log('🔍 DEBUG - Current protocol:', window.location.protocol);
+                    console.log('🚀 CALLBACK - User signed in, setting cookies and redirecting...');
+                    console.log('🔍 CALLBACK DEBUG - Session details:', session);
+                    console.log('🔍 CALLBACK DEBUG - Current URL:', window.location.href);
+                    console.log('🔍 CALLBACK DEBUG - Current domain:', window.location.hostname);
+                    console.log('🔍 CALLBACK DEBUG - Current protocol:', window.location.protocol);
                     
                     // Set the auth token in a cookie with proper settings for OAuth
                     const isSecure = window.location.protocol === 'https:';
@@ -640,11 +758,12 @@ async def oauth_callback(
                     // Verify cookies were set
                     console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
                     
-                    console.log('Callback: Cookies set, redirecting to authorize...');
+                    console.log('🚀 CALLBACK - Cookies set, redirecting to authorize...');
                     
                     // Redirect back to the OAuth authorize endpoint with the session
                     const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
-                    window.location.href = authorizeUrl;
+                    console.log('🎯 CALLBACK - Final redirect to authorize:', authorizeUrl);
+                    window.location.replace(authorizeUrl);
                 }}
             }});
             
@@ -673,11 +792,12 @@ async def oauth_callback(
                     
                     console.log('🔍 DEBUG - All cookies after setting:', document.cookie);
                     
-                    console.log('Callback: Cookies set, redirecting to authorize...');
+                    console.log('🚀 CALLBACK - Cookies set, redirecting to authorize...');
                     
                     // Redirect back to the OAuth authorize endpoint with the session
                     const authorizeUrl = `/oauth/authorize?oauth_session={oauth_session}`;
-                    window.location.href = authorizeUrl;
+                    console.log('🎯 CALLBACK - Final redirect to authorize:', authorizeUrl);
+                    window.location.replace(authorizeUrl);
                 }} else {{
                     console.log('Callback: No session found, redirecting back to authorize');
                     // Redirect back without session - will show login page again

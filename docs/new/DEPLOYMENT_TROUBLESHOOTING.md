@@ -156,13 +156,40 @@ curl https://jean-memory-api-virginia.onrender.com/.well-known/oauth-authorizati
 curl https://jean-memory-api-virginia.onrender.com/.well-known/oauth-protected-resource
 ```
 
+## OAuth Flow Fix Applied ✅
+
+**Issue Identified:** Supabase redirect hijacking prevents OAuth callback completion
+
+**Root Cause:** After Google authentication, users are redirected to main app instead of OAuth callback
+
+**Fix Applied:**
+1. ✅ **Forced OAuth callback redirects** in login page JavaScript
+2. ✅ **Emergency fallback mechanisms** with 5s and 10s timeouts
+3. ✅ **Manual completion endpoint** `/oauth/force-complete` as nuclear option
+4. ✅ **Enhanced logging** for debugging OAuth flow steps
+5. ✅ **Bypass Supabase redirects** using `window.location.replace()`
+
+### OAuth Flow Improvements
+
+**New Flow Pattern:**
+1. User clicks "Connect" in Claude → OAuth login page loads
+2. User clicks "Continue with Google" → Supabase OAuth starts
+3. **After authentication**: JavaScript **forces** redirect to `/oauth/callback`
+4. Callback handler sets cookies and redirects to `/oauth/authorize?oauth_session=xxx`
+5. Authorize endpoint auto-approves and redirects to Claude with auth code
+6. Claude calls `/oauth/token` to complete flow
+
+**Failsafe Mechanisms:**
+- **5s timeout**: Force callback if no automatic redirect
+- **10s timeout**: Show manual "Complete OAuth Manually" button
+- **Emergency endpoint**: `/oauth/force-complete?oauth_session=xxx`
+
 ## Next Actions
 
-1. **Commit and push fixes** ✅ (Done)
-2. **Deploy to production** 🚀 (Ready)
-3. **Monitor deployment logs** 👁️ (Active)
-4. **Test endpoints** 🧪 (After deployment)
-5. **Test Claude Web integration** 🔗 (Final step)
+1. **Deploy OAuth fixes** 🚀 (Ready)
+2. **Test Claude Web connection** 🔗 (Monitor logs for callback completion)
+3. **Verify token exchange** 🧪 (Look for POST /oauth/token in logs)
+4. **Document success** 📝 (After validation)
 
 ## Success Criteria
 
