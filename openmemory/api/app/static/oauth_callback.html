@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Processing Authentication...</title>
+    <!-- Use the UMD build of Supabase JS from the CDN, which creates a global `supabase` object -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f8f9fa; color: #343a40; text-align: center; }
@@ -19,12 +20,13 @@
         <p>Please wait, we're securely connecting you now. This may take a moment.</p>
     </div>
 
-    <script type="module">
-        import { createClient } from 'https://unpkg.com/@supabase/supabase-js@2';
-
+    <!-- This is a regular script, NOT a module. It uses the global `supabase` object loaded above. -->
+    <script>
         const SUPABASE_URL = '{{SUPABASE_URL}}';
         const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
         const AUTHORIZE_URL = '{{AUTHORIZE_URL}}';
+
+        console.log('🔍 CALLBACK - Page loaded. Supabase URL:', SUPABASE_URL);
 
         const cookieStorageAdapter = {
             getItem: key => document.cookie.split('; ').find(row => row.startsWith(key + '='))?.split('=')[1] || null,
@@ -37,61 +39,78 @@
             removeItem: key => document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         };
 
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        // Use the global `supabase` object provided by the script in the <head>
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
-                detectSessionInUrl: true,
+                detectSessionInUrl: true, 
                 flowType: 'pkce',
-                storage: cookieStorageAdapter
-            }
+                storage: cookieStorageAdapter,
+            },
         });
 
-        const setCookiesAndRedirect = (session) => {
-            if (session && session.access_token) {
-                console.log('✅ Session found. Setting cookies and redirecting.', session);
-                cookieStorageAdapter.setItem('sb-access-token', session.access_token);
-                if (session.refresh_token) {
-                    cookieStorageAdapter.setItem('sb-refresh-token', session.refresh_token);
-                }
-                window.location.replace(AUTHORIZE_URL);
-                return true;
-            }
-            return false;
-        };
-        
-        const handleAuth = async () => {
-            console.log('🔍 Starting robust auth handling...');
+        console.log('🔍 CALLBACK - Supabase client initialized.');
+
+        function setCookiesFromSession(session) {
+            if (!session) return;
+            console.log('🔍 CALLBACK - Setting cookies from session:', session);
+            const accessToken = session.access_token;
+            const refreshToken = session.refresh_token;
+
+            const isSecure = window.location.protocol === 'https:';
+            const secureFlag = isSecure ? '; secure' : '';
+            const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
             
-            let signedIn = false;
-            supabase.auth.onAuthStateChange((event, session) => {
-                if (event === 'SIGNED_IN' && !signedIn) {
-                    signedIn = true;
-                    console.log('✅ Caught SIGNED_IN event.');
-                    setCookiesAndRedirect(session);
+            if (accessToken) {
+                document.cookie = `sb-access-token=${accessToken}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+            }
+            if (refreshToken) {
+                document.cookie = `sb-refresh-token=${refreshToken}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+            }
+            console.log('🔍 CALLBACK - All cookies after setting:', document.cookie);
+        }
+
+        async function handleAuth() {
+            console.log('🔍 CALLBACK - Starting session check...');
+            
+            // First, try to get the session from the URL (most reliable)
+            const { data: { session: sessionFromUrl }, error: urlError } = await supabaseClient.auth.getSession();
+            
+            if (sessionFromUrl) {
+                console.log('✅ CALLBACK - SUCCESS: Session detected automatically from URL.', sessionFromUrl);
+                setCookiesFromSession(sessionFromUrl);
+                window.location.replace(AUTHORIZE_URL);
+                return;
+            }
+            console.warn('🔍 CALLBACK - No session from URL. Error:', urlError?.message);
+
+            // Fallback 2: Manual code exchange
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                console.log('🔍 CALLBACK - Fallback 2: Found auth code, attempting manual exchange...');
+                const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
+                if (data.session) {
+                    console.log('✅ CALLBACK - SUCCESS: Manual code exchange successful.', data.session);
+                    setCookiesFromSession(data.session);
+                    window.location.replace(AUTHORIZE_URL);
+                    return;
+                }
+                console.error('🔍 CALLBACK - Manual code exchange failed:', error);
+            }
+
+            // Fallback 3: Listen for auth state changes
+            console.log('🔍 CALLBACK - Fallback 3: Listening for auth state changes...');
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                console.log('🔍 CALLBACK - Auth state change event:', event, session);
+                if (event === 'SIGNED_IN' && session) {
+                    console.log('✅ CALLBACK - SUCCESS: SIGNED_IN event detected.', session);
+                    setCookiesFromSession(session);
+                    window.location.replace(AUTHORIZE_URL);
                 }
             });
 
-            await new Promise(resolve => setTimeout(resolve, 250));
-            if (signedIn) return;
-            
-            const code = new URLSearchParams(window.location.search).get('code');
-            if (code) {
-                console.log('🔍 Found code. Attempting manual exchange...');
-                const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-                if (data && data.session) {
-                    console.log('✅ Manual exchange successful.');
-                    if (setCookiesAndRedirect(data.session)) return;
-                }
-            }
-
-            console.log('🔍 Checking with getSession()...');
-            const { data } = await supabase.auth.getSession();
-            if (data && data.session) {
-                console.log('✅ Found session with getSession().');
-                if (setCookiesAndRedirect(data.session)) return;
-            }
-            
-            console.error('❌ Could not establish session after all methods.');
-        };
+            console.error('❌ CALLBACK - FAILED: Could not establish session after all fallbacks.');
+        }
 
         handleAuth();
     </script>
