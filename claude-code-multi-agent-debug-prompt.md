@@ -22,6 +22,22 @@ You are helping debug and resolve a blocking issue in the Claude Code multi-agen
 
 Work with me in a human-in-the-loop debugging cycle to resolve this blocker. Follow this approach:
 
+### 0. Initial Cleanup
+First, check and clean up any existing MCP connections:
+
+```bash
+# Check existing connections
+claude mcp list
+
+# If you see jean-memory-planner, jean-memory-impl-a, jean-memory-impl-b, remove them:
+claude mcp remove jean-memory-planner
+claude mcp remove jean-memory-impl-a
+claude mcp remove jean-memory-impl-b
+
+# Verify they're removed
+claude mcp list
+```
+
 ### 1. Review Current State
 First, familiarize yourself with:
 - `/Users/rohankatakam/Documents/jm/jean-memory/docs/latest/ccmulti/LESSONS_LEARNED.md` - See "Phase 2: Current Debugging Insights"
@@ -52,6 +68,8 @@ You will:
 - If yes, proceed to test coordination functionality
 
 ### 3. Key Test Commands
+
+**Note**: I currently have these connections active. I'll remove them before we start fresh debugging.
 
 ```bash
 # Multi-terminal setup (I'll run in 3 terminals)
