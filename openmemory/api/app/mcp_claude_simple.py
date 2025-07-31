@@ -330,9 +330,24 @@ async def mcp_options():
         content={"status": "ok"},
         headers={
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS, HEAD",
             "Access-Control-Allow-Headers": "Content-Type, Authorization, mcp-session-id, Origin",
             "Access-Control-Max-Age": "3600"
+        }
+    )
+
+
+@oauth_mcp_router.head("/mcp")
+async def mcp_head():
+    """Handle HEAD requests for MCP endpoint discovery"""
+    from fastapi import Response
+    return Response(
+        status_code=200,
+        headers={
+            "Content-Type": "application/json",
+            "X-MCP-Protocol": "2025-03-26",
+            "X-OAuth-Supported": "true",
+            "Access-Control-Allow-Origin": "*"
         }
     )
 

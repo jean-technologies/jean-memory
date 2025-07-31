@@ -329,6 +329,34 @@ async def oauth_discovery_root():
     from app.oauth_simple_new import oauth_discovery
     return await oauth_discovery()
 
+# OAuth Protected Resource Metadata (RFC 9728) - CRITICAL for MCP
+@app.get("/.well-known/oauth-protected-resource")
+async def oauth_protected_resource_discovery():
+    """OAuth Protected Resource Metadata (RFC 9728) for MCP servers"""
+    return {
+        "resource": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}",
+        "authorization_servers": [
+            f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}"
+        ],
+        "scopes_supported": ["read", "write"],
+        "bearer_methods_supported": ["header"],
+        "resource_documentation": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/docs"
+    }
+
+# MCP-specific protected resource metadata
+@app.get("/.well-known/oauth-protected-resource/mcp")
+async def oauth_protected_resource_mcp():
+    """OAuth Protected Resource Metadata specifically for MCP endpoint"""
+    return {
+        "resource": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/mcp",
+        "authorization_servers": [
+            f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}"
+        ],
+        "scopes_supported": ["read", "write"],
+        "bearer_methods_supported": ["header"],
+        "resource_documentation": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/docs"
+    }
+
 # Setup MCP server after routers but outside of lifespan to ensure it doesn't block health checks
 setup_mcp_server(app)
 
