@@ -1410,3 +1410,290 @@ Supabase project-level redirect URL setting (`https://jeanmemory.com`) **overrid
 - Update OAuth implementation to use new project credentials
 
 **Status:** Reverting nuclear fixes. Infrastructure configuration required to proceed.
+
+## COMPREHENSIVE RESEARCH FINDINGS (July 31, 2025)
+
+### Critical Issue: Supabase getSession() Returns Null After OAuth Redirect
+
+Based on extensive online research of Supabase OAuth cross-domain session issues in 2024-2025, this is a **well-documented problem** affecting many developers implementing OAuth flows.
+
+#### Root Causes Identified
+
+**1. PKCE Flow Configuration Issues**
+- **Missing `detectSessionInUrl: true`**: Client must be configured to automatically exchange auth codes for sessions
+- **Incorrect `flowType`**: Must be set to `'pkce'` for OAuth flows
+- **Code Exchange Not Implemented**: Manual `exchangeCodeForSession(code)` required when automatic detection fails
+
+**From Supabase Documentation:**
+```javascript
+const supabase = createClient('https://xyzcompany.supabase.co', 'public-anon-key', {
+  auth: {
+    detectSessionInUrl: true,  // ✅ CRITICAL: Auto-exchange auth codes
+    flowType: 'pkce',          // ✅ REQUIRED: PKCE flow
+    storage: customStorageAdapter  // Optional: Custom storage for server-side
+  }
+})
+```
+
+**2. Server vs Client Session State Mismatch**
+- **localStorage vs Server Cookies**: Supabase uses localStorage by default, causing server-side session detection to fail
+- **Session Sync Issues**: Auth state not synchronized between client and server after redirect
+- **Timing Issues**: Path changes trigger redirects before auth state updates
+
+**Community Report:**
+> "What I think is happening is that after signin I'm redirected to my homepage, but after the redirect supabase.auth.user() is still null, and my ProtectedRoute component is then redirecting back to /login because of this. I think in my case it may be that the change in path is triggering a redirect before the user state is changed (also perhaps before the cookie is set?)."
+
+**3. Code Verifier Storage Problems**
+- **PKCE Flow Dependency**: Auth code exchange requires code verifier stored during initial auth flow
+- **Storage Mechanism**: Code verifier must be accessible across redirect boundaries
+- **5-Minute Expiry**: Auth codes expire after 5 minutes and can only be used once
+
+**4. Server-Side Session Validation Issues**
+- **getSession() vs getUser()**: `getSession()` is unreliable in server-side code
+- **Token Revalidation**: Server code should use `getUser()` which validates tokens with Supabase
+
+**Supabase Official Recommendation:**
+> "Never trust supabase.auth.getSession() inside server code such as middleware. It isn't guaranteed to revalidate the Auth token. It's safe to trust getUser() because it sends a request to the Supabase Auth server every time to revalidate the Auth token."
+
+#### Solutions Implemented by Community
+
+**1. Proper PKCE Implementation with Auth Helpers**
+```javascript
+// Next.js with @supabase/ssr
+const supabase = createServerClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    cookies: {
+      get(name) {
+        return cookies().get(name)?.value
+      },
+    },
+  }
+)
+```
+
+**2. Manual Code Exchange Implementation**
+```javascript
+// For cross-domain scenarios
+if (typeof window !== 'undefined') {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      console.error('Error exchanging code for session:', error);
+    }
+  }
+}
+```
+
+**3. OnAuthStateChange Event Handling**
+```javascript
+// React/Next.js pattern
+useEffect(() => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (event, session) => {
+      if (event === 'SIGNED_IN') {
+        // Handle successful authentication
+        setUser(session?.user ?? null);
+      }
+    }
+  );
+
+  return () => subscription.unsubscribe();
+}, []);
+```
+
+**4. Redirect URL Configuration Best Practices**
+- **Exact URL Matching**: Ensure redirect URLs have trailing slashes if required
+- **Site URL vs Redirect URLs**: Site URL takes precedence over redirectTo parameters
+- **Cross-Domain Cookie Settings**: Configure secure, sameSite attributes properly
+
+#### Specific Issues Affecting Our Implementation
+
+**1. Cross-Domain Cookie Problem**
+- Our API domain (`jean-memory-api-virginia.onrender.com`) cannot read cookies set by main app domain (`jeanmemory.com`)
+- Browser security prevents cross-domain cookie sharing
+- OAuth flows need self-contained authentication on API domain
+
+**2. Site URL Override Behavior**
+- Supabase Site URL (`https://jeanmemory.com`) overrides JavaScript `redirectTo` parameters
+- All OAuth flows redirect to Site URL regardless of code configuration
+- Cannot be fixed with JavaScript - requires Supabase project configuration changes
+
+**3. Session Detection Failure Pattern**
+Our logs show classic signs of this issue:
+```javascript
+console.log('🔍 CALLBACK - Starting session check...');
+supabase.auth.getSession().then(async (result) => {
+    const session = result.data.session;
+    console.log('🔍 CALLBACK - Session data:', session);  // Returns null
+    console.log('🔍 CALLBACK - Session exists:', !!session);  // false
+});
+```
+
+#### Research-Backed Solutions for Our Implementation
+
+**Option 1: Implement Proper PKCE with detectSessionInUrl (RECOMMENDED)**
+```javascript
+// Update our OAuth callback JavaScript
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    detectSessionInUrl: true,    // ✅ Enable automatic code exchange
+    flowType: 'pkce',           // ✅ Ensure PKCE flow
+    storage: {                  // ✅ Custom storage for cross-domain
+      getItem: (key) => {
+        return document.cookie
+          .split('; ')
+          .find(row => row.startsWith(key + '='))
+          ?.split('=')[1];
+      },
+      setItem: (key, value) => {
+        const isSecure = window.location.protocol === 'https:';
+        const secureFlag = isSecure ? '; secure' : '';
+        const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
+        document.cookie = `${key}=${value}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+      },
+      removeItem: (key) => {
+        document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      }
+    }
+  }
+});
+```
+
+**Option 2: Manual Code Exchange Implementation**
+```javascript
+// Add to our OAuth callback handler
+const handleManualCodeExchange = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  
+  if (code) {
+    console.log('🔍 MANUAL - Found auth code, attempting exchange:', code);
+    
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (error) {
+        console.error('🔍 MANUAL - Code exchange failed:', error);
+        return null;
+      }
+      
+      if (data.session) {
+        console.log('🔍 MANUAL - Code exchange successful:', data.session);
+        // Set cookies and continue OAuth flow
+        setCookiesFromSession(data.session);
+        return data.session;
+      }
+    } catch (error) {
+      console.error('🔍 MANUAL - Code exchange error:', error);
+    }
+  }
+  
+  return null;
+};
+```
+
+**Option 3: Auth State Change Handler**
+```javascript
+// Add proper auth state monitoring
+const setupAuthStateMonitoring = () => {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔍 AUTH STATE CHANGE:', event, session);
+    
+    if (event === 'SIGNED_IN' && session) {
+      console.log('🔍 AUTH STATE - Sign in detected, setting cookies');
+      setCookiesFromSession(session);
+      
+      // Continue OAuth flow
+      redirectToAuthorizeWithSession();
+    }
+  });
+};
+```
+
+**Option 4: Server-Side Token Validation Fix**
+```python
+# Update our get_oauth_user function based on research
+async def get_oauth_user(request: Request) -> Optional[SupabaseUser]:
+    # Try multiple cookie sources as community recommends
+    cookie_sources = [
+        ('sb-access-token', lambda v: v),
+        ('supabase-auth-token', lambda v: v), 
+        ('sb-session', parse_session_cookie),
+        ('supabase.auth.token', parse_session_cookie),
+    ]
+    
+    access_token = None
+    for cookie_name, parser in cookie_sources:
+        cookie_value = request.cookies.get(cookie_name)
+        if cookie_value:
+            access_token = parser(cookie_value)
+            if access_token:
+                break
+    
+    if not access_token:
+        logger.info("No OAuth access token found in any cookie format")
+        return None
+    
+    # Use getUser() instead of getSession() as recommended
+    try:
+        auth_response = supabase_service_client.auth.get_user(access_token)
+        if auth_response and auth_response.user:
+            return auth_response.user
+    except Exception as e:
+        logger.error(f"Token validation failed: {e}")
+    
+    return None
+```
+
+#### GitHub Issues Analysis
+
+**Common Patterns from 2024-2025 Issues:**
+
+1. **Issue #426 (gotrue-js)**: getSession() returns null after login
+   - **Solution**: Use auth-helpers for proper session sync
+   - **Root Cause**: localStorage vs server-side session mismatch
+
+2. **Issue #645 (auth-helpers)**: Middleware getSession returns null with OAuth providers
+   - **Solution**: Implement proper cookie-based session storage
+   - **Root Cause**: Third-party provider redirects don't set server-accessible sessions
+
+3. **Discussion #19608**: getSession/getUser return null after setSession
+   - **Solution**: Use onAuthStateChange to detect session updates
+   - **Root Cause**: Timing issues between session setting and detection
+
+#### Key Takeaways for Our Implementation
+
+**1. The Problem is Well-Known and Solvable**
+- This exact issue affects many developers using Supabase OAuth
+- Multiple proven solutions exist in the community
+- The issue is configuration and implementation-specific, not a Supabase bug
+
+**2. Our Current Implementation Needs Updates**
+- Add `detectSessionInUrl: true` to client configuration
+- Implement manual code exchange as fallback
+- Add auth state change monitoring
+- Use proper server-side token validation with `getUser()`
+
+**3. The Site URL Override Issue Remains**
+- Even with proper PKCE implementation, Site URL still takes precedence
+- This is a Supabase project configuration issue, not a code issue
+- Infrastructure solution required (bridge page or Site URL change)
+
+**4. Multiple Layers of Fixes Needed**
+- **Code Layer**: Implement proper PKCE and session handling
+- **Configuration Layer**: Fix Supabase redirect URL settings  
+- **Architecture Layer**: Consider separate OAuth domain or bridge solution
+
+#### Recommended Implementation Order
+
+1. **Phase 1**: Implement research-backed PKCE fixes in our OAuth callback
+2. **Phase 2**: Add manual code exchange and auth state monitoring
+3. **Phase 3**: Test with proper Supabase redirect URL configuration
+4. **Phase 4**: Deploy bridge page solution if needed for production compatibility
+
+This research confirms that our issue is a common, well-documented problem with multiple proven solutions. The next step is implementing these research-backed fixes in our OAuth callback implementation.
