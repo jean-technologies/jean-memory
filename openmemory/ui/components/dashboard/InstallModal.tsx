@@ -13,6 +13,7 @@ import Image from 'next/image';
 import apiClient from '@/lib/apiClient';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface InstallModalProps {
   app: App | null;
@@ -622,63 +623,170 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
               </div>
             </div>
         ) : app.id === 'claude code' ? (
-            <div className="py-2 space-y-4 text-left">
-                <p className="text-muted-foreground text-sm mb-4">
-                    Jean Memory tracks your projects and builds a working memory.
-                </p>
-                
-                <div className="space-y-4">
-                    <div>
-                        <h3 className="font-medium text-foreground mb-2">1. Add MCP Server</h3>
-                        <p className="text-xs text-muted-foreground mb-2">Add Jean Memory as an HTTP MCP server:</p>
-                        <div className="relative bg-background border rounded-md">
-                            <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
-                                <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp</code>
-                            </div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp`)}
-                            >
-                                {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">OAuth authentication will be handled automatically by Claude</p>
-                    </div>
-
-                    <div>
-                        <h3 className="font-medium text-foreground mb-2">2. Verify Installation</h3>
-                        <p className="text-xs text-muted-foreground mb-2">Check that Jean Memory is active:</p>
-                        <div className="relative bg-background border rounded-md">
-                            <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
-                                <code>claude mcp list</code>
-                            </div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy("claude mcp list")}
-                            >
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">You should see "jean-memory" in the list of active servers.</p>
-                    </div>
-
-                    <div className="bg-green-50 dark:bg-green-950/30 rounded-md p-3 border border-green-200 dark:border-green-800">
-                        <h4 className="font-medium text-green-800 dark:text-green-200 text-xs mb-2">✅ Same as Claude Desktop</h4>
-                        <p className="text-green-700 dark:text-green-300 text-xs">
-                            This command creates the exact same configuration as your working Claude Desktop extension, 
-                            ensuring identical functionality and API endpoints.
+            <div className="py-2 text-left">
+                <Tabs defaultValue="single-agent" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="single-agent">Single Agent</TabsTrigger>
+                        <TabsTrigger value="multi-agent">Multi-Agent</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="single-agent" className="space-y-4">
+                        <p className="text-muted-foreground text-sm mb-4">
+                            Jean Memory tracks your projects and builds a working memory.
                         </p>
-                    </div>
-                </div>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="font-medium text-foreground mb-2">1. Add MCP Server</h3>
+                                <p className="text-xs text-muted-foreground mb-2">Add Jean Memory as an HTTP MCP server:</p>
+                                <div className="relative bg-background border rounded-md">
+                                    <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                        <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp</code>
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                        onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp`)}
+                                    >
+                                        {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">OAuth authentication will be handled automatically by Claude</p>
+                            </div>
 
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 border border-blue-200 dark:border-blue-800">
+                            <div>
+                                <h3 className="font-medium text-foreground mb-2">2. Verify Installation</h3>
+                                <p className="text-xs text-muted-foreground mb-2">Check that Jean Memory is active:</p>
+                                <div className="relative bg-background border rounded-md">
+                                    <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                        <code>claude mcp list</code>
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                        onClick={() => handleCopy("claude mcp list")}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">You should see "jean-memory" in the list of active servers.</p>
+                            </div>
+
+                            <div className="bg-green-50 dark:bg-green-950/30 rounded-md p-3 border border-green-200 dark:border-green-800">
+                                <h4 className="font-medium text-green-800 dark:text-green-200 text-xs mb-2">✅ Same as Claude Desktop</h4>
+                                <p className="text-green-700 dark:text-green-300 text-xs">
+                                    This command creates the exact same configuration as your working Claude Desktop extension, 
+                                    ensuring identical functionality and API endpoints.
+                                </p>
+                            </div>
+                        </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="multi-agent" className="space-y-4">
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                            <h3 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-2">🚀 Multi-Agent Coordination</h3>
+                            <p className="text-blue-800 dark:text-blue-200 text-xs mb-3">
+                                Scale your development with 2-5 coordinated Claude agents working simultaneously across multiple terminals.
+                            </p>
+                            <div className="space-y-1 text-xs">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                    <span className="text-blue-700 dark:text-blue-300">Automatic file conflict prevention</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                    <span className="text-blue-700 dark:text-blue-300">Real-time progress synchronization</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                    <span className="text-blue-700 dark:text-blue-300">Intelligent task distribution</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="font-medium text-foreground mb-2">1. Setup Multi-Agent MCP Server</h3>
+                                <p className="text-xs text-muted-foreground mb-2">Add the enhanced Jean Memory server with multi-agent capabilities:</p>
+                                <div className="relative bg-background border rounded-md">
+                                    <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
+                                        <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp/v2/claude/{user?.id || '{your-user-id}'}</code>
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                        onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp/v2/claude/${user?.id || '{your-user-id}'}`)}
+                                    >
+                                        {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">This enables the streamlined multi-agent coordination tools</p>
+                            </div>
+
+                            <div>
+                                <h3 className="font-medium text-foreground mb-2">2. Use Magic Phrase for Auto-Setup</h3>
+                                <p className="text-xs text-muted-foreground mb-2">Simply add this phrase to any task list for automatic coordination:</p>
+                                <div className="bg-muted border rounded-md p-3">
+                                    <p className="text-foreground text-sm font-medium mb-2">Example Usage:</p>
+                                    <div className="bg-background border rounded-md p-3 text-xs">
+                                        <code className="text-muted-foreground">
+                                            I need to implement these features:<br/>
+                                            1. Add user authentication<br/>
+                                            2. Create admin dashboard<br/>
+                                            3. Implement API rate limiting<br/><br/>
+                                            <span className="text-blue-600 dark:text-blue-400 font-medium">I want to build this using Jean Memory multi-agent coordination.</span>
+                                        </code>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Adding this magic phrase automatically triggers complete multi-agent setup with ready-to-copy terminal commands.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h3 className="font-medium text-foreground mb-2">3. What You Get Automatically</h3>
+                                <div className="space-y-2 text-xs text-muted-foreground">
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500 font-bold mt-0.5">✓</span>
+                                        <span>Complete project analysis using Claude Code's native abilities</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500 font-bold mt-0.5">✓</span>
+                                        <span>Optimal 2-5 agent distribution based on task complexity</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500 font-bold mt-0.5">✓</span>
+                                        <span>Ready-to-copy terminal setup commands</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500 font-bold mt-0.5">✓</span>
+                                        <span>Specialized agent prompts for each implementer</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500 font-bold mt-0.5">✓</span>
+                                        <span>Cross-terminal coordination and progress tracking</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-md p-3 border border-yellow-200 dark:border-yellow-700">
+                            <h4 className="font-medium text-yellow-800 dark:text-yellow-200 text-xs mb-2">💡 Pro Tip</h4>
+                            <p className="text-yellow-700 dark:text-yellow-300 text-xs">
+                                The multi-agent system works best with 3-8 distinct tasks. It automatically prevents file conflicts 
+                                and coordinates work across multiple terminals for maximum productivity.
+                            </p>
+                        </div>
+                    </TabsContent>
+                </Tabs>
+
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 border border-blue-200 dark:border-blue-800 mt-4">
                     <p className="text-blue-800 dark:text-blue-200 text-xs font-medium mb-1">Your User ID</p>
                     <p className="text-blue-700 dark:text-blue-300 text-xs mb-2">
-                        Keep this ID for the installation command above:
+                        Keep this ID for the installation commands above:
                     </p>
                     <div className="relative bg-white dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-md">
                         <div className="overflow-x-auto p-2 pr-10 font-mono text-xs text-blue-900 dark:text-blue-100">
