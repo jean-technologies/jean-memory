@@ -589,7 +589,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         email: str = payload.get("email")
         user_id: str = payload.get("sub")
-        client: str = payload.get("aud") # Audience claim
+        client: str = payload.get("client") # Client name from token
         
         if email is None or user_id is None:
             logger.error("Token missing email or sub claim")
@@ -597,7 +597,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
             
         logger.info(f"✅ JWT successfully decoded for user: {email}")
         logger.info(f"   - Supabase User ID (sub): {user_id}")
-        logger.info(f"   - Audience (aud): {client}")
+        logger.info(f"   - Client: {client}")
 
         # You can add further validation here if needed, e.g., checking
         # if the user exists in your local database.
