@@ -29,7 +29,7 @@ const ChatBubble = ({ message, isUser, isPersonalized }: { message: string; isUs
     </div>
   );
 
-const AppIcon = ({ src, alt }: { src: string; alt: string; }) => (
+const AppIcon = ({ src, alt }: { src: string; alt:string; }) => (
     <motion.div
         whileHover={{ scale: 1.1, y: -5 }}
         transition={{ type: "spring", stiffness: 300 }}
@@ -172,14 +172,14 @@ function MathTutorApp() {
                                 <AppIcon src="/images/substack.png" alt="Substack Logo" />
                                 <AppIcon src="/images/vscode.svg" alt="VS Code Logo" />
                             </div>
-                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-48">
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-56">
                                 <h3 className="text-md font-semibold mb-2 text-center text-gray-500 flex-shrink-0">Generic AI</h3>
                                 <div className="p-2 rounded-lg flex flex-col justify-end flex-grow min-h-0">
                                     <ChatBubble isUser={true} message="What should I work on today?" />
                                     <ChatBubble isUser={false} message="You could work on tasks, check your calendar, or read emails." />
                                 </div>
                             </div>
-                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-48">
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-56">
                                 <h3 className="text-md font-semibold mb-2 text-center text-gray-900 flex-shrink-0">Personalized with Jean</h3>
                                 <div className="p-2 rounded-lg flex flex-col justify-end flex-grow min-h-0">
                                     <ChatBubble isUser={true} message="What should I work on today?" />
