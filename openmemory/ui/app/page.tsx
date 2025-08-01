@@ -71,14 +71,14 @@ function MathTutorApp() {
 }`;
 
   return (
-    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
+    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-x-hidden">
       <div className="absolute inset-0 z-0">
         <ParticleNetwork id="landing-particles-final" particleColor="#e5e7eb" particleCount={120} />
       </div>
 
-      <main className="relative z-10 grid lg:grid-cols-2 min-h-screen">
+      <main className="relative z-10 grid grid-cols-1 lg:grid-cols-2 min-h-screen">
         {/* Left Column: Content */}
-        <div className="flex flex-col justify-center items-center p-8 lg:p-16">
+        <div className="flex flex-col justify-center items-center p-8 py-16 lg:p-16">
           <div className="max-w-lg w-full text-center">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -149,8 +149,8 @@ function MathTutorApp() {
           </div>
         </div>
 
-        {/* Right Column: Visuals */}
-        <div className="flex items-center justify-center p-8 bg-gray-100/30 backdrop-blur-sm lg:bg-transparent">
+        {/* Right Column / Mobile Section: Visuals */}
+        <div className="flex items-center justify-center p-8 pt-0 lg:pt-8 bg-gray-100/30 backdrop-blur-sm lg:bg-transparent">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={activeTab}
