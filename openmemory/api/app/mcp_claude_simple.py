@@ -64,6 +64,8 @@ async def get_user_with_session_fallback(
     logger.error(f"🔥🔥🔥 AUTH FALLBACK CALLED:")
     logger.error(f"   - Has Authorization header: {'authorization' in request.headers}")
     logger.error(f"   - Has claude_session cookie: {claude_session is not None}")
+    logger.error(f"   - Claude session value: {claude_session[:8] + '...' if claude_session else 'None'}")
+    logger.error(f"   - All request cookies: {dict(request.cookies)}")
     logger.error(f"   - User-Agent: {request.headers.get('user-agent', 'unknown')}")
     
     # Try OAuth Bearer token first (preferred method)
@@ -119,13 +121,20 @@ async def get_user_with_session_fallback(
         }
     
     # Fallback to session-based auth for other clients
-    if claude_session:
-        user_data = get_session(claude_session)
+    # First try the claude_session parameter, then check request cookies directly
+    session_id = claude_session or request.cookies.get('claude_session')
+    
+    if session_id:
+        logger.error(f"🔍 TRYING SESSION AUTHENTICATION:")
+        logger.error(f"   - Session ID source: {'parameter' if claude_session else 'direct cookie'}")
+        logger.error(f"   - Session ID: {session_id[:8]}...")
+        
+        user_data = get_session(session_id)
         if user_data:
             logger.info(f"✅ Session authentication successful for user: {user_data.get('email')}")
             return user_data
         else:
-            logger.warning(f"❌ Invalid or expired session: {claude_session[:8]}...")
+            logger.warning(f"❌ Invalid or expired session: {session_id[:8]}...")
     
     # No valid authentication found
     logger.error(f"🚨 No valid authentication found")
@@ -284,10 +293,15 @@ async def mcp_oauth_proxy(
     logger.error(f"   - Has claude_session cookie: {claude_session_cookie is not None}")
     logger.error(f"   - All cookies: {dict(request.cookies)}")
     
-    if 'Claude-User' in user_agent and not claude_session_cookie:
+    # Check both cookie parameter and direct request cookies for session
+    existing_session = claude_session_cookie or request.cookies.get('claude_session')
+    
+    if 'Claude-User' in user_agent and not existing_session:
         logger.warning(f"🎯 Claude Web App detected without session - creating session")
         # This is a Claude Web App request, we should set a session cookie
         # We'll handle this in the response
+    elif 'Claude-User' in user_agent and existing_session:
+        logger.info(f"🎯 Claude Web App detected WITH existing session: {existing_session[:8]}...")
     elif 'claude' in user_agent.lower() or 'anthropic' in user_agent.lower():
         logger.warning(f"🤔 Possible Claude client detected but doesn't match expected pattern")
     """
@@ -375,8 +389,8 @@ async def mcp_oauth_proxy(
             response_obj.headers["X-MCP-Transport"] = "http"
             response_obj.headers["X-OAuth-Supported"] = "true"
             
-            # Set session cookie for Claude Web App if needed
-            if 'Claude-User' in user_agent and not claude_session_cookie:
+            # Set session cookie for Claude Web App if needed (only if no existing session)
+            if 'Claude-User' in user_agent and not existing_session:
                 session_id = create_session(user)
                 logger.error(f"🍪🔥 SETTING CLAUDE WEB APP SESSION COOKIE (BATCH):")
                 logger.error(f"   - Session ID: {session_id[:8]}...")
@@ -387,12 +401,14 @@ async def mcp_oauth_proxy(
                     value=session_id,
                     max_age=86400,  # 24 hours
                     httponly=False,  # Allow JavaScript access for debugging
-                    secure=True,
-                    samesite="none",  # Required for cross-site requests
+                    secure=False,   # Allow HTTP for Claude Web App compatibility
+                    samesite="lax",  # More permissive for cross-origin requests
                     domain=None,  # Let browser handle domain
                     path="/"  # Ensure cookie works for all paths
                 )
                 logger.info(f"🍪 Set session cookie for Claude Web App: {session_id[:8]}...")
+            elif 'Claude-User' in user_agent and existing_session:
+                logger.info(f"🍪 Claude Web App already has session cookie: {existing_session[:8]}... - not setting new one")
             
             return response_obj
         
@@ -421,8 +437,8 @@ async def mcp_oauth_proxy(
                 response_obj.headers["X-MCP-Transport"] = "http"
                 response_obj.headers["X-OAuth-Supported"] = "true"
             
-            # Set session cookie for Claude Web App if needed
-            if 'Claude-User' in user_agent and not claude_session_cookie:
+            # Set session cookie for Claude Web App if needed (only if no existing session)
+            if 'Claude-User' in user_agent and not existing_session:
                 session_id = create_session(user)
                 logger.error(f"🍪🔥 SETTING CLAUDE WEB APP SESSION COOKIE (SINGLE):")
                 logger.error(f"   - Session ID: {session_id[:8]}...")
@@ -433,12 +449,14 @@ async def mcp_oauth_proxy(
                     value=session_id,
                     max_age=86400,  # 24 hours
                     httponly=False,  # Allow JavaScript access for debugging
-                    secure=True,
-                    samesite="none",  # Required for cross-site requests
+                    secure=False,   # Allow HTTP for Claude Web App compatibility
+                    samesite="lax",  # More permissive for cross-origin requests
                     domain=None,  # Let browser handle domain
                     path="/"  # Ensure cookie works for all paths
                 )
                 logger.info(f"🍪 Set session cookie for Claude Web App: {session_id[:8]}...")
+            elif 'Claude-User' in user_agent and existing_session:
+                logger.info(f"🍪 Claude Web App already has session cookie: {existing_session[:8]}... - not setting new one")
             
             return response_obj
             
