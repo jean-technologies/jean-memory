@@ -60,9 +60,6 @@ def create_access_token(user_id: str, email: str, client_name: str, scopes: list
         "scope": " ".join(scopes),  # OAuth 2.1 standard scope claim
         "iat": datetime.utcnow().timestamp(),
         "exp": expire.timestamp(),
-        "iss": "jean-memory-oauth",
-        "aud": "jean-memory-mcp",  # Audience claim for MCP resource server
-        "mcp_protocol_version": "2025-06-18"
     }
     
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -81,7 +78,7 @@ def decode_access_token(token: str) -> Dict:
 
 @oauth_router.get("/.well-known/oauth-authorization-server")
 async def oauth_discovery():
-    """OAuth 2.0 Authorization Server Metadata (RFC 8414) - MCP 2025-06-18 Compatible"""
+    """OAuth 2.0 discovery endpoint for Claude Web"""
     # Get base URL from environment variable
     base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
     
@@ -91,32 +88,12 @@ async def oauth_discovery():
         "token_endpoint": f"{base_url}/oauth/token",
         "registration_endpoint": f"{base_url}/oauth/register",
         "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "grant_types_supported": ["authorization_code"],
         "code_challenge_methods_supported": ["S256"],
-        "token_endpoint_auth_methods_supported": ["client_secret_post", "none"],
-        "scopes_supported": ["mcp:tools", "mcp:resources", "mcp:prompts"],
-        "subject_types_supported": ["public"],
-        # MCP-specific metadata for 2025-06-18 compatibility
-        "mcp_protocol_version": "2025-06-18",
-        "mcp_capabilities": ["tools", "resources", "prompts"],
-        "pkce_required": True,
-        "dynamic_client_registration_supported": True
+        "token_endpoint_auth_methods_supported": ["none"],
+        "scopes_supported": ["read", "write", "mcp:tools", "mcp:resources", "mcp:prompts"],
     }
 
-
-@oauth_router.get("/.well-known/oauth-protected-resource")
-async def oauth_protected_resource_metadata():
-    """OAuth 2.0 Protected Resource Metadata (RFC 9728) - MCP 2025-06-18"""
-    base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
-    
-    return {
-        "resource": base_url,
-        "authorization_servers": [base_url],
-        "scopes_supported": ["mcp:tools", "mcp:resources", "mcp:prompts"],
-        "bearer_methods_supported": ["header"],
-        "resource_documentation": f"{base_url}/mcp/status",
-        "mcp_protocol_version": "2025-06-18"
-    }
 
 
 @oauth_router.post("/register")
@@ -608,9 +585,7 @@ async def token_exchange(
         "access_token": access_token,
         "token_type": "Bearer",
         "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        "scope": " ".join(requested_scopes),
-        "refresh_token": None,  # Not implemented yet
-        "mcp_protocol_version": "2025-06-18"
+        "scope": " ".join(requested_scopes)
     }
 
 
