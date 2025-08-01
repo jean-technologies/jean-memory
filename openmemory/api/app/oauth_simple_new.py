@@ -49,7 +49,8 @@ bearer_scheme = HTTPBearer(auto_error=True)
 def create_access_token(user_id: str, email: str, client_name: str, scopes: list = None) -> str:
     """Create JWT access token with MCP-compliant scopes"""
     if scopes is None:
-        scopes = ["mcp:tools", "mcp:resources", "mcp:prompts"]
+        # Use both legacy and MCP scopes for maximum compatibility
+        scopes = ["read", "write", "mcp:tools", "mcp:resources", "mcp:prompts"]
     
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
@@ -60,6 +61,9 @@ def create_access_token(user_id: str, email: str, client_name: str, scopes: list
         "scope": " ".join(scopes),  # OAuth 2.1 standard scope claim
         "iat": datetime.utcnow().timestamp(),
         "exp": expire.timestamp(),
+        "aud": "jean-memory-mcp",  # Audience for MCP resource server
+        "iss": "https://jean-memory-api-virginia.onrender.com",  # Issuer
+        "mcp_capabilities": ["tools", "resources", "prompts"]  # MCP-specific claim
     }
     
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -593,7 +597,26 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
     """Extract user from JWT token"""
     
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        # Try to decode with audience validation first (for new tokens)
+        try:
+            payload = jwt.decode(
+                credentials.credentials, 
+                JWT_SECRET, 
+                algorithms=[JWT_ALGORITHM],
+                audience="jean-memory-mcp",
+                issuer="https://jean-memory-api-virginia.onrender.com",
+                options={"verify_aud": True, "verify_iss": True}
+            )
+            logger.info("✅ JWT decoded with full validation (aud + iss)")
+        except jwt.InvalidAudienceError:
+            # Fallback for tokens without audience claim (legacy tokens)
+            payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            logger.warning("⚠️ JWT decoded without audience validation (legacy token)")
+        except jwt.InvalidIssuerError:
+            # Fallback for tokens without issuer claim (legacy tokens)
+            payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            logger.warning("⚠️ JWT decoded without issuer validation (legacy token)")
+            
         email: str = payload.get("email")
         user_id: str = payload.get("sub")
         client: str = payload.get("client") # Client name from token
@@ -621,9 +644,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
             logger.error(f"Invalid scopes: {scopes}")
             raise credentials_exception
         
-        # Log if using legacy scopes
-        if has_legacy_scopes and not has_mcp_scopes:
-            logger.warning(f"Using legacy scopes: {scopes}. Consider updating to MCP scopes.")
+        # Log scope usage for debugging
+        if has_legacy_scopes and has_mcp_scopes:
+            logger.info(f"Using hybrid scopes (legacy + MCP): {scopes}")
+        elif has_legacy_scopes and not has_mcp_scopes:
+            logger.warning(f"Using legacy scopes only: {scopes}. Consider updating to MCP scopes.")
+        else:
+            logger.info(f"Using MCP scopes: {scopes}")
 
         return {
             "user_id": user_id, 
