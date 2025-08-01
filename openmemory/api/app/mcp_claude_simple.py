@@ -140,14 +140,17 @@ async def mcp_oauth_proxy(
     user: dict = Depends(get_current_user)
 ):
     """
-    MCP OAuth Proxy - Stateless HTTP Transport
+    MCP OAuth Proxy - HTTP Streaming Transport (MCP 2025-06-18)
     
     URL: https://jean-memory-api-virginia.onrender.com/mcp
-    Authentication: OAuth Bearer token (JWT) with auto-discovery
-    Transport: Direct HTTP (no sessions, no SSE)
+    Authentication: OAuth 2.1 + Bearer token per RFC 6749 Section 5.1.1
+    Transport: HTTP streaming (single persistent connection)
     
-    This is the main endpoint users copy/paste into Claude Web connectors.
-    After OAuth authentication, requests are proxied to the robust V2 logic.
+    Implements MCP 2025-06-18 specification with:
+    - OAuth 2.1 + PKCE authentication 
+    - Resource parameter binding (RFC 8707)
+    - Tools discovery in initialize response
+    - Bearer token validation per OAuth 2.1 Section 5.2
     """
     
     # Validate Origin header (security requirement)
@@ -155,7 +158,7 @@ async def mcp_oauth_proxy(
         logger.warning(f"Invalid origin: {request.headers.get('origin')}")
         raise HTTPException(status_code=403, detail="Invalid origin")
     
-    logger.info(f"🚀 MCP OAuth Proxy: {user['client']} for user {user['user_id']} ({user['email']})")
+    logger.info(f"🚀 MCP HTTP Streaming: {user['client']} for user {user['user_id']} ({user['email']}) - Protocol 2025-06-18")
     
     # Set context variables for the duration of this request
     user_token = user_id_var.set(user["user_id"])
@@ -228,67 +231,9 @@ async def mcp_oauth_proxy(
         background_tasks_var.reset(tasks_token)
 
 
-@oauth_mcp_router.get("/mcp")
-async def mcp_streaming_endpoint(user: dict = Depends(get_current_user)):
-    """
-    Handle GET requests to /mcp endpoint for Server-Sent Events streaming
-    
-    Claude Web may require SSE streaming for proper connection persistence.
-    This provides a streaming endpoint to maintain connection state.
-    """
-    from fastapi.responses import StreamingResponse
-    import asyncio
-    import json
-    import datetime
-    
-    logger.warning(f"🔥 SSE STREAM REQUESTED by {user['email']} - Claude may need streaming connection")
-    
-    async def event_generator():
-        try:
-            # Send initial connection event
-            yield f"event: connection\ndata: {json.dumps({'status': 'connected', 'user': user['email']})}\n\n"
-            
-            # Send capabilities immediately to signal tools are available
-            capabilities_event = {
-                "event": "capabilities",
-                "capabilities": {
-                    "tools": {"listChanged": True},
-                    "resources": {},
-                    "prompts": {}
-                },
-                "protocolVersion": "2024-11-05",
-                "serverInfo": {"name": "Jean Memory", "version": "1.0.0"}
-            }
-            yield f"event: capabilities\ndata: {json.dumps(capabilities_event)}\n\n"
-            
-            # Keep connection alive with periodic heartbeats
-            while True:
-                try:
-                    await asyncio.sleep(30)  # 30 second heartbeat
-                    heartbeat = {
-                        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
-                        "status": "alive",
-                        "user": user["email"]
-                    }
-                    yield f"event: heartbeat\ndata: {json.dumps(heartbeat)}\n\n"
-                except asyncio.CancelledError:
-                    logger.info(f"SSE connection closed for {user['email']}")
-                    break
-                    
-        except Exception as e:
-            logger.error(f"SSE stream error for {user['email']}: {e}")
-            yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
-    
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control",
-        }
-    )
+# SSE endpoint removed - MCP 2025-06-18 uses HTTP streaming only
+# All communication happens through POST /mcp with proper OAuth 2.1 + Bearer tokens
+# Per MCP spec: "Authorization: Bearer <access-token>" header required on every HTTP request
 
 
 @oauth_mcp_router.get("/mcp/health")  
