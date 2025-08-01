@@ -1,0 +1,43 @@
+{
+  "name": "@jeanmemory/react",
+  "version": "0.1.0",
+  "description": "React SDK for Jean Memory - Build personalized AI chatbots in 5 lines of code",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublish": "npm run build"
+  },
+  "keywords": [
+    "jean-memory",
+    "react",
+    "ai",
+    "chatbot",
+    "personalization",
+    "assistant-ui"
+  ],
+  "author": "Jean Memory",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "@assistant-ui/react": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jean-technologies/jean-memory.git",
+    "directory": "sdk/react"
+  },
+  "homepage": "https://jeanmemory.com"
+}

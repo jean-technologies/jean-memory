@@ -415,6 +415,85 @@ graph TD
           <p className="text-xl text-muted-foreground mb-6">
             Build personal or enterprise agents with human-like memory
           </p>
+
+          {/* Jean Memory SDK Quickstart */}
+          <div className="my-8 p-6 bg-gradient-to-r from-blue-950/50 to-purple-950/50 border border-blue-800/60 rounded-lg">
+            <div className="flex items-center mb-4">
+              <Sparkles className="w-6 h-6 text-blue-400 mr-3" />
+              <h2 className="text-2xl font-bold text-foreground">🚀 Jean Memory SDK - Build AI Chatbots in 5 Lines</h2>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Skip the API complexity. Build personalized AI chatbots with Jean Memory context in just 5 lines of code.
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* React Example */}
+              <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                  <Component className="w-5 h-5 mr-2 text-blue-400" />
+                  React + Assistant-UI
+                </h3>
+                <CodeBlock lang="bash" code="npm install @jeanmemory/react @assistant-ui/react" />
+                <CodeBlock lang="tsx" code={`import { SignInWithJean, JeanChat, useJeanAgent } from '@jeanmemory/react';
+
+function MathTutorApp() {
+  const { agent, signIn } = useJeanAgent({
+    systemPrompt: "You are a patient math tutor"
+  });
+
+  if (!agent) return <SignInWithJean onSuccess={signIn} />;
+  return <JeanChat agent={agent} />; // Powered by Assistant-UI
+}`} />
+              </div>
+
+              {/* Python Example */}
+              <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                  <Terminal className="w-5 h-5 mr-2 text-green-400" />
+                  Python CLI
+                </h3>
+                <CodeBlock lang="bash" code="pip install jeanmemory" />
+                <CodeBlock lang="python" code={`from jeanmemory import JeanAgent
+
+agent = JeanAgent(
+    api_key="jean_sk_your_key_here",
+    system_prompt="You are a supportive therapist"
+)
+agent.run()  # Interactive CLI chat`} />
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-green-950/30 border border-green-800/40 rounded-lg">
+              <h4 className="font-semibold text-green-200 mb-2 flex items-center">
+                <BrainCircuit className="w-4 h-4 mr-2" />
+                What You Get Out of the Box:
+              </h4>
+              <ul className="text-green-100/80 text-sm space-y-1">
+                <li>✅ <strong>"Sign in with Jean"</strong> - Seamless user authentication</li>
+                <li>✅ <strong>Personalized Context</strong> - Automatic memory retrieval and injection</li>
+                <li>✅ <strong>Assistant-UI Integration</strong> - Production-ready chat components</li>
+                <li>✅ <strong>MCP Tools Integration</strong> - Full jean_memory and store_document tool access</li>
+                <li>✅ <strong>Multi-tenant Ready</strong> - Each user gets their own memory context</li>
+              </ul>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => window.open('https://github.com/jean-technologies/jean-memory/tree/main/sdk', '_blank')}
+              >
+                <Code className="w-4 h-4 mr-2" />
+                View SDK Examples
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => window.open('/api/v1/keys', '_blank')}
+              >
+                <Key className="w-4 h-4 mr-2" />
+                Get API Key
+              </Button>
+            </div>
+          </div>
           
           <div className="my-8">
             <InteractiveDemo />
