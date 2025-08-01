@@ -8,8 +8,6 @@ This endpoint implements a lean, stateless proxy that:
 4. Returns responses directly without sessions or SSE overhead
 
 This combines OAuth security with V2's superior performance and reliability.
-
-Legacy support included for backwards compatibility.
 """
 
 import logging
@@ -352,7 +350,6 @@ async def mcp_oauth_proxy(
         logger.error(f"   - Request URL: {request.url}")
         logger.error(f"   - Request headers: {dict(request.headers)}")
         error_response = {
->>>>>>> main
             "jsonrpc": "2.0",
             "error": {"code": -32700, "message": "Parse error"},
             "id": None
@@ -387,51 +384,6 @@ async def mcp_oauth_proxy(
         user_id_var.reset(user_token)
         client_name_var.reset(client_token)
         background_tasks_var.reset(tasks_token)
-
-
-# Legacy MCP router for backwards compatibility
-from app.oauth_simple import get_current_user as get_legacy_user
-from app.routing.mcp import handle_request_logic
-from starlette.datastructures import MutableHeaders
-
-mcp_router = APIRouter(tags=["mcp-legacy"])
-
-@mcp_router.post("/mcp-legacy")
-async def mcp_server_legacy(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    user: dict = Depends(get_legacy_user)
-):
-    """Legacy MCP server endpoint for backwards compatibility"""
-    logger.info(f"Legacy MCP request from {user['client']} for user {user['user_id']}")
-    
-    try:
-        body = await request.json()
-    except Exception as e:
-        logger.error(f"Failed to parse JSON: {e}")
-        return {
-            "jsonrpc": "2.0",
-            "error": {"code": -32700, "message": "Parse error"},
-            "id": None
-        }
-    
-    # Add user context to headers
-    headers = MutableHeaders(request.headers)
-    headers["x-user-id"] = user["user_id"]
-    headers["x-user-email"] = user["email"]  
-    headers["x-client-name"] = user["client"]
-    
-    # Modify request with user context
-    request._headers = headers
-    
-    # Route to existing MCP logic
-    response = await handle_request_logic(request, body, background_tasks)
-    
-    method = body.get("method", "unknown")
-    logger.info(f"Legacy MCP {method} completed for {user['email']}")
-    
-    return response
-
 
 @oauth_mcp_router.get("/mcp")
 async def mcp_get_dummy(request: Request, user: dict = Depends(get_mcp_user)):
