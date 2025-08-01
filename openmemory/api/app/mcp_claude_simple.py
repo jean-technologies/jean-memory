@@ -257,10 +257,20 @@ async def mcp_oauth_proxy(
     user_agent = request.headers.get('user-agent', '')
     claude_session_cookie = request.cookies.get('claude_session')
     
+    logger.error(f"🔍🔥 USER AGENT ANALYSIS:")
+    logger.error(f"   - Full User-Agent: {user_agent}")
+    logger.error(f"   - Contains 'Claude-User': {'Claude-User' in user_agent}")
+    logger.error(f"   - Contains 'claude': {'claude' in user_agent.lower()}")
+    logger.error(f"   - Contains 'anthropic': {'anthropic' in user_agent.lower()}")
+    logger.error(f"   - Has claude_session cookie: {claude_session_cookie is not None}")
+    logger.error(f"   - All cookies: {dict(request.cookies)}")
+    
     if 'Claude-User' in user_agent and not claude_session_cookie:
         logger.warning(f"🎯 Claude Web App detected without session - creating session")
         # This is a Claude Web App request, we should set a session cookie
         # We'll handle this in the response
+    elif 'claude' in user_agent.lower() or 'anthropic' in user_agent.lower():
+        logger.warning(f"🤔 Possible Claude client detected but doesn't match expected pattern")
     """
     MCP OAuth Proxy - Stateless HTTP Transport (MCP 2025-06-18)
     
@@ -337,16 +347,31 @@ async def mcp_oauth_proxy(
             
             response_obj = JSONResponse(content=responses)
             
+            # Add Claude Web App compatibility headers
+            response_obj.headers["Access-Control-Allow-Origin"] = "*"
+            response_obj.headers["Access-Control-Allow-Credentials"] = "true"
+            response_obj.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, HEAD"
+            response_obj.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Origin"
+            response_obj.headers["X-MCP-Protocol"] = "2025-06-18"
+            response_obj.headers["X-MCP-Transport"] = "http"
+            response_obj.headers["X-OAuth-Supported"] = "true"
+            
             # Set session cookie for Claude Web App if needed
             if 'Claude-User' in user_agent and not claude_session_cookie:
                 session_id = create_session(user)
+                logger.error(f"🍪🔥 SETTING CLAUDE WEB APP SESSION COOKIE (BATCH):")
+                logger.error(f"   - Session ID: {session_id[:8]}...")
+                logger.error(f"   - User Agent: {user_agent}")
+                logger.error(f"   - Response type: {type(response_obj)}")
                 response_obj.set_cookie(
                     key="claude_session",
                     value=session_id,
                     max_age=86400,  # 24 hours
-                    httponly=True,
+                    httponly=False,  # Allow JavaScript access for debugging
                     secure=True,
-                    samesite="none"  # Required for cross-site requests
+                    samesite="none",  # Required for cross-site requests
+                    domain=None,  # Let browser handle domain
+                    path="/"  # Ensure cookie works for all paths
                 )
                 logger.info(f"🍪 Set session cookie for Claude Web App: {session_id[:8]}...")
             
@@ -367,17 +392,32 @@ async def mcp_oauth_proxy(
                 logger.error(f"🔥🔥🔥 RETURNING JSON RESPONSE:")
                 logger.error(f"   - Final response: {response}")
                 response_obj = JSONResponse(content=response)
+                
+                # Add Claude Web App compatibility headers
+                response_obj.headers["Access-Control-Allow-Origin"] = "*"
+                response_obj.headers["Access-Control-Allow-Credentials"] = "true"
+                response_obj.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, HEAD"
+                response_obj.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Origin"
+                response_obj.headers["X-MCP-Protocol"] = "2025-06-18"
+                response_obj.headers["X-MCP-Transport"] = "http"
+                response_obj.headers["X-OAuth-Supported"] = "true"
             
             # Set session cookie for Claude Web App if needed
             if 'Claude-User' in user_agent and not claude_session_cookie:
                 session_id = create_session(user)
+                logger.error(f"🍪🔥 SETTING CLAUDE WEB APP SESSION COOKIE (SINGLE):")
+                logger.error(f"   - Session ID: {session_id[:8]}...")
+                logger.error(f"   - User Agent: {user_agent}")
+                logger.error(f"   - Response type: {type(response_obj)}")
                 response_obj.set_cookie(
                     key="claude_session",
                     value=session_id,
                     max_age=86400,  # 24 hours
-                    httponly=True,
+                    httponly=False,  # Allow JavaScript access for debugging
                     secure=True,
-                    samesite="none"  # Required for cross-site requests
+                    samesite="none",  # Required for cross-site requests
+                    domain=None,  # Let browser handle domain
+                    path="/"  # Ensure cookie works for all paths
                 )
                 logger.info(f"🍪 Set session cookie for Claude Web App: {session_id[:8]}...")
             
