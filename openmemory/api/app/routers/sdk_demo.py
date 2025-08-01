@@ -13,7 +13,7 @@ from app.auth import get_service_client
 from app.database import get_db
 from app.models import User, ApiKey
 from app.tools.orchestration import jean_memory
-from app.context_vars import user_id_var, client_name_var, background_tasks_var
+from app.context import user_id_var, client_name_var, background_tasks_var
 
 logger = logging.getLogger(__name__)
 
