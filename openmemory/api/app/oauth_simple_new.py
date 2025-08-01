@@ -46,17 +46,23 @@ oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
 bearer_scheme = HTTPBearer(auto_error=True)
 
 
-def create_access_token(user_id: str, email: str, client_name: str) -> str:
-    """Create JWT access token"""
+def create_access_token(user_id: str, email: str, client_name: str, scopes: list = None) -> str:
+    """Create JWT access token with MCP-compliant scopes"""
+    if scopes is None:
+        scopes = ["mcp:tools", "mcp:resources", "mcp:prompts"]
+    
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     payload = {
         "sub": user_id,
         "email": email,
         "client": client_name,
-        "scope": "read write",
+        "scope": " ".join(scopes),  # OAuth 2.1 standard scope claim
         "iat": datetime.utcnow().timestamp(),
         "exp": expire.timestamp(),
+        "iss": "jean-memory-oauth",
+        "aud": "jean-memory-mcp",  # Audience claim for MCP resource server
+        "mcp_protocol_version": "2025-06-18"
     }
     
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -75,7 +81,7 @@ def decode_access_token(token: str) -> Dict:
 
 @oauth_router.get("/.well-known/oauth-authorization-server")
 async def oauth_discovery():
-    """OAuth 2.0 discovery endpoint for Claude Web"""
+    """OAuth 2.0 Authorization Server Metadata (RFC 8414) - MCP 2025-06-18 Compatible"""
     # Get base URL from environment variable
     base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
     
@@ -85,10 +91,31 @@ async def oauth_discovery():
         "token_endpoint": f"{base_url}/oauth/token",
         "registration_endpoint": f"{base_url}/oauth/register",
         "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code"],
+        "grant_types_supported": ["authorization_code", "refresh_token"],
         "code_challenge_methods_supported": ["S256"],
-        "token_endpoint_auth_methods_supported": ["none"],
-        "scopes_supported": ["read", "write"],
+        "token_endpoint_auth_methods_supported": ["client_secret_post", "none"],
+        "scopes_supported": ["mcp:tools", "mcp:resources", "mcp:prompts"],
+        "subject_types_supported": ["public"],
+        # MCP-specific metadata for 2025-06-18 compatibility
+        "mcp_protocol_version": "2025-06-18",
+        "mcp_capabilities": ["tools", "resources", "prompts"],
+        "pkce_required": True,
+        "dynamic_client_registration_supported": True
+    }
+
+
+@oauth_router.get("/.well-known/oauth-protected-resource")
+async def oauth_protected_resource_metadata():
+    """OAuth 2.0 Protected Resource Metadata (RFC 9728) - MCP 2025-06-18"""
+    base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+    
+    return {
+        "resource": base_url,
+        "authorization_servers": [base_url],
+        "scopes_supported": ["mcp:tools", "mcp:resources", "mcp:prompts"],
+        "bearer_methods_supported": ["header"],
+        "resource_documentation": f"{base_url}/mcp/status",
+        "mcp_protocol_version": "2025-06-18"
     }
 
 
@@ -562,11 +589,13 @@ async def token_exchange(
     
     logger.info("✅ PKCE verification successful")
     
-    # Create access token
+    # Create access token with MCP scopes
+    requested_scopes = form_data.get("scope", "mcp:tools mcp:resources mcp:prompts").split()
     access_token = create_access_token(
         user_id=auth_data["user_id"],
         email=auth_data["email"],
-        client_name="claude"
+        client_name="claude",
+        scopes=requested_scopes
     )
     
     logger.info(f"Created access token for user {auth_data['email']}")
@@ -578,7 +607,9 @@ async def token_exchange(
         "access_token": access_token,
         "token_type": "Bearer",
         "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        "scope": auth_data.get("scope", "read write")
+        "scope": " ".join(requested_scopes),
+        "refresh_token": None,  # Not implemented yet
+        "mcp_protocol_version": "2025-06-18"
     }
 
 
@@ -598,11 +629,23 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
         logger.info(f"✅ JWT successfully decoded for user: {email}")
         logger.info(f"   - Supabase User ID (sub): {user_id}")
         logger.info(f"   - Client: {client}")
-
-        # You can add further validation here if needed, e.g., checking
-        # if the user exists in your local database.
         
-        return {"user_id": user_id, "email": email, "client": client}
+        # Extract and validate scopes
+        scopes = payload.get("scope", "").split()
+        logger.info(f"   - Scopes: {scopes}")
+        
+        # Validate MCP scopes
+        valid_mcp_scopes = {"mcp:tools", "mcp:resources", "mcp:prompts"}
+        if not any(scope in valid_mcp_scopes for scope in scopes):
+            logger.error(f"Invalid MCP scopes: {scopes}")
+            raise credentials_exception
+
+        return {
+            "user_id": user_id, 
+            "email": email, 
+            "client": client,
+            "scopes": scopes
+        }
         
     except Exception as e:
         logger.error(f"JWT Error: {e}", exc_info=True)
