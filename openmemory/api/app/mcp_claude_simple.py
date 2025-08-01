@@ -75,7 +75,9 @@ async def handle_mcp_request(
         }
 
     elif method_name == "tools/list":
+        logger.warning(f"🔥🔥🔥 EXPLICIT TOOLS/LIST CALLED! Client: {client_name}")
         tools_schema = client_profile.get_tools_schema(include_annotations=True)
+        logger.warning(f"🔥🔥🔥 RETURNING {len(tools_schema)} TOOLS FOR EXPLICIT TOOLS/LIST")
         return {"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id}
 
     elif method_name == "tools/call":
@@ -101,7 +103,11 @@ async def handle_mcp_request(
 
 
     elif method_name in ["resources/list", "prompts/list"]:
-        return {"jsonrpc": "2.0", "result": {method_name.split('/')[0]: []}, "id": request_id}
+        logger.warning(f"🔥🔥🔥 {method_name.upper()} CALLED! Client: {client_name}")
+        result_key = method_name.split('/')[0]
+        response = {"jsonrpc": "2.0", "result": {result_key: []}, "id": request_id}
+        logger.warning(f"🔥🔥🔥 RETURNING EMPTY {result_key.upper()} LIST")
+        return response
 
     elif method_name == "resources/templates/list":
         return {"jsonrpc": "2.0", "result": {"templates": []}, "id": request_id}
