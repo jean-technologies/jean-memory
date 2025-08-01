@@ -108,7 +108,7 @@ export default function ParticleNetwork({
         straight: false,
       },
       number: {
-        value: isMobile ? 40 : particleCount, 
+        value: isMobile ? 25 : particleCount, 
       },
       opacity: {
           value: isMobile ? 0.5 : 0.3,
