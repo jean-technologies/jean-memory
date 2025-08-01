@@ -117,10 +117,12 @@ async def handle_mcp_request(
         logger.error(f"   - Client protocol version: {client_protocol_version}")
         logger.warning(f"🔥 CLIENT REQUESTED PROTOCOL: {client_protocol_version}")
         
-        # MCP 2025-06-18 specification: tools are discovered via separate tools/list call
-        # Initialize response should only indicate if tools list can change
+        # WORKAROUND: Claude Web App bug - include tools directly in initialize response
+        # Even though we signal protocol 2025-06-18, Claude doesn't call tools/list
+        # So we provide tools directly in the capabilities to ensure they are discovered
+        tools_schema = client_profile.get_tools_schema(include_annotations=True)
         capabilities = {
-            "tools": {"listChanged": True},
+            "tools": {"list": tools_schema, "listChanged": False},
             "logging": {},
             "sampling": {}
         }
