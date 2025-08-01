@@ -385,7 +385,6 @@ async def mcp_oauth_proxy(
         client_name_var.reset(client_token)
         background_tasks_var.reset(tasks_token)
 
-
 @oauth_mcp_router.get("/mcp")
 async def mcp_get_dummy(request: Request, user: dict = Depends(get_mcp_user)):
     """
@@ -415,8 +414,8 @@ async def mcp_get_dummy(request: Request, user: dict = Depends(get_mcp_user)):
 # "Authorization: Bearer <access-token>" header on every HTTP request.
 
 
-@oauth_mcp_router.get("/mcp/health")  
-async def mcp_health(user: dict = Depends(get_current_user)):
+@oauth_mcp_router.get("/mcp/health")
+async def mcp_health(user: dict = Depends(get_mcp_user)):
     """Health check for MCP server with auth"""
     
     return {

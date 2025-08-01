@@ -18,6 +18,14 @@ from app.tools.debug import (
     test_connection,
     debug_get_qdrant_payload,
 )
+from app.tools.coordination import (
+    setup_multi_agent_coordination,
+    analyze_task_conflicts,
+    create_task_distribution,
+    claim_file_lock,
+    sync_progress,
+    check_agent_status,
+)
 
 # A centralized registry for all available tool functions.
 # This makes it easy to manage tools and decouples them from the server logic.
@@ -36,4 +44,11 @@ tool_registry = {
     "delete_all_memories": delete_all_memories,
     "get_memory_details": get_memory_details,
     "debug_get_qdrant_payload": debug_get_qdrant_payload,
+    # Multi-agent coordination tools
+    "setup_multi_agent_coordination": setup_multi_agent_coordination,
+    "analyze_task_conflicts": analyze_task_conflicts,
+    "create_task_distribution": create_task_distribution,
+    "claim_file_lock": claim_file_lock,
+    "sync_progress": sync_progress,
+    "check_agent_status": check_agent_status,
 } 

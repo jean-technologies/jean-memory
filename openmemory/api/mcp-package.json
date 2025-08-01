@@ -1,0 +1,29 @@
+{
+  "name": "jean-memory-mcp-server",
+  "version": "1.0.0",
+  "description": "Jean Memory MCP Server for Claude Code integration",
+  "main": "jean-memory-mcp-server.js",
+  "bin": {
+    "jean-memory-mcp": "./jean-memory-mcp-server.js"
+  },
+  "scripts": {
+    "start": "node jean-memory-mcp-server.js",
+    "test": "node test-mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "claude-code",
+    "jean-memory",
+    "memory",
+    "ai"
+  ],
+  "author": "Jean Technologies",
+  "license": "MIT"
+}

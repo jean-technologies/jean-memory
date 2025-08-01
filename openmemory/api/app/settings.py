@@ -78,6 +78,15 @@ class Config:
         self.ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
         self.APIFY_TOKEN = os.getenv("APIFY_TOKEN")
         
+        # API Base URL configuration for OAuth and MCP endpoints
+        self.API_BASE_URL = self._get_api_base_url()
+        
+        # SMS service always uses production (Twilio only configured there)
+        self.SMS_SERVICE_URL = "https://jean-memory-api-virginia.onrender.com"
+        
+        # Frontend URL configuration for CORS
+        self.FRONTEND_URLS = self._get_frontend_urls()
+        
         # Neo4j configuration for graph memory
         # Only adding what's needed for Neo4j connectivity testing
         self.NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
@@ -186,6 +195,41 @@ class Config:
     def pgvector_connection_string(self) -> str:
         """Get the pgvector PostgreSQL connection string"""
         return f"postgresql://{self.PGVECTOR_USER}:{self.PGVECTOR_PASSWORD}@{self.PGVECTOR_HOST}:{self.PGVECTOR_PORT}/{self.PGVECTOR_DATABASE}"
+    
+    def _get_api_base_url(self) -> str:
+        """Get the appropriate API base URL for the current environment"""
+        # Allow explicit override via environment variable
+        explicit_url = os.getenv("API_BASE_URL")
+        if explicit_url:
+            return explicit_url
+        
+        # Auto-detect based on environment
+        if self.IS_PRODUCTION:
+            # Production - use Virginia production server
+            return "https://jean-memory-api-virginia.onrender.com"
+        else:
+            # Development - use dev server
+            return "https://jean-memory-api-dev.onrender.com"
+    
+    def _get_frontend_urls(self) -> list:
+        """Get appropriate frontend URLs for CORS configuration"""
+        base_urls = [
+            "http://localhost:3000", 
+            "http://localhost:3001", 
+            "https://app.jeanmemory.com",
+            "https://jeanmemory.com",
+            "https://www.jeanmemory.com",
+            "https://api.jeanmemory.com",
+            "https://platform.openai.com",  # OpenAI API Playground
+        ]
+        
+        # Add environment-specific URLs
+        if self.IS_PRODUCTION:
+            base_urls.append("https://jean-memory-ui-virginia.onrender.com")
+        else:
+            base_urls.append("https://jean-memory-ui-dev.onrender.com")
+        
+        return base_urls
     
     @property
     def environment_name(self) -> str:

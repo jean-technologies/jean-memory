@@ -16,7 +16,7 @@ export default function ParticleNetwork({
   id,
   className, 
   interactive = true, 
-  particleCount = 200 
+  particleCount = 80 
 }: ParticleNetworkProps) {
   const [init, setInit] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -45,13 +45,11 @@ export default function ParticleNetwork({
   }, []);
 
   const particleColors = theme === 'light' 
-    ? ["#718096", "#a0aec0", "#cbd5e0"] // Steel gray palette for light mode
-    : ["#9ca3af", "#6b7280", "#4b5563"]; // Original palette for dark mode
+    ? ["#718096", "#a0aec0", "#cbd5e0"] 
+    : ["#9ca3af", "#6b7280", "#4b5563"]; 
   
   const linkColor = theme === 'light' ? "#a0aec0" : "#6b7280";
 
-  // Desktop: Full interactive experience
-  // Mobile: Simplified but visible
   const options = {
     fullScreen: {
       enable: false,
@@ -66,11 +64,11 @@ export default function ParticleNetwork({
     interactivity: {
       events: {
         onClick: {
-          enable: interactive && !isMobile, // Desktop only: click to add particles
+          enable: interactive && !isMobile,
           mode: "push",
         },
         onHover: {
-          enable: interactive && !isMobile, // Desktop only: hover connections
+          enable: interactive && !isMobile,
           mode: "grab",
         },
       },
@@ -89,14 +87,14 @@ export default function ParticleNetwork({
     particles: {
       color: {
         value: isMobile 
-          ? particleColors[1] // a mid-range color for mobile
+          ? particleColors[1]
           : particleColors,
       },
-              links: {
+      links: {
           color: linkColor,
           distance: 100,
           enable: true,
-          opacity: isMobile ? 0.4 : 0.2, // Much more subtle
+          opacity: isMobile ? 0.4 : 0.2,
           width: 1,
         },
       move: {
@@ -106,23 +104,22 @@ export default function ParticleNetwork({
           default: "bounce",
         },
         random: true,
-        speed: isMobile ? 0.5 : 0.6, // Much slower and more subtle
+        speed: isMobile ? 0.5 : 0.6,
         straight: false,
       },
       number: {
-        value: isMobile ? 30 : 80, // Significantly fewer particles
+        value: isMobile ? 40 : particleCount, 
       },
-              opacity: {
-          value: isMobile ? 0.5 : 0.3, // Much more subtle
+      opacity: {
+          value: isMobile ? 0.5 : 0.3,
         },
       shape: {
         type: "circle",
       },
       size: {
-        value: { min: 1, max: isMobile ? 3 : 3 }, // Consistent size
+        value: { min: 1, max: isMobile ? 3 : 3 },
       },
     },
-    detectRetina: true,
   };
 
   if (!init) {
@@ -137,4 +134,4 @@ export default function ParticleNetwork({
       options={options as any}
     />
   );
-} 
+}

@@ -6,12 +6,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer
 from app.database import engine, Base, SessionLocal
-from app.mcp_server import setup_mcp_server
 from app.routers import memories_router, apps_router, stats_router, integrations_router, profile_router, webhooks_router
 from app.routers import keys as keys_router
 from app.routers.admin import router as admin_router
 from app.routers.stripe_webhooks import router as stripe_webhooks_router
 from app.routers.migration import router as migration_router
+
 
 from fastapi_pagination import add_pagination
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,7 @@ from app.routers.local_auth import router as local_auth_router
 from app.routers import sdk_demo
 from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import oauth_mcp_router
-from app.routers.fastmcp_oauth import fastmcp_router
+from app.routing.mcp import mcp_router as mcp_v2_router
 import asyncio
 
 # Configure logging
@@ -148,20 +148,7 @@ app.add_middleware(MemoryMonitorMiddleware)
 # It must be a list of specific origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://localhost:3001", 
-        "https://app.jeanmemory.com",  # Updated to new custom domain
-        "https://jeanmemory.com", # New custom domain
-        "https://www.jeanmemory.com", # New custom domain with www
-        "https://jean-memory-ui-virginia.onrender.com", # Render.com frontend URL (Virginia)
-        "https://api.jeanmemory.com", # API domain used by some components
-        "https://platform.openai.com", # OpenAI API Playground
-        "https://claude.ai", # Claude Web
-        "https://api.claude.ai", # Claude API
-        "https://app.claude.ai", # Claude App
-        "https://*.claude.ai", # Claude subdomains
-    ],  
+    allow_origins=config.FRONTEND_URLS,  
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], # Added PATCH
     allow_headers=["*"], # Allow all headers to fix CORS issues
@@ -280,6 +267,86 @@ async def download_claude_extension_http():
     """Serve the Jean Memory Claude Desktop Extension file with HTTP transport"""
     return await download_claude_extension(transport="http")
 
+@app.get("/mcp/claude-code/debug")
+async def debug_mcp_files():
+    """Debug endpoint to check what files are available"""
+    from pathlib import Path
+    import os
+    
+    api_dir = Path(__file__).parent
+    files = list(api_dir.glob("*"))
+    
+    return {
+        "api_dir": str(api_dir),
+        "working_dir": str(Path.cwd()),
+        "files": [str(f) for f in files],
+        "mcp_server_exists": (api_dir / "jean-memory-mcp-server.js").exists(),
+        "mcp_package_exists": (api_dir / "mcp-package.json").exists(),
+    }
+
+@app.get("/mcp/claude-code/package")
+async def download_claude_code_mcp_package():
+    """Serve the Jean Memory MCP Server package for Claude Code"""
+    import tempfile
+    import tarfile
+    import shutil
+    from pathlib import Path
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get API directory and check for MCP server files
+        api_dir = Path(__file__).parent
+        server_file = api_dir / "jean-memory-mcp-server.js"
+        package_file = api_dir / "mcp-package.json"
+        
+        logger.info(f"Looking for MCP files in: {api_dir}")
+        logger.info(f"Server file exists: {server_file.exists()}")
+        logger.info(f"Package file exists: {package_file.exists()}")
+        
+        if not server_file.exists():
+            raise HTTPException(
+                status_code=404, 
+                detail=f"MCP server file not found at {server_file}. Working directory: {Path.cwd()}"
+            )
+        
+        # Create a temporary tar.gz file
+        temp_dir = tempfile.mkdtemp()
+        tar_path = Path(temp_dir) / "jean-memory-mcp.tar.gz"
+        
+        logger.info(f"Creating tar file at: {tar_path}")
+        
+        with tarfile.open(tar_path, 'w:gz') as tar:
+            tar.add(server_file, arcname="jean-memory-mcp-server.js")
+            if package_file.exists():
+                tar.add(package_file, arcname="package.json")
+        
+        logger.info(f"Tar file created successfully, size: {tar_path.stat().st_size} bytes")
+        
+        # Use a background task to cleanup the temp directory after response
+        import asyncio
+        
+        async def cleanup():
+            await asyncio.sleep(10)  # Wait 10 seconds before cleanup
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        
+        asyncio.create_task(cleanup())
+        
+        return FileResponse(
+            path=str(tar_path),
+            filename="jean-memory-mcp.tar.gz",
+            media_type="application/gzip",
+            headers={
+                "Content-Disposition": "attachment; filename=jean-memory-mcp.tar.gz",
+                "Content-Description": "Jean Memory MCP Server Package for Claude Code"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error creating MCP package: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create package: {str(e)}")
+
 @app.get("/api/v1/vcard")
 async def serve_vcard(data: str):
     """Serve vCard file for MMS contact cards"""
@@ -322,13 +389,12 @@ app.include_router(agent_mcp_router) # New secure agent endpoint
 app.include_router(migration_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])  # Migration status endpoint
 app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - verified by signature)
 
-# OAuth 2.0 endpoints for Claude Web - RE-ENABLED FOR FASTMCP
-app.include_router(oauth_router)  # OAuth server at /oauth/* - NEED THIS FOR OAUTH ENDPOINTS
+# OAuth 2.0 endpoints for Claude Web
+app.include_router(oauth_router)  # OAuth server at /oauth/*
 
-# MCP server endpoint for Claude Web with Streamable HTTP Transport (2025-03-26)
-app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp with OAuth + Streamable HTTP
-# FastMCP OAuth implementation (RFC 7591 DCR compliant)
-app.include_router(fastmcp_router)  # FastMCP OAuth endpoints at /fastmcp/*
+# MCP server endpoint for Claude Web  
+app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp (Bearer token)
+app.include_router(mcp_v2_router)  # MCP v2 endpoints with multi-terminal support at /mcp/v2/* and legacy endpoints
 
 # OAuth discovery at root level for Claude
 @app.get("/.well-known/oauth-authorization-server")
@@ -337,37 +403,8 @@ async def oauth_discovery_root():
     from app.oauth_simple_new import oauth_discovery
     return await oauth_discovery()
 
-# OAuth Protected Resource Metadata (RFC 9728) - CRITICAL for MCP
-@app.get("/.well-known/oauth-protected-resource")
-async def oauth_protected_resource_discovery():
-    """OAuth Protected Resource Metadata (RFC 9728) for MCP servers"""
-    return {
-        "resource": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}",
-        "authorization_servers": [
-            f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}"
-        ],
-        "scopes_supported": ["read", "write"],
-        "bearer_methods_supported": ["header"],
-        "resource_documentation": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/docs"
-    }
 
-# MCP-specific protected resource metadata
-@app.get("/.well-known/oauth-protected-resource/mcp")
-async def oauth_protected_resource_mcp():
-    """OAuth Protected Resource Metadata specifically for MCP endpoint"""
-    return {
-        "resource": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/mcp",
-        "authorization_servers": [
-            f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}"
-        ],
-        "scopes_supported": ["read", "write"],
-        "bearer_methods_supported": ["header"],
-        "resource_documentation": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/docs"
-    }
 
-# TEMPORARILY RE-ENABLED: Legacy MCP endpoints to redirect to OAuth
-# This helps Claude clients that are still trying /mcp/v2/... endpoints
-setup_mcp_server(app)
 
 # add_pagination(app) # Keep if used
 
