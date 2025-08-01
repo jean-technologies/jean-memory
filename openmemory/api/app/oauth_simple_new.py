@@ -545,7 +545,8 @@ async def token_exchange(
     code: str = Form(...),
     client_id: str = Form(...),
     redirect_uri: Optional[str] = Form(None),
-    code_verifier: Optional[str] = Form(None)
+    code_verifier: Optional[str] = Form(None),
+    scope: Optional[str] = Form(None)
 ):
     """Exchange authorization code for access token"""
     import logging
@@ -590,7 +591,7 @@ async def token_exchange(
     logger.info("✅ PKCE verification successful")
     
     # Create access token with MCP scopes
-    requested_scopes = form_data.get("scope", "mcp:tools mcp:resources mcp:prompts").split()
+    requested_scopes = (scope or "mcp:tools mcp:resources mcp:prompts").split()
     access_token = create_access_token(
         user_id=auth_data["user_id"],
         email=auth_data["email"],
@@ -634,11 +635,20 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
         scopes = payload.get("scope", "").split()
         logger.info(f"   - Scopes: {scopes}")
         
-        # Validate MCP scopes
+        # Validate MCP scopes (allow legacy scopes for backward compatibility)
         valid_mcp_scopes = {"mcp:tools", "mcp:resources", "mcp:prompts"}
-        if not any(scope in valid_mcp_scopes for scope in scopes):
-            logger.error(f"Invalid MCP scopes: {scopes}")
+        legacy_scopes = {"read", "write"}
+        
+        has_mcp_scopes = any(scope in valid_mcp_scopes for scope in scopes)
+        has_legacy_scopes = any(scope in legacy_scopes for scope in scopes)
+        
+        if not (has_mcp_scopes or has_legacy_scopes):
+            logger.error(f"Invalid scopes: {scopes}")
             raise credentials_exception
+        
+        # Log if using legacy scopes
+        if has_legacy_scopes and not has_mcp_scopes:
+            logger.warning(f"Using legacy scopes: {scopes}. Consider updating to MCP scopes.")
 
         return {
             "user_id": user_id, 

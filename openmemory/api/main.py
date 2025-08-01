@@ -360,9 +360,9 @@ async def oauth_protected_resource_mcp():
         "resource_documentation": f"{os.getenv('API_BASE_URL', 'https://jean-memory-api-virginia.onrender.com')}/docs"
     }
 
-# DISABLED: Legacy MCP endpoints that bypass OAuth authentication
-# This forces Claude to use the OAuth-protected /mcp endpoint instead of /mcp/v2/...
-# setup_mcp_server(app)
+# TEMPORARILY RE-ENABLED: Legacy MCP endpoints to redirect to OAuth
+# This helps Claude clients that are still trying /mcp/v2/... endpoints
+setup_mcp_server(app)
 
 # add_pagination(app) # Keep if used
 
