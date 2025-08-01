@@ -52,7 +52,7 @@ async def handle_mcp_request(
         if client_protocol_version in ["2025-06-18", "2025-03-26"]:
             tools_schema = client_profile.get_tools_schema(include_annotations=True)
             capabilities = {
-                "tools": {"list": tools_schema, "listChanged": False},
+                "tools": tools_schema,
                 "logging": {},
                 "sampling": {}
             }
