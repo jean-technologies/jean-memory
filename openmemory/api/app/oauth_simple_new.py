@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
-bearer_scheme = HTTPBearer(auto_error=False)
+bearer_scheme = HTTPBearer(auto_error=True)
 
 
 def create_access_token(user_id: str, email: str, client_name: str) -> str:
