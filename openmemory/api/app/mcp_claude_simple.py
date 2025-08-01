@@ -26,119 +26,62 @@ logger = logging.getLogger(__name__)
 
 oauth_mcp_router = APIRouter(tags=["oauth-mcp"])
 
-# Session storage for Claude Web App (in production, use Redis or database)
-claude_sessions = {}
+# MCP OAuth 2.1 compliant server - no session cookies required
 
-def create_session(user_data: dict) -> str:
-    """Create a session for Claude Web App users"""
-    session_id = secrets.token_urlsafe(32)
-    claude_sessions[session_id] = {
-        "user_data": user_data,
-        "created_at": datetime.utcnow(),
-        "expires_at": datetime.utcnow() + timedelta(hours=24)
-    }
-    logger.info(f"🎯 Created Claude Web App session: {session_id[:8]}... for user {user_data.get('email')}")
-    return session_id
-
-def get_session(session_id: str) -> dict:
-    """Get session data if valid"""
-    if not session_id or session_id not in claude_sessions:
-        return None
-    
-    session = claude_sessions[session_id]
-    if datetime.utcnow() > session["expires_at"]:
-        # Session expired
-        del claude_sessions[session_id]
-        logger.warning(f"🕐 Session expired and removed: {session_id[:8]}...")
-        return None
-    
-    return session["user_data"]
-
-async def get_user_with_session_fallback(
-    request: Request,
-    claude_session: str = Cookie(None)
-):
+async def get_mcp_user(request: Request):
     """
-    Get user either from OAuth Bearer token OR session cookie for Claude Web App
-    """
-    logger.error(f"🔥🔥🔥 AUTH FALLBACK CALLED:")
-    logger.error(f"   - Has Authorization header: {'authorization' in request.headers}")
-    logger.error(f"   - Has claude_session cookie: {claude_session is not None}")
-    logger.error(f"   - Claude session value: {claude_session[:8] + '...' if claude_session else 'None'}")
-    logger.error(f"   - All request cookies: {dict(request.cookies)}")
-    logger.error(f"   - User-Agent: {request.headers.get('user-agent', 'unknown')}")
+    MCP OAuth 2.1 compliant authentication - Bearer tokens only
     
-    # Try OAuth Bearer token first (preferred method)
+    Per MCP specification: https://modelcontextprotocol.io/specification/draft/basic/authorization
+    - MUST use Authorization: Bearer <access-token> header
+    - MUST use HTTPS for all OAuth communication  
+    - MUST implement OAuth 2.1 with PKCE
+    - NO session cookies or alternative auth methods
+    """
+    logger.info(f"🔐 MCP OAuth 2.1 Authentication Check")
+    logger.info(f"   - Method: {request.method}")
+    logger.info(f"   - URL: {request.url}")
+    logger.info(f"   - User-Agent: {request.headers.get('user-agent', 'unknown')}")
+    
+    # MCP requires Bearer token authentication ONLY
     auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        try:
-            from app.oauth_simple_new import bearer_scheme
-            from fastapi.security.utils import get_authorization_scheme_param
+    if not auth_header or not auth_header.startswith("Bearer "):
+        logger.error(f"❌ MCP Authentication Failed: Missing or invalid Authorization header")
+        logger.error(f"   - Authorization header: {auth_header[:20] + '...' if auth_header else 'None'}")
+        logger.error(f"   - Required format: 'Authorization: Bearer <access-token>'")
+        raise HTTPException(
+            status_code=401, 
+            detail="MCP OAuth 2.1 authentication required. Missing Authorization: Bearer <access-token> header.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    try:
+        from app.oauth_simple_new import get_current_user
+        from fastapi.security.utils import get_authorization_scheme_param
+        from fastapi.security.http import HTTPAuthorizationCredentials
+        
+        scheme, token = get_authorization_scheme_param(auth_header)
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid authorization scheme. Must use Bearer.")
             
-            scheme, token = get_authorization_scheme_param(auth_header)
-            if scheme.lower() == "bearer":
-                # Create credentials object manually for get_current_user
-                from fastapi.security.http import HTTPAuthorizationCredentials
-                credentials = HTTPAuthorizationCredentials(scheme=scheme, credentials=token)
-                
-                # Temporarily override the dependency
-                user_data = await get_current_user(credentials)
-                logger.info(f"✅ OAuth authentication successful for user: {user_data.get('email')}")
-                return user_data
-        except Exception as e:
-            logger.warning(f"⚠️ OAuth authentication failed: {e}")
-            # Fall through to session check
-    
-    # Check for Claude Web App user-agent pattern
-    user_agent = request.headers.get('user-agent', '')
-    is_claude_web_app = 'Claude-User' in user_agent
-    
-    # For Claude Web App, try to extract user info from request headers or special parameters
-    if is_claude_web_app:
-        logger.warning(f"🎯 Claude Web App detected - attempting alternative authentication")
+        credentials = HTTPAuthorizationCredentials(scheme=scheme, credentials=token)
+        user_data = await get_current_user(credentials)
         
-        # Try to get user info from X-User-Context header (if Claude Web App sends it)
-        user_context = request.headers.get('X-User-Context')
-        if user_context:
-            try:
-                import json
-                import base64
-                decoded_context = base64.b64decode(user_context).decode('utf-8')
-                user_data = json.loads(decoded_context)
-                logger.info(f"✅ Claude Web App context authentication successful")
-                return user_data
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to parse user context: {e}")
+        logger.info(f"✅ MCP OAuth 2.1 authentication successful")
+        logger.info(f"   - User: {user_data.get('email')}")
+        logger.info(f"   - Client: {user_data.get('client')}")
         
-        # As a fallback for Claude Web App, create a default user context
-        # This is a temporary solution - in production you'd want proper authentication
-        logger.warning(f"🚨 Creating default user context for Claude Web App - THIS IS FOR DEVELOPMENT ONLY")
-        return {
-            "user_id": "claude-web-app-user",
-            "email": "claude-web-app@example.com",
-            "client": "claude-web-app",
-            "sub": "claude-web-app-user"
-        }
-    
-    # Fallback to session-based auth for other clients
-    # First try the claude_session parameter, then check request cookies directly
-    session_id = claude_session or request.cookies.get('claude_session')
-    
-    if session_id:
-        logger.error(f"🔍 TRYING SESSION AUTHENTICATION:")
-        logger.error(f"   - Session ID source: {'parameter' if claude_session else 'direct cookie'}")
-        logger.error(f"   - Session ID: {session_id[:8]}...")
+        return user_data
         
-        user_data = get_session(session_id)
-        if user_data:
-            logger.info(f"✅ Session authentication successful for user: {user_data.get('email')}")
-            return user_data
-        else:
-            logger.warning(f"❌ Invalid or expired session: {session_id[:8]}...")
-    
-    # No valid authentication found
-    logger.error(f"🚨 No valid authentication found")
-    raise HTTPException(status_code=401, detail="Authentication required")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ MCP OAuth token validation failed: {e}")
+        raise HTTPException(
+            status_code=401, 
+            detail="Invalid or expired access token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 async def handle_mcp_request(
@@ -248,62 +191,49 @@ async def handle_mcp_request(
         }
 
 
-def validate_origin(request: Request) -> bool:
-    """Validate Origin header to prevent DNS rebinding attacks"""
+def validate_mcp_request(request: Request) -> bool:
+    """
+    Validate MCP OAuth 2.1 requirements:
+    - HTTPS required for production
+    - Valid Origin header
+    - Proper MCP headers
+    """
+    # Check HTTPS requirement (except for localhost development)
+    if not request.url.scheme == "https" and not request.url.hostname in ["localhost", "127.0.0.1"]:
+        logger.error(f"❌ MCP OAuth 2.1 requires HTTPS: {request.url}")
+        return False
+    
+    # Validate Origin header to prevent DNS rebinding attacks
     origin = request.headers.get("origin")
-    if not origin:
-        return True  # Allow requests without Origin header
+    if origin:
+        allowed_origins = [
+            "https://claude.ai",
+            "https://app.claude.ai", 
+            "https://api.claude.ai",
+            "https://jean-memory-api-virginia.onrender.com",
+            "https://localhost",  # Only HTTPS localhost
+        ]
+        
+        if not any(origin.startswith(allowed) for allowed in allowed_origins):
+            logger.error(f"❌ Invalid origin for MCP OAuth: {origin}")
+            return False
     
-    # Allow our known domains
-    allowed_origins = [
-        "https://claude.ai",
-        "https://app.claude.ai", 
-        "https://api.claude.ai",
-        "https://jean-memory-api-virginia.onrender.com",
-        "http://localhost",
-        "https://localhost"
-    ]
-    
-    return any(origin.startswith(allowed) for allowed in allowed_origins)
+    return True
 
 
 @oauth_mcp_router.post("/mcp")
 async def mcp_oauth_proxy(
     request: Request,
     background_tasks: BackgroundTasks,
-    user: dict = Depends(get_user_with_session_fallback)
+    user: dict = Depends(get_mcp_user)
 ):
-    logger.error(f"🔥🔥🔥 MCP POST REQUEST RECEIVED:")
-    logger.error(f"   - Method: POST")
-    logger.error(f"   - URL: {request.url}")
-    logger.error(f"   - Headers: {dict(request.headers)}")
-    logger.error(f"   - User: {user.get('email', 'unknown')}")
-    logger.error(f"   - Client: {user.get('client', 'unknown')}")
-    logger.error(f"   - User ID: {user.get('user_id', 'unknown')}")
-    
-    # Check if this is a Claude Web App request without session
-    user_agent = request.headers.get('user-agent', '')
-    claude_session_cookie = request.cookies.get('claude_session')
-    
-    logger.error(f"🔍🔥 USER AGENT ANALYSIS:")
-    logger.error(f"   - Full User-Agent: {user_agent}")
-    logger.error(f"   - Contains 'Claude-User': {'Claude-User' in user_agent}")
-    logger.error(f"   - Contains 'claude': {'claude' in user_agent.lower()}")
-    logger.error(f"   - Contains 'anthropic': {'anthropic' in user_agent.lower()}")
-    logger.error(f"   - Has claude_session cookie: {claude_session_cookie is not None}")
-    logger.error(f"   - All cookies: {dict(request.cookies)}")
-    
-    # Check both cookie parameter and direct request cookies for session
-    existing_session = claude_session_cookie or request.cookies.get('claude_session')
-    
-    if 'Claude-User' in user_agent and not existing_session:
-        logger.warning(f"🎯 Claude Web App detected without session - creating session")
-        # This is a Claude Web App request, we should set a session cookie
-        # We'll handle this in the response
-    elif 'Claude-User' in user_agent and existing_session:
-        logger.info(f"🎯 Claude Web App detected WITH existing session: {existing_session[:8]}...")
-    elif 'claude' in user_agent.lower() or 'anthropic' in user_agent.lower():
-        logger.warning(f"🤔 Possible Claude client detected but doesn't match expected pattern")
+    logger.info(f"🚀 MCP OAuth 2.1 Request Processing")
+    logger.info(f"   - Method: POST")
+    logger.info(f"   - URL: {request.url}")
+    logger.info(f"   - User: {user.get('email', 'unknown')}")
+    logger.info(f"   - Client: {user.get('client', 'unknown')}")
+    logger.info(f"   - User ID: {user.get('user_id', 'unknown')}")
+    logger.info(f"   - User-Agent: {request.headers.get('user-agent', 'unknown')}")
     """
     MCP OAuth Proxy - Stateless HTTP Transport (MCP 2025-06-18)
     
@@ -319,16 +249,10 @@ async def mcp_oauth_proxy(
     - Adherence to stateless HTTP transport; each request is self-contained.
     """
     
-    # Validate Origin header (security requirement)
-    origin = request.headers.get('origin')
-    if not validate_origin(request):
-        logger.error(f"🚨 ORIGIN VALIDATION FAILED:")
-        logger.error(f"   - Origin: {origin}")
-        logger.error(f"   - User-Agent: {request.headers.get('user-agent')}")
-        logger.error(f"   - All headers: {dict(request.headers)}")
-        raise HTTPException(status_code=403, detail="Invalid origin")
-    else:
-        logger.info(f"✅ Origin validation passed: {origin}")
+    # Validate MCP OAuth 2.1 requirements
+    if not validate_mcp_request(request):
+        logger.error(f"🚨 MCP OAuth 2.1 validation failed")
+        raise HTTPException(status_code=403, detail="MCP OAuth 2.1 requirements not met")
     
     logger.info(f"🚀 MCP Stateless HTTP Transport: {user['client']} for user {user['user_id']} ({user['email']}) - Protocol 2025-06-18")
     
@@ -380,7 +304,7 @@ async def mcp_oauth_proxy(
             
             response_obj = JSONResponse(content=responses)
             
-            # Add Claude Web App compatibility headers
+            # MCP OAuth 2.1 compliant headers
             response_obj.headers["Access-Control-Allow-Origin"] = "*"
             response_obj.headers["Access-Control-Allow-Credentials"] = "true"
             response_obj.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, HEAD"
@@ -388,27 +312,6 @@ async def mcp_oauth_proxy(
             response_obj.headers["X-MCP-Protocol"] = "2025-06-18"
             response_obj.headers["X-MCP-Transport"] = "http"
             response_obj.headers["X-OAuth-Supported"] = "true"
-            
-            # Set session cookie for Claude Web App if needed (only if no existing session)
-            if 'Claude-User' in user_agent and not existing_session:
-                session_id = create_session(user)
-                logger.error(f"🍪🔥 SETTING CLAUDE WEB APP SESSION COOKIE (BATCH):")
-                logger.error(f"   - Session ID: {session_id[:8]}...")
-                logger.error(f"   - User Agent: {user_agent}")
-                logger.error(f"   - Response type: {type(response_obj)}")
-                response_obj.set_cookie(
-                    key="claude_session",
-                    value=session_id,
-                    max_age=86400,  # 24 hours
-                    httponly=False,  # Allow JavaScript access for debugging
-                    secure=False,   # Allow HTTP for Claude Web App compatibility
-                    samesite="lax",  # More permissive for cross-origin requests
-                    domain=None,  # Let browser handle domain
-                    path="/"  # Ensure cookie works for all paths
-                )
-                logger.info(f"🍪 Set session cookie for Claude Web App: {session_id[:8]}...")
-            elif 'Claude-User' in user_agent and existing_session:
-                logger.info(f"🍪 Claude Web App already has session cookie: {existing_session[:8]}... - not setting new one")
             
             return response_obj
         
@@ -428,7 +331,7 @@ async def mcp_oauth_proxy(
                 logger.error(f"   - Final response: {response}")
                 response_obj = JSONResponse(content=response)
                 
-                # Add Claude Web App compatibility headers
+                # MCP OAuth 2.1 compliant headers
                 response_obj.headers["Access-Control-Allow-Origin"] = "*"
                 response_obj.headers["Access-Control-Allow-Credentials"] = "true"
                 response_obj.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, HEAD"
@@ -436,27 +339,6 @@ async def mcp_oauth_proxy(
                 response_obj.headers["X-MCP-Protocol"] = "2025-06-18"
                 response_obj.headers["X-MCP-Transport"] = "http"
                 response_obj.headers["X-OAuth-Supported"] = "true"
-            
-            # Set session cookie for Claude Web App if needed (only if no existing session)
-            if 'Claude-User' in user_agent and not existing_session:
-                session_id = create_session(user)
-                logger.error(f"🍪🔥 SETTING CLAUDE WEB APP SESSION COOKIE (SINGLE):")
-                logger.error(f"   - Session ID: {session_id[:8]}...")
-                logger.error(f"   - User Agent: {user_agent}")
-                logger.error(f"   - Response type: {type(response_obj)}")
-                response_obj.set_cookie(
-                    key="claude_session",
-                    value=session_id,
-                    max_age=86400,  # 24 hours
-                    httponly=False,  # Allow JavaScript access for debugging
-                    secure=False,   # Allow HTTP for Claude Web App compatibility
-                    samesite="lax",  # More permissive for cross-origin requests
-                    domain=None,  # Let browser handle domain
-                    path="/"  # Ensure cookie works for all paths
-                )
-                logger.info(f"🍪 Set session cookie for Claude Web App: {session_id[:8]}...")
-            elif 'Claude-User' in user_agent and existing_session:
-                logger.info(f"🍪 Claude Web App already has session cookie: {existing_session[:8]}... - not setting new one")
             
             return response_obj
             
@@ -503,30 +385,25 @@ async def mcp_oauth_proxy(
 
 
 @oauth_mcp_router.get("/mcp")
-async def mcp_get_dummy(request: Request, user: dict = Depends(get_user_with_session_fallback)):
-    logger.error(f"🔥🔥🔥 MCP GET REQUEST RECEIVED:")
-    logger.error(f"   - Method: GET")
-    logger.error(f"   - URL: {request.url}")
-    logger.error(f"   - Headers: {dict(request.headers)}")
-    logger.error(f"   - User: {user.get('email', 'unknown')}")
-    logger.error(f"   - Client: {user.get('client', 'unknown')}")
-    logger.error(f"   - User ID: {user.get('user_id', 'unknown')}")
+async def mcp_get_dummy(request: Request, user: dict = Depends(get_mcp_user)):
     """
-    Dummy GET endpoint to appease legacy Claude clients.
+    MCP OAuth 2.1 compliant GET endpoint
     
-    The modern OAuth flow uses stateless POST requests exclusively. However, some
-    Claude clients still attempt a GET request after initialization. Returning a 405
-    causes the client to enter a retry loop.
-    
-    This dummy endpoint catches that GET, authenticates the user to ensure the token
-    is valid, logs the event, and returns an empty 204 No Content. This satisfies
-    the client's check without creating a protocol conflict.
+    Per MCP specification, GET requests should return 405 Method Not Allowed
+    since MCP uses POST for JSON-RPC communication only.
+    However, some clients may still attempt GET requests.
     """
-    logger.warning(
-        f"⚠️ Dummy GET /mcp called by client for user {user['email']}. "
-        "This is a legacy client behavior. Returning 204 No Content to prevent retry loops."
+    logger.info(f"⚠️ GET /mcp called by client for user {user['email']}")
+    logger.info("MCP uses POST for JSON-RPC communication only")
+    
+    return Response(
+        status_code=405,
+        headers={
+            "Allow": "POST, OPTIONS, HEAD",
+            "X-MCP-Protocol": "2025-06-18",
+            "X-MCP-Transport": "http"
+        }
     )
-    return Response(status_code=204)
 
 
 # SSE endpoint removed - MCP 2025-06-18 uses a stateless HTTP transport only.
