@@ -65,17 +65,25 @@ async def handle_request_logic(request: Request, body: dict, background_tasks: B
 
         if method_name == "initialize":
             client_version = params.get("protocolVersion", "2024-11-05")
-            use_annotations = client_version == "2025-03-26"
-            protocol_version = "2025-03-26" if use_annotations else "2024-11-05"
             
-            # Properly advertise tool capabilities
-            if use_annotations:
+            # Support multiple MCP protocol versions
+            if client_version == "2025-03-26":
+                protocol_version = "2025-03-26"
                 capabilities = {
                     "tools": {"listChanged": False}, 
                     "logging": {}, 
                     "sampling": {}
                 }
+            elif client_version == "2025-06-18":
+                protocol_version = "2025-06-18"
+                capabilities = {
+                    "tools": {"listChanged": True},  # Signal tools available via tools/list
+                    "logging": {}, 
+                    "sampling": {}
+                }
             else:
+                # Default to 2024-11-05 for older clients
+                protocol_version = "2024-11-05"
                 capabilities = {
                     "tools": {}  # This tells clients that tools are supported
                 }
