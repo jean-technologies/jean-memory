@@ -4,17 +4,26 @@
 **Status:** ✅ **FIXED - TOOLS SCHEMA FORMAT CORRECTED**  
 **Issue:** Tools schema format mismatch in MCP initialize response - RESOLVED
 
-## 🎯 ISSUE IDENTIFIED: Code Fix Not Being Executed
+## ✅ ISSUE RESOLVED: Tools Schema Format Fixed
 
-**Root Cause Confirmed:** Claude Web uses MCP protocol version `2025-06-18`, but despite implementing the fix in `/routing/mcp.py`, the production server still returns the old format.
+**Root Cause:** Tools schema format mismatch in MCP initialize response for protocol version `2025-06-18`.
 
-**Evidence from production logs:**
+**The Problem:** In `/openmemory/api/app/mcp_claude_simple.py` line 143, server was sending:
+```python
+capabilities = {
+    "tools": tools_schema,  # ❌ Direct array - wrong format
+    "logging": {},
+    "sampling": {}
+}
 ```
-✅ OAuth Discovery: All endpoints return 200 OK
-✅ OAuth Authentication: User authentication successful  
-✅ MCP Initialize: Claude calls initialize with protocolVersion '2025-06-18'
-❌ PROBLEM: Server still returns {'tools': {'listChanged': True}} instead of tools schema
-❌ DEPLOYMENT ISSUE: Fix in routing/mcp.py lines 67-88 not being executed
+
+**The Fix:** Changed to correct MCP specification format:
+```python
+capabilities = {
+    "tools": {"list": tools_schema, "listChanged": False},  # ✅ Correct format
+    "logging": {},
+    "sampling": {}
+}
 ```
 
 ## ✅ WHAT'S WORKING (SERVER-SIDE)
