@@ -2,73 +2,73 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code, BotMessageSquare, BrainCircuit, Search, List, Wand2, ArrowRight, Lightbulb, FileText } from "lucide-react";
+import { BotMessageSquare, BrainCircuit, Search, List, Wand2, ArrowRight, Lightbulb, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
 import { Badge } from "@/components/ui/badge";
 import { RequestFeatureModal } from "@/components/tools/RequestFeatureModal";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const tools = [
+const primaryTools = [
   {
     name: "jean_memory",
-    icon: <BrainCircuit className="w-6 h-6 text-purple-500" />,
-    description: "🌟 THE PRIMARY TOOL - Intelligent context engineering that automatically adapts. For new conversations, provides deep comprehensive understanding. For follow-ups, gives targeted fast responses. Always use this tool first.",
-    example: "jean_memory: 'Hi! I'm testing the new smart context system.' (is_new_conversation: true)",
-    badge: "Primary Tool",
-    isNew: true
-  },
-  {
-    name: "ask_memory",
-    icon: <BrainCircuit className="w-6 h-6 text-primary" />,
-    description: "Fast memory search for simple questions about your memories, thoughts, and experiences.",
-    example: "ask_memory: 'What are my main interests and preferences?'"
-  },
-  {
-    name: "search_memory",
-    icon: <Search className="w-6 h-6 text-primary" />,
-    description: "Quick keyword-based search through your memories for specific information.",
-    example: "search_memory: 'Q3 project goals'"
-  },
-  {
-    name: "add_memories",
-    icon: <BotMessageSquare className="w-6 h-6 text-primary" />,
-    description: "Manually store specific information (jean_memory handles this automatically in most cases).",
-    example: "add_memories: 'I met with John Doe today to discuss the Q3 project goals.'"
+    description: "The intelligent memory layer that automatically learns from every conversation and provides relevant context when you need it. Simply use this tool and Jean Memory handles everything else.",
+    examples: [
+      "jean_memory: 'I just finished my morning workout' (is_new_conversation: true)",
+      "jean_memory: 'What did I work on yesterday?' (needs_context: true)",
+      "jean_memory: 'I prefer dark mode in my apps' (is_new_conversation: false)"
+    ],
+    badge: "Primary",
+    isHighlighted: true
   },
   {
     name: "store_document",
-    icon: <FileText className="w-6 h-6 text-primary" />,
-    description: "Store large documents like files, articles, or notes. Creates a searchable summary automatically.",
-    example: 'store_document: { title: "Meeting Notes Q3", content: "..." }',
+    description: "Store large documents, files, or lengthy content. Perfect for saving meeting notes, documentation, or articles for future reference.",
+    examples: [
+      'store_document: { title: "Meeting Notes", content: "..." }'
+    ],
+    badge: "Documents"
+  }
+];
+
+const otherTools = [
+  {
+    name: "search_memory",
+    description: "Quick keyword search through your memories",
+    example: "search_memory: 'project goals'"
+  },
+  {
+    name: "ask_memory", 
+    description: "Simple questions about your stored memories",
+    example: "ask_memory: 'What are my preferences?'"
+  },
+  {
+    name: "add_memories",
+    description: "Manually store specific information",
+    example: "add_memories: 'Met with John about Q3 goals'"
   },
   {
     name: "list_memories",
-    icon: <List className="w-6 h-6 text-primary" />,
-    description: "Browse through your stored memories to get an overview.",
+    description: "Browse through stored memories",
     example: "list_memories"
   },
+  {
+    name: "deep_memory_query",
+    description: "Complex analysis across all memories",
+    example: "Tell me everything about my work patterns"
+  }
 ];
-
-const deepMemoryTool = {
-  name: "deep_memory_query",
-  icon: <Wand2 className="w-6 h-6 text-purple-400" />,
-  description: "Advanced standalone tool for complex analysis over your entire memory bank. Note: This capability is now automatically built into jean_memory for new conversations and rich content.",
-  examples: [
-    "\"Tell me everything about Jonathan - his personality, work, interests, values\"",
-    "\"Analyze my recent thoughts and tell me about patterns I might not be aware of\"",
-    "\"What are the key themes across all my stored experiences?\"",
-  ]
-};
 
 export default function HowToUsePage() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isOtherToolsOpen, setIsOtherToolsOpen] = useState(false);
 
   return (
     <ProtectedRoute>
       <div className="relative min-h-screen w-full bg-background">
       <div className="absolute inset-0 z-0 h-full w-full">
-        <ParticleNetwork id="how-to-use-particles" className="h-full w-full" interactive={false} particleCount={80} />
+        <ParticleNetwork id="how-to-use-particles" className="h-full w-full" interactive={true} particleCount={80} />
       </div>
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/80 to-background z-5" />
       
@@ -80,157 +80,164 @@ export default function HowToUsePage() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Using Your Memory Tools
+            Jean Memory
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Jean Memory now features intelligent context engineering. <strong>jean_memory</strong> is your primary tool that automatically provides deep understanding for new conversations and fast responses for follow-ups.
+          <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
+            An agentic memory layer that learns from your conversations and provides intelligent context. Simply use these tools and Jean Memory handles the rest.
           </p>
         </motion.div>
 
-        <div className="space-y-6">
-          {tools.map((tool, index) => (
-            <motion.div
-              key={tool.name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 * (index + 1) }}
-            >
-              <Card className="bg-card/50 hover:bg-card/80 transition-colors duration-300">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-secondary rounded-lg">{tool.icon}</div>
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2 font-mono text-lg">
+        <div className="space-y-8">
+          {/* Primary Tools Section */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-center text-foreground mb-6">
+              Essential Tools
+            </h2>
+            
+            {primaryTools.map((tool, index) => (
+              <motion.div
+                key={tool.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * (index + 1) }}
+              >
+                <Card className={`${tool.isHighlighted ? 'bg-card border-l-4 border-l-foreground/20' : 'bg-card'} hover:bg-card/80 transition-colors duration-200`}>
+                  <CardHeader>
+                    <div>
+                      <CardTitle className="flex items-center gap-2 font-mono text-lg mb-2">
                         {tool.name}
                         {tool.badge && (
-                          <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                          <Badge variant="outline" className="text-xs">
                             {tool.badge}
                           </Badge>
                         )}
-                        {tool.isNew && (
-                          <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                            Enhanced
-                          </Badge>
-                        )}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">{tool.description}</p>
+                      <p className="text-sm text-muted-foreground">{tool.description}</p>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <pre className="p-3 rounded-md bg-secondary text-sm text-secondary-foreground overflow-x-auto">
-                    <code>{tool.example}</code>
-                  </pre>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-          
-          {/* Smart Behavior Explanation */}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">Examples:</p>
+                      {tool.examples.map((example, i) => (
+                        <div key={i} className="bg-muted/30 rounded p-3">
+                          <pre className="text-xs text-foreground/70 overflow-x-auto">
+                            <code>{example}</code>
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* How It Works Section */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/50 dark:to-blue-950/50 border border-purple-200 dark:border-purple-500/30">
+            <Card className="bg-muted/30">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <BrainCircuit className="w-6 h-6 text-purple-500" />
-                  How jean_memory Automatically Adapts
+                <CardTitle className="text-lg">
+                  How Jean Memory Works
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-sm">New Conversations</p>
-                        <p className="text-sm text-muted-foreground">Automatically provides deep, comprehensive understanding (30-60s) to establish rich context</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-sm">Rich Personal Content</p>
-                        <p className="text-sm text-muted-foreground">Detects when you share substantial personal information and triggers deep analysis</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-sm">Follow-up Questions</p>
-                        <p className="text-sm text-muted-foreground">Fast, targeted responses (5-10s) for continuing conversations</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-sm">Explicit Deep Requests</p>
-                        <p className="text-sm text-muted-foreground">Triggers comprehensive analysis when you ask to "go deeper" or "tell me everything"</p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-foreground rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-medium text-sm">Always Learning</p>
+                      <p className="text-xs text-muted-foreground">Every conversation automatically adds to your memory layer</p>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          {/* Deep Memory Query Card */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-          >
-            <Card className="bg-card/50 border border-purple-200 dark:border-purple-500/30 hover:border-purple-400/50 dark:hover:border-purple-500/50 transition-colors duration-300">
-              <CardHeader>
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">{deepMemoryTool.icon}</div>
-                  <div>
-                    <CardTitle className="flex items-center gap-2 font-mono text-lg">
-                      {deepMemoryTool.name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">{deepMemoryTool.description}</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Example Use Cases:</h4>
-                  {deepMemoryTool.examples.map((example, i) => (
-                    <div key={i} className="flex items-center gap-3 text-sm">
-                      <ArrowRight className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0" />
-                      <span className="font-mono text-secondary-foreground">{example}</span>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-foreground rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-medium text-sm">Intelligent Context</p>
+                      <p className="text-xs text-muted-foreground">Provides relevant context automatically based on your conversation</p>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-foreground rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-medium text-sm">Adaptive Speed</p>
+                      <p className="text-xs text-muted-foreground">Fast responses for quick questions, deep analysis for new conversations</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
+          {/* Collapsible Other Tools Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <Collapsible open={isOtherToolsOpen} onOpenChange={setIsOtherToolsOpen}>
+              <CollapsibleTrigger asChild>
+                <Card className="bg-card/50 hover:bg-card/70 transition-colors cursor-pointer border-dashed">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {isOtherToolsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        <CardTitle className="text-base">Additional Tools</CardTitle>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Advanced functionality</p>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4">
+                <div className="grid gap-3">
+                  {otherTools.map((tool, index) => (
+                    <Card key={tool.name} className="bg-card/30 border-dashed">
+                      <CardContent className="pt-4">
+                        <div className="mb-2">
+                          <span className="font-mono text-sm font-medium">{tool.name}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{tool.description}</p>
+                        <pre className="text-xs bg-secondary/30 p-2 rounded text-muted-foreground">
+                          <code>{tool.example}</code>
+                        </pre>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-muted/30 rounded">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Most users only need <strong>jean_memory</strong> and <strong>store_document</strong>. 
+                    These advanced tools are available when you need specific functionality.
+                  </p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </motion.div>
+
           {/* Request Feature Card */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
             onClick={() => setIsRequestModalOpen(true)}
             className="cursor-pointer"
           >
-            <Card className="bg-card/50 hover:bg-card/80 transition-colors duration-300">
+            <Card className="bg-card/50 hover:bg-card/70 transition-colors">
               <CardHeader>
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-secondary rounded-lg">
-                    <Lightbulb className="w-6 h-6 text-primary" />
-                  </div>
+                <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-lg">
+                    <CardTitle className="text-base">
                       Request a Tool or Feature
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Have an idea for a new tool or an improvement? Let us know!
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Have an idea for a new tool or improvement? Let us know.
                     </p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
                 </div>
               </CardHeader>
             </Card>

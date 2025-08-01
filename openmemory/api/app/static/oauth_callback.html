@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processing Authentication...</title>
+    <!-- Use the UMD build of Supabase JS from the CDN, which creates a global `supabase` object -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f8f9fa; color: #343a40; text-align: center; }
+        .container { max-width: 400px; padding: 20px; }
+        .spinner { border: 4px solid #dee2e6; border-top: 4px solid #0d6efd; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h1 { font-weight: 300; }
+        p { color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Finalizing Connection</h1>
+        <div class="spinner"></div>
+        <p>Please wait, we're securely connecting you now. This may take a moment.</p>
+    </div>
+
+    <!-- This is a regular script, NOT a module. It uses the global `supabase` object loaded above. -->
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+        const AUTHORIZE_URL = '{{AUTHORIZE_URL}}';
+
+        console.log('🔍 CALLBACK V2 - Page loaded. Supabase URL:', SUPABASE_URL);
+
+        const cookieStorageAdapter = {
+            getItem: key => document.cookie.split('; ').find(row => row.startsWith(key + '='))?.split('=')[1] || null,
+            setItem: (key, value) => {
+                const isSecure = window.location.protocol === 'https:';
+                const secureFlag = isSecure ? '; secure' : '';
+                const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
+                document.cookie = `${key}=${value}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+            },
+            removeItem: key => document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+        };
+
+        // Use the global `supabase` object provided by the script in the <head>
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                // We are intentionally NOT setting a custom storage adapter here.
+                // Supabase's default `localStorage` adapter is required for the
+                // PKCE flow to correctly store and retrieve the code_verifier.
+                detectSessionInUrl: true, 
+                flowType: 'pkce',
+            },
+        });
+
+        console.log('🔍 CALLBACK V2 - Supabase client initialized.');
+
+        function setCookiesFromSession(session) {
+            if (!session) return;
+            console.log('🔍 CALLBACK V2 - Setting cookies from session:', session);
+            const accessToken = session.access_token;
+            const refreshToken = session.refresh_token;
+
+            const isSecure = window.location.protocol === 'https:';
+            const secureFlag = isSecure ? '; secure' : '';
+            const sameSiteFlag = isSecure ? '; samesite=none' : '; samesite=lax';
+            
+            if (accessToken) {
+                document.cookie = `sb-access-token=${accessToken}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+            }
+            if (refreshToken) {
+                document.cookie = `sb-refresh-token=${refreshToken}; path=/; max-age=3600${sameSiteFlag}${secureFlag}`;
+            }
+            console.log('🔍 CALLBACK V2 - All cookies after setting:', document.cookie);
+        }
+
+        async function handleAuth() {
+            console.log('🔍 CALLBACK V2 - Starting auth handling...');
+            
+            // Fallback 1: Manual code exchange (most direct)
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            if (code) {
+                console.log('🔍 CALLBACK V2 - Found auth code in URL, attempting manual exchange...');
+                const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
+                if (data.session) {
+                    console.log('✅ CALLBACK V2 - SUCCESS: Manual code exchange successful.', data.session);
+                    setCookiesFromSession(data.session);
+                    window.location.replace(AUTHORIZE_URL);
+                    return;
+                }
+                console.error('❌ CALLBACK V2 - Manual code exchange failed:', error?.message);
+            } else {
+                console.warn('🔍 CALLBACK V2 - No auth code found in URL.');
+            }
+
+            // Fallback 2: getSession (if code exchange fails or isn't needed)
+            console.log('🔍 CALLBACK V2 - Trying getSession() as a fallback...');
+            const { data: { session: sessionFromUrl }, error: urlError } = await supabaseClient.auth.getSession();
+            
+            if (sessionFromUrl) {
+                console.log('✅ CALLBACK V2 - SUCCESS: Session detected via getSession().', sessionFromUrl);
+                setCookiesFromSession(sessionFromUrl);
+                window.location.replace(AUTHORIZE_URL);
+                return;
+            }
+            console.warn('❌ CALLBACK V2 - getSession() did not find a session. Error:', urlError?.message);
+
+            // Fallback 3: Listen for auth state changes
+            console.log('🔍 CALLBACK V2 - Listening for auth state changes as a last resort...');
+            const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
+                console.log('🔍 CALLBACK V2 - Auth state change event:', event, session);
+                if (event === 'SIGNED_IN' && session) {
+                    console.log('✅ CALLBACK V2 - SUCCESS: SIGNED_IN event detected.', session);
+                    subscription.unsubscribe(); // Clean up listener
+                    setCookiesFromSession(session);
+                    window.location.replace(AUTHORIZE_URL);
+                }
+            });
+
+            // If after a short delay nothing has happened, log a final error.
+            setTimeout(() => {
+                console.error('❌ CALLBACK V2 - FAILED: Could not establish session after all fallbacks and a 5-second timeout.');
+            }, 5000);
+        }
+
+        handleAuth();
+    </script>
+</body>
+</html> 

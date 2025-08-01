@@ -5,12 +5,12 @@ from fastapi import Depends, HTTPException, Request
 from supabase import create_client, Client as SupabaseClient
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN, HTTP_500_INTERNAL_SERVER_ERROR
 from gotrue.types import User as SupabaseUser
+from typing import Optional
 import time
 import hashlib
 import datetime
 from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
-
 from .settings import config
 from .database import get_db
 from .models import User, ApiKey
@@ -230,6 +230,85 @@ async def get_user_from_api_key_header(request: Request) -> bool:
         return False
     finally:
         db.close()
+
+async def get_oauth_user(request: Request) -> Optional[SupabaseUser]:
+    """
+    OAuth-specific user detection for cross-domain OAuth flows.
+    
+    This function is designed specifically for OAuth authorization endpoints
+    where users are redirected from external domains (like Claude) and we need
+    to detect their authentication status using browser cookies, not API headers.
+    
+    This is different from get_current_supa_user() which expects Bearer tokens
+    in Authorization headers for API calls.
+    """
+    if not supabase_service_client:
+        logger.error("Supabase client not initialized for OAuth user detection")
+        return None
+    
+    # Enhanced debugging - log ALL request details
+    logger.info(f"🔍 OAuth user detection DEBUG:")
+    logger.info(f"   Request URL: {request.url}")
+    logger.info(f"   Request method: {request.method}")
+    logger.info(f"   Request headers: {dict(request.headers)}")
+    logger.info(f"   Request client: {request.client}")
+    logger.info(f"   Request cookies: {dict(request.cookies)}")
+    logger.info(f"   Total cookies received: {len(request.cookies)}")
+    
+    # Try to extract access token from various cookie formats
+    access_token = None
+    
+    def parse_session_cookie(cookie_value: str) -> Optional[str]:
+        """Parse JSON session cookie to extract access_token"""
+        if not cookie_value:
+            return None
+        try:
+            import json
+            session_data = json.loads(cookie_value)
+            return session_data.get('access_token')
+        except:
+            return None
+    
+    # Check multiple cookie sources in order of preference
+    cookie_sources = [
+        ('sb-access-token', lambda v: v),  # Direct access token (our new format)
+        ('supabase-auth-token', lambda v: v),  # Alternative direct token
+        ('sb-session', parse_session_cookie),  # JSON session cookie
+        ('supabase.auth.token', parse_session_cookie),  # Alternative session cookie
+        ('supabase-auth-token-hash', lambda v: v),  # Hashed token format
+    ]
+    
+    for cookie_name, parser in cookie_sources:
+        cookie_value = request.cookies.get(cookie_name)
+        if cookie_value:
+            try:
+                token = parser(cookie_value)
+                if token:
+                    access_token = token
+                    logger.info(f"Found OAuth access token in {cookie_name} cookie")
+                    break
+            except Exception as e:
+                logger.debug(f"Failed to parse {cookie_name} cookie: {e}")
+                continue
+    
+    if not access_token:
+        # Log all available cookies for debugging
+        cookie_list = [f"{k}: {v[:20]}..." if len(v) > 20 else f"{k}: {v}" for k, v in request.cookies.items()]
+        logger.info(f"No OAuth access token found. Available cookies: {cookie_list}")
+        return None
+    
+    # Validate token with Supabase
+    try:
+        auth_response = supabase_service_client.auth.get_user(access_token)
+        if auth_response and auth_response.user:
+            logger.info(f"OAuth user authenticated successfully: {auth_response.user.email}")
+            return auth_response.user
+        else:
+            logger.info("OAuth access token found but user validation failed")
+            return None
+    except Exception as e:
+        logger.error(f"OAuth user validation failed: {e}")
+        return None
 
 async def get_service_client() -> SupabaseClient:
     """

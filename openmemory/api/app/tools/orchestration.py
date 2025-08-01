@@ -17,7 +17,7 @@ def _track_tool_usage(tool_name: str, properties: dict = None):
     pass
 
 @mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!! This is the primary tool for ALL conversational interactions. It saves new information, and provides relevant context on the user's life. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.")
-async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool) -> str:
+async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool = True) -> str:
     """
     Asynchronous, dual-path orchestration. Provides a fast search result immediately
     while triggering intelligent, asynchronous memory analysis and saving in the background.
