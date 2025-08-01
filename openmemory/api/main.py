@@ -306,7 +306,9 @@ async def serve_vcard(data: str):
 # Include routers - Now using get_current_supa_user from app.auth
 app.include_router(keys_router.router, dependencies=[Depends(get_current_supa_user)])
 # SDK Demo Router (no auth dependencies - handles its own authentication)
+logger.info("🚀 Loading Jean Memory SDK Demo Router...")
 app.include_router(sdk_demo.router)
+logger.info("✅ Jean Memory SDK Demo Router loaded successfully at /sdk/*")
 # Local Auth Router (only active in local development)
 app.include_router(local_auth_router, prefix="/api/v1")
 app.include_router(memories_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])

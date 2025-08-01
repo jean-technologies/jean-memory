@@ -53,25 +53,33 @@ class ChatResponse(BaseModel):
 
 async def _validate_api_key_and_get_user(api_key: str, db: Session) -> User:
     """Validate API key and return associated user"""
+    logger.info(f"🔍 SDK VALIDATE: Validating API key format (starts with jean_sk_: {api_key.startswith('jean_sk_')})")
+    
     if not api_key.startswith("jean_sk_"):
+        logger.error(f"❌ SDK VALIDATE: Invalid API key format - does not start with jean_sk_")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key format"
         )
     
     from app.auth import hash_api_key
+    logger.info(f"🔐 SDK VALIDATE: Hashing API key for database lookup")
     hashed_key = hash_api_key(api_key)
+    
+    logger.info(f"🔍 SDK VALIDATE: Querying database for API key")
     db_api_key = db.query(ApiKey).filter(
         ApiKey.key_hash == hashed_key,
         ApiKey.is_active == True
     ).first()
     
     if not db_api_key:
+        logger.error(f"❌ SDK VALIDATE: API key not found in database or inactive")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or inactive API key"
         )
     
+    logger.info(f"✅ SDK VALIDATE: API key validated successfully for user {db_api_key.user.user_id}")
     return db_api_key.user
 
 @router.post("/auth/login", response_model=UserLoginResponse)
@@ -85,12 +93,15 @@ async def sdk_auth_login(
     Authenticate a user for SDK-enabled applications.
     Returns tokens that can be used for SDK operations.
     """
+    logger.info(f"🚀 SDK AUTH: Starting authentication for email: {credentials.email}")
     try:
         # Authenticate with Supabase using service client
+        logger.info(f"🔐 SDK AUTH: Attempting Supabase authentication for {credentials.email}")
         auth_response = supabase_client.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })
+        logger.info(f"✅ SDK AUTH: Supabase authentication response received for {credentials.email}")
         
         # Validate response structure
         if not auth_response or not auth_response.user or not auth_response.session:
@@ -103,8 +114,10 @@ async def sdk_auth_login(
         session = auth_response.session
         
         # Ensure user exists in our database
+        logger.info(f"🔍 SDK AUTH: Checking if user {supa_user.id} exists in database")
         db_user = db.query(User).filter(User.user_id == str(supa_user.id)).first()
         if not db_user:
+            logger.info(f"➕ SDK AUTH: Creating new user record for {supa_user.email}")
             db_user = User(
                 user_id=str(supa_user.id),
                 email=supa_user.email or credentials.email
@@ -112,8 +125,11 @@ async def sdk_auth_login(
             db.add(db_user)
             db.commit()
             db.refresh(db_user)
+            logger.info(f"✅ SDK AUTH: New user created successfully")
+        else:
+            logger.info(f"✅ SDK AUTH: Existing user found in database")
         
-        logger.info(f"SDK authentication successful for user {supa_user.email}")
+        logger.info(f"🎉 SDK AUTH: Authentication successful for user {supa_user.email} (ID: {supa_user.id})")
         
         return UserLoginResponse(
             user_id=str(supa_user.id),
@@ -123,10 +139,11 @@ async def sdk_auth_login(
             expires_in=session.expires_in
         )
         
-    except HTTPException:
+    except HTTPException as he:
+        logger.error(f"❌ SDK AUTH: HTTP Exception - {he.detail} (status: {he.status_code})")
         raise
     except Exception as e:
-        logger.error(f"SDK authentication failed: {e}")
+        logger.error(f"💥 SDK AUTH: Unexpected error during authentication: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication failed"
@@ -141,8 +158,10 @@ async def validate_developer_credentials(
     Validate developer API key and client name.
     Returns developer information if valid.
     """
+    logger.info(f"🔑 SDK DEV: Validating developer API key for client: {developer_request.client_name}")
     try:
         user = await _validate_api_key_and_get_user(developer_request.api_key, db)
+        logger.info(f"✅ SDK DEV: API key validated successfully for developer {user.user_id}")
         
         return {
             "status": "valid",
@@ -151,10 +170,11 @@ async def validate_developer_credentials(
             "message": f"Developer authenticated for client: {developer_request.client_name}"
         }
         
-    except HTTPException:
+    except HTTPException as he:
+        logger.error(f"❌ SDK DEV: HTTP Exception - {he.detail} (status: {he.status_code})")
         raise
     except Exception as e:
-        logger.error(f"Developer validation failed: {e}")
+        logger.error(f"💥 SDK DEV: Unexpected error during validation: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Developer validation failed"
@@ -171,14 +191,20 @@ async def enhance_chat_with_context(
     Enhance chat messages with user's Jean Memory context.
     This is the core SDK functionality for AI chatbot integration.
     """
+    logger.info(f"💬 SDK CHAT: Starting chat enhancement for user {chat_request.user_id} via client {chat_request.client_name}")
+    logger.info(f"💬 SDK CHAT: Processing {len(chat_request.messages)} message(s)")
     try:
         # Validate developer API key
+        logger.info(f"🔐 SDK CHAT: Validating developer API key")
         developer_user = await _validate_api_key_and_get_user(chat_request.api_key, db)
+        logger.info(f"✅ SDK CHAT: Developer API key validated for user {developer_user.user_id}")
         
         # Set context variables for MCP tools
+        logger.info(f"🔧 SDK CHAT: Setting context variables for MCP tools")
         user_id_var.set(chat_request.user_id)
         client_name_var.set(chat_request.client_name)
         background_tasks_var.set(background_tasks)
+        logger.info(f"✅ SDK CHAT: Context variables set successfully")
         
         # Get user's most recent message for context retrieval
         user_messages = [msg for msg in chat_request.messages if msg.role == "user"]
@@ -191,12 +217,14 @@ async def enhance_chat_with_context(
         latest_user_message = user_messages[-1].content
         
         # Retrieve relevant context using jean_memory tool
+        logger.info(f"🧠 SDK CHAT: Retrieving context for message: '{latest_user_message[:100]}...'")
         try:
             memory_result = await jean_memory(latest_user_message)
             context_retrieved = True
             user_context = memory_result if memory_result else "No relevant context found"
+            logger.info(f"✅ SDK CHAT: Context retrieved successfully (length: {len(user_context) if user_context else 0} chars)")
         except Exception as e:
-            logger.warning(f"Context retrieval failed: {e}")
+            logger.warning(f"⚠️ SDK CHAT: Context retrieval failed: {str(e)}", exc_info=True)
             context_retrieved = False
             user_context = None
         
@@ -227,7 +255,8 @@ async def enhance_chat_with_context(
                 "content": msg.content
             })
         
-        logger.info(f"Enhanced chat for user {chat_request.user_id} via client {chat_request.client_name}")
+        logger.info(f"🎉 SDK CHAT: Chat enhancement completed for user {chat_request.user_id} via client {chat_request.client_name}")
+        logger.info(f"📊 SDK CHAT: Response contains {len(enhanced_messages)} enhanced message(s), context_retrieved={context_retrieved}")
         
         return ChatResponse(
             enhanced_messages=enhanced_messages,
@@ -235,10 +264,11 @@ async def enhance_chat_with_context(
             user_context=user_context
         )
         
-    except HTTPException:
+    except HTTPException as he:
+        logger.error(f"❌ SDK CHAT: HTTP Exception - {he.detail} (status: {he.status_code})")
         raise
     except Exception as e:
-        logger.error(f"Chat enhancement failed: {e}")
+        logger.error(f"💥 SDK CHAT: Unexpected error during chat enhancement: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Chat enhancement failed"
@@ -247,6 +277,7 @@ async def enhance_chat_with_context(
 @router.get("/health")
 async def sdk_health_check():
     """Health check endpoint for SDK functionality"""
+    logger.info("🏥 SDK HEALTH: Health check endpoint called")
     return {
         "status": "healthy",
         "service": "Jean Memory SDK",
