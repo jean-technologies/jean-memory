@@ -140,17 +140,18 @@ async def mcp_oauth_proxy(
     user: dict = Depends(get_current_user)
 ):
     """
-    MCP OAuth Proxy - HTTP Streaming Transport (MCP 2025-06-18)
+    MCP OAuth Proxy - Stateless HTTP Transport (MCP 2025-06-18)
     
     URL: https://jean-memory-api-virginia.onrender.com/mcp
     Authentication: OAuth 2.1 + Bearer token per RFC 6749 Section 5.1.1
-    Transport: HTTP streaming (single persistent connection)
+    Transport: Stateless HTTP (request-reply per call)
     
     Implements MCP 2025-06-18 specification with:
     - OAuth 2.1 + PKCE authentication 
     - Resource parameter binding (RFC 8707)
     - Tools discovery in initialize response
     - Bearer token validation per OAuth 2.1 Section 5.2
+    - Adherence to stateless HTTP transport; each request is self-contained.
     """
     
     # Validate Origin header (security requirement)
@@ -158,7 +159,7 @@ async def mcp_oauth_proxy(
         logger.warning(f"Invalid origin: {request.headers.get('origin')}")
         raise HTTPException(status_code=403, detail="Invalid origin")
     
-    logger.info(f"🚀 MCP HTTP Streaming: {user['client']} for user {user['user_id']} ({user['email']}) - Protocol 2025-06-18")
+    logger.info(f"🚀 MCP Stateless HTTP Transport: {user['client']} for user {user['user_id']} ({user['email']}) - Protocol 2025-06-18")
     
     # Set context variables for the duration of this request
     user_token = user_id_var.set(user["user_id"])
@@ -231,9 +232,31 @@ async def mcp_oauth_proxy(
         background_tasks_var.reset(tasks_token)
 
 
-# SSE endpoint removed - MCP 2025-06-18 uses HTTP streaming only
-# All communication happens through POST /mcp with proper OAuth 2.1 + Bearer tokens
-# Per MCP spec: "Authorization: Bearer <access-token>" header required on every HTTP request
+@oauth_mcp_router.get("/mcp")
+async def mcp_get_dummy(user: dict = Depends(get_current_user)):
+    """
+    Dummy GET endpoint to appease legacy Claude clients.
+    
+    The modern OAuth flow uses stateless POST requests exclusively. However, some
+    Claude clients still attempt a GET request after initialization. Returning a 405
+    causes the client to enter a retry loop.
+    
+    This dummy endpoint catches that GET, authenticates the user to ensure the token
+    is valid, logs the event, and returns an empty 204 No Content. This satisfies
+    the client's check without creating a protocol conflict.
+    """
+    logger.warning(
+        f"⚠️ Dummy GET /mcp called by client for user {user['email']}. "
+        "This is a legacy client behavior. Returning 204 No Content to prevent retry loops."
+    )
+    return Response(status_code=204)
+
+
+# SSE endpoint removed - MCP 2025-06-18 uses a stateless HTTP transport only.
+# The previous GET /mcp endpoint implemented a stateful SSE stream, which
+# conflicted with the modern OAuth flow and caused client-side errors.
+# All communication must happen through POST /mcp with a self-contained
+# "Authorization: Bearer <access-token>" header on every HTTP request.
 
 
 @oauth_mcp_router.get("/mcp/health")  
@@ -256,7 +279,7 @@ async def mcp_status():
     return {
         "status": "online",
         "transport": "oauth-proxy",
-        "protocol_version": "2024-11-05",
+        "protocol_version": "2025-06-18",
         "protocol": "MCP",
         "oauth": "enabled",
         "serverInfo": {
@@ -287,7 +310,7 @@ async def mcp_head():
         status_code=200,
         headers={
             "Content-Type": "application/json",
-            "X-MCP-Protocol": "2024-11-05",
+            "X-MCP-Protocol": "2025-06-18",
             "X-MCP-Transport": "http",
             "X-OAuth-Supported": "true",
             "Access-Control-Allow-Origin": "*"

@@ -575,14 +575,24 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         raise HTTPException(status_code=401, detail="Authorization required")
     
     try:
-        payload = decode_access_token(credentials.credentials)
-        return {
-            "user_id": payload["sub"],
-            "email": payload["email"],
-            "client": payload["client"],
-            "scope": payload.get("scope", "read")
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        email: str = payload.get("email")
+        user_id: str = payload.get("sub")
+        client: str = payload.get("aud") # Audience claim
+        
+        if email is None or user_id is None:
+            logger.error("Token missing email or sub claim")
+            raise credentials_exception
+            
+        logger.info(f"✅ JWT successfully decoded for user: {email}")
+        logger.info(f"   - Supabase User ID (sub): {user_id}")
+        logger.info(f"   - Audience (aud): {client}")
+
+        # You can add further validation here if needed, e.g., checking
+        # if the user exists in your local database.
+        
+        return {"user_id": user_id, "email": email, "client": client}
+        
+    except JWTError as e:
+        logger.error(f"JWT Error: {e}", exc_info=True)
+        raise credentials_exception
