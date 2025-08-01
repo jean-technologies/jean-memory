@@ -17,7 +17,7 @@ const ChatBubble = ({ message, isUser, isPersonalized }: { message: string; isUs
       )}
       <div className="min-w-0"> 
         <div
-          className={`px-4 py-2 rounded-lg max-w-xs text-sm inline-block ${
+          className={`px-4 py-2 rounded-lg max-w-xs text-sm inline-block break-words ${
             isUser
               ? "bg-gray-800 text-white rounded-br-none"
               : "bg-gray-200 text-gray-800 rounded-bl-none"
@@ -127,7 +127,7 @@ function MathTutorApp() {
                   {activeTab === 'users' ? (
                       <motion.div key="user-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full">
                         <Link href={user ? "/dashboard" : "/auth?animate=true"} passHref className="w-full">
-                          <Button size="lg" variant="outline" className="w-full text-md py-6 border-gray-300 bg-white/50 hover:bg-gray-200/50">
+                          <Button size="lg" variant="outline" className="w-full text-md py-6 border-orange-400 bg-white/50 hover:bg-gray-200/50">
                               {user ? "Go to Dashboard" : "Sign In With Jean"}
                           </Button>
                         </Link>
@@ -172,16 +172,16 @@ function MathTutorApp() {
                                 <AppIcon src="/images/substack.png" alt="Substack Logo" />
                                 <AppIcon src="/images/vscode.svg" alt="VS Code Logo" />
                             </div>
-                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4">
-                                <h3 className="text-md font-semibold mb-2 text-center text-gray-500">Generic AI</h3>
-                                <div className="p-2 rounded-lg flex flex-col justify-end h-32">
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-48">
+                                <h3 className="text-md font-semibold mb-2 text-center text-gray-500 flex-shrink-0">Generic AI</h3>
+                                <div className="p-2 rounded-lg flex flex-col justify-end flex-grow min-h-0">
                                     <ChatBubble isUser={true} message="What should I work on today?" />
                                     <ChatBubble isUser={false} message="You could work on tasks, check your calendar, or read emails." />
                                 </div>
                             </div>
-                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4">
-                                <h3 className="text-md font-semibold mb-2 text-center text-gray-900">Personalized with Jean</h3>
-                                <div className="p-2 rounded-lg flex flex-col justify-end h-32">
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-48">
+                                <h3 className="text-md font-semibold mb-2 text-center text-gray-900 flex-shrink-0">Personalized with Jean</h3>
+                                <div className="p-2 rounded-lg flex flex-col justify-end flex-grow min-h-0">
                                     <ChatBubble isUser={true} message="What should I work on today?" />
                                     <ChatBubble isUser={false} message="Finalize the Q3 launch slides. You also wanted to practice Spanish." isPersonalized={true} />
                                 </div>
