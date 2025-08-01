@@ -16,7 +16,7 @@ const ChatBubble = ({ message, isUser, isPersonalized }: { message: string; isUs
         <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isPersonalized ? "bg-slate-400" : "bg-gray-400"}`}></div>
       )}
       <div
-        className={`px-4 py-2 rounded-lg max-w-xs text-sm ${
+        className={`px-4 py-2 rounded-lg max-w-xs text-sm break-words ${
           isUser
             ? "bg-gray-800 text-white rounded-br-none"
             : "bg-gray-200 text-gray-800 rounded-bl-none"
