@@ -74,7 +74,7 @@ function MathTutorApp() {
   const secondaryButtonClass = "px-8 py-6 text-lg hover:bg-gray-200/50";
 
   return (
-    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
+    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
       <div className="absolute inset-0 z-0">
         <ParticleNetwork id="landing-particles-final" particleColor="#cccccc" particleCount={150} />
       </div>
@@ -87,7 +87,7 @@ function MathTutorApp() {
           className="text-center w-full max-w-7xl mx-auto"
         >
           <motion.h1
-            className="text-6xl sm:text-7xl md:text-8xl font-semibold mb-4 text-gray-900 tracking-tight"
+            className="text-6xl sm:text-7xl md:text-8xl font-serif font-semibold mb-4 text-gray-900 tracking-tight"
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}

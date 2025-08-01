@@ -9,11 +9,25 @@ import { AuthProvider } from "../contexts/AuthContext";
 import type { Metadata } from 'next';
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Inter } from "next/font/google";
+import { Inter, Lora, Source_Code_Pro } from "next/font/google";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-lora",
+});
+
+const sourceCodePro = Source_Code_Pro({
+  subsets: ["latin"],
+  variable: "--font-source-code-pro",
+});
+
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jeanmemory.com'),
@@ -59,7 +73,9 @@ export default function RootLayout({
       </head>
       <body className={cn(
         "min-h-screen font-sans antialiased flex flex-col bg-background text-foreground",
-        inter.className
+        inter.variable,
+        lora.variable,
+        sourceCodePro.variable
       )}>
         {/* Google tag (gtag.js) */}
         <Script
