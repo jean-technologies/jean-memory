@@ -596,6 +596,12 @@ async def token_exchange(
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """Extract user from JWT token"""
     
+    logger.error(f"🔥🔥🔥 GET_CURRENT_USER CALLED:")
+    logger.error(f"   - Credentials type: {type(credentials)}")
+    logger.error(f"   - Credentials scheme: {getattr(credentials, 'scheme', 'unknown')}")
+    logger.error(f"   - Token length: {len(getattr(credentials, 'credentials', '')) if credentials else 0}")
+    logger.error(f"   - Token preview: {getattr(credentials, 'credentials', '')[:50] if credentials else 'None'}...")
+    
     try:
         # Try to decode with audience validation first (for new tokens)
         try:

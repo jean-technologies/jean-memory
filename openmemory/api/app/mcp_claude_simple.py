@@ -38,33 +38,49 @@ async def handle_mcp_request(
     request_id = message.get("id")
     client_name = user["client"]
 
+    logger.error(f"🔥🔥🔥 HANDLE_MCP_REQUEST CALLED:")
+    logger.error(f"   - Method: {method_name}")
+    logger.error(f"   - Params: {params}")
+    logger.error(f"   - Request ID: {request_id}")
+    logger.error(f"   - Client: {client_name}")
+    logger.error(f"   - User: {user.get('email', 'unknown')}")
+    logger.error(f"   - Full message: {message}")
+
     logger.info(f"Handling MCP method '{method_name}' for client '{client_name}'")
 
     client_profile = get_client_profile(client_name)
 
     if method_name == "initialize":
+        logger.error(f"🔥🔥🔥 INITIALIZE REQUEST PROCESSING:")
         # Use client's exact protocol version to avoid version mismatch issues
         client_protocol_version = params.get("protocolVersion", "2024-11-05")
         protocol_version = client_protocol_version
+        logger.error(f"   - Client protocol version: {client_protocol_version}")
         logger.warning(f"🔥 CLIENT REQUESTED PROTOCOL: {client_protocol_version}")
         
         # For newer protocols, include tools directly in initialize response
         if client_protocol_version in ["2025-06-18", "2025-03-26"]:
+            logger.error(f"   - Using modern protocol with direct tools")
             tools_schema = client_profile.get_tools_schema(include_annotations=True)
+            logger.error(f"   - Retrieved tools schema: {tools_schema}")
             capabilities = {
                 "tools": tools_schema,
                 "logging": {},
                 "sampling": {}
             }
+            logger.error(f"   - Built capabilities: {capabilities}")
             logger.warning(f"🔥 SENDING {len(tools_schema)} TOOLS IN INITIALIZE RESPONSE")
         else:
+            logger.error(f"   - Using legacy protocol with tools/list")
             # Older protocols use separate tools/list call
             capabilities = {
                 "tools": {"listChanged": True},
                 "logging": {},
                 "sampling": {}
             }
-        return {
+            logger.error(f"   - Built legacy capabilities: {capabilities}")
+        
+        initialize_response = {
             "jsonrpc": "2.0",
             "result": {
                 "protocolVersion": protocol_version,
@@ -73,12 +89,20 @@ async def handle_mcp_request(
             },
             "id": request_id
         }
+        logger.error(f"🔥🔥🔥 INITIALIZE RESPONSE BUILT:")
+        logger.error(f"   - Full response: {initialize_response}")
+        return initialize_response
 
     elif method_name == "tools/list":
+        logger.error(f"🔥🔥🔥 TOOLS/LIST REQUEST PROCESSING:")
         logger.warning(f"🔥🔥🔥 EXPLICIT TOOLS/LIST CALLED! Client: {client_name}")
         tools_schema = client_profile.get_tools_schema(include_annotations=True)
+        logger.error(f"   - Retrieved tools schema: {tools_schema}")
         logger.warning(f"🔥🔥🔥 RETURNING {len(tools_schema)} TOOLS FOR EXPLICIT TOOLS/LIST")
-        return {"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id}
+        tools_response = {"jsonrpc": "2.0", "result": {"tools": tools_schema}, "id": request_id}
+        logger.error(f"🔥🔥🔥 TOOLS/LIST RESPONSE BUILT:")
+        logger.error(f"   - Full response: {tools_response}")
+        return tools_response
 
     elif method_name == "tools/call":
         tool_name = params.get("name")
@@ -145,6 +169,13 @@ async def mcp_oauth_proxy(
     background_tasks: BackgroundTasks,
     user: dict = Depends(get_current_user)
 ):
+    logger.error(f"🔥🔥🔥 MCP POST REQUEST RECEIVED:")
+    logger.error(f"   - Method: POST")
+    logger.error(f"   - URL: {request.url}")
+    logger.error(f"   - Headers: {dict(request.headers)}")
+    logger.error(f"   - User: {user.get('email', 'unknown')}")
+    logger.error(f"   - Client: {user.get('client', 'unknown')}")
+    logger.error(f"   - User ID: {user.get('user_id', 'unknown')}")
     """
     MCP OAuth Proxy - Stateless HTTP Transport (MCP 2025-06-18)
     
@@ -181,6 +212,9 @@ async def mcp_oauth_proxy(
     try:
         # Parse request body (single message or batch)
         body = await request.json()
+        logger.error(f"🔥🔥🔥 REQUEST BODY PARSED:")
+        logger.error(f"   - Body type: {type(body)}")
+        logger.error(f"   - Body content: {body}")
         
         # Log all incoming methods to debug what Claude is calling
         if isinstance(body, list):
@@ -199,43 +233,73 @@ async def mcp_oauth_proxy(
         
         # Handle batch requests
         if isinstance(body, list):
-            logger.info(f"Processing batch request with {len(body)} messages")
+            logger.error(f"🔥🔥🔥 PROCESSING BATCH REQUEST:")
+            logger.error(f"   - Batch size: {len(body)} messages")
             responses = []
             
-            for message in body:
+            for i, message in enumerate(body):
+                logger.error(f"🔥🔥🔥 BATCH MESSAGE {i+1}:")
+                logger.error(f"   - Message: {message}")
                 response = await handle_mcp_request(message, user, background_tasks)
+                logger.error(f"🔥🔥🔥 BATCH RESPONSE {i+1}:")
+                logger.error(f"   - Response: {response}")
                 if response:  # Only add non-None responses
                     responses.append(response)
             
+            logger.error(f"🔥🔥🔥 FINAL BATCH RESPONSE:")
+            logger.error(f"   - Total responses: {len(responses)}")
+            logger.error(f"   - Responses: {responses}")
             return JSONResponse(content=responses)
         
         # Handle single message
         else:
+            logger.error(f"🔥🔥🔥 PROCESSING SINGLE REQUEST:")
+            logger.error(f"   - Message: {body}")
             response = await handle_mcp_request(body, user, background_tasks)
+            logger.error(f"🔥🔥🔥 SINGLE RESPONSE:")
+            logger.error(f"   - Response: {response}")
             if response is None:
+                logger.error(f"🔥🔥🔥 RETURNING 204 NO CONTENT")
                 # For notifications, no response is sent back to the client.
                 return Response(status_code=204)
+            logger.error(f"🔥🔥🔥 RETURNING JSON RESPONSE:")
+            logger.error(f"   - Final response: {response}")
             return JSONResponse(content=response)
             
     except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in request: {e}")
+        logger.error(f"🔥🔥🔥 JSON DECODE ERROR:")
+        logger.error(f"   - Error: {e}")
+        logger.error(f"   - Request URL: {request.url}")
+        logger.error(f"   - Request headers: {dict(request.headers)}")
+        error_response = {
+            "jsonrpc": "2.0",
+            "error": {"code": -32700, "message": "Parse error"},
+            "id": None
+        }
+        logger.error(f"🔥🔥🔥 RETURNING JSON DECODE ERROR RESPONSE:")
+        logger.error(f"   - Response: {error_response}")
         return JSONResponse(
             status_code=400,
-            content={
-                "jsonrpc": "2.0",
-                "error": {"code": -32700, "message": "Parse error"},
-                "id": None
-            }
+            content=error_response
         )
     except Exception as e:
-        logger.error(f"Error in MCP OAuth proxy: {e}", exc_info=True)
+        logger.error(f"🔥🔥🔥 GENERAL EXCEPTION IN MCP PROXY:")
+        logger.error(f"   - Exception: {e}")
+        logger.error(f"   - Exception type: {type(e)}")
+        logger.error(f"   - Request URL: {request.url}")
+        logger.error(f"   - Request headers: {dict(request.headers)}")
+        logger.error(f"   - User: {user}")
+        logger.error(f"   - Full traceback:", exc_info=True)
+        error_response = {
+            "jsonrpc": "2.0", 
+            "error": {"code": -32603, "message": "Internal error"},
+            "id": None
+        }
+        logger.error(f"🔥🔥🔥 RETURNING GENERAL ERROR RESPONSE:")
+        logger.error(f"   - Response: {error_response}")
         return JSONResponse(
             status_code=500,
-            content={
-                "jsonrpc": "2.0", 
-                "error": {"code": -32603, "message": "Internal error"},
-                "id": None
-            }
+            content=error_response
         )
     finally:
         # Ensure context variables are reset
@@ -245,7 +309,14 @@ async def mcp_oauth_proxy(
 
 
 @oauth_mcp_router.get("/mcp")
-async def mcp_get_dummy(user: dict = Depends(get_current_user)):
+async def mcp_get_dummy(request: Request, user: dict = Depends(get_current_user)):
+    logger.error(f"🔥🔥🔥 MCP GET REQUEST RECEIVED:")
+    logger.error(f"   - Method: GET")
+    logger.error(f"   - URL: {request.url}")
+    logger.error(f"   - Headers: {dict(request.headers)}")
+    logger.error(f"   - User: {user.get('email', 'unknown')}")
+    logger.error(f"   - Client: {user.get('client', 'unknown')}")
+    logger.error(f"   - User ID: {user.get('user_id', 'unknown')}")
     """
     Dummy GET endpoint to appease legacy Claude clients.
     
