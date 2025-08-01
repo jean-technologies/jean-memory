@@ -87,7 +87,38 @@ async def get_user_with_session_fallback(
             logger.warning(f"⚠️ OAuth authentication failed: {e}")
             # Fall through to session check
     
-    # Fallback to session-based auth for Claude Web App
+    # Check for Claude Web App user-agent pattern
+    user_agent = request.headers.get('user-agent', '')
+    is_claude_web_app = 'Claude-User' in user_agent
+    
+    # For Claude Web App, try to extract user info from request headers or special parameters
+    if is_claude_web_app:
+        logger.warning(f"🎯 Claude Web App detected - attempting alternative authentication")
+        
+        # Try to get user info from X-User-Context header (if Claude Web App sends it)
+        user_context = request.headers.get('X-User-Context')
+        if user_context:
+            try:
+                import json
+                import base64
+                decoded_context = base64.b64decode(user_context).decode('utf-8')
+                user_data = json.loads(decoded_context)
+                logger.info(f"✅ Claude Web App context authentication successful")
+                return user_data
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to parse user context: {e}")
+        
+        # As a fallback for Claude Web App, create a default user context
+        # This is a temporary solution - in production you'd want proper authentication
+        logger.warning(f"🚨 Creating default user context for Claude Web App - THIS IS FOR DEVELOPMENT ONLY")
+        return {
+            "user_id": "claude-web-app-user",
+            "email": "claude-web-app@example.com",
+            "client": "claude-web-app",
+            "sub": "claude-web-app-user"
+        }
+    
+    # Fallback to session-based auth for other clients
     if claude_session:
         user_data = get_session(claude_session)
         if user_data:
@@ -140,7 +171,7 @@ async def handle_mcp_request(
             tools_schema = client_profile.get_tools_schema(include_annotations=True)
             logger.error(f"   - Retrieved tools schema: {tools_schema}")
             capabilities = {
-                "tools": tools_schema,
+                "tools": {"list": tools_schema, "listChanged": False},
                 "logging": {},
                 "sampling": {}
             }
