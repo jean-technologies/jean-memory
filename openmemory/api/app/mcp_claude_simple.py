@@ -165,27 +165,15 @@ async def handle_mcp_request(
         logger.error(f"   - Client protocol version: {client_protocol_version}")
         logger.warning(f"🔥 CLIENT REQUESTED PROTOCOL: {client_protocol_version}")
         
-        # For newer protocols, include tools directly in initialize response
-        if client_protocol_version in ["2025-06-18", "2025-03-26"]:
-            logger.error(f"   - Using modern protocol with direct tools")
-            tools_schema = client_profile.get_tools_schema(include_annotations=True)
-            logger.error(f"   - Retrieved tools schema: {tools_schema}")
-            capabilities = {
-                "tools": {"list": tools_schema, "listChanged": False},
-                "logging": {},
-                "sampling": {}
-            }
-            logger.error(f"   - Built capabilities: {capabilities}")
-            logger.warning(f"🔥 SENDING {len(tools_schema)} TOOLS IN INITIALIZE RESPONSE")
-        else:
-            logger.error(f"   - Using legacy protocol with tools/list")
-            # Older protocols use separate tools/list call
-            capabilities = {
-                "tools": {"listChanged": True},
-                "logging": {},
-                "sampling": {}
-            }
-            logger.error(f"   - Built legacy capabilities: {capabilities}")
+        # MCP 2025-06-18 specification: tools are discovered via separate tools/list call
+        # Initialize response should only indicate if tools list can change
+        capabilities = {
+            "tools": {"listChanged": True},
+            "logging": {},
+            "sampling": {}
+        }
+        logger.error(f"   - Built capabilities: {capabilities}")
+        logger.warning(f"🔥 TOOLS DISCOVERY VIA SEPARATE tools/list CALL (MCP {client_protocol_version})")
         
         initialize_response = {
             "jsonrpc": "2.0",
