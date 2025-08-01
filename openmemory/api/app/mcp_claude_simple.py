@@ -161,9 +161,15 @@ async def mcp_oauth_proxy(
     """
     
     # Validate Origin header (security requirement)
+    origin = request.headers.get('origin')
     if not validate_origin(request):
-        logger.warning(f"Invalid origin: {request.headers.get('origin')}")
+        logger.error(f"🚨 ORIGIN VALIDATION FAILED:")
+        logger.error(f"   - Origin: {origin}")
+        logger.error(f"   - User-Agent: {request.headers.get('user-agent')}")
+        logger.error(f"   - All headers: {dict(request.headers)}")
         raise HTTPException(status_code=403, detail="Invalid origin")
+    else:
+        logger.info(f"✅ Origin validation passed: {origin}")
     
     logger.info(f"🚀 MCP Stateless HTTP Transport: {user['client']} for user {user['user_id']} ({user['email']}) - Protocol 2025-06-18")
     
