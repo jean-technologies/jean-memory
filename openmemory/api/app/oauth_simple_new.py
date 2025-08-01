@@ -13,9 +13,10 @@ from urllib.parse import urlencode
 import jwt
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request, HTTPException, Form, Depends
+from fastapi import APIRouter, Request, HTTPException, Form, Depends, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import logging
 
 from app.settings import config
 
@@ -26,6 +27,19 @@ registered_clients: Dict[str, Dict] = {}
 # JWT settings
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this")
 JWT_ALGORITHM = "HS256"
+
+# OAuth2 scheme for Bearer token authentication
+bearer_scheme = HTTPBearer()
+
+# Exception for credential validation failures
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+# Logger for this module
+logger = logging.getLogger(__name__)
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
@@ -568,11 +582,8 @@ async def token_exchange(
     }
 
 
-async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme)):
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """Extract user from JWT token"""
-    
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Authorization required")
     
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -593,6 +604,6 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         
         return {"user_id": user_id, "email": email, "client": client}
         
-    except JWTError as e:
+    except Exception as e:
         logger.error(f"JWT Error: {e}", exc_info=True)
         raise credentials_exception
