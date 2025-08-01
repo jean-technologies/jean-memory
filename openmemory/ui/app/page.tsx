@@ -29,7 +29,7 @@ const ChatBubble = ({ message, isUser, isPersonalized }: { message: string; isUs
     </div>
   );
 
-const AppIcon = ({ src, alt }: { src: string; alt:string; }) => (
+const AppIcon = ({ src, alt }: { src: string; alt: string; }) => (
     <motion.div
         whileHover={{ scale: 1.1, y: -5 }}
         transition={{ type: "spring", stiffness: 300 }}
@@ -80,7 +80,7 @@ function MathTutorApp() {
 
       <main className="relative z-10 grid grid-cols-1 lg:grid-cols-2 min-h-screen">
         {/* Left Column: Content */}
-        <div className="flex flex-col justify-center items-center p-8 py-16 lg:p-16">
+        <div className="flex flex-col items-center p-8 pt-24 pb-12 lg:justify-center lg:p-16">
           <div className="max-w-lg w-full text-center">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -99,7 +99,7 @@ function MathTutorApp() {
             </motion.div>
             
             <motion.p
-              className="text-3xl text-gray-600 mb-12 text-center"
+              className="text-2xl lg:text-3xl text-gray-600 mb-8 lg:mb-12 text-center"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -108,7 +108,7 @@ function MathTutorApp() {
             </motion.p>
             
             <motion.div 
-              className="flex bg-gray-200/70 p-1 rounded-lg mb-12"
+              className="flex bg-gray-200/70 p-1 rounded-lg mb-8 lg:mb-12"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.6 }}
@@ -152,7 +152,7 @@ function MathTutorApp() {
         </div>
 
         {/* Right Column / Mobile Section: Visuals */}
-        <div className="flex items-center justify-center p-8 pt-0 lg:pt-8 bg-gray-100/30 backdrop-blur-sm lg:bg-transparent">
+        <div className="flex items-center justify-center p-4 md:p-8 pt-0 lg:p-8 bg-gray-100/30 backdrop-blur-sm lg:bg-transparent">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={activeTab}
@@ -163,7 +163,7 @@ function MathTutorApp() {
                     className="w-full max-w-xl"
                 >
                     {activeTab === 'users' ? (
-                        <div className="space-y-6">
+                        <div className="space-y-4 md:space-y-6">
                             <div className="flex justify-center items-center space-x-4">
                                 <AppIcon src="/images/ChatGPT-Logo.svg" alt="ChatGPT Logo" />
                                 <AppIcon src="/images/claude.webp" alt="Claude Logo" />
