@@ -19,11 +19,6 @@ const config = {
       },
     },
     extend: {
-      fontFamily: {
-        sans: ["var(--font-inter)"],
-        serif: ["var(--font-lora)"],
-        mono: ["var(--font-source-code-pro)"],
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

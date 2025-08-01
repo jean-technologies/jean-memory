@@ -74,7 +74,7 @@ function MathTutorApp() {
   const secondaryButtonClass = "px-8 py-6 text-lg hover:bg-gray-200/50";
 
   return (
-    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
+    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
       <div className="absolute inset-0 z-0">
         <ParticleNetwork id="landing-particles-final" particleColor="#cccccc" particleCount={150} />
       </div>
@@ -86,15 +86,22 @@ function MathTutorApp() {
           transition={{ duration: 0.8 }}
           className="text-center w-full max-w-7xl mx-auto"
         >
-          <motion.h1
-            className="text-6xl sm:text-7xl md:text-8xl font-serif font-semibold mb-4 text-gray-900 tracking-tight"
+          <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-4"
           >
-            Jean
-          </motion.h1>
-
+            <Image 
+              src="/images/jean-logo-full-bw.png"
+              alt="Jean Logo"
+              width={240}
+              height={80}
+              className="mx-auto"
+              priority
+            />
+          </motion.div>
+          
           <motion.p
             className="text-xl sm:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto"
             initial={{ opacity: 0 }}
