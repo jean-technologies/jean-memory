@@ -15,14 +15,16 @@ const ChatBubble = ({ message, isUser, isPersonalized }: { message: string; isUs
       {!isUser && (
         <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isPersonalized ? "bg-slate-400" : "bg-gray-400"}`}></div>
       )}
-      <div
-        className={`px-4 py-2 rounded-lg max-w-xs text-sm break-words ${
-          isUser
-            ? "bg-gray-800 text-white rounded-br-none"
-            : "bg-gray-200 text-gray-800 rounded-bl-none"
-        }`}
-      >
-        {message}
+      <div className="min-w-0"> 
+        <div
+          className={`px-4 py-2 rounded-lg max-w-xs text-sm inline-block ${
+            isUser
+              ? "bg-gray-800 text-white rounded-br-none"
+              : "bg-gray-200 text-gray-800 rounded-bl-none"
+          }`}
+        >
+          {message}
+        </div>
       </div>
     </div>
   );
@@ -71,7 +73,7 @@ function MathTutorApp() {
 }`;
 
   return (
-    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-x-hidden">
+    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
       <div className="absolute inset-0 z-0">
         <ParticleNetwork id="landing-particles-final" particleColor="#e5e7eb" particleCount={120} />
       </div>
@@ -102,7 +104,7 @@ function MathTutorApp() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              The universal memory across your applications
+              Universal memory across your applications
             </motion.p>
             
             <motion.div 
@@ -177,7 +179,7 @@ function MathTutorApp() {
                                     <ChatBubble isUser={false} message="You could work on tasks, check your calendar, or read emails." />
                                 </div>
                             </div>
-                            <div className="bg-white/60 backdrop-blur-sm border border-orange-300 rounded-xl p-4">
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4">
                                 <h3 className="text-md font-semibold mb-2 text-center text-gray-900">Personalized with Jean</h3>
                                 <div className="p-2 rounded-lg flex flex-col justify-end h-32">
                                     <ChatBubble isUser={true} message="What should I work on today?" />
