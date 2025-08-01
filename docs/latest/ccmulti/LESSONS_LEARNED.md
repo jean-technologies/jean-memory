@@ -4,20 +4,31 @@
 
 This document consolidates key lessons learned from previous implementation attempts and provides critical insights for successful minimal implementation of the Claude Code multi-agent workflow.
 
-## ✅ Latest Progress Update (January 2025)
+## ✅ Latest Progress Update (July 31, 2025)
 
-**Phase 1 Successfully Completed:**
+**🎉 MULTI-AGENT SYSTEM FULLY OPERATIONAL:**
+
+**Phase 1 & 2 Successfully Completed:**
 - Multi-terminal coordination infrastructure working
-- Virtual user ID pattern implemented and tested
-- Database session registration operational  
+- Virtual user ID pattern implemented and tested  
+- Database session registration operational
 - Session-aware Claude profile functional
 - HTTP v2 transport reliable for multi-agent connections
+- **Frontend integration complete with multi-agent tab**
+- **All 6 coordination tools registered and callable**
+- **Magic phrase workflow functional end-to-end**
+
+**🔧 Critical Fixes Applied (July 31, 2025):**
+- **CRITICAL FIX 1**: Added `from .coordination import *` to `/app/tools/__init__.py`
+- **CRITICAL FIX 2**: Added `setup_multi_agent_coordination` to central `tool_registry.py`
+- **RESULT**: Tools now both visible AND callable (resolved registration gap)
 
 **Key Technical Discoveries:**
+- Tool registration requires BOTH MCP decoration AND central registry mapping
+- Frontend multi-agent tab provides streamlined user experience
+- Magic phrase "using Jean Memory multi-agent coordination" triggers full automation
+- Database coordination works across separate Claude Code processes
 - `claude mcp add --transport http` works perfectly for multi-terminal setup
-- Virtual user ID parsing enables cross-session coordination via database
-- Session-aware tool descriptions provide multi-agent context to agents
-- Database schema requires `last_activity` instead of `updated_at` for compatibility
 
 **Successful Connection Pattern:**
 ```bash
@@ -211,9 +222,42 @@ Long-term Context (Jean Memory): 2-6s operations
 └─ Domain knowledge: Deep context searches
 ```
 
-## Google ADK Integration Insights
+## 🔧 Outstanding Backend Issues (July 31, 2025)
 
-### Why Google ADK Works
+### Current Stability Challenges
+While the multi-agent coordination functionality is working end-to-end, there are backend database issues that need resolution for production stability:
+
+**1. Database Constraint Violations:**
+- NOT NULL constraint on `updated_at` field in `claude_code_sessions` table
+- Caused by INSERT statements missing required `updated_at` timestamp
+- **Impact**: Session creation fails in some cases
+- **Location**: `/app/routing/mcp.py` - `register_agent_connection()` function
+
+**2. Foreign Key Constraint Errors:**
+- Task progress references non-existent sessions when in single-user mode
+- `sync_progress` tool tries to insert records with session_id "single_user"
+- **Impact**: Progress tracking fails for non-multi-agent usage
+- **Location**: `/app/tools/coordination.py` - `sync_progress()` function
+
+**3. Circular Import Warnings:**
+- Import cycle in `app.tools.memory` module during startup
+- **Impact**: Non-breaking but causes startup warnings
+- **Location**: `/app/tools/orchestration.py` imports from memory module
+
+**4. pgvector Connection Failures:**
+- Connection to localhost:5432 refused during development  
+- **Impact**: Phase 2 features affected, but non-critical for multi-agent coordination
+- **Status**: Not blocking multi-agent functionality
+
+### Next Development Priorities
+1. **Database schema fixes** for production stability
+2. **Error handling improvements** for graceful degradation
+3. **Connection resilience** for development environments
+4. **Monitoring and logging** enhancements for troubleshooting
+
+## Google ADK Integration Insights (Previous Research)
+
+### Why Google ADK Works (Historical Context)
 1. **Performance**: In-memory operations vs network calls
 2. **Precision**: Session-scoped memory store prevents pollution
 3. **Simplicity**: Built specifically for multi-agent coordination

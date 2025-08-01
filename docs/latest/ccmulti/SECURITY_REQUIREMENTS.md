@@ -81,7 +81,10 @@ elif is_multi_agent and not is_claude_code:
 - `analyze_task_conflicts` - Task analysis and agent distribution planning
 - `create_task_distribution` - Terminal command and prompt generation
 
-### Execution Tools (All Agents)
+### Core Coordination Tool
+- `setup_multi_agent_coordination` - Magic phrase automation (streamlined workflow)
+
+### Execution Tools (All Agents)  
 - `claim_file_lock` - Cross-session file locking
 - `sync_progress` - Progress broadcasting across terminals
 - `check_agent_status` - Agent monitoring
@@ -106,16 +109,18 @@ curl -X POST https://jean-memory-api-dev.onrender.com/mcp/v2/cursor/test_user \
   -d '{"jsonrpc": "2.0", "method": "tools/list", "params": {}, "id": 1}'
 ```
 
-### Security Checklist
+### Security Checklist (✅ Verified July 31, 2025)
 
-- [x] Claude Code MCP shows all coordination tools when in multi-agent session ✅
+- [x] Claude Code MCP shows all 6 coordination tools when in multi-agent session ✅
+- [x] Tool registration gap fixed - coordination tools properly imported ✅
+- [x] Central registry mapping complete - all tools callable ✅  
 - [x] Cursor IDE connections show NO coordination tools ✅
 - [x] Chorus connections show NO coordination tools ✅
 - [x] ChatGPT connections show NO coordination tools ✅
 - [x] API key users show NO coordination tools ✅
 - [x] Default/unknown clients show NO coordination tools ✅
 - [x] Security warnings logged for blocked attempts ✅
-- [x] All client profiles tested individually ✅
+- [x] Magic phrase workflow functional end-to-end ✅
 
 ### Log Monitoring
 
