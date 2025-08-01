@@ -608,14 +608,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
                 options={"verify_aud": True, "verify_iss": True}
             )
             logger.info("✅ JWT decoded with full validation (aud + iss)")
-        except jwt.InvalidAudienceError:
-            # Fallback for tokens without audience claim (legacy tokens)
+        except (jwt.InvalidAudienceError, jwt.InvalidIssuerError, jwt.MissingRequiredClaimError) as e:
+            # Fallback for tokens without audience/issuer claims (legacy tokens)
+            logger.warning(f"⚠️ JWT validation failed ({type(e).__name__}), trying legacy decode...")
             payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            logger.warning("⚠️ JWT decoded without audience validation (legacy token)")
-        except jwt.InvalidIssuerError:
-            # Fallback for tokens without issuer claim (legacy tokens)
-            payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            logger.warning("⚠️ JWT decoded without issuer validation (legacy token)")
+            logger.warning("⚠️ JWT decoded without audience/issuer validation (legacy token)")
             
         email: str = payload.get("email")
         user_id: str = payload.get("sub")
