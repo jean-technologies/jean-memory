@@ -29,7 +29,7 @@ class JeanAgentMCP:
         self, 
         api_key: str, 
         system_prompt: str = "You are a helpful assistant.",
-        client_name: str = "Python MCP App"
+        client_name: str = "claude"
     ):
         self.api_key = api_key
         self.system_prompt = system_prompt

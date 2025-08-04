@@ -58,7 +58,7 @@ export const useJeanAgentMCP = (config: JeanAgentConfig = {}) => {
 
   const apiKey = config.apiKey || 'jean_sk_gdy4KGuspLZ82PHGI_3v8hEkP2iyFN4axYciKX8WqeA';
   const systemPrompt = config.systemPrompt || 'You are a helpful assistant';
-  const clientName = config.clientName || 'React MCP App';
+  const clientName = config.clientName || 'claude';
 
   // Validate API key on initialization
   useEffect(() => {
