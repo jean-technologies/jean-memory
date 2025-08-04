@@ -1,18 +1,54 @@
 # Jean Memory SDK Architecture - 5-Line AI Agent Platform
 
-**Date:** August 1, 2025  
-**Status:** ✅ IMPLEMENTED & DEPLOYED  
+**Date:** August 4, 2025  
+**Status:** ✅ PYTHON SDK FULLY WORKING, REACT SDK PENDING
 **Goal:** Enable developers to create personalized AI chatbots in <5 lines of code
 
 ## 🎉 IMPLEMENTATION STATUS
 
-### ✅ COMPLETED (August 1, 2025)
-- **Backend SDK API**: All endpoints live and tested
-- **React SDK**: `useJeanAgent` hook with assistant-ui integration
-- **Python SDK**: `JeanAgent` class with CLI support
-- **MCP Integration**: Full jean_memory tool access
-- **Frontend Integration**: Quickstart added to /api-docs
-- **5-Line Target**: ACHIEVED for both React and Python
+### ✅ COMPLETED (August 4, 2025)
+- **Backend SDK API**: All endpoints live and tested ✅
+- **Authentication Flow**: "Sign in with Jean" working end-to-end ✅
+- **Python SDK**: `JeanAgent` class with OpenAI integration and CLI support ✅
+- **Real MCP Integration**: Full jean_memory tool with proper parameter handling ✅
+- **Context Retrieval**: Users get personalized responses based on their memories ✅
+- **Memory Persistence**: New information automatically saved to user's vault ✅
+- **Multi-tenant Isolation**: Each user gets their own isolated memory context ✅
+- **5-Line Target**: ACHIEVED for Python SDK ✅
+
+### 🚧 IN PROGRESS  
+- **React SDK**: `useJeanAgent` hook with assistant-ui integration (needs dependency fixes)
+- **Frontend Integration**: React quickstart on /api-docs page (pending React SDK fixes)
+
+## 🚀 CURRENT WORKING IMPLEMENTATION
+
+As of August 4, 2025, the **Python SDK works exactly as envisioned**:
+
+### **Working Python Example (5 lines)**
+```python
+from jeanmemory import JeanAgent
+
+agent = JeanAgent(
+    api_key="jean_sk_gdy4KGuspLZ82PHGI_3v8hEkP2iyFN4axYciKX8WqeA",
+    system_prompt="You are a helpful math tutor"
+)
+agent.run()  # ✅ FULLY FUNCTIONAL
+```
+
+### **What Actually Works**
+1. **✅ Authentication**: Users sign in with their Jean Memory credentials  
+2. **✅ Context Retrieval**: Agent retrieves 4681+ characters of user's personal context
+3. **✅ System Prompt Adherence**: Bot acts as specified role (math tutor, therapist, etc.)
+4. **✅ Memory Persistence**: Conversations automatically saved to user's memory vault
+5. **✅ Multi-tenant**: Each user sees only their own memories and context
+6. **✅ Real AI Integration**: Uses OpenAI GPT-4o-mini for actual intelligent responses
+
+### **Proven End-to-End Flow**
+- Developer provides API key and system prompt → SDK handles authentication → User signs in with Jean credentials → Agent retrieves personalized context → OpenAI generates response using system prompt + user context → New information saved to user's memory vault
+
+### **Current Issues**
+- **Terminal Formatting**: Minor UI improvements needed for chat interface
+- **React SDK**: Dependencies and imports need to be fixed for web integration
 
 ## Executive Summary
 
@@ -107,20 +143,37 @@ agent.run()  # Interactive chat with jean_memory tool integration
 
 ### 1. Chat UI Library Integration
 
-**Chosen Library:** Assistant-UI (https://github.com/assistant-ui/assistant-ui)
+**Chosen Library:** Assistant-UI  
+**Website:** https://www.assistant-ui.com/  
+**Documentation:** https://www.assistant-ui.com/docs/getting-started  
+**Examples:** https://www.assistant-ui.com/examples
 
 **Why Assistant-UI:**
-- Native MCP support with dedicated server tools
-- TypeScript-first with excellent DX
-- Streaming support out of the box
-- Composable primitives for customization
-- Active development in 2024-2025
-- Minimal setup required
+- ✅ **Native MCP Support**: Built-in Model Context Protocol integration  
+- ✅ **Production Ready**: Professional chat components out of the box
+- ✅ **TypeScript-First**: Excellent developer experience and type safety
+- ✅ **Streaming Support**: Real-time message rendering
+- ✅ **Composable Primitives**: Use only what you need, customize everything
+- ✅ **Active Development**: Modern library with 2024-2025 updates
+- ✅ **Minimal Setup**: Quick integration with existing React apps
 
-**Alternative Options:**
-- NLUX - For framework flexibility
-- Vercel AI SDK - For Next.js projects
-- Lobe Chat - For complete solutions with MCP marketplace
+**Key Assistant-UI Components for Jean Memory SDK:**
+```tsx
+import { 
+  AssistantRuntimeProvider, 
+  Thread,
+  ThreadWelcome,
+  ThreadMessages,
+  ThreadScrollToBottom,
+  ThreadSuggestions,
+  Composer
+} from '@assistant-ui/react';
+```
+
+**Alternative Options Considered:**
+- **NLUX** (nlux.ai) - For framework flexibility across Vue/Svelte
+- **Vercel AI SDK UI** - For Next.js-specific integrations  
+- **Lobe Chat** - For complete solutions with MCP marketplace
 
 ### 2. Multi-Tenant Authentication Layer
 
@@ -246,15 +299,17 @@ class AgentProxy:
 
 ### 4. MCP Integration with Assistant-UI
 
+**Assistant-UI Documentation Reference:** https://www.assistant-ui.com/docs/getting-started
+
 **Integration Strategy:**
 ```typescript
-// /sdk/mcp-adapter.ts
+// /sdk/mcp-adapter.ts  
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
 import { createMCPRuntime } from './runtime/mcp-runtime';
 
 export const JeanMemoryProvider = ({ children, config }) => {
   const runtime = createMCPRuntime({
-    endpoint: '/sdk/agent/process',
+    endpoint: '/sdk/chat/enhance',
     authToken: config.authToken,
     systemPrompt: config.systemPrompt,
     tools: ['jean_memory', 'store_document', 'search_memory']
@@ -264,6 +319,20 @@ export const JeanMemoryProvider = ({ children, config }) => {
     <AssistantRuntimeProvider runtime={runtime}>
       {children}
     </AssistantRuntimeProvider>
+  );
+};
+```
+
+**Based on Assistant-UI Examples:** https://www.assistant-ui.com/examples
+```tsx
+// Example integration pattern from Assistant-UI docs
+import { Thread } from '@assistant-ui/react';
+
+export const JeanChat = ({ agent }) => {
+  return (
+    <div className="h-full max-h-dvh flex flex-col">
+      <Thread />
+    </div>
   );
 };
 ```
