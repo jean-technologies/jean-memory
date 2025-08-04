@@ -42,9 +42,8 @@ export function useJeanAgent(config: JeanAgentConfig = {}): JeanAgentHook {
     setError(null);
 
     try {
-      // Actually, let's use the same pattern as Python SDK - authenticate directly with Supabase
-      // then use the access token for MCP calls (this matches the working Python implementation)
-      const response = await fetch(`${JEAN_API_BASE}/auth/login`, {
+      // Use exact same approach as working Python CLI
+      const response = await fetch(`${JEAN_API_BASE}/sdk/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
@@ -75,32 +74,19 @@ export function useJeanAgent(config: JeanAgentConfig = {}): JeanAgentHook {
     sendMessage: async (message: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      // Inject system prompt like Python SDK does
-      const systemPrompt = config.systemPrompt || 'You are a helpful assistant';
-      const enhancedMessage = `[SYSTEM: ${systemPrompt}]\n\n${message}`;
-      
-      // Use same MCP endpoint as Python SDK - this matches the working implementation!
-      const mcpPayload = {
-        "jsonrpc": "2.0",
-        "method": "tools/call",
-        "params": {
-          "name": "jean_memory",
-          "arguments": {
-            "user_message": enhancedMessage,
-            "is_new_conversation": false,
-            "needs_context": true
-          }
-        },
-        "id": Date.now()
-      };
-
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/`, {
+      // Match Python CLI exactly: api_key in body, same payload structure
+      const response = await fetch(`${JEAN_API_BASE}/sdk/chat/enhance`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(mcpPayload)
+        body: JSON.stringify({
+          api_key: config.apiKey || 'jean_sk_gdy4KGuspLZ82PHGI_3v8hEkP2iyFN4axYciKX8WqeA',
+          client_name: 'React App',
+          user_id: user.user_id,
+          messages: [{ role: 'user', content: message }],
+          system_prompt: config.systemPrompt || 'You are a helpful assistant'
+        })
       });
 
       if (!response.ok) {
@@ -108,7 +94,7 @@ export function useJeanAgent(config: JeanAgentConfig = {}): JeanAgentHook {
       }
 
       const result = await response.json();
-      return result.result || 'No response received';
+      return result.response || result.enhanced_messages?.[0]?.content || 'No response received';
     }
   } : null;
 
@@ -145,7 +131,7 @@ export function SignInWithJean({
     setError(null);
 
     try {
-      const response = await fetch(`${JEAN_API_BASE}/auth/login`, {
+      const response = await fetch(`${JEAN_API_BASE}/sdk/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
