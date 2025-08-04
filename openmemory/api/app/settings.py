@@ -216,6 +216,7 @@ class Config:
         base_urls = [
             "http://localhost:3000", 
             "http://localhost:3001", 
+            "http://localhost:3002",  # Added for React SDK testing
             "https://app.jeanmemory.com",
             "https://jeanmemory.com",
             "https://www.jeanmemory.com",
