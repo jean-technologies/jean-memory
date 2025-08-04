@@ -110,13 +110,40 @@ class JeanAgent:
             user_context = data["user_context"]
             context_retrieved = data["context_retrieved"]
             
-            # Simulate AI response (in real implementation, this would call your LLM)
-            if context_retrieved and user_context:
-                assistant_response = f"Based on your Jean Memory context: {user_context[:200]}..."
-                print(f"🧠 Retrieved context: {len(user_context)} characters")
-            else:
-                assistant_response = "I don't have any specific context about you yet. Tell me more!"
-                print("💭 No previous context found")
+            # Generate actual AI response using the enhanced messages
+            print(f"🧠 Retrieved context: {len(user_context) if user_context else 0} characters")
+            
+            try:
+                # Use the enhanced messages from the API to call OpenAI
+                import openai
+                import os
+                
+                # Check for OpenAI API key
+                openai_key = os.getenv("OPENAI_API_KEY")
+                if not openai_key:
+                    raise ValueError("OPENAI_API_KEY environment variable not set")
+                
+                # Create OpenAI client
+                client = openai.OpenAI(api_key=openai_key)
+                
+                # Call OpenAI with enhanced messages
+                completion = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=enhanced_messages,
+                    max_tokens=500,
+                    temperature=0.7
+                )
+                
+                assistant_response = completion.choices[0].message.content.strip()
+                
+            except Exception as llm_error:
+                # Fallback to enhanced context if OpenAI fails
+                if context_retrieved and user_context:
+                    assistant_response = f"I can see from your memory that you have rich context, but I need an OpenAI API key to provide intelligent responses. Please set OPENAI_API_KEY environment variable. Raw context available: {len(user_context)} characters."
+                else:
+                    assistant_response = "I don't have any specific context about you yet, and I need an OpenAI API key to provide intelligent responses. Tell me more!"
+                
+                print(f"⚠️ LLM Error: {llm_error}")
             
             # Add assistant response to conversation
             assistant_message = {"role": "assistant", "content": assistant_response}
@@ -143,8 +170,9 @@ class JeanAgent:
         
         while True:
             try:
-                # Get user input
-                user_input = input("\n👤 You: ").strip()
+                # Get user input with better formatting
+                print()  # Add space before prompt
+                user_input = input("👤 You: ").strip()
                 
                 if user_input.lower() in ['quit', 'exit', 'q']:
                     print("👋 Goodbye!")
@@ -156,7 +184,7 @@ class JeanAgent:
                 # Send message and get response
                 print("🤔 Thinking...")
                 response = self.send_message(user_input)
-                print(f"🤖 Assistant: {response}")
+                print(f"\n🤖 {self.system_prompt.split('.')[0].replace('You are a', '').replace('You are an', '').strip().title()}: {response}")
                 
             except KeyboardInterrupt:
                 print("\n👋 Goodbye!")

@@ -39,6 +39,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "requests>=2.25.0",
+        "openai>=1.0.0",
     ],
     keywords="jean-memory ai chatbot personalization sdk",
 )
