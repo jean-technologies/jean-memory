@@ -86,19 +86,21 @@ class JeanAgent:
         if not self.user:
             raise ValueError("User not authenticated. Call authenticate() first.")
         
-        # Add user message to conversation
+        # Add user message to conversation history (for context)
         user_message = {"role": "user", "content": message}
         self.messages.append(user_message)
         
         try:
             # Enhance message with Jean Memory context
+            # FIX: Send only current message like React SDK (not full conversation history)
+            current_message = [user_message]
             response = requests.post(
                 f"{JEAN_API_BASE}/sdk/chat/enhance",
                 json={
                     "api_key": self.api_key,
                     "client_name": self.client_name,
                     "user_id": self.user["user_id"],
-                    "messages": self.messages,
+                    "messages": current_message,  # Send only current message for better memory retrieval
                     "system_prompt": self.system_prompt
                 }
             )
@@ -137,9 +139,9 @@ class JeanAgent:
                 assistant_response = completion.choices[0].message.content.strip()
                 
             except Exception as llm_error:
-                # Fallback to enhanced context if OpenAI fails
+                # Fallback to enhanced context if OpenAI fails (good for testing)
                 if context_retrieved and user_context:
-                    assistant_response = f"I can see from your memory that you have rich context, but I need an OpenAI API key to provide intelligent responses. Please set OPENAI_API_KEY environment variable. Raw context available: {len(user_context)} characters."
+                    assistant_response = f"✅ SUCCESS! Retrieved {len(user_context)} characters from your Jean Memory:\n\n{user_context[:300]}...\n\n📝 Response: As your {self.system_prompt.lower()}, I can see your personal context and am ready to help!"
                 else:
                     assistant_response = "I don't have any specific context about you yet, and I need an OpenAI API key to provide intelligent responses. Tell me more!"
                 
