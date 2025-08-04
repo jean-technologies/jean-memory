@@ -5,7 +5,7 @@ from .base import BaseClientProfile
 class APIProfile(BaseClientProfile):
     """Client profile for API key users."""
 
-    def get_tools_schema(self, include_annotations: bool = False) -> List[Dict[str, Any]]:
+    def get_tools_schema(self, include_annotations: bool = False, session_info: dict = None) -> List[Dict[str, Any]]:
         """Returns the JSON schema for API key users with enhanced features."""
         return [
             {
