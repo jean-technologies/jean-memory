@@ -219,7 +219,15 @@ async def enhance_chat_with_context(
         # Retrieve relevant context using jean_memory tool
         logger.info(f"🧠 SDK CHAT: Retrieving context for message: '{latest_user_message[:100]}...'")
         try:
-            memory_result = await jean_memory(latest_user_message)
+            # Determine if this is a new conversation (first user message)
+            is_new_conversation = len([msg for msg in chat_request.messages if msg.role == "user"]) == 1
+            
+            # Call jean_memory with proper parameters
+            memory_result = await jean_memory(
+                user_message=latest_user_message,
+                is_new_conversation=is_new_conversation,
+                needs_context=True
+            )
             context_retrieved = True
             user_context = memory_result if memory_result else "No relevant context found"
             logger.info(f"✅ SDK CHAT: Context retrieved successfully (length: {len(user_context) if user_context else 0} chars)")
