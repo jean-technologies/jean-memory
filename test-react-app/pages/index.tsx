@@ -3,7 +3,7 @@
  * Demonstrates the 5-line integration working like Python SDK
  */
 import React, { useState } from 'react';
-import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJeanAgent, SignInWithJean, JeanChat } from '../components/useJeanAgent';
 
 export default function Home() {
   const [activeDemo, setActiveDemo] = useState<'math' | 'therapist' | 'custom'>('math');
@@ -18,6 +18,17 @@ export default function Home() {
           <p className="text-gray-600 text-center mb-6">
             Testing 5-line integration matching Python SDK functionality
           </p>
+          <div className="text-center mb-6">
+            <a 
+              href="/mcp" 
+              className="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              🚀 Try New MCP Integration
+            </a>
+            <p className="text-xs text-gray-500 mt-2">
+              Direct jean_memory tool integration (same as Claude Desktop)
+            </p>
+          </div>
           
           <div className="flex justify-center space-x-4 mb-8">
             <button
