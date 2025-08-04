@@ -134,6 +134,46 @@ class JeanAgentMCP:
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Failed to call jean_memory tool: {e}")
     
+    def _synthesize_natural_response(self, user_message: str, context: str, has_rich_context: bool = False) -> str:
+        """Synthesize natural conversational response using backend OpenAI"""
+        if not self.user:
+            raise ValueError("User not authenticated. Call authenticate() first.")
+        
+        # Create messages for LLM synthesis
+        system_content = f"{self.system_prompt}"
+        if context:
+            system_content += f"\n\nPersonal context about the user:\n{context}"
+        
+        system_content += "\n\nIMPORTANT: Respond naturally as the persona described in the system prompt. Do NOT mention that you retrieved context or accessed memories. Act as if you naturally know this information about the user. Be conversational and helpful."
+        
+        messages = [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": user_message}
+        ]
+        
+        try:
+            # Call backend synthesis endpoint
+            response = requests.post(
+                f"{JEAN_API_BASE}/sdk/synthesize",
+                json={
+                    "api_key": self.api_key,
+                    "messages": messages,
+                    "user_id": self.user["user_id"]
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            return data.get("response", "I'm here to help!")
+            
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️ LLM synthesis failed: {e}")
+            # Fallback to basic response
+            if has_rich_context:
+                return f"As your {self.system_prompt.lower()}, I can see from our interactions that I can help you with many things. What would you like to work on?"
+            else:
+                return f"As your {self.system_prompt.lower()}, I'm ready to help! What can I assist you with?"
+
     def _call_store_document_tool(self, title: str, content: str, document_type: str = "markdown") -> str:
         """Call the store_document MCP tool directly"""
         if not self.user:
@@ -189,19 +229,21 @@ class JeanAgentMCP:
         print("🧠 Using jean_memory MCP tool...")
         memory_response = self._call_jean_memory_tool(message)
         
-        # Parse the memory response to provide user-friendly output
+        # Synthesize natural conversational response using context
+        print("🤖 Synthesizing natural response...")
         if memory_response.startswith("---\n[Your Life Context]"):
-            # New conversation with cached narrative
-            context_length = len(memory_response)
-            assistant_response = f"✅ Retrieved {context_length} characters from your Jean Memory! As your {self.system_prompt.lower()}, I can see your personal context and am ready to help with: {message}"
+            # New conversation with full narrative context
+            context = memory_response.replace("---\n[Your Life Context]\n", "").replace("\n---", "")
+            assistant_response = self._synthesize_natural_response(message, context, has_rich_context=True)
         elif "Context is not required" in memory_response:
-            assistant_response = f"As your {self.system_prompt.lower()}, I can help with: {message}"
+            # No context needed - respond as persona without personal context
+            assistant_response = self._synthesize_natural_response(message, "", has_rich_context=False)
         elif "new conversation" in memory_response.lower():
-            assistant_response = f"Welcome! As your {self.system_prompt.lower()}, I'm ready to help. This conversation will be saved to your Jean Memory for future reference."
+            # First conversation without cached context
+            assistant_response = self._synthesize_natural_response(message, "", has_rich_context=False)
         else:
-            # Standard context response
-            context_length = len(memory_response)
-            assistant_response = f"✅ Retrieved {context_length} characters from your Jean Memory. As your {self.system_prompt.lower()}, I can help with: {message}\n\nContext: {memory_response[:200]}..."
+            # Standard context response - use retrieved memories naturally
+            assistant_response = self._synthesize_natural_response(message, memory_response, has_rich_context=False)
         
         # Add assistant response to conversation
         assistant_message = {"role": "assistant", "content": assistant_response}

@@ -168,6 +168,58 @@ export const useJeanAgentMCP = (config: JeanAgentConfig = {}) => {
     return content;
   }, [user, clientName, isFirstMessage]);
 
+  const synthesizeNaturalResponse = useCallback(async (
+    userMessage: string, 
+    context: string, 
+    systemPrompt: string, 
+    hasRichContext: boolean
+  ): Promise<string> => {
+    try {
+      // Create messages for LLM synthesis
+      const messages = [
+        {
+          role: 'system',
+          content: `${systemPrompt}${context ? `\n\nPersonal context about the user:\n${context}` : ''}
+
+IMPORTANT: Respond naturally as the persona described in the system prompt. Do NOT mention that you retrieved context or accessed memories. Act as if you naturally know this information about the user. Be conversational and helpful.`
+        },
+        {
+          role: 'user', 
+          content: userMessage
+        }
+      ];
+
+      // Call backend synthesis endpoint (uses server-side OpenAI key)
+      const response = await fetch(`${JEAN_API_BASE}/sdk/synthesize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          api_key: apiKey,
+          messages,
+          user_id: user?.user_id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Synthesis API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.response || 'I\'m here to help!';
+      
+    } catch (error) {
+      console.error('LLM synthesis error:', error);
+      // Fallback to basic response if LLM fails
+      if (hasRichContext) {
+        return `As your ${systemPrompt.toLowerCase()}, I can see from our previous interactions that I can help you with many things. What would you like to work on?`;
+      } else {
+        return `As your ${systemPrompt.toLowerCase()}, I'm ready to help! What can I assist you with?`;
+      }
+    }
+  }, []);
+
   const callStoreDocumentTool = useCallback(async (title: string, content: string, documentType: string = 'markdown'): Promise<string> => {
     if (!user) {
       throw new Error('User not authenticated');
@@ -231,21 +283,22 @@ export const useJeanAgentMCP = (config: JeanAgentConfig = {}) => {
       console.log('🧠 Using jean_memory MCP tool...');
       const memoryResponse = await callJeanMemoryTool(message);
 
-      // Parse the memory response to provide user-friendly output
+      // Synthesize natural conversational response using context
       let assistantResponse: string;
       
       if (memoryResponse.startsWith('---\n[Your Life Context]')) {
-        // New conversation with cached narrative
-        const contextLength = memoryResponse.length;
-        assistantResponse = `✅ Retrieved ${contextLength} characters from your Jean Memory! As your ${systemPrompt.toLowerCase()}, I can see your personal context and am ready to help with: ${message}`;
+        // New conversation with full narrative context - respond naturally as the persona
+        const context = memoryResponse.replace('---\n[Your Life Context]\n', '').replace('\n---', '');
+        assistantResponse = await synthesizeNaturalResponse(message, context, systemPrompt, true);
       } else if (memoryResponse.includes('Context is not required')) {
-        assistantResponse = `As your ${systemPrompt.toLowerCase()}, I can help with: ${message}`;
+        // No context needed - respond as persona without personal context
+        assistantResponse = await synthesizeNaturalResponse(message, '', systemPrompt, false);
       } else if (memoryResponse.toLowerCase().includes('new conversation')) {
-        assistantResponse = `Welcome! As your ${systemPrompt.toLowerCase()}, I'm ready to help. This conversation will be saved to your Jean Memory for future reference.`;
+        // First conversation without cached context
+        assistantResponse = await synthesizeNaturalResponse(message, '', systemPrompt, false);
       } else {
-        // Standard context response
-        const contextLength = memoryResponse.length;
-        assistantResponse = `✅ Retrieved ${contextLength} characters from your Jean Memory. As your ${systemPrompt.toLowerCase()}, I can help with: ${message}\n\nContext: ${memoryResponse.substring(0, 200)}...`;
+        // Standard context response - use retrieved memories naturally
+        assistantResponse = await synthesizeNaturalResponse(message, memoryResponse, systemPrompt, false);
       }
 
       // Add assistant response to conversation

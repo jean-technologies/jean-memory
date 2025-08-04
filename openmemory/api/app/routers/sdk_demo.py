@@ -51,6 +51,14 @@ class ChatResponse(BaseModel):
     context_retrieved: bool
     user_context: Optional[str] = None
 
+class SynthesizeRequest(BaseModel):
+    api_key: str
+    messages: List[Dict[str, str]]
+    user_id: Optional[str] = None
+
+class SynthesizeResponse(BaseModel):
+    response: str
+
 async def _validate_api_key_and_get_user(api_key: str, db: Session) -> User:
     """Validate API key and return associated user"""
     logger.info(f"🔍 SDK VALIDATE: Validating API key format (starts with jean_sk_: {api_key.startswith('jean_sk_')})")
@@ -283,6 +291,57 @@ async def enhance_chat_with_context(
             detail="Chat enhancement failed"
         )
 
+@router.post("/synthesize", response_model=SynthesizeResponse)
+async def synthesize_natural_response(
+    synthesize_request: SynthesizeRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Synthesize natural conversational responses using OpenAI
+    Takes context from jean_memory and generates human-like responses
+    """
+    logger.info(f"🤖 SDK SYNTHESIZE: Starting synthesis for user {synthesize_request.user_id}")
+    try:
+        # Validate developer API key
+        developer_user = await _validate_api_key_and_get_user(synthesize_request.api_key, db)
+        logger.info(f"✅ SDK SYNTHESIZE: Developer API key validated for user {developer_user.user_id}")
+        
+        # Call OpenAI for natural response synthesis
+        import openai
+        import os
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="OpenAI API key not configured"
+            )
+        
+        client = openai.OpenAI(api_key=openai_key)
+        
+        logger.info(f"🤖 SDK SYNTHESIZE: Calling OpenAI with {len(synthesize_request.messages)} messages")
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": msg["role"], "content": msg["content"]} for msg in synthesize_request.messages],
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        response_text = completion.choices[0].message.content.strip()
+        logger.info(f"✅ SDK SYNTHESIZE: Generated {len(response_text)} character response")
+        
+        return SynthesizeResponse(response=response_text)
+        
+    except HTTPException as he:
+        logger.error(f"❌ SDK SYNTHESIZE: HTTP Exception - {he.detail} (status: {he.status_code})")
+        raise
+    except Exception as e:
+        logger.error(f"💥 SDK SYNTHESIZE: Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Response synthesis failed"
+        )
+
 @router.get("/health")
 async def sdk_health_check():
     """Health check endpoint for SDK functionality"""
@@ -294,6 +353,7 @@ async def sdk_health_check():
             "POST /sdk/auth/login",
             "POST /sdk/validate-developer", 
             "POST /sdk/chat/enhance",
+            "POST /sdk/synthesize",
             "GET /sdk/health"
         ]
     }
