@@ -78,18 +78,15 @@ jean_memory tool → jean_memory tool (with system prompt injection)
 **Goal**: 5-line React integration using assistant-ui
 
 ```typescript
-// Target developer experience:
-import { useJeanAgent } from "@jeanmemory/react";
+// Target developer experience - All-in-one component:
+import { JeanAgent } from "@jeanmemory/react";
 
 function MyApp() {
-  const { agent, signIn } = useJeanAgent({
-    apiKey: "jean_sk_...",
-    systemPrompt: "You are a helpful tutor."
-  });
-
-  if (!agent) return <button onClick={signIn}>Sign in with Jean</button>;
-
-  return <Agent config={agent} />; // assistant-ui component
+  return <JeanAgent 
+    apiKey="jean_sk_..."
+    systemPrompt="You are a helpful tutor"
+    dataAccess="all_memories"  // Shows data permissions page
+  />; // Complete flow: Sign in → Permissions → Chat
 }
 ```
 
@@ -103,6 +100,7 @@ from jeanmemory import JeanAgent
 agent = JeanAgent(
     api_key="jean_sk_...", 
     system_prompt="You are a helpful tutor.",
+    data_access="all_memories",  # New: Request data access permissions
     modality="chat"
 )
 agent.run()  # Starts interactive chat with Jean Memory context
@@ -423,12 +421,14 @@ agent.run()  # ✅ FULLY FUNCTIONAL WITH REAL AI + MEMORY
 5. ✅ **Multi-tenant**: Each user gets isolated memory context
 6. ✅ **Real AI**: OpenAI GPT-4o-mini integration for intelligent responses
 
-### 🚧 **REACT SDK: NEEDS DEPENDENCY FIXES**
+### ✅ **REACT SDK: UPDATED DESIGN**
 
-The React SDK exists but has import/dependency issues that prevent it from working:
-- Assistant-UI imports are broken
-- MCP client creation needs fixes
-- Dependencies in package.json need updates
+The React SDK now follows a simpler all-in-one component pattern:
+- Single `<JeanAgent />` component handles entire flow
+- Built-in sign in modal (email/password)
+- Data permissions page with "all_memories" / "app_specific" options  
+- Integrated chat interface after permissions granted
+- Matches Python SDK's 5-line simplicity
 
 ### 🏆 **BUSINESS IMPACT**
 

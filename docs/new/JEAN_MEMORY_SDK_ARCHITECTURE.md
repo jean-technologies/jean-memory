@@ -91,16 +91,16 @@ Jean Memory SDK enables developers to build **multi-tenant AI chatbots** where *
 
 ### **5-Line Developer Experience**
 
-**React + Assistant-UI:**
+**React (All-in-One Component):**
 ```typescript
-import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { JeanAgent } from '@jeanmemory/react';
 
 function MyApp() {
-  const { agent, signIn } = useJeanAgent({ 
-    systemPrompt: "You are a helpful tutor" 
-  });
-  if (!agent) return <SignInWithJean onSuccess={signIn} />;
-  return <JeanChat agent={agent} />; // Powered by Assistant-UI
+  return <JeanAgent 
+    apiKey="jean_sk_..."
+    systemPrompt="You are a helpful tutor"
+    dataAccess="all_memories"
+  />; // Complete flow: Sign in → Permissions → Chat
 }
 ```
 
@@ -110,7 +110,8 @@ from jeanmemory import JeanAgent
 
 agent = JeanAgent(
     api_key="jean_sk_...", 
-    system_prompt="You are a supportive therapist"
+    system_prompt="You are a supportive therapist",
+    data_access="all_memories"  # Request data access permissions
 )
 agent.run()  # Interactive chat with jean_memory tool integration
 ```
@@ -181,9 +182,16 @@ import {
 
 **Key Features:**
 - **Universal Sign In**: ANY user with a Jean Memory account can authenticate
+- **Data Access Permissions**: Users explicitly grant access to their memories
 - **Automatic User Context**: Each user gets their own memory space and context
 - **Session Isolation**: User A's memories never appear for User B
 - **Developer Simplicity**: Developers don't handle user management or memory storage
+
+**Data Access Flow:**
+1. Developer specifies `dataAccess` requirement ("all_memories" or "app_specific")
+2. User signs in with Jean Memory credentials
+3. User sees permissions page showing requested access level
+4. User grants permissions before accessing chat interface
 
 **Secure API Key Gateway Approach:**
 Instead of exposing Supabase credentials, developers use Jean Memory API keys as a secure gateway. This leverages your existing API Key infrastructure (`jean_sk_...` keys) from your `/api-docs`:

@@ -93,6 +93,7 @@ health_coach = JeanAgent(
     - Be encouraging but practical, never pushy or judgmental
     
     Style: Supportive, knowledgeable, practical. Use health and fitness emojis occasionally.""",
+    data_access="all_memories",  # Requests full memory access for holistic health insights
     client_name="Health Coach Demo"
 )
 
@@ -110,6 +111,7 @@ career_mentor = JeanAgent(
     - Be strategic but also compassionate about the human side of career development
     
     Style: Professional yet warm, strategic, insightful. Focus on sustainable career growth.""",
+    data_access="all_memories",  # Cross-domain insights for career coaching
     client_name="Career Mentor Demo"
 )
 ```
@@ -117,16 +119,30 @@ career_mentor = JeanAgent(
 ### Demo Environment Setup
 
 ```bash
-# Environment Variables
+# Python Demo Environment
 export OPENAI_API_KEY="your_openai_key"
 export JEAN_API_KEY="jean_sk_your_demo_key"
-
-# Dependencies
 pip install jeanmemory openai
-
-# Demo Scripts
 python health_coach_demo.py
-python career_mentor_demo.py
+
+# React Demo Environment  
+npm install @jeanmemory/react
+npm start
+# Shows: Sign in → Data Permissions → Chat Interface
+```
+
+### Frontend SDK Demo (New)
+```tsx
+// React Implementation - Same 5 lines
+import { JeanAgent } from '@jeanmemory/react';
+
+function HealthCoachApp() {
+  return <JeanAgent 
+    apiKey="jean_sk_your_key_here"
+    systemPrompt="You are Alex, a holistic health coach..."
+    dataAccess="all_memories"
+  />;
+}
 ```
 
 ## Demo Execution Strategy
@@ -154,7 +170,8 @@ python career_mentor_demo.py
 - Show the complete memory loop
 
 **Minutes 9-10: Business Implications**
-- Show the 5-line SDK integration code
+- Show the 5-line SDK integration code (Python + React)
+- Demonstrate data permissions flow in frontend
 - Explain multi-tenant architecture
 - Discuss scalability and revenue model
 

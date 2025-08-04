@@ -338,6 +338,7 @@ const navItems = [
   { href: '#error-handling', label: 'Error Handling', icon: AlertTriangle },
   { href: '#example-use-cases', label: 'Example Use Cases', icon: Lightbulb },
   { href: '#python-example', label: 'Python Examples', icon: Code },
+  { href: '#react-sdk-example', label: 'React SDK Example', icon: Component },
   { href: '#curl-example', label: 'cURL Examples', icon: Terminal },
 ];
 
@@ -431,9 +432,9 @@ graph TD
               <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                   <Component className="w-5 h-5 mr-2 text-blue-400" />
-                  React + Assistant-UI
+                  React SDK
                 </h3>
-                <CodeBlock lang="bash" code="npm install @jeanmemory/react @assistant-ui/react" />
+                <CodeBlock lang="bash" code="npm install @jeanmemory/react" />
                 <CodeBlock lang="tsx" code={`import { SignInWithJean, JeanChat, useJeanAgent } from '@jeanmemory/react';
 
 function MathTutorApp() {
@@ -442,7 +443,7 @@ function MathTutorApp() {
   });
 
   if (!agent) return <SignInWithJean onSuccess={signIn} />;
-  return <JeanChat agent={agent} />; // Powered by Assistant-UI
+  return <JeanChat agent={agent} />; // Custom chat interface
 }`} />
               </div>
 
@@ -471,9 +472,10 @@ agent.run()  # Interactive CLI chat`} />
               <ul className="text-green-100/80 text-sm space-y-1">
                 <li>✅ <strong>"Sign in with Jean"</strong> - Seamless user authentication</li>
                 <li>✅ <strong>Personalized Context</strong> - Automatic memory retrieval and injection</li>
-                <li>✅ <strong>Assistant-UI Integration</strong> - Production-ready chat components</li>
-                <li>✅ <strong>MCP Tools Integration</strong> - Full jean_memory and store_document tool access</li>
+                <li>✅ <strong>Custom Chat Interface</strong> - Clean, responsive chat components</li>
+                <li>✅ <strong>MCP Tools Integration</strong> - Full jean_memory tool access via /mcp/messages/</li>
                 <li>✅ <strong>Multi-tenant Ready</strong> - Each user gets their own memory context</li>
+                <li>✅ <strong>System Prompt Injection</strong> - Customize AI behavior per application</li>
               </ul>
             </div>
 
@@ -996,6 +998,223 @@ This combines the original user report from Slack with the formal Jira ticket de
 else:
     print("Could not find any context for that ticket.")
         `} />
+          </div>
+        </section>
+
+        <section id="react-sdk-example">
+          <h2 className="text-3xl font-bold text-foreground mb-4">React SDK Complete Example</h2>
+          <p className="text-muted-foreground mb-4">
+            Here's a complete working example using the Jean Memory React SDK that demonstrates the 5-line integration working with real Jean Memory authentication and context.
+          </p>
+          
+          <div className="p-6 border border-border rounded-lg bg-card mb-8">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Installation & Setup</h3>
+              <CodeBlock lang="bash" code={`# Install the Jean Memory React SDK
+npm install @jeanmemory/react
+
+# Or using a local package (for development)
+npm install file:../sdk/react/jeanmemory-react-0.1.0.tgz`} />
+          </div>
+
+          <div className="p-6 border border-border rounded-lg bg-card mb-8">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Complete Working Example</h3>
+              <p className="text-muted-foreground mb-4">
+                This example shows how to create multiple AI agents (math tutor, therapist, custom) that all use Jean Memory for personalized context.
+              </p>
+              <CodeBlock lang="tsx" code={`/**
+ * Jean Memory React SDK - Complete Example
+ * Demonstrates 5-line integration with multiple AI personalities
+ */
+import React, { useState } from 'react';
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+
+export default function JeanMemoryDemo() {
+  const [activeDemo, setActiveDemo] = useState<'math' | 'therapist' | 'custom'>('math');
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <h1 className="text-3xl font-bold text-center mb-4">
+            🧠 Jean Memory React SDK Demo
+          </h1>
+          
+          <div className="flex justify-center space-x-4 mb-8">
+            <button
+              onClick={() => setActiveDemo('math')}
+              className={\`px-4 py-2 rounded \${
+                activeDemo === 'math' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700'
+              }\`}
+            >
+              Math Tutor Demo
+            </button>
+            <button
+              onClick={() => setActiveDemo('therapist')}
+              className={\`px-4 py-2 rounded \${
+                activeDemo === 'therapist' 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-200 text-gray-700'
+              }\`}
+            >
+              Therapist Demo
+            </button>
+            <button
+              onClick={() => setActiveDemo('custom')}
+              className={\`px-4 py-2 rounded \${
+                activeDemo === 'custom' 
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-gray-200 text-gray-700'
+              }\`}
+            >
+              Custom Demo
+            </button>
+          </div>
+
+          <div className="space-y-8">
+            {activeDemo === 'math' && <MathTutorDemo />}
+            {activeDemo === 'therapist' && <TherapistDemo />}
+            {activeDemo === 'custom' && <CustomDemo />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Example 1: Math Tutor (5 lines of code)
+function MathTutorDemo() {
+  const { agent, signIn } = useJeanAgent({
+    systemPrompt: "You are a patient math tutor who explains concepts step by step"
+  });
+
+  return (
+    <div className="border-2 border-blue-200 rounded-lg p-6">
+      <h2 className="text-xl font-bold mb-4 text-blue-700">
+        📚 Math Tutor Demo (5 lines of code)
+      </h2>
+      
+      {!agent ? (
+        <div className="text-center py-8">
+          <p className="mb-4 text-gray-600">Sign in to test the math tutor</p>
+          <SignInWithJean onSuccess={signIn} />
+        </div>
+      ) : (
+        <JeanChat agent={agent} className="h-80 border rounded-lg p-4" />
+      )}
+    </div>
+  );
+}
+
+// Example 2: Therapist (matches Python SDK functionality)
+function TherapistDemo() {
+  const { agent, signIn } = useJeanAgent({
+    systemPrompt: "You are a supportive therapist who provides empathetic guidance"
+  });
+
+  return (
+    <div className="border-2 border-green-200 rounded-lg p-6">
+      <h2 className="text-xl font-bold mb-4 text-green-700">
+        🌱 Therapist Demo (matches Python SDK)
+      </h2>
+      
+      {!agent ? (
+        <div className="text-center py-8">
+          <p className="mb-4 text-gray-600">Sign in to test the therapist</p>
+          <SignInWithJean onSuccess={signIn} />
+        </div>
+      ) : (
+        <JeanChat agent={agent} className="h-80 border rounded-lg p-4" />
+      )}
+    </div>
+  );
+}
+
+// Example 3: Custom styled demo
+function CustomDemo() {
+  const { agent, signIn, user, error } = useJeanAgent({
+    systemPrompt: "You are a helpful AI assistant who knows the user's personal context"
+  });
+
+  if (!agent) {
+    return (
+      <div className="border-2 border-purple-200 rounded-lg p-6">
+        <h2 className="text-xl font-bold mb-4 text-purple-700">
+          ✨ Custom Styled Demo
+        </h2>
+        <div className="text-center py-8">
+          <h3 className="text-lg mb-2">Welcome to Your Personal AI</h3>
+          <p className="text-gray-600 mb-6">
+            Sign in with Jean Memory to get a personalized AI experience
+          </p>
+          <SignInWithJean 
+            onSuccess={signIn}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          />
+          {error && <p className="text-red-500 mt-4">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-2 border-purple-200 rounded-lg p-6">
+      <h2 className="text-xl font-bold mb-4 text-purple-700">
+        ✨ Custom Styled Demo
+      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-600">
+          Logged in as: <span className="font-semibold">{user?.email}</span>
+        </div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="text-sm text-purple-600 hover:text-purple-800"
+        >
+          Sign Out
+        </button>
+      </div>
+      <JeanChat 
+        agent={agent} 
+        className="h-80 border-2 border-purple-200 rounded-lg p-4 bg-purple-50"
+      />
+    </div>
+  );
+}`} />
+          </div>
+
+          <div className="p-6 border border-border rounded-lg bg-card">
+              <h3 className="text-lg font-semibold text-foreground mb-2">How It Works</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-2">🔐 Authentication</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Uses /auth/login endpoint with Supabase integration. 
+                    Same authentication flow as Python SDK.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">💬 MCP Integration</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Uses /mcp/messages/ endpoint with JSON-RPC for jean_memory tool calls.
+                    Matches Python SDK functionality exactly.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">🧠 System Prompts</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Injects system prompts using [SYSTEM: prompt] format.
+                    Enables different AI personalities per application.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">⚡ Memory Context</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Automatically retrieves user's personal context.
+                    Multi-tenant isolation ensures privacy.
+                  </p>
+                </div>
+              </div>
           </div>
         </section>
 

@@ -47,9 +47,9 @@ Jean Memory becomes the **universal identity provider for AI applications** - wh
 
 2. **Authentication**
    - Alice clicks "Sign in with Jean"
-   - Gets redirected to Jean Memory OAuth page
-   - Enters her existing Jean Memory credentials
-   - Grants permission for WriteWell AI to access her memories
+   - Enters her Jean Memory email and password in modal
+   - Sees data permissions page: "WriteWell AI is requesting access to: ✓ All your memories"
+   - Clicks "Grant Permissions" to authorize access
 
 3. **Instant Personalization**
    - WriteWell AI immediately knows:
@@ -71,13 +71,14 @@ Jean Memory becomes the **universal identity provider for AI applications** - wh
 
 1. **Development**
    ```jsx
+   import { JeanAgent } from '@jeanmemory/react';
+   
    function WriteWellAI() {
-     const { user, signIn } = useJeanAgent({
-       systemPrompt: "You are an expert writing coach who helps improve clarity and engagement"
-     });
-     
-     if (!user) return <SignInWithJean onSuccess={signIn} />;
-     return <JeanChat user={user} />;
+     return <JeanAgent 
+       apiKey="jean_sk_bob_api_key_here"
+       systemPrompt="You are an expert writing coach who helps improve clarity and engagement"
+       dataAccess="all_memories"  // Requests access to all user memories
+     />;
    }
    ```
 
