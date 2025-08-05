@@ -1,0 +1,19 @@
+{
+  "name": "jean-memory-mcp-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for Jean Memory MCP protocol - handles ChatGPT, Claude, and other AI clients",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --env production",
+    "tail": "wrangler tail --env production"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240603.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.60.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
