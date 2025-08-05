@@ -418,20 +418,16 @@ graph TD
           </p>
 
           {/* Jean Memory SDK Quickstart */}
-          <div className="my-8 p-6 bg-gradient-to-r from-blue-950/50 to-purple-950/50 border border-blue-800/60 rounded-lg">
-            <div className="flex items-center mb-4">
-              <Sparkles className="w-6 h-6 text-blue-400 mr-3" />
-              <h2 className="text-2xl font-bold text-foreground">🚀 Jean Memory SDK - Build AI Chatbots in 5 Lines</h2>
-            </div>
+          <div className="my-8 p-6 bg-card border border-border rounded-lg">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Jean Memory SDK - Quick Start</h2>
             <p className="text-muted-foreground mb-6">
-              Skip the API complexity. Build personalized AI chatbots with Jean Memory context in just 5 lines of code.
+              Build personalized AI chatbots with Jean Memory context using our simplified SDK.
             </p>
             
             <div className="grid md:grid-cols-2 gap-6">
               {/* React Example */}
-              <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                  <Component className="w-5 h-5 mr-2 text-blue-400" />
+              <div className="bg-card rounded-lg p-4 border border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-3">
                   React SDK
                 </h3>
                 <CodeBlock lang="bash" code="npm install @jeanmemory/react" />
@@ -448,9 +444,8 @@ function MathTutorApp() {
               </div>
 
               {/* Python Example */}
-              <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                  <Terminal className="w-5 h-5 mr-2 text-green-400" />
+              <div className="bg-card rounded-lg p-4 border border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-3">
                   Python CLI
                 </h3>
                 <CodeBlock lang="bash" code="pip install jeanmemory" />
@@ -464,24 +459,23 @@ agent.run()  # Interactive CLI chat`} />
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-green-950/30 border border-green-800/40 rounded-lg">
-              <h4 className="font-semibold text-green-200 mb-2 flex items-center">
-                <BrainCircuit className="w-4 h-4 mr-2" />
-                What You Get Out of the Box:
+            <div className="mt-6 p-4 bg-muted/50 border border-border rounded-lg">
+              <h4 className="font-semibold text-foreground mb-2">
+                Features Included:
               </h4>
-              <ul className="text-green-100/80 text-sm space-y-1">
-                <li>✅ <strong>"Sign in with Jean"</strong> - Seamless user authentication</li>
-                <li>✅ <strong>Personalized Context</strong> - Automatic memory retrieval and injection</li>
-                <li>✅ <strong>Custom Chat Interface</strong> - Clean, responsive chat components</li>
-                <li>✅ <strong>MCP Tools Integration</strong> - Full jean_memory tool access via /mcp/messages/</li>
-                <li>✅ <strong>Multi-tenant Ready</strong> - Each user gets their own memory context</li>
-                <li>✅ <strong>System Prompt Injection</strong> - Customize AI behavior per application</li>
+              <ul className="text-muted-foreground text-sm space-y-1">
+                <li>• <strong>"Sign in with Jean"</strong> - Seamless user authentication</li>
+                <li>• <strong>Personalized Context</strong> - Automatic memory retrieval and injection</li>
+                <li>• <strong>Custom Chat Interface</strong> - Clean, responsive chat components</li>
+                <li>• <strong>MCP Tools Integration</strong> - Full jean_memory tool access via /mcp/messages/</li>
+                <li>• <strong>Multi-tenant Ready</strong> - Each user gets their own memory context</li>
+                <li>• <strong>System Prompt Injection</strong> - Customize AI behavior per application</li>
               </ul>
             </div>
 
             <div className="mt-4 flex gap-3">
               <Button 
-                className="bg-blue-600 hover:bg-blue-700"
+                variant="default"
                 onClick={() => window.open('https://github.com/jean-technologies/jean-memory/tree/main/sdk', '_blank')}
               >
                 <Code className="w-4 h-4 mr-2" />
@@ -504,9 +498,8 @@ agent.run()  # Interactive CLI chat`} />
           <p className="text-lg text-muted-foreground mb-4">
             Welcome to the Jean Memory API documentation. This API provides a robust, unified memory layer for your AI applications, featuring secure API key authentication and powerful metadata filtering for advanced use cases.
           </p>
-          <div className="flex items-center gap-4 p-4 bg-green-950/50 border border-green-800/60 rounded-lg">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-green-300 text-sm">
+          <div className="flex items-center gap-4 p-4 bg-muted/50 border border-border rounded-lg">
+            <p className="text-muted-foreground text-sm">
               <strong>Production Ready:</strong> Zero breaking changes, dual-path authentication, and enterprise-grade security.
             </p>
           </div>

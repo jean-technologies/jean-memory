@@ -132,4 +132,3 @@ This project incorporates code from [mem0ai/mem0](https://github.com/mem0ai/mem0
 - **Documentation**: [jeanmemory.com/api-docs](https://jeanmemory.com/api-docs)
 - **Bug Reports**: [GitHub Issues](https://github.com/jean-technologies/jean-memory/issues)
 - **General Inquiries**: [jonathan@jeantechnologies.com](mailto:jonathan@jeantechnologies.com)
-# Deployment trigger Tue Jul 29 19:02:54 PDT 2025

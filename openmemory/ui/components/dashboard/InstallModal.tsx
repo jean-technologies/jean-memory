@@ -387,7 +387,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
             </div>
         ) : app.id === 'claude' ? (
             <div className="py-2 space-y-6">
-                {/* MCP Connector - Most Important */}
+                {/* MCP Connector - Commented out until OAuth is fixed
                 <div className="space-y-3">
                     <h3 className="font-medium text-foreground text-lg">🔌 MCP Connector</h3>
                     <p className="text-sm text-muted-foreground">For Claude Web, Desktop, and Code - OAuth authentication handled automatically</p>
@@ -404,10 +404,11 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </div>
                     <p className="text-xs text-muted-foreground">No manual setup required - Claude handles OAuth authentication automatically</p>
                 </div>
+                */}
 
-                {/* Download Extension - Alternative */}
-                <div className="space-y-3 pt-4 border-t border-muted">
-                    <h3 className="font-medium text-foreground">Desktop Extension (Alternative)</h3>
+                {/* Download Extension */}
+                <div className="space-y-3">
+                    <h3 className="font-medium text-foreground">Desktop Extension</h3>
                     <Button 
                         onClick={handleDownloadExtension}
                         className="w-full"
@@ -674,10 +675,10 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                                 <p className="text-xs text-muted-foreground mt-2">You should see "jean-memory" in the list of active servers.</p>
                             </div>
 
-                            <div className="bg-green-50 dark:bg-green-950/30 rounded-md p-3 border border-green-200 dark:border-green-800">
-                                <h4 className="font-medium text-green-800 dark:text-green-200 text-xs mb-2">✅ Same as Claude Desktop</h4>
-                                <p className="text-green-700 dark:text-green-300 text-xs">
-                                    This command creates the exact same configuration as your working Claude Desktop extension, 
+                            <div className="bg-muted rounded-md p-3 border">
+                                <h4 className="font-medium text-foreground text-xs mb-2">Configuration Note</h4>
+                                <p className="text-muted-foreground text-xs">
+                                    This command creates the same configuration as the Claude Desktop extension, 
                                     ensuring identical functionality and API endpoints.
                                 </p>
                             </div>
@@ -685,23 +686,23 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                     </TabsContent>
                     
                     <TabsContent value="multi-agent" className="space-y-4">
-                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                            <h3 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-2">🚀 Multi-Agent Coordination</h3>
-                            <p className="text-blue-800 dark:text-blue-200 text-xs mb-3">
+                        <div className="bg-muted rounded-lg p-4 border">
+                            <h3 className="font-medium text-foreground text-sm mb-2">Multi-Agent Coordination</h3>
+                            <p className="text-muted-foreground text-xs mb-3">
                                 Scale your development with 2-5 coordinated Claude agents working simultaneously across multiple terminals.
                             </p>
                             <div className="space-y-1 text-xs">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                    <span className="text-blue-700 dark:text-blue-300">Automatic file conflict prevention</span>
+                                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full"></div>
+                                    <span className="text-muted-foreground">Automatic file conflict prevention</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                    <span className="text-blue-700 dark:text-blue-300">Real-time progress synchronization</span>
+                                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full"></div>
+                                    <span className="text-muted-foreground">Real-time progress synchronization</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                    <span className="text-blue-700 dark:text-blue-300">Intelligent task distribution</span>
+                                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full"></div>
+                                    <span className="text-muted-foreground">Intelligent task distribution</span>
                                 </div>
                             </div>
                         </div>
