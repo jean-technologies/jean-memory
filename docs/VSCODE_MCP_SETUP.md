@@ -4,18 +4,24 @@
 
 ### Step 1: Enable MCP in VS Code Settings
 
-#### Option A: Using Settings UI
-1. Open VS Code
-2. Press `Cmd+,` (Mac) or `Ctrl+,` (Windows/Linux) to open Settings
-3. Search for "mcp"
-4. Check the following boxes:
-   - ✅ `Chat: Mcp: Enabled`
-   - ✅ `Chat: Mcp: Discovery: Enabled`
+#### Find Your settings.json File:
 
-#### Option B: Using settings.json
-1. Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux)
-2. Type "Preferences: Open User Settings (JSON)"
-3. Add these lines to your settings.json:
+**Mac:**
+1. Press `Cmd+Shift+P` to open command palette
+2. Type: `Open Settings (JSON)` (not "User" - just "Open Settings JSON")
+3. Select "Preferences: Open Settings (JSON)"
+
+**Alternative Mac Path:**
+- Go to: `~/Library/Application Support/Code/User/settings.json`
+- Open in any text editor
+
+**Windows:**
+- Path: `%APPDATA%\Code\User\settings.json`
+
+**Linux:**
+- Path: `~/.config/Code/User/settings.json`
+
+#### Add These Lines to settings.json:
 
 ```json
 {
@@ -26,12 +32,24 @@
 
 ### Step 2: Create MCP Configuration File
 
-1. Create the `.vscode` folder in your project root (if it doesn't exist):
+#### Location: `.vscode/mcp.json` in your project root
+
+**How to create it:**
+
+1. **In VS Code:**
+   - Open your project folder
+   - Right-click in the Explorer sidebar
+   - Select "New Folder" → name it `.vscode` (if it doesn't exist)
+   - Right-click on `.vscode` folder
+   - Select "New File" → name it `mcp.json`
+
+2. **Or via Terminal:**
 ```bash
 mkdir -p .vscode
+touch .vscode/mcp.json
 ```
 
-2. Create `.vscode/mcp.json` file with this content:
+3. **Add this content to `.vscode/mcp.json`:**
 
 ```json
 {
@@ -48,7 +66,7 @@ mkdir -p .vscode
 }
 ```
 
-3. **IMPORTANT**: Replace `YOUR_USER_ID_HERE` with your actual Jean Memory user ID (e.g., `2822dc63-74a4-4ba1-b406-166352591123`)
+4. **IMPORTANT**: Replace `YOUR_USER_ID_HERE` with your actual Jean Memory user ID (e.g., `2822dc63-74a4-4ba1-b406-166352591123`)
 
 ### Step 3: Verify Installation
 
@@ -66,25 +84,17 @@ mkdir -p .vscode
 
 5. You should see Jean Memory tools available
 
-### Alternative: Using HTTP Transport (Recommended)
 
-If the SSE method doesn't work, try the HTTP transport:
-
-`.vscode/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "jean-memory": {
-      "uri": "https://jean-memory-api-virginia.onrender.com/mcp/v2/claude/YOUR_USER_ID_HERE"
-    }
-  }
-}
-```
 
 ### Troubleshooting
 
+#### Can't find settings.json?
+1. In VS Code, try: `Cmd+Shift+P` → type `Open Settings JSON` (without "User")
+2. Or directly open: `~/Library/Application Support/Code/User/settings.json` on Mac
+3. Make sure VS Code is open when using command palette
+
 #### Tools not showing up?
-1. Make sure both MCP settings are enabled in VS Code settings
+1. Make sure both MCP settings are enabled in VS Code settings.json
 2. Verify your `.vscode/mcp.json` is in the project root
 3. Check that you replaced `YOUR_USER_ID_HERE` with your actual ID
 4. Restart VS Code completely (not just reload)
@@ -95,8 +105,8 @@ If the SSE method doesn't work, try the HTTP transport:
 
 #### Connection errors?
 1. Check your internet connection
-2. Verify the URL is correct
-3. Try the alternative HTTP transport method
+2. Verify the URL is correct: `https://api.jeanmemory.com/mcp/claude/sse/YOUR_USER_ID`
+3. Make sure you have `npx` and `supergateway` available
 
 ### Finding Your User ID
 
@@ -118,4 +128,4 @@ Once connected, VS Code can:
 If you're still having issues:
 1. Check VS Code Output panel (View → Output → Select "MCP" from dropdown)
 2. Look for error messages in the Developer Tools (Help → Toggle Developer Tools)
-3. Try the HTTP transport instead of SSE
+3. Ensure `supergateway` is installed: `npm install -g supergateway`
