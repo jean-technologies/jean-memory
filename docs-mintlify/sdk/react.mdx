@@ -27,38 +27,38 @@ function App() {
 }
 ```
 
-## Sign In With Jean Modal
+## Customizable Authentication
 
-For applications that require users to sign in, the SDK provides a `SignInWithJean` component that renders a pre-built authentication modal.
+Jean Memory provides a flexible authentication flow that you can tailor to your application's branding. The "Sign In with Jean" button can be customized to fit your needs.
 
-<img
-  src="/images/sign-in-with-jean.png"
-  alt="Sign In With Jean Modal"
-/>
+<div style={{
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    margin: '2rem 0'
+}}>
+    <button style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        padding: '0.5rem 1rem',
+        borderRadius: '6px',
+        background: 'white',
+        color: 'black',
+        fontWeight: '500',
+        fontSize: '0.875rem',
+        border: '1px solid #E5E7EB'
+    }}>
+        Sign In with Jean
+        <img src="/logo/jean-bug-white.png" alt="Jean Memory Logo" style={{height: '20px'}}/>
+    </button>
+</div>
 
-### How It Works
+You can adapt the text to best suit your user experience, for example:
 
-1.  **Check Authentication**: The `useJeanAgent` hook returns an `isAuthenticated` boolean.
-2.  **Show Modal**: If the user is not authenticated, render the `SignInWithJean` component.
-3.  **Handle Success**: The `onSuccess` callback is triggered when the user successfully signs in, which you can use to call the `signIn` function from the hook.
-
-### Example
-
-```javascript
-import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
-
-function App() {
-  const { agent, signIn, isAuthenticated } = useJeanAgent({ 
-    apiKey: process.env.REACT_APP_JEAN_API_KEY 
-  });
-  
-  if (!isAuthenticated) {
-    return <SignInWithJean onSuccess={signIn} />;
-  }
-  
-  return <JeanChat agent={agent} />;
-}
-```
+- "Add Memory to X"
+- "Bring Your Memories"
+- "Personalize"
 
 ## `useJeanAgent` Hook
 

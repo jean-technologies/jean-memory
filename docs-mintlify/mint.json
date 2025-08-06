@@ -5,7 +5,7 @@
     "dark": "/logo/light.svg",
     "light": "/logo/dark.svg"
   },
-  "favicon": "/logo/jean-bug.png",
+  "favicon": "/logo/jean-bug-white.png",
   "custom": {
     "css": ["styles.css"]
   },
