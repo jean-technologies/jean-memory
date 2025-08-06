@@ -117,15 +117,15 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-2 flex-1 justify-end">
           {user ? (
             <>
-              <Link href="/api-docs">
+              <a href="https://docs.jeanmemory.com" target="_blank" rel="noopener noreferrer">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  API
+                  For Developers
                 </Button>
-              </Link>
+              </a>
               <Link href="/pro">
                 <Button
                   variant="ghost"
@@ -153,15 +153,15 @@ export function Navbar() {
         <div className="flex items-center gap-2 md:hidden">
           {user ? (
             <>
-              <Link href="/api-docs">
+              <a href="https://docs.jeanmemory.com" target="_blank" rel="noopener noreferrer">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  API
+                  For Developers
                 </Button>
-              </Link>
+              </a>
               <Link href="/pro">
                 <Button
                   variant="ghost"

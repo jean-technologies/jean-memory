@@ -63,12 +63,12 @@ export function UserNav() {
               <span>Privacy</span>
             </DropdownMenuItem>
           </Link>
-          <Link href="/api-docs">
+          <a href="https://docs.jeanmemory.com" target="_blank" rel="noopener noreferrer">
             <DropdownMenuItem>
               <Book className="mr-2 h-4 w-4" />
-              <span>API Docs</span>
+              <span>Documentation</span>
             </DropdownMenuItem>
-          </Link>
+          </a>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <a href="https://github.com/jonathan-politzki/your-memory" target="_blank" rel="noopener noreferrer">

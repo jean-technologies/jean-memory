@@ -133,7 +133,12 @@ function MathTutorApp() {
                         </Link>
                       </motion.div>
                   ) : (
-                    <motion.div key="dev-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full space-y-4">
+                    <motion.div key="dev-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full space-y-3">
+                      <a href="https://docs.jeanmemory.com" target="_blank" rel="noopener noreferrer" className="w-full block">
+                        <Button size="lg" variant="outline" className="w-full text-md py-6 border-purple-400 bg-white/50 hover:bg-purple-50">
+                          View Documentation
+                        </Button>
+                      </a>
                       <Link href="https://calendly.com/jonathan-jeantechnologies/30min" passHref className="w-full">
                         <Button size="lg" variant="outline" className="w-full text-md py-6 border-gray-300 bg-white/50 hover:bg-gray-200/50">
                           Request a Demo
