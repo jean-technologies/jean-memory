@@ -42,7 +42,7 @@
     {
       "group": "Use Cases",
       "pages": [
-        "api-reference/examples"
+        "use-cases/examples"
       ]
     },
     {
@@ -69,8 +69,7 @@
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/authentication",
-        "api-reference/reference"
+        "api-reference/authentication"
       ]
     }
   ],
