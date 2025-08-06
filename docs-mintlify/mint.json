@@ -36,7 +36,9 @@
       "group": "Documentation",
       "pages": [
         "overview",
-        "quickstart"
+        "quickstart",
+        "authentication",
+        "use-cases"
       ]
     },
     {
