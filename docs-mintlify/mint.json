@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Jean Memory",
   "logo": {
-    "dark": "/logo/logo-dark-theme.png",
-    "light": "/logo/logo-light-theme.png"
+    "dark": "/logo/logo-full.png",
+    "light": "/logo/logo-full.png"
   },
   "favicon": "/logo/jean-bug.png",
   "custom": {
