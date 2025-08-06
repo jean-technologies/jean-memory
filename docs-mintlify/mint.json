@@ -6,16 +6,32 @@
     "light": "/logo/light.svg"
   },
   "favicon": "/favicon.svg",
+  "custom": {
+    "css": ["custom.css"]
+  },
   "colors": {
     "primary": "#9563FF",
     "light": "#AE87FF",
     "dark": "#0D001D",
     "background": {
-      "dark": "#090014"
+      "dark": "#090014",
+      "light": "#FFFFFF"
     },
     "anchors": {
       "from": "#FF7F57",
       "to": "#9563FF"
+    }
+  },
+  "theme": {
+    "typography": {
+      "bodyColor": {
+        "light": "#1F2937",
+        "dark": "#F3F4F6"
+      },
+      "headingColor": {
+        "light": "#111827",
+        "dark": "#F9FAFB"
+      }
     }
   },
   "topbarLinks": [
