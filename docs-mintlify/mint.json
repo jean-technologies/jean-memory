@@ -36,13 +36,9 @@
       "group": "Documentation",
       "pages": [
         "overview",
-        "quickstart"
-      ]
-    },
-    {
-      "group": "Guides",
-      "pages": [
-        "guides/use-cases"
+        "quickstart",
+        "authentication-guide",
+        "use-cases-guide"
       ]
     },
     {
@@ -64,12 +60,6 @@
       "group": "Tools",
       "pages": [
         "tools"
-      ]
-    },
-    {
-      "group": "API",
-      "pages": [
-        "api/authentication"
       ]
     }
   ],
