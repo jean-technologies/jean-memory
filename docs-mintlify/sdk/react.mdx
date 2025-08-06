@@ -1,0 +1,100 @@
+---
+title: React SDK
+description: 'React library for Jean Memory'
+---
+
+## Installation
+
+```bash
+npm install @jeanmemory/react @assistant-ui/react
+```
+
+## Basic Usage
+
+```javascript
+import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+
+function App() {
+  const { agent } = useJeanAgent({ 
+    apiKey: process.env.REACT_APP_JEAN_API_KEY 
+  });
+  
+  return <JeanChat agent={agent} />;
+}
+```
+
+## With Authentication
+
+```javascript
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+
+function App() {
+  const { agent, signIn, isAuthenticated } = useJeanAgent({ 
+    apiKey: process.env.REACT_APP_JEAN_API_KEY 
+  });
+  
+  if (!isAuthenticated) {
+    return <SignInWithJean onSuccess={signIn} />;
+  }
+  
+  return <JeanChat agent={agent} />;
+}
+```
+
+## Hook Options
+
+```javascript
+const { agent, signIn, signOut, isAuthenticated, isLoading, error } = useJeanAgent({
+  apiKey: "jean_sk_...",        // Required
+  systemPrompt: "You are...",   // Optional
+  baseUrl: "https://...",       // Optional
+  debug: false                  // Optional
+});
+```
+
+## Component Props
+
+### JeanChat
+
+```javascript
+<JeanChat 
+  agent={agent}
+  theme={{
+    primaryColor: '#9563FF',
+    fontFamily: 'Inter'
+  }}
+  height="600px"
+  placeholder="Ask me anything..."
+/>
+```
+
+## Memory Management
+
+```javascript
+// Memories are stored automatically, but you can also:
+await agent.addMemory("User prefers dark mode");
+await agent.searchMemories("preferences");
+```
+
+## Next.js
+
+```javascript
+// app/chat/page.js
+'use client';
+
+import dynamic from 'next/dynamic';
+import { useJeanAgent } from '@jeanmemory/react';
+
+const JeanChat = dynamic(
+  () => import('@jeanmemory/react').then(mod => mod.JeanChat),
+  { ssr: false }
+);
+
+export default function ChatPage() {
+  const { agent } = useJeanAgent({ 
+    apiKey: process.env.NEXT_PUBLIC_JEAN_API_KEY 
+  });
+  
+  return <JeanChat agent={agent} />;
+}
+```

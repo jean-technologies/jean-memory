@@ -1,0 +1,72 @@
+---
+title: Examples
+description: 'Common use cases'
+---
+
+## Store User Preferences
+
+```javascript
+const response = await fetch('https://api.jeanmemory.com/mcp/messages/', {
+  method: 'POST',
+  headers: {
+    'X-Api-Key': 'jean_sk_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'tools/call',
+    params: {
+      name: 'add_memories',
+      arguments: {
+        text: 'User prefers dark mode and uses VSCode',
+        tags: ['preferences', 'settings']
+      }
+    },
+    id: '1'
+  })
+});
+```
+
+## Search Project Context
+
+```python
+import requests
+
+response = requests.post(
+    'https://api.jeanmemory.com/mcp/messages/',
+    headers={'X-Api-Key': 'jean_sk_...'},
+    json={
+        'jsonrpc': '2.0',
+        'method': 'tools/call',
+        'params': {
+            'name': 'search_memory_v2',
+            'arguments': {
+                'query': 'project requirements',
+                'tags_filter': ['work', 'project-alpha']
+            }
+        },
+        'id': '2'
+    }
+)
+```
+
+## Track Tasks
+
+```bash
+# Add a task
+curl -X POST https://api.jeanmemory.com/mcp/messages/ \
+  -H "X-Api-Key: jean_sk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+      "name": "add_memories",
+      "arguments": {
+        "text": "TODO: Review PR #123 for dashboard improvements",
+        "tags": ["tasks", "todo", "dashboard"]
+      }
+    },
+    "id": "3"
+  }'
+```

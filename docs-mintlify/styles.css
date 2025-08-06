@@ -1,0 +1,59 @@
+/* Force dark text in light mode */
+:root[data-theme="light"] {
+  --tw-prose-body: #374151 !important;
+  --tw-prose-headings: #111827 !important;
+  --tw-prose-lead: #4b5563 !important;
+  --tw-prose-links: #7c3aed !important;
+  --tw-prose-bold: #111827 !important;
+  --tw-prose-counters: #6b7280 !important;
+  --tw-prose-bullets: #6b7280 !important;
+  --tw-prose-hr: #e5e7eb !important;
+  --tw-prose-quotes: #111827 !important;
+  --tw-prose-quote-borders: #e5e7eb !important;
+  --tw-prose-captions: #6b7280 !important;
+  --tw-prose-code: #111827 !important;
+  --tw-prose-pre-code: #e5e7eb !important;
+  --tw-prose-pre-bg: #1f2937 !important;
+  --tw-prose-th-borders: #d1d5db !important;
+  --tw-prose-td-borders: #e5e7eb !important;
+}
+
+/* Ensure all text elements are dark in light mode */
+[data-theme="light"] * {
+  color: #374151;
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+  color: #111827 !important;
+}
+
+[data-theme="light"] p,
+[data-theme="light"] li,
+[data-theme="light"] td,
+[data-theme="light"] th {
+  color: #374151 !important;
+}
+
+[data-theme="light"] strong,
+[data-theme="light"] b {
+  color: #111827 !important;
+}
+
+[data-theme="light"] code {
+  color: #7c3aed !important;
+}
+
+/* Fix navigation text in light mode */
+[data-theme="light"] nav a {
+  color: #4b5563 !important;
+}
+
+[data-theme="light"] nav a:hover,
+[data-theme="light"] nav a[data-active="true"] {
+  color: #111827 !important;
+}

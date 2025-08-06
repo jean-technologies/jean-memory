@@ -1,0 +1,57 @@
+---
+title: MCP Setup
+description: 'Connect Jean Memory to AI assistants'
+---
+
+## What is MCP?
+
+Model Context Protocol (MCP) lets AI assistants like Claude and ChatGPT connect to external tools.
+
+## Quick Setup
+
+### Claude Desktop
+
+1. Find your config file:
+   - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+2. Add Jean Memory:
+```json
+{
+  "mcpServers": {
+    "jean-memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop
+
+### ChatGPT
+
+Coming soon - use the API for now.
+
+### Cursor
+
+Add to your `.cursor/config.json`:
+```json
+{
+  "mcp": {
+    "servers": {
+      "jean-memory": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
+      }
+    }
+  }
+}
+```
+
+## How It Works
+
+Once connected, the AI can:
+- Store memories: "Remember that..."
+- Search memories: "What did we discuss about..."
+- Use context automatically in responses

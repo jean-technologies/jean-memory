@@ -1,0 +1,84 @@
+---
+title: Quickstart
+description: 'Get running in 2 minutes'
+---
+
+## 1. Get Your API Key
+
+Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
+
+## 2. Install
+
+<Tabs>
+  <Tab title="React">
+    ```bash
+    npm install @jeanmemory/react
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```bash
+    pip install jeanmemory
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```bash
+    npm install @jeanmemory/node
+    ```
+  </Tab>
+</Tabs>
+
+## 3. Add to Your App
+
+<Tabs>
+  <Tab title="React">
+    ```javascript
+    import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+    
+    function App() {
+      const { agent } = useJeanAgent({ 
+        apiKey: process.env.REACT_APP_JEAN_API_KEY 
+      });
+      return <JeanChat agent={agent} />;
+    }
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    from jeanmemory import JeanAgent
+    import os
+    
+    agent = JeanAgent(
+        api_key=os.getenv("JEAN_API_KEY")
+    )
+    agent.run()
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```javascript
+    import { JeanAgent } from '@jeanmemory/node';
+    
+    const agent = new JeanAgent({
+      apiKey: process.env.JEAN_API_KEY
+    });
+    
+    await agent.run();
+    ```
+  </Tab>
+</Tabs>
+
+## 4. Set Environment Variable
+
+```bash
+# .env file
+JEAN_API_KEY=jean_sk_your_api_key_here
+```
+
+## That's It!
+
+Your AI now has persistent memory. Test it:
+
+1. Tell it something: "My favorite color is blue"
+2. Close and restart your app
+3. Ask: "What's my favorite color?"
+
+It remembers!

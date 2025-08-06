@@ -1,0 +1,39 @@
+---
+title: 'Node.js SDK'
+description: 'Server-side memory for Node applications'
+---
+
+## Installation
+
+```bash
+npm install @jeanmemory/node
+```
+
+## Quick Start
+
+```javascript
+import { JeanAgent } from '@jeanmemory/node';
+
+const agent = new JeanAgent({
+  apiKey: process.env.JEAN_API_KEY
+});
+
+await agent.run();
+```
+
+## Express Integration
+
+```javascript
+import express from 'express';
+import { JeanAgent } from '@jeanmemory/node';
+
+const app = express();
+const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });
+
+app.post('/chat', async (req, res) => {
+  const response = await agent.sendMessage(req.body.message);
+  res.json({ response: response.content });
+});
+```
+
+Full documentation coming soon.

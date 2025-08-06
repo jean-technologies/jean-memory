@@ -1,0 +1,72 @@
+---
+title: 'API Overview'
+description: 'REST API for direct memory management'
+---
+
+## Base URL
+
+```
+https://api.jeanmemory.com
+```
+
+## Authentication
+
+Include your API key in the header:
+
+```bash
+X-Api-Key: jean_sk_your_api_key_here
+```
+
+## Endpoints
+
+All requests go to a single MCP endpoint:
+
+```
+POST /mcp/messages/
+```
+
+## Request Format
+
+JSON-RPC 2.0 format:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "tool_name",
+    "arguments": {
+      // tool-specific arguments
+    }
+  },
+  "id": "unique-request-id"
+}
+```
+
+## Available Tools
+
+- `add_memories` - Store new memories
+- `search_memory_v2` - Search with filters
+- `update_memory` - Update existing
+- `delete_memory` - Remove memories
+
+## Quick Example
+
+```bash
+curl -X POST https://api.jeanmemory.com/mcp/messages/ \
+  -H "X-Api-Key: jean_sk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+      "name": "add_memories",
+      "arguments": {
+        "text": "User prefers dark mode"
+      }
+    },
+    "id": "1"
+  }'
+```
+
+See individual endpoint docs for details.

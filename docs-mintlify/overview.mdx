@@ -1,0 +1,105 @@
+---
+title: Overview
+description: 'Universal memory for AI applications'
+---
+
+<Note>
+**AI Agent Quick Deploy**: Copy the setup instructions below to paste into Claude, ChatGPT, or any AI coding assistant.
+</Note>
+
+```
+# Jean Memory - Complete Setup Guide
+
+## Installation
+
+### React
+npm install @jeanmemory/react
+
+import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+
+function App() {
+  const { agent } = useJeanAgent({ apiKey: "jean_sk_..." });
+  return <JeanChat agent={agent} />;
+}
+
+### Python
+pip install jeanmemory
+
+from jeanmemory import JeanAgent
+
+agent = JeanAgent(api_key="jean_sk_...")
+agent.run()
+
+## API Key
+Get your key at https://jeanmemory.com/dashboard
+
+## Testing
+1. Send: "Remember that my favorite color is blue"
+2. Restart app
+3. Ask: "What's my favorite color?"
+
+The AI will remember!
+```
+
+## What is Jean Memory?
+
+Jean Memory is a universal memory layer for AI applications. Add persistent memory to any AI in just 5 lines of code.
+
+## The 5-Line Integration
+
+<CodeGroup>
+```javascript React
+import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+
+function App() {
+  const { agent } = useJeanAgent({ apiKey: "jean_sk_..." });
+  return <JeanChat agent={agent} />;
+}
+```
+
+```python Python
+from jeanmemory import JeanAgent
+
+agent = JeanAgent(api_key="jean_sk_...")
+agent.run()
+```
+</CodeGroup>
+
+## Key Features
+
+- **Universal** - Works with ChatGPT, Claude, Cursor, and custom apps
+- **Persistent** - Memories survive across sessions
+- **Intelligent** - AI-powered retrieval, not just keyword matching
+- **Simple** - No database setup, no schemas, just an API key
+
+## How It Works
+
+1. **Store** - Conversations and context are automatically saved
+2. **Retrieve** - Relevant memories are pulled based on context
+3. **Enhance** - AI responses include personal context
+
+## Getting Started
+
+<CardGroup cols={3}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get running in 2 minutes
+  </Card>
+  <Card
+    title="SDK Docs"
+    icon="code"
+    href="/sdk/react"
+  >
+    Library documentation
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api/reference"
+  >
+    REST API details
+  </Card>
+</CardGroup>

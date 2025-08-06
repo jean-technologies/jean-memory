@@ -1,0 +1,33 @@
+---
+title: ChatGPT
+description: 'Setup for ChatGPT'
+---
+
+## Coming Soon
+
+ChatGPT integration via custom GPT is in development.
+
+## Current Options
+
+Use the SDK or API directly in your ChatGPT-powered applications:
+
+```python
+from jeanmemory import JeanAgent
+import openai
+
+# Store context
+agent = JeanAgent(api_key="jean_sk_...")
+agent.add_memory("User is working on a React project")
+
+# Use with ChatGPT
+memories = agent.search_memories("current project")
+context = "\n".join([m.text for m in memories])
+
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": f"Context: {context}"},
+        {"role": "user", "content": "What should I work on?"}
+    ]
+)
+```
