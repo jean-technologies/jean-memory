@@ -1,0 +1,109 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Jean Memory",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#9563FF",
+    "light": "#AE87FF",
+    "dark": "#0D001D",
+    "background": {
+      "dark": "#090014"
+    },
+    "anchors": {
+      "from": "#FF7F57",
+      "to": "#9563FF"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@jeanmemory.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Dashboard",
+    "url": "https://jeanmemory.com/dashboard"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    },
+    {
+      "name": "SDK",
+      "url": "sdk"
+    },
+    {
+      "name": "MCP",
+      "url": "mcp"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/jean-technologies/jean-memory"
+    },
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://jeanmemory.com/blog"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "development"
+      ]
+    },
+    {
+      "group": "Essentials",
+      "pages": [
+        "essentials/authentication",
+        "essentials/api-key",
+        "essentials/metadata",
+        "essentials/errors"
+      ]
+    },
+    {
+      "group": "API Documentation",
+      "pages": [
+        "api-reference/introduction",
+        "api-reference/endpoint/add-memories",
+        "api-reference/endpoint/search-memories",
+        "api-reference/endpoint/update-memory",
+        "api-reference/endpoint/delete-memory"
+      ]
+    },
+    {
+      "group": "SDK Documentation",
+      "pages": [
+        "sdk/introduction",
+        "sdk/react",
+        "sdk/python",
+        "sdk/nodejs"
+      ]
+    },
+    {
+      "group": "MCP Protocol",
+      "pages": [
+        "mcp/introduction",
+        "mcp/claude-desktop",
+        "mcp/chatgpt",
+        "mcp/cursor"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "x": "https://x.com/jeanmemory",
+    "github": "https://github.com/jean-technologies",
+    "linkedin": "https://www.linkedin.com/company/jean-memory"
+  }
+}

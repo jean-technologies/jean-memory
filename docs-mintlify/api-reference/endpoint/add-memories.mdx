@@ -1,0 +1,145 @@
+---
+title: 'add_memories'
+api: 'POST /mcp/messages/'
+description: 'Store new memories with optional metadata tags'
+---
+
+## Request
+
+<ParamField body="jsonrpc" type="string" required>
+  Must be "2.0"
+</ParamField>
+
+<ParamField body="method" type="string" required>
+  Must be "tools/call"
+</ParamField>
+
+<ParamField body="id" type="string" required>
+  Unique request identifier
+</ParamField>
+
+<ParamField body="params" type="object" required>
+  <Expandable title="params">
+    <ParamField body="name" type="string" required>
+      Must be "add_memories"
+    </ParamField>
+    
+    <ParamField body="arguments" type="object" required>
+      <Expandable title="arguments">
+        <ParamField body="text" type="string" required>
+          The memory content to store
+        </ParamField>
+        
+        <ParamField body="tags" type="array">
+          Optional array of string tags for categorization
+        </ParamField>
+        
+        <ParamField body="priority" type="boolean">
+          If true, marks the memory as high priority
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="jsonrpc" type="string">
+  Always "2.0"
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The request identifier
+</ResponseField>
+
+<ResponseField name="result" type="object">
+  <Expandable title="result">
+    <ResponseField name="message" type="string">
+      Success message confirming memory storage
+    </ResponseField>
+    
+    <ResponseField name="memory_id" type="string">
+      Unique identifier for the stored memory
+    </ResponseField>
+    
+    <ResponseField name="timestamp" type="string">
+      ISO 8601 timestamp of when the memory was stored
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.jeanmemory.com/mcp/messages/ \
+  -H "X-Api-Key: jean_sk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+      "name": "add_memories",
+      "arguments": {
+        "text": "Meeting with Sarah tomorrow at 3pm to discuss Q4 roadmap",
+        "tags": ["work", "meetings", "q4", "roadmap"],
+        "priority": true
+      }
+    },
+    "id": "add-memory-001"
+  }'
+```
+
+```python Python
+from jeanmemory import JeanClient
+
+client = JeanClient(api_key="jean_sk_your_api_key_here")
+
+response = client.add_memory(
+    text="Meeting with Sarah tomorrow at 3pm to discuss Q4 roadmap",
+    tags=["work", "meetings", "q4", "roadmap"],
+    priority=True
+)
+
+print(response.memory_id)
+```
+
+```javascript JavaScript
+import { JeanClient } from '@jeanmemory/node';
+
+const client = new JeanClient({
+  apiKey: 'jean_sk_your_api_key_here'
+});
+
+const response = await client.addMemory({
+  text: "Meeting with Sarah tomorrow at 3pm to discuss Q4 roadmap",
+  tags: ["work", "meetings", "q4", "roadmap"],
+  priority: true
+});
+
+console.log(response.memoryId);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "message": "Memory added successfully",
+    "memory_id": "mem_abc123def456",
+    "timestamp": "2024-01-15T15:30:00Z"
+  },
+  "id": "add-memory-001"
+}
+```
+
+```json Error Response
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32602,
+    "message": "Invalid params: text field is required"
+  },
+  "id": "add-memory-001"
+}
+```
+</ResponseExample>

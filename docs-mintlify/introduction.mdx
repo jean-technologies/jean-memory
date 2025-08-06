@@ -1,0 +1,123 @@
+---
+title: Introduction
+description: 'Build AI applications with persistent, universal memory'
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="Hero Dark"
+/>
+
+## Welcome to Jean Memory
+
+Jean Memory is the universal memory layer for AI applications. Add persistent, contextual memory to your AI agents in just 5 lines of code.
+
+<CardGroup cols={2}>
+  <Card
+    title="5-Line Integration"
+    icon="code"
+    href="/quickstart"
+  >
+    Get started with our SDK in minutes
+  </Card>
+  <Card
+    title="MCP Compatible"
+    icon="plug"
+    href="/mcp/introduction"
+  >
+    Works with Claude, ChatGPT, and Cursor
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/introduction"
+  >
+    Complete REST API documentation
+  </Card>
+  <Card
+    title="SDK Libraries"
+    icon="package"
+    href="/sdk/introduction"
+  >
+    React, Python, and Node.js SDKs
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion title="Universal Memory" icon="brain">
+    Your memories follow you across every AI application - from ChatGPT to Claude to your custom apps.
+  </Accordion>
+  <Accordion title="Smart Context" icon="sparkles">
+    AI-powered retrieval ensures your agents always have the right context at the right time.
+  </Accordion>
+  <Accordion title="Enterprise Ready" icon="building">
+    Production-grade infrastructure with metadata tagging, filtering, and multi-tenant support.
+  </Accordion>
+  <Accordion title="Privacy First" icon="shield">
+    Your memories are encrypted and only accessible by you. Full GDPR compliance.
+  </Accordion>
+</AccordionGroup>
+
+## Quick Example
+
+<CodeGroup>
+```javascript React
+import { useJeanAgent } from '@jeanmemory/react';
+
+function App() {
+  const { agent, signIn } = useJeanAgent({
+    apiKey: "jean_sk_...",
+    systemPrompt: "You are a helpful assistant"
+  });
+
+  if (!agent) return <SignInWithJean onSuccess={signIn} />;
+  return <JeanChat agent={agent} />;
+}
+```
+
+```python Python
+from jeanmemory import JeanAgent
+
+agent = JeanAgent(
+    api_key="jean_sk_...",
+    system_prompt="You are a helpful assistant"
+)
+agent.run()
+```
+
+```javascript Node.js
+import { JeanAgent } from '@jeanmemory/node';
+
+const agent = new JeanAgent({
+  apiKey: "jean_sk_...",
+  systemPrompt: "You are a helpful assistant"
+});
+
+await agent.run();
+```
+</CodeGroup>
+
+## Get Started
+
+<Steps>
+  <Step title="Get your API Key">
+    Sign up at [jeanmemory.com](https://jeanmemory.com) and get your API key from the dashboard.
+  </Step>
+  <Step title="Install the SDK">
+    Choose your preferred SDK and install it with your package manager.
+  </Step>
+  <Step title="Initialize Jean">
+    Add the 5 lines of code to your application.
+  </Step>
+  <Step title="Start Building">
+    Your AI now has persistent memory across sessions!
+  </Step>
+</Steps>

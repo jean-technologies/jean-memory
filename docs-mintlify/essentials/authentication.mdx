@@ -1,0 +1,110 @@
+---
+title: 'Authentication'
+description: 'Understanding Jean Memory authentication methods'
+---
+
+## Overview
+
+Jean Memory supports two authentication methods to ensure compatibility across different platforms while maintaining security.
+
+## API Key Authentication
+
+<Info>
+  **Recommended for:** Web applications, backend services, and direct API integration
+</Info>
+
+API keys provide full access to all Jean Memory features including metadata tagging and advanced filtering.
+
+### Getting your API Key
+
+1. Sign in to your [Jean Memory Dashboard](https://jeanmemory.com/dashboard)
+2. Navigate to Settings > API Keys
+3. Click "Generate New Key"
+4. Copy and securely store your key
+
+### Using your API Key
+
+Include your API key in the `X-Api-Key` header:
+
+```bash
+curl -X POST https://api.jeanmemory.com/mcp/messages/ \
+  -H "X-Api-Key: jean_sk_your_api_key_here" \
+  -H "Content-Type: application/json"
+```
+
+<Warning>
+  API keys have full access to your account. Never share them publicly or commit them to version control.
+</Warning>
+
+## Header Authentication
+
+<Info>
+  **Used by:** Claude Desktop, existing MCP integrations
+</Info>
+
+This authentication method is used internally by MCP-compatible applications and provides a simplified toolset.
+
+### Required Headers
+
+```bash
+x-user-id: your-supabase-user-id
+x-client-name: your-app-name
+```
+
+### Limitations
+
+Header authentication provides access to basic memory operations but excludes:
+- Metadata tagging
+- Advanced filtering
+- Bulk operations
+- Analytics
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Environment Variables" icon="lock">
+    Always store API keys in environment variables:
+    ```bash
+    JEAN_API_KEY=jean_sk_your_api_key_here
+    ```
+  </Accordion>
+  
+  <Accordion title="Key Rotation" icon="rotate">
+    Rotate your API keys regularly:
+    - Every 90 days for production
+    - Immediately if compromised
+    - When team members leave
+  </Accordion>
+  
+  <Accordion title="Restrict Key Scope" icon="shield">
+    Create separate keys for different environments:
+    - Development
+    - Staging
+    - Production
+  </Accordion>
+  
+  <Accordion title="Monitor Usage" icon="chart-line">
+    Check your API usage regularly:
+    - Review access logs
+    - Set up alerts for unusual activity
+    - Monitor rate limit consumption
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Steps>
+  <Step title="Invalid API Key">
+    Ensure your key starts with `jean_sk_` and hasn't been revoked
+  </Step>
+  <Step title="Authentication Failed">
+    Check that you're using the correct header name (`X-Api-Key` with capital X)
+  </Step>
+  <Step title="Rate Limited">
+    Review your plan limits and consider upgrading if needed
+  </Step>
+</Steps>
+
+## Need Help?
+
+Contact [support@jeanmemory.com](mailto:support@jeanmemory.com) for authentication issues.
