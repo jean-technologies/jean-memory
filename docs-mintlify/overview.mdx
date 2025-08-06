@@ -13,34 +13,20 @@ This is all orchestrated through a single, powerful `jean_memory` tool, which ac
 
 ## High-Level Architecture
 
-At a high level, Jean Memory sits between your application and the AI models, providing the necessary context to make the AI's responses personal and relevant.
+Jean Memory sits between your application and your AI models, acting as an intelligent orchestration layer. It receives requests, retrieves and synthesizes the necessary context, and provides it to the AI model to generate a personalized and relevant response.
 
 ```mermaid
 graph TD
-    subgraph Your Application
-        A[Your Frontend or Backend]
-    end
-
+    A[Your Application] --> B{Jean Memory API};
+    B --> C(Intelligent Context Orchestration);
+    C --> D[Secure Memory Storage];
+    C --> E[AI Platforms];
     subgraph Jean Memory
-        B[Jean Memory API]
-        C[Intelligent Context Orchestration]
-        D[Secure Memory Storage]
+        B; C; D;
     end
 
-    subgraph AI Platforms
-        E[Claude, ChatGPT, etc.]
-    end
-
-    A --> B
-    B --> C
-    C --> D
-    C --> E
-
-    style A fill:#cce6ff,stroke:#333,stroke-width:2px
-    style B fill:#fff0b3,stroke:#333,stroke-width:2px
-    style C fill:#d9f2d9,stroke:#333,stroke-width:2px
-    style D fill:#ffd9d9,stroke:#333,stroke-width:2px
-    style E fill:#d9e6f2,stroke:#333,stroke-width:2px
+    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style E fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
 ## Key Features

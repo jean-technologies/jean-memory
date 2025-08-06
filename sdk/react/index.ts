@@ -5,5 +5,4 @@
 
 export { useJeanAgent, SignInWithJean, JeanChat } from './useJeanAgent';
 export type { JeanAgentConfig, JeanUser, JeanAgentHook } from './useJeanAgent';
-
 // Note: Assistant-UI integration can be added later for production use

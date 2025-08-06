@@ -5,29 +5,24 @@ description: 'Get running in 2 minutes'
 
 ## How Jean Memory Works
 
-<div style={{textAlign: 'center', margin: '2rem 0'}}>
-  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap'}}>
-    <div style={{padding: '1.5rem', borderRadius: '8px', background: 'var(--tw-prose-pre-bg)', border: '1px solid var(--tw-prose-th-borders)', minWidth: '120px', textAlign: 'center'}}>
-      <strong>Your App</strong>
-      <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.8}}>Any UI</div>
-    </div>
-    <div style={{fontSize: '1.5rem'}}>→</div>
-    <div style={{padding: '1.5rem', borderRadius: '8px', background: 'linear-gradient(135deg, #9563FF 0%, #7C3AED 100%)', color: 'white', minWidth: '120px', textAlign: 'center'}}>
-      <strong>Jean Memory</strong>
-      <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.9}}>Memory Layer</div>
-    </div>
-    <div style={{fontSize: '1.5rem'}}>→</div>
-    <div style={{padding: '1.5rem', borderRadius: '8px', background: 'var(--tw-prose-pre-bg)', border: '1px solid var(--tw-prose-th-borders)', minWidth: '120px', textAlign: 'center'}}>
-      <strong>AI Model</strong>
-      <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.8}}>Enhanced</div>
-    </div>
-  </div>
-  <p style={{marginTop: '1.5rem', fontSize: '0.875rem', opacity: 0.8}}>Jean Memory intelligently orchestrates memory storage, retrieval, and deduplication in the background</p>
-</div>
+Jean Memory acts as an intelligent memory layer between your application and your AI model, ensuring that every interaction is informed by relevant, long-term context.
+
+<CardGroup>
+    <Card title="Your Application" icon="cloud">
+        The user-facing application that initiates a request.
+    </Card>
+    <Card title="Jean Memory" icon="brain">
+        Intelligently orchestrates memory storage, retrieval, and deduplication.
+    </Card>
+    <Card title="AI Model" icon="sparkles">
+        Receives enhanced context to provide personalized responses.
+    </Card>
+</CardGroup>
+
 
 <iframe 
     width="100%" 
-    style={{aspectRatio: "16 / 9"}} 
+    style={{aspectRatio: "16 / 9", margin: '2rem 0'}} 
     src="https://www.youtube.com/embed/kO6f7doPjSI" 
     title="YouTube video player" 
     frameBorder="0" 
@@ -114,18 +109,38 @@ Your AI now has persistent memory. Test it:
 
 It remembers across sessions automatically!
 
-## Sign In With Jean
+## Customizable Authentication
 
-<div style={{padding: '2rem', borderRadius: '8px', background: 'var(--tw-prose-pre-bg)', border: '1px solid var(--tw-prose-th-borders)', margin: '2rem 0'}}>
-  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem'}}>
-    <div style={{padding: '0.75rem 1.5rem', borderRadius: '6px', background: 'linear-gradient(135deg, #9563FF 0%, #7C3AED 100%)', color: 'white', fontWeight: 'bold', fontSize: '0.875rem'}}>
-      Sign In with Jean
-    </div>
-  </div>
-  <p style={{textAlign: 'center', margin: 0, fontSize: '0.875rem', opacity: 0.8}}>Businesses can customize this however they'd like:</p>
-  <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem'}}>
-    <code style={{fontSize: '0.75rem', padding: '0.25rem 0.5rem'}}>"Add Memory to X"</code>
-    <code style={{fontSize: '0.75rem', padding: '0.25rem 0.5rem'}}>"Bring Your Memories"</code>
-    <code style={{fontSize: '0.75rem', padding: '0.25rem 0.5rem'}}>"Personalize"</code>
-  </div>
+Jean Memory provides a flexible authentication flow that you can tailor to your application's branding. The "Sign In with Jean" button can be customized to fit your needs.
+
+<div style={{
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    padding: '2rem', 
+    borderRadius: '8px', 
+    border: '1px solid var(--tw-prose-th-borders)', 
+    margin: '2rem 0'
+}}>
+    <button style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.75rem 1.5rem',
+        borderRadius: '6px',
+        background: 'black',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '0.875rem',
+        border: '1px solid #333'
+    }}>
+        <img src="/logo/light.png" alt="Jean Memory Logo" style={{height: '20px'}}/>
+        Sign In with Jean
+    </button>
 </div>
+
+You can adapt the text to best suit your user experience, for example:
+
+- "Add Memory to X"
+- "Bring Your Memories"
+- "Personalize"
