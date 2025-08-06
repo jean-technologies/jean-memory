@@ -123,7 +123,7 @@ export function Navbar() {
                   size="sm"
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  For Developers
+                  API
                 </Button>
               </Link>
               <Link href="/pro">
@@ -159,7 +159,7 @@ export function Navbar() {
                   size="sm"
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  For Developers
+                  API
                 </Button>
               </Link>
               <Link href="/pro">
