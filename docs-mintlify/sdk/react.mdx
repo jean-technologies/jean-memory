@@ -1,15 +1,19 @@
 ---
 title: React SDK
-description: 'React library for Jean Memory'
+description: 'The official React library for Jean Memory.'
 ---
 
 ## Installation
+
+To get started, install the Jean Memory React SDK and its peer dependency, `@assistant-ui/react`.
 
 ```bash
 npm install @jeanmemory/react @assistant-ui/react
 ```
 
 ## Basic Usage
+
+The easiest way to get started is with the `JeanChat` component. It provides a full-featured chat interface with memory enabled out of the box.
 
 ```javascript
 import { useJeanAgent, JeanChat } from '@jeanmemory/react';
@@ -23,7 +27,22 @@ function App() {
 }
 ```
 
-## With Authentication
+## Sign In With Jean Modal
+
+For applications that require users to sign in, the SDK provides a `SignInWithJean` component that renders a pre-built authentication modal.
+
+<img
+  src="/images/sign-in-with-jean.png"
+  alt="Sign In With Jean Modal"
+/>
+
+### How It Works
+
+1.  **Check Authentication**: The `useJeanAgent` hook returns an `isAuthenticated` boolean.
+2.  **Show Modal**: If the user is not authenticated, render the `SignInWithJean` component.
+3.  **Handle Success**: The `onSuccess` callback is triggered when the user successfully signs in, which you can use to call the `signIn` function from the hook.
+
+### Example
 
 ```javascript
 import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
@@ -41,20 +60,29 @@ function App() {
 }
 ```
 
-## Hook Options
+## `useJeanAgent` Hook
+
+This is the core hook for interacting with the Jean Memory API.
 
 ```javascript
-const { agent, signIn, signOut, isAuthenticated, isLoading, error } = useJeanAgent({
+const { 
+  agent, 
+  signIn, 
+  signOut, 
+  isAuthenticated, 
+  isLoading, 
+  error 
+} = useJeanAgent({
   apiKey: "jean_sk_...",        // Required
-  systemPrompt: "You are...",   // Optional
-  baseUrl: "https://...",       // Optional
-  debug: false                  // Optional
+  systemPrompt: "You are...",   // Optional: Customize the AI's personality
+  baseUrl: "https://...",       // Optional: For self-hosted instances
+  debug: false                  // Optional: Enable debug logging
 });
 ```
 
-## Component Props
+## `JeanChat` Component
 
-### JeanChat
+A fully-featured, customizable chat component.
 
 ```javascript
 <JeanChat 
@@ -68,15 +96,22 @@ const { agent, signIn, signOut, isAuthenticated, isLoading, error } = useJeanAge
 />
 ```
 
-## Memory Management
+## Manual Memory Management
+
+While conversations are automatically saved, you can also manage memories manually.
 
 ```javascript
-// Memories are stored automatically, but you can also:
-await agent.addMemory("User prefers dark mode");
-await agent.searchMemories("preferences");
+// Add a new memory
+await agent.addMemory("User prefers to be addressed by their first name, Alex.");
+
+// Search for memories
+const results = await agent.searchMemories("user preferences");
+console.log(results);
 ```
 
-## Next.js
+## Next.js Integration
+
+For Next.js applications, you need to dynamically import the `JeanChat` component to disable server-side rendering (SSR), as it relies on browser APIs.
 
 ```javascript
 // app/chat/page.js

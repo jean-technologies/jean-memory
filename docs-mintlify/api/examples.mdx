@@ -1,72 +1,75 @@
 ---
-title: Examples
-description: 'Common use cases'
+title: Use Cases
+description: "Inspirational examples of what you can build with Jean Memory."
 ---
 
-## Store User Preferences
+Jean Memory is a powerful tool that can be used to build a wide range of applications. Here are a few examples to inspire you.
+
+<CardGroup cols={2}>
+  <Card
+    title="Personalized AI Tutors"
+    icon="book"
+    href="#"
+  >
+    Create an AI tutor that remembers a student's progress, learning style, and areas of difficulty. It can tailor lessons and provide personalized feedback, creating a truly adaptive learning experience.
+  </Card>
+  <Card
+    title="AI-Powered Customer Support"
+    icon="headset"
+    href="#"
+  >
+    Build a customer support bot that remembers a user's entire history with your product. It can provide context-aware support, understand previous issues, and offer solutions that are relevant to the user's specific needs.
+  </Card>
+  <Card
+    title="Smart Personal Assistants"
+    icon="user-group"
+    href="#"
+  >
+    Develop a personal assistant that remembers your preferences, schedule, and important relationships. It can help you draft emails, plan your day, and even remember the little things, like your partner's favorite color.
+  </Card>
+  <Card
+    title="Context-Aware Code Completion"
+    icon="code"
+    href="#"
+  >
+    Integrate Jean Memory into your development environment to create a coding assistant that understands the context of your project. It can remember your coding style, the purpose of different functions, and even the history of a file.
+  </Card>
+</CardGroup>
+
+## Example: AI-Powered Customer Support
+
+Here’s a conceptual example of how you might build an AI-powered customer support chatbot with Jean Memory.
+
+### 1. Store Every Interaction
+
+Every time a user interacts with your support bot, you save the conversation to their memory.
 
 ```javascript
-const response = await fetch('https://api.jeanmemory.com/mcp/messages/', {
-  method: 'POST',
-  headers: {
-    'X-Api-Key': 'jean_sk_...',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    jsonrpc: '2.0',
-    method: 'tools/call',
-    params: {
-      name: 'add_memories',
-      arguments: {
-        text: 'User prefers dark mode and uses VSCode',
-        tags: ['preferences', 'settings']
-      }
-    },
-    id: '1'
-  })
-});
+// User opens a support ticket
+const conversation = "User is having trouble with billing. They were charged twice for their last invoice.";
+
+await agent.addMemory(conversation, { tags: ['support', 'billing'] });
 ```
 
-## Search Project Context
+### 2. Retrieve Context When Needed
 
-```python
-import requests
+When the user starts a new conversation, you can search their memory to understand their history.
 
-response = requests.post(
-    'https://api.jeanmemory.com/mcp/messages/',
-    headers={'X-Api-Key': 'jean_sk_...'},
-    json={
-        'jsonrpc': '2.0',
-        'method': 'tools/call',
-        'params': {
-            'name': 'search_memory_v2',
-            'arguments': {
-                'query': 'project requirements',
-                'tags_filter': ['work', 'project-alpha']
-            }
-        },
-        'id': '2'
-    }
-)
+```javascript
+// User starts a new chat
+const userHistory = await agent.searchMemories("billing issues");
+
+// Provide this context to the AI
+const prompt = `
+  Here is the user's recent support history:
+  ${userHistory}
+
+  Now, please respond to their new message: "I have another question about my bill."
+`;
 ```
 
-## Track Tasks
+### 3. Provide a Better Experience
 
-```bash
-# Add a task
-curl -X POST https://api.jeanmemory.com/mcp/messages/ \
-  -H "X-Api-Key: jean_sk_..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "add_memories",
-      "arguments": {
-        "text": "TODO: Review PR #123 for dashboard improvements",
-        "tags": ["tasks", "todo", "dashboard"]
-      }
-    },
-    "id": "3"
-  }'
-```
+The AI now has the context it needs to provide a personalized and helpful response, without asking the user to repeat themselves.
+
+> **AI Response:** "Of course! I see that you had an issue with being double-charged on your last invoice. I've already credited your account for that. What is your new question? I'm here to help."

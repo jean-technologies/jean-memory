@@ -50,15 +50,13 @@
     {
       "group": "MCP",
       "pages": [
-        "mcp/setup",
-        "mcp/claude",
-        "mcp/chatgpt"
+        "mcp/introduction",
+        "mcp/context-engineering"
       ]
     },
     {
       "group": "API",
       "pages": [
-        "api/reference",
         "api/authentication",
         "api/examples"
       ]

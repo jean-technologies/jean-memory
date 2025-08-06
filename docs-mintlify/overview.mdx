@@ -3,82 +3,57 @@ title: Overview
 description: 'Universal memory for AI applications'
 ---
 
-<Note>
-**AI Agent Quick Deploy**: Copy the setup instructions below to paste into Claude, ChatGPT, or any AI coding assistant.
-</Note>
-
-```
-# Jean Memory - Complete Setup Guide
-
-## Installation
-
-### React
-npm install @jeanmemory/react
-
-import { useJeanAgent, JeanChat } from '@jeanmemory/react';
-
-function App() {
-  const { agent } = useJeanAgent({ apiKey: "jean_sk_..." });
-  return <JeanChat agent={agent} />;
-}
-
-### Python
-pip install jeanmemory
-
-from jeanmemory import JeanAgent
-
-agent = JeanAgent(api_key="jean_sk_...")
-agent.run()
-
-## API Key
-Get your key at https://jeanmemory.com/dashboard
-
-## Testing
-1. Send: "Remember that my favorite color is blue"
-2. Restart app
-3. Ask: "What's my favorite color?"
-
-The AI will remember!
-```
-
 ## What is Jean Memory?
 
-Jean Memory is a universal memory layer for AI applications. Add persistent memory to any AI in just 5 lines of code.
+Jean Memory is a universal memory layer for AI applications. It gives your AI a persistent, cross-platform memory, allowing it to remember past conversations and context.
 
-## The 5-Line Integration
+The core philosophy is **Context Engineering, not just Information Retrieval**. This means Jean Memory doesn't just store data—it intelligently understands, synthesizes, and prepares the perfect context for your AI, right when it's needed.
 
-<CodeGroup>
-```javascript React
-import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+This is all orchestrated through a single, powerful `jean_memory` tool, which acts as a "tool of tools" to provide intelligent, agentic memory with long-term context.
 
-function App() {
-  const { agent } = useJeanAgent({ apiKey: "jean_sk_..." });
-  return <JeanChat agent={agent} />;
-}
+## High-Level Architecture
+
+At a high level, Jean Memory sits between your application and the AI models, providing the necessary context to make the AI's responses personal and relevant.
+
+```mermaid
+graph TD
+    subgraph Your Application
+        A[Your Frontend or Backend]
+    end
+
+    subgraph Jean Memory
+        B[Jean Memory API]
+        C[Intelligent Context Orchestration]
+        D[Secure Memory Storage]
+    end
+
+    subgraph AI Platforms
+        E[Claude, ChatGPT, etc.]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    C --> E
+
+    style A fill:#cce6ff,stroke:#333,stroke-width:2px
+    style B fill:#fff0b3,stroke:#333,stroke-width:2px
+    style C fill:#d9f2d9,stroke:#333,stroke-width:2px
+    style D fill:#ffd9d9,stroke:#333,stroke-width:2px
+    style E fill:#d9e6f2,stroke:#333,stroke-width:2px
 ```
-
-```python Python
-from jeanmemory import JeanAgent
-
-agent = JeanAgent(api_key="jean_sk_...")
-agent.run()
-```
-</CodeGroup>
 
 ## Key Features
 
-- **Universal** - Works with ChatGPT, Claude, Cursor, and custom apps
-- **Persistent** - Memories survive across sessions
-- **Intelligent** - AI-powered retrieval, not just keyword matching
-- **Simple** - No database setup, no schemas, just an API key
-
-## How It Works
-
-1. **Store** - Conversations and context are automatically saved
-2. **Retrieve** - Relevant memories are pulled based on context
-3. **Enhance** - AI responses include personal context
+-   **Universal**: Works with ChatGPT, Claude, Cursor, and any custom AI application.
+-   **Persistent**: Memories survive across sessions and platforms.
+-   **Intelligent Context**: AI-powered context engineering, not just keyword matching.
+-   **Simple Integration**: Add memory to any AI with just a few lines of code.
+-   **Asynchronous by Design**: Fast responses with complex processing in the background.
 
 ## Getting Started
+
+Ready to give your AI a memory?
 
 <CardGroup cols={3}>
   <Card
@@ -93,13 +68,13 @@ agent.run()
     icon="code"
     href="/sdk/react"
   >
-    Library documentation
+    Full library documentation
   </Card>
   <Card
     title="API Reference"
     icon="book"
-    href="/api/reference"
+    href="/api/authentication"
   >
-    REST API details
+    Learn how to authenticate
   </Card>
 </CardGroup>

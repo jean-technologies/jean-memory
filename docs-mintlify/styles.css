@@ -1,26 +1,72 @@
-/* Force dark text in light mode */
+/* styles.css */
+
+/* Base styles for light and dark modes */
+:root {
+  --light-text: #374151;
+  --light-headings: #111827;
+  --light-links: #7c3aed;
+  --light-code: #8b5cf6;
+  --dark-text: #d1d5db;
+  --dark-headings: #f9fafb;
+}
+
+/* Ensure good contrast for code blocks in light mode */
 :root[data-theme="light"] {
-  --tw-prose-body: #374151 !important;
-  --tw-prose-headings: #111827 !important;
+  --code-background: #f9fafb;
+  --code-border: #e5e7eb;
+  
+  /* Overriding Shiki theme colors for better readability */
+  --shiki-color-text: #374151;
+  --shiki-color-background: #f9fafb;
+  --shiki-token-keyword: #7c3aed;
+  --shiki-token-string: #2563eb;
+  --shiki-token-function: #db2777;
+  --shiki-token-punctuation: #4b5563;
+  --shiki-token-comment: #6b7280;
+  --shiki-token-constant: #f59e0b;
+  --shiki-token-parameter: #10b981;
+}
+
+/* Ensure good contrast for code blocks in dark mode */
+:root[data-theme="dark"] {
+  --code-background: #1f2937;
+  --code-border: #374151;
+
+  /* Overriding Shiki theme colors for dark mode */
+  --shiki-color-text: #d1d5db;
+  --shiki-color-background: #1f2937;
+  --shiki-token-keyword: #a78bfa;
+  --shiki-token-string: #60a5fa;
+  --shiki-token-function: #f472b6;
+  --shiki-token-punctuation: #9ca3af;
+  --shiki-token-comment: #6b7280;
+  --shiki-token-constant: #fbbf24;
+  --shiki-token-parameter: #34d399;
+}
+
+/* Force dark text in light mode for general elements */
+:root[data-theme="light"] {
+  --tw-prose-body: var(--light-text) !important;
+  --tw-prose-headings: var(--light-headings) !important;
   --tw-prose-lead: #4b5563 !important;
-  --tw-prose-links: #7c3aed !important;
-  --tw-prose-bold: #111827 !important;
+  --tw-prose-links: var(--light-links) !important;
+  --tw-prose-bold: var(--light-headings) !important;
   --tw-prose-counters: #6b7280 !important;
   --tw-prose-bullets: #6b7280 !important;
   --tw-prose-hr: #e5e7eb !important;
-  --tw-prose-quotes: #111827 !important;
+  --tw-prose-quotes: var(--light-headings) !important;
   --tw-prose-quote-borders: #e5e7eb !important;
   --tw-prose-captions: #6b7280 !important;
-  --tw-prose-code: #111827 !important;
-  --tw-prose-pre-code: #e5e7eb !important;
-  --tw-prose-pre-bg: #1f2937 !important;
+  --tw-prose-code: var(--light-code) !important;
+  --tw-prose-pre-code: var(--shiki-color-text) !important;
+  --tw-prose-pre-bg: var(--shiki-color-background) !important;
   --tw-prose-th-borders: #d1d5db !important;
   --tw-prose-td-borders: #e5e7eb !important;
 }
 
-/* Ensure all text elements are dark in light mode */
+/* General text elements in light mode */
 [data-theme="light"] * {
-  color: #374151;
+  color: var(--light-text);
 }
 
 [data-theme="light"] h1,
@@ -29,31 +75,31 @@
 [data-theme="light"] h4,
 [data-theme="light"] h5,
 [data-theme="light"] h6 {
-  color: #111827 !important;
+  color: var(--light-headings) !important;
 }
 
 [data-theme="light"] p,
 [data-theme="light"] li,
 [data-theme="light"] td,
 [data-theme="light"] th {
-  color: #374151 !important;
+  color: var(--light-text) !important;
 }
 
 [data-theme="light"] strong,
 [data-theme="light"] b {
-  color: #111827 !important;
+  color: var(--light-headings) !important;
 }
 
 [data-theme="light"] code {
-  color: #7c3aed !important;
+  color: var(--light-code) !important;
 }
 
-/* Fix navigation text in light mode */
+/* Navigation text in light mode */
 [data-theme="light"] nav a {
   color: #4b5563 !important;
 }
 
 [data-theme="light"] nav a:hover,
 [data-theme="light"] nav a[data-active="true"] {
-  color: #111827 !important;
+  color: var(--light-headings) !important;
 }

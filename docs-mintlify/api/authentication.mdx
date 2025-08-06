@@ -1,33 +1,55 @@
 ---
 title: Authentication
-description: 'API authentication methods'
+description: 'How to authenticate with the Jean Memory API.'
 ---
 
-## API Key Authentication
+Authentication in Jean Memory is designed to be both secure and flexible, catering to different use cases. The primary method for all developers is a secret API key. For advanced use cases, we also offer the Model Context Protocol (MCP) as an alternative to our REST API.
 
-Get your API key from [jeanmemory.com/dashboard](https://jeanmemory.com/dashboard)
+## API Key (for REST API & SDK)
+
+When you, as a developer, build an application using our REST API or SDKs, you'll use a secret API key to authenticate your application with Jean Memory. This key grants your application access to the API on your behalf.
+
+You can find your API key in the [Jean Memory Dashboard](https://jeanmemory.com/dashboard).
+
+<Info>
+All secret keys are prefixed with `jean_sk_`. Keep this key secure and never expose it in a client-side application.
+</Info>
 
 ### Using Your Key
 
-Include in the `X-Api-Key` header:
+Include your API key as a `Bearer` token in the `Authorization` header.
 
 ```bash
-curl -X POST https://api.jeanmemory.com/mcp/messages/ \
-  -H "X-Api-Key: jean_sk_your_api_key_here" \
-  -H "Content-Type: application/json"
+curl https://api.jeanmemory.com/agent/v1/mcp/messages/ \
+  -H "Authorization: Bearer jean_sk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
 ```
 
-### Environment Variables
+## End-User Authorization via SDK
 
-Always use environment variables:
+When an end-user of your application wants to connect their Jean Memory, your application needs to get their permission to access their memories. Our React SDK makes this easy with the `SignInWithJean` component, which initiates an OAuth flow for the user to grant your application access.
 
-```bash
-# .env
-JEAN_API_KEY=jean_sk_your_api_key_here
+Your developer API key is used to identify your application, but the memory operations are performed on behalf of the authenticated end-user.
+
+```javascript
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+
+function MyApp() {
+  const { agent, signIn, isAuthenticated } = useJeanAgent({ 
+    apiKey: process.env.REACT_APP_JEAN_API_KEY 
+  });
+  
+  if (!isAuthenticated) {
+    return <SignInWithJean onSuccess={signIn} />;
+  }
+  
+  return <JeanChat agent={agent} />;
+}
 ```
 
-### Security
+## Model Context Protocol (MCP) Authentication
 
-- Never commit API keys to git
-- Rotate keys regularly
-- Use different keys for dev/prod
+For advanced developers building agentic systems, MCP offers a more powerful, stateful alternative to our REST API. MCP uses a standard OAuth 2.0 flow for authentication, which is handled automatically when you connect to an MCP server.
+
+You can learn more in the [MCP Introduction](/mcp/introduction).

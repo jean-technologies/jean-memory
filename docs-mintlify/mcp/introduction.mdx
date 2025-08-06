@@ -1,181 +1,35 @@
 ---
-title: 'MCP Protocol'
-description: 'Connect Jean Memory to AI assistants via Model Context Protocol'
+title: Introduction to MCP
+description: "A powerful, stateful protocol for building advanced agentic systems."
 ---
 
-## What is MCP?
+The Model Context Protocol (MCP) is an open standard designed to provide a more powerful and flexible way to connect AI agents to tools and data. It standardizes the piping of context and memory across the internet, enabling a new level of interoperability for AI systems.
 
-Model Context Protocol (MCP) is an open standard that enables AI assistants like Claude, ChatGPT, and Cursor to connect with external tools and data sources.
+While our REST API is perfect for many use cases, MCP is the ideal choice for developers building sophisticated, agentic systems that require stateful connections, real-time communication, and dynamic tool use.
 
-## Supported Platforms
+## Why Choose MCP over the REST API?
 
-<CardGroup cols={3}>
-  <Card
-    title="Claude Desktop"
-    icon="robot"
-    href="/mcp/claude-desktop"
-  >
-    Native MCP support with OAuth
-  </Card>
-  <Card
-    title="ChatGPT"
-    icon="message"
-    href="/mcp/chatgpt"
-  >
-    Custom GPT integration
-  </Card>
-  <Card
-    title="Cursor"
-    icon="code"
-    href="/mcp/cursor"
-  >
-    IDE-integrated AI coding
-  </Card>
-</CardGroup>
+| Feature                       | REST API                                   | Model Context Protocol (MCP)                               |
+| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **Connection**                | Stateless (each request is independent)    | Stateful (a continuous, persistent connection)             |
+| **Communication**             | Request-Response (client-driven)           | Bidirectional (server can push updates to the agent)       |
+| **Tool Use**                  | Static (hard-coded to specific endpoints)  | Dynamic (agent can discover and learn to use new tools)    |
+| **Context Management**        | Handled in the prompt (can lead to bloat)  | Managed by the protocol (more efficient and scalable)      |
 
-## How It Works
+In short, if you are building a simple application and just need to store and retrieve memories, our REST API is a great choice. If you are building a complex, autonomous agent that needs to interact with its environment in real-time, MCP is the way to go.
 
-```mermaid
-graph LR
-    A[AI Assistant] -->|MCP Request| B[Jean Memory]
-    B -->|Memory Context| A
-    B -->|Store| C[Memory Database]
-    C -->|Retrieve| B
-```
+## Key Benefits of MCP for Agentic Memory
 
-## Quick Setup
+*   **Complex, Multi-Step Tasks**: Because MCP maintains a stateful connection, it's perfect for complex workflows where context needs to be preserved across multiple steps. The agent can have an ongoing "conversation" with a tool, rather than sending a series of disconnected requests.
 
-<Tabs>
-  <Tab title="Claude Desktop">
-    1. Open Claude Desktop settings
-    2. Go to Developer > MCP Servers
-    3. Add Jean Memory server:
-    
-    ```json
-    {
-      "jean-memory": {
-        "command": "npx",
-        "args": ["-y", "@jean-technologies/mcp-server"]
-      }
-    }
-    ```
-    
-    4. Restart Claude Desktop
-    5. Authorize with OAuth when prompted
-  </Tab>
-  
-  <Tab title="ChatGPT">
-    1. Visit [ChatGPT Store](https://chat.openai.com/gpts)
-    2. Search for "Jean Memory"
-    3. Click "Start Chat"
-    4. Authorize access when prompted
-  </Tab>
-  
-  <Tab title="Cursor">
-    1. Open Cursor Settings
-    2. Navigate to AI > MCP
-    3. Add Jean Memory configuration:
-    
-    ```json
-    {
-      "mcp": {
-        "servers": {
-          "jean-memory": {
-            "command": "npx",
-            "args": ["-y", "@jean-technologies/mcp-server"]
-          }
-        }
-      }
-    }
-    ```
-    
-    4. Reload window
-  </Tab>
-</Tabs>
+*   **Real-Time Reactivity**: MCP allows tools to proactively push information to the agent. This is essential for building agents that can react to live events, such as a file being updated, a new message arriving, or a change in a database.
 
-## Available Tools
+*   **Enhanced Autonomy and Adaptability**: With dynamic tool discovery, your agent can learn to use new tools and capabilities without being explicitly re-programmed. This allows you to build more adaptive and autonomous agents that can evolve over time.
 
-When connected via MCP, AI assistants can access these memory tools:
+*   **Efficiency and Scalability**: By managing context and tool definitions outside of the prompt, MCP avoids the "prompt bloat" that can limit the performance and scalability of agents built on REST APIs.
 
-<AccordionGroup>
-  <Accordion title="jean_memory" icon="brain">
-    **Primary tool for context-aware conversations**
-    
-    Intelligently retrieves relevant memories based on the conversation context.
-    
-    ```json
-    {
-      "name": "jean_memory",
-      "arguments": {
-        "user_message": "What did we discuss about the project?",
-        "is_new_conversation": false,
-        "needs_context": true
-      }
-    }
-    ```
-  </Accordion>
-  
-  <Accordion title="add_memories" icon="plus">
-    **Store new information**
-    
-    Save important information from conversations.
-    
-    ```json
-    {
-      "name": "add_memories",
-      "arguments": {
-        "text": "Project deadline is March 15th"
-      }
-    }
-    ```
-  </Accordion>
-  
-  <Accordion title="search_memory" icon="search">
-    **Search specific memories**
-    
-    Find memories matching a query.
-    
-    ```json
-    {
-      "name": "search_memory",
-      "arguments": {
-        "query": "project deadline"
-      }
-    }
-    ```
-  </Accordion>
-</AccordionGroup>
+## How to Get Started
 
-## Authentication
+To get started with MCP, you'll need to connect to one of our MCP servers. The authentication is handled via a standard OAuth 2.0 flow, which is initiated when you connect.
 
-MCP connections use OAuth 2.1 for secure authentication:
-
-1. **Initial Connection**: AI assistant requests access
-2. **OAuth Flow**: User authorizes in browser
-3. **Token Storage**: Credentials stored securely
-4. **Auto-refresh**: Tokens refresh automatically
-
-<Note>
-  MCP connections don't require API keys - authentication is handled via OAuth.
-</Note>
-
-## Troubleshooting
-
-<Steps>
-  <Step title="Connection Failed">
-    Ensure you have the latest version of your AI assistant
-  </Step>
-  <Step title="OAuth Error">
-    Clear cookies and re-authorize the connection
-  </Step>
-  <Step title="Tools Not Available">
-    Restart your AI assistant after configuration
-  </Step>
-  <Step title="Memory Not Persisting">
-    Check that you're logged into Jean Memory
-  </Step>
-</Steps>
-
-## Advanced Configuration
-
-For custom MCP implementations, see our [GitHub repository](https://github.com/jean-technologies/jean-memory-mcp).
+You can find more details on how to implement this in our SDK documentation.
