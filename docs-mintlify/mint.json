@@ -63,9 +63,9 @@
     {
       "group": "API Reference",
       "pages": [
-        "api/authentication",
-        "api/examples",
-        "api/reference"
+        "api-reference/authentication",
+        "api-reference/examples",
+        "api-reference/reference"
       ]
     }
   ],
