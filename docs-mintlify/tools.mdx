@@ -1,0 +1,122 @@
+---
+title: Tools
+description: 'Core tools that power Jean Memory'
+---
+
+Jean Memory is built from powerful core tools that work together to provide intelligent memory management for your AI applications.
+
+## add_memory
+
+The foundation of Jean Memory's storage system. Intelligently processes and stores new memories with automatic deduplication.
+
+<CodeGroup>
+```python Python
+from jeanmemory import add_memory
+
+add_memory(
+    user_id="user123",
+    content="I love hiking in the mountains",
+    metadata={"category": "personal", "source": "chat"}
+)
+```
+
+```javascript Node.js
+import { addMemory } from '@jeanmemory/node';
+
+await addMemory({
+  userId: 'user123',
+  content: 'I love hiking in the mountains',
+  metadata: { category: 'personal', source: 'chat' }
+});
+```
+
+```bash REST API
+curl -X POST https://api.jeanmemory.com/v1/memories \
+  -H "Authorization: Bearer jean_sk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "content": "I love hiking in the mountains",
+    "metadata": {"category": "personal", "source": "chat"}
+  }'
+```
+</CodeGroup>
+
+**Features:**
+- Automatic deduplication prevents memory bloat
+- Intelligent categorization and tagging
+- Metadata support for rich context
+- Background processing for optimal performance
+
+## search_memory
+
+Advanced semantic search that finds relevant memories based on context, not just keywords.
+
+<CodeGroup>
+```python Python
+from jeanmemory import search_memory
+
+results = search_memory(
+    user_id="user123",
+    query="outdoor activities I enjoy",
+    limit=5
+)
+```
+
+```javascript Node.js
+import { searchMemory } from '@jeanmemory/node';
+
+const results = await searchMemory({
+  userId: 'user123',
+  query: 'outdoor activities I enjoy',
+  limit: 5
+});
+```
+
+```bash REST API
+curl -X GET "https://api.jeanmemory.com/v1/memories/search?user_id=user123&query=outdoor%20activities%20I%20enjoy&limit=5" \
+  -H "Authorization: Bearer jean_sk_..."
+```
+</CodeGroup>
+
+**Features:**
+- Semantic understanding beyond keywords
+- Contextual relevance scoring
+- Configurable result limits
+- Real-time search performance
+
+## Memory Orchestration
+
+Jean Memory's intelligent orchestration layer coordinates between storage, retrieval, and AI models to provide the most relevant context.
+
+**Key Capabilities:**
+- **Smart Context Selection**: Automatically chooses the most relevant memories for each conversation
+- **Background Deduplication**: Prevents memory bloat by identifying and merging similar memories
+- **Adaptive Learning**: Improves relevance over time based on usage patterns
+- **Multi-modal Support**: Handles text, images, and structured data seamlessly
+
+## Integration Architecture
+
+<div style={{textAlign: 'center', margin: '2rem 0'}}>
+  <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', maxWidth: '800px', margin: '0 auto'}}>
+    <div style={{padding: '1.5rem', borderRadius: '8px', background: 'var(--tw-prose-pre-bg)', border: '1px solid var(--tw-prose-th-borders)', textAlign: 'center'}}>
+      <div style={{fontSize: '2rem', marginBottom: '0.5rem'}}>🔄</div>
+      <strong>add_memory</strong>
+      <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.8}}>Store & Process</div>
+    </div>
+    <div style={{padding: '1.5rem', borderRadius: '8px', background: 'var(--tw-prose-pre-bg)', border: '1px solid var(--tw-prose-th-borders)', textAlign: 'center'}}>
+      <div style={{fontSize: '2rem', marginBottom: '0.5rem'}}>🔍</div>
+      <strong>search_memory</strong>
+      <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.8}}>Find & Retrieve</div>
+    </div>
+    <div style={{padding: '1.5rem', borderRadius: '8px', background: 'linear-gradient(135deg, #9563FF 0%, #7C3AED 100%)', color: 'white', textAlign: 'center'}}>
+      <div style={{fontSize: '2rem', marginBottom: '0.5rem'}}>🧠</div>
+      <strong>Jean Memory</strong>
+      <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.9}}>Orchestrate</div>
+    </div>
+  </div>
+</div>
+
+## Getting Started
+
+Ready to use these tools? Check out our [SDK documentation](/sdk/react) or jump straight into the [API reference](/api/authentication) to start building with Jean Memory's core tools.

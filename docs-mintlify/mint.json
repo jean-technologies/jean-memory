@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Jean Memory",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "dark": "/logo/dark.png",
+    "light": "/logo/light.png"
   },
   "favicon": "/favicon.png",
   "custom": {
@@ -52,6 +52,12 @@
       "pages": [
         "mcp/introduction",
         "mcp/context-engineering"
+      ]
+    },
+    {
+      "group": "Tools",
+      "pages": [
+        "tools"
       ]
     },
     {

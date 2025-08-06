@@ -48,8 +48,66 @@ function MyApp() {
 }
 ```
 
+## OAuth 2.1 for MCP Applications
+
+For MCP applications that need to access user memories, Jean Memory implements OAuth 2.1 with PKCE (Proof Key for Code Exchange) for enhanced security.
+
+### MCP OAuth Flow
+
+1. **Authorization Request**: Your MCP application redirects users to Jean Memory's authorization server
+2. **User Consent**: Users grant permission for your application to access their memories
+3. **Authorization Code**: Jean Memory redirects back with an authorization code
+4. **Token Exchange**: Your application exchanges the code for access and refresh tokens
+
+<CodeGroup>
+```javascript MCP Client Setup
+// Configure your MCP client with OAuth
+const mcpClient = new McpClient({
+  oauth: {
+    clientId: 'your_mcp_client_id',
+    redirectUri: 'https://yourapp.com/oauth/callback',
+    scopes: ['read_memories', 'write_memories']
+  }
+});
+
+// Initiate OAuth flow
+await mcpClient.authorize();
+```
+
+```python Python MCP
+import mcp_client
+
+client = mcp_client.Client(
+    oauth_config={
+        'client_id': 'your_mcp_client_id',
+        'redirect_uri': 'https://yourapp.com/oauth/callback',
+        'scopes': ['read_memories', 'write_memories']
+    }
+)
+
+# Start OAuth flow
+await client.authorize()
+```
+</CodeGroup>
+
+### OAuth Scopes
+
+| Scope | Description |
+|-------|-------------|
+| `read_memories` | Access to search and retrieve user memories |
+| `write_memories` | Ability to add new memories |
+| `delete_memories` | Permission to delete user memories |
+| `profile` | Access to basic user profile information |
+
+### Security Features
+
+- **PKCE**: All OAuth flows use Proof Key for Code Exchange for enhanced security
+- **Short-lived tokens**: Access tokens expire after 1 hour
+- **Refresh tokens**: Long-lived tokens for seamless re-authentication
+- **Scope limitation**: Fine-grained permissions control
+
 ## Model Context Protocol (MCP) Authentication
 
-For advanced developers building agentic systems, MCP offers a more powerful, stateful alternative to our REST API. MCP uses a standard OAuth 2.0 flow for authentication, which is handled automatically when you connect to an MCP server.
+For advanced developers building agentic systems, MCP offers a more powerful, stateful alternative to our REST API. Authentication is handled through the OAuth 2.1 flow described above.
 
 You can learn more in the [MCP Introduction](/mcp/introduction).

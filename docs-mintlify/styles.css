@@ -103,3 +103,81 @@
 [data-theme="light"] nav a[data-active="true"] {
   color: var(--light-headings) !important;
 }
+
+/* Particle Background Animation */
+.particle-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: float 6s ease-in-out infinite;
+}
+
+[data-theme="light"] .particle {
+  background: #d1d5db;
+}
+
+[data-theme="dark"] .particle {
+  background: #6b7280;
+}
+
+.particle:nth-child(1) { width: 2px; height: 2px; left: 10%; animation-delay: 0s; animation-duration: 8s; }
+.particle:nth-child(2) { width: 3px; height: 3px; left: 20%; animation-delay: 1s; animation-duration: 7s; }
+.particle:nth-child(3) { width: 2px; height: 2px; left: 30%; animation-delay: 2s; animation-duration: 9s; }
+.particle:nth-child(4) { width: 2px; height: 2px; left: 40%; animation-delay: 0.5s; animation-duration: 6s; }
+.particle:nth-child(5) { width: 3px; height: 3px; left: 50%; animation-delay: 1.5s; animation-duration: 8s; }
+.particle:nth-child(6) { width: 2px; height: 2px; left: 60%; animation-delay: 2.5s; animation-duration: 7s; }
+.particle:nth-child(7) { width: 2px; height: 2px; left: 70%; animation-delay: 0.2s; animation-duration: 9s; }
+.particle:nth-child(8) { width: 3px; height: 3px; left: 80%; animation-delay: 1.8s; animation-duration: 6s; }
+.particle:nth-child(9) { width: 2px; height: 2px; left: 90%; animation-delay: 2.2s; animation-duration: 8s; }
+.particle:nth-child(10) { width: 2px; height: 2px; left: 15%; animation-delay: 0.8s; animation-duration: 7s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(100vh) rotate(0deg); }
+  50% { transform: translateY(-10vh) rotate(180deg); }
+}
+
+/* Add particles to body */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background: 
+    radial-gradient(2px 2px at 20px 30px, currentColor 50%, transparent 50%),
+    radial-gradient(2px 2px at 40px 70px, currentColor 50%, transparent 50%),
+    radial-gradient(3px 3px at 90px 40px, currentColor 50%, transparent 50%),
+    radial-gradient(2px 2px at 130px 80px, currentColor 50%, transparent 50%),
+    radial-gradient(2px 2px at 160px 30px, currentColor 50%, transparent 50%);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  opacity: 0.1;
+  animation: particleMove 20s linear infinite;
+}
+
+[data-theme="light"] body::before {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] body::before {
+  color: #6b7280;
+}
+
+@keyframes particleMove {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-100px); }
+}
