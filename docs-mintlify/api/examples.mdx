@@ -124,10 +124,10 @@ function MathTutor() {
     );
     
     // Context is automatically provided to the AI
-    return <JeanChat agent={agent} />;
+    return agent;
   };
 
-  return handleNewSession();
+  return <JeanChat agent={agent} />;
 }
 ```
 

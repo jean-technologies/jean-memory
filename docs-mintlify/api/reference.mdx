@@ -74,3 +74,13 @@ POST /mcp/messages/
 - Free: 60 requests/minute
 - Pro: 300 requests/minute
 - Enterprise: Unlimited
+
+## Error Handling
+
+All errors return standard HTTP status codes:
+
+- `400` - Bad Request: Invalid parameters
+- `401` - Unauthorized: Invalid API key
+- `403` - Forbidden: Insufficient permissions
+- `429` - Too Many Requests: Rate limit exceeded
+- `500` - Internal Server Error: Contact support
