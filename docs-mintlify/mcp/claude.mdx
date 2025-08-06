@@ -1,0 +1,35 @@
+---
+title: Claude Desktop
+description: 'Setup for Claude Desktop'
+---
+
+## Configuration
+
+1. Locate config file:
+   - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+2. Add Jean Memory:
+
+```json
+{
+  "mcpServers": {
+    "jean-memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop
+
+4. Authorize when prompted
+
+## Usage
+
+Claude will automatically use your memories. You can also:
+
+- **Store**: "Remember that I prefer Python over JavaScript"
+- **Retrieve**: "What are my programming preferences?"
+- **Context**: Memories are automatically included in responses

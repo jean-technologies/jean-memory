@@ -1,0 +1,33 @@
+---
+title: Authentication
+description: 'API authentication methods'
+---
+
+## API Key Authentication
+
+Get your API key from [jeanmemory.com/dashboard](https://jeanmemory.com/dashboard)
+
+### Using Your Key
+
+Include in the `X-Api-Key` header:
+
+```bash
+curl -X POST https://api.jeanmemory.com/mcp/messages/ \
+  -H "X-Api-Key: jean_sk_your_api_key_here" \
+  -H "Content-Type: application/json"
+```
+
+### Environment Variables
+
+Always use environment variables:
+
+```bash
+# .env
+JEAN_API_KEY=jean_sk_your_api_key_here
+```
+
+### Security
+
+- Never commit API keys to git
+- Rotate keys regularly
+- Use different keys for dev/prod

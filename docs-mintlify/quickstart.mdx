@@ -1,188 +1,84 @@
 ---
-title: 'Quickstart'
-description: 'Start building with Jean Memory in under 5 minutes'
+title: Quickstart
+description: 'Get running in 2 minutes'
 ---
 
-## Setup your environment
+## 1. Get Your API Key
 
-Get your API key from the [Jean Memory Dashboard](https://jeanmemory.com/dashboard).
+Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
 
-<Info>
-  **Prerequisite** You should have created a Jean Memory account. If you haven't, [sign up here](https://jeanmemory.com/auth).
-</Info>
-
-## Choose your framework
+## 2. Install
 
 <Tabs>
   <Tab title="React">
-    ### Install the SDK
-    
-    <CodeGroup>
-    ```bash npm
-    npm install @jeanmemory/react @assistant-ui/react
-    ```
-    
-    ```bash yarn
-    yarn add @jeanmemory/react @assistant-ui/react
-    ```
-    
-    ```bash pnpm
-    pnpm add @jeanmemory/react @assistant-ui/react
-    ```
-    </CodeGroup>
-    
-    ### Add to your app
-    
-    ```javascript
-    import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
-    
-    function App() {
-      const { agent, signIn } = useJeanAgent({
-        apiKey: process.env.REACT_APP_JEAN_API_KEY,
-        systemPrompt: "You are a helpful assistant"
-      });
-    
-      if (!agent) return <SignInWithJean onSuccess={signIn} />;
-      return <JeanChat agent={agent} />;
-    }
-    ```
-    
-    ### Environment variables
-    
-    Create a `.env` file in your project root:
-    
     ```bash
-    REACT_APP_JEAN_API_KEY=jean_sk_your_api_key_here
+    npm install @jeanmemory/react
     ```
   </Tab>
-  
   <Tab title="Python">
-    ### Install the SDK
-    
     ```bash
     pip install jeanmemory
     ```
+  </Tab>
+  <Tab title="Node.js">
+    ```bash
+    npm install @jeanmemory/node
+    ```
+  </Tab>
+</Tabs>
+
+## 3. Add to Your App
+
+<Tabs>
+  <Tab title="React">
+    ```javascript
+    import { useJeanAgent, JeanChat } from '@jeanmemory/react';
     
-    ### Create your agent
-    
+    function App() {
+      const { agent } = useJeanAgent({ 
+        apiKey: process.env.REACT_APP_JEAN_API_KEY 
+      });
+      return <JeanChat agent={agent} />;
+    }
+    ```
+  </Tab>
+  <Tab title="Python">
     ```python
     from jeanmemory import JeanAgent
     import os
     
     agent = JeanAgent(
-        api_key=os.getenv("JEAN_API_KEY"),
-        system_prompt="You are a helpful assistant",
-        modality="chat"
+        api_key=os.getenv("JEAN_API_KEY")
     )
-    
     agent.run()
     ```
-    
-    ### Environment variables
-    
-    Create a `.env` file in your project root:
-    
-    ```bash
-    JEAN_API_KEY=jean_sk_your_api_key_here
-    ```
   </Tab>
-  
   <Tab title="Node.js">
-    ### Install the SDK
-    
-    <CodeGroup>
-    ```bash npm
-    npm install @jeanmemory/node
-    ```
-    
-    ```bash yarn
-    yarn add @jeanmemory/node
-    ```
-    
-    ```bash pnpm
-    pnpm add @jeanmemory/node
-    ```
-    </CodeGroup>
-    
-    ### Create your agent
-    
     ```javascript
     import { JeanAgent } from '@jeanmemory/node';
-    import dotenv from 'dotenv';
-    
-    dotenv.config();
     
     const agent = new JeanAgent({
-      apiKey: process.env.JEAN_API_KEY,
-      systemPrompt: "You are a helpful assistant"
+      apiKey: process.env.JEAN_API_KEY
     });
     
     await agent.run();
     ```
-    
-    ### Environment variables
-    
-    Create a `.env` file in your project root:
-    
-    ```bash
-    JEAN_API_KEY=jean_sk_your_api_key_here
-    ```
-  </Tab>
-  
-  <Tab title="cURL">
-    ### Make your first request
-    
-    ```bash
-    curl -X POST https://api.jeanmemory.com/mcp/messages/ \
-      -H "X-Api-Key: jean_sk_your_api_key_here" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "jsonrpc": "2.0",
-        "method": "tools/call",
-        "params": {
-          "name": "add_memories",
-          "arguments": {
-            "text": "My favorite color is blue",
-            "tags": ["personal", "preferences"]
-          }
-        },
-        "id": "1"
-      }'
-    ```
   </Tab>
 </Tabs>
 
-## What's next?
+## 4. Set Environment Variable
 
-Great, you're now set up with Jean Memory! Here are some next steps:
+```bash
+# .env file
+JEAN_API_KEY=jean_sk_your_api_key_here
+```
 
-<CardGroup cols={2}>
-  <Card
-    title="Explore API Reference"
-    icon="book"
-    href="/api-reference/introduction"
-  >
-    Learn about all available endpoints and parameters
-  </Card>
-  <Card
-    title="MCP Integration"
-    icon="plug"
-    href="/mcp/introduction"
-  >
-    Connect with Claude Desktop, ChatGPT, or Cursor
-  </Card>
-  <Card
-    title="Authentication"
-    icon="lock"
-    href="/essentials/authentication"
-  >
-    Understand our dual-path authentication system
-  </Card>
-  <Card
-    title="Metadata & Tags"
-    icon="tags"
-    href="/essentials/metadata"
-  >
-    Organize memories with powerful tagging
-  </Card>
-</CardGroup>
+## That's It!
+
+Your AI now has persistent memory. Test it:
+
+1. Tell it something: "My favorite color is blue"
+2. Close and restart your app
+3. Ask: "What's my favorite color?"
+
+It remembers!

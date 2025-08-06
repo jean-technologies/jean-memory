@@ -5,107 +5,67 @@
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.png",
   "custom": {
-    "css": ["custom.css"]
+    "css": ["styles.css"]
   },
   "colors": {
     "primary": "#9563FF",
-    "light": "#AE87FF",
-    "dark": "#0D001D",
+    "light": "#7C3AED",
+    "dark": "#6B21A8",
     "background": {
-      "dark": "#090014",
+      "dark": "#0F0F0F",
       "light": "#FFFFFF"
-    },
-    "anchors": {
-      "from": "#FF7F57",
-      "to": "#9563FF"
     }
+  },
+  "modeToggle": {
+    "default": "dark"
   },
   "topbarLinks": [
     {
-      "name": "Support",
-      "url": "mailto:support@jeanmemory.com"
+      "name": "GitHub",
+      "url": "https://github.com/jean-technologies/jean-memory"
     }
   ],
   "topbarCtaButton": {
-    "name": "Dashboard",
-    "url": "https://jeanmemory.com/dashboard"
+    "name": "Get Started",
+    "url": "https://jeanmemory.com"
   },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "api-reference"
-    },
-    {
-      "name": "SDK",
-      "url": "sdk"
-    },
-    {
-      "name": "MCP",
-      "url": "mcp"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "GitHub",
-      "icon": "github",
-      "url": "https://github.com/jean-technologies/jean-memory"
-    },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://jeanmemory.com/blog"
-    }
-  ],
   "navigation": [
     {
-      "group": "Start Here",
+      "group": "Documentation",
       "pages": [
-        "introduction",
-        "quickstart",
-        "five-line-magic"
+        "overview",
+        "quickstart"
       ]
     },
     {
-      "group": "SDK Libraries",
+      "group": "SDK",
       "pages": [
         "sdk/react",
         "sdk/python",
-        "sdk/nodejs",
-        "sdk/examples"
+        "sdk/nodejs"
       ]
     },
     {
-      "group": "AI Platforms",
+      "group": "MCP",
       "pages": [
-        "platforms/claude",
-        "platforms/chatgpt",
-        "platforms/cursor",
-        "platforms/custom"
+        "mcp/setup",
+        "mcp/claude",
+        "mcp/chatgpt"
       ]
     },
     {
-      "group": "API Reference",
+      "group": "API",
       "pages": [
-        "api/overview",
-        "api/memories",
-        "api/search",
-        "api/tags"
-      ]
-    },
-    {
-      "group": "Concepts",
-      "pages": [
-        "concepts/memory-engine",
-        "concepts/smart-context",
-        "concepts/authentication"
+        "api/reference",
+        "api/authentication",
+        "api/examples"
       ]
     }
   ],
   "footerSocials": {
-    "x": "https://x.com/jeanmemory",
     "github": "https://github.com/jean-technologies",
-    "linkedin": "https://www.linkedin.com/company/jean-memory"
+    "twitter": "https://x.com/jeanmemory"
   }
 }

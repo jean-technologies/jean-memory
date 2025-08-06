@@ -1,0 +1,76 @@
+---
+title: API Reference
+description: 'Direct REST API access'
+---
+
+## Base URL
+
+```
+https://api.jeanmemory.com
+```
+
+## Authentication
+
+Include your API key in the header:
+
+```bash
+X-Api-Key: jean_sk_your_api_key_here
+```
+
+## Endpoints
+
+### Add Memory
+
+```bash
+POST /mcp/messages/
+
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "add_memories",
+    "arguments": {
+      "text": "User prefers dark mode",
+      "tags": ["preferences"]
+    }
+  },
+  "id": "1"
+}
+```
+
+### Search Memories
+
+```bash
+POST /mcp/messages/
+
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "search_memory_v2",
+    "arguments": {
+      "query": "user preferences",
+      "tags_filter": ["preferences"]
+    }
+  },
+  "id": "2"
+}
+```
+
+## Response Format
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    // Tool-specific response
+  },
+  "id": "1"
+}
+```
+
+## Rate Limits
+
+- Free: 60 requests/minute
+- Pro: 300 requests/minute
+- Enterprise: Unlimited
