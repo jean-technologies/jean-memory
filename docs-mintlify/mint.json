@@ -63,6 +63,7 @@
     {
       "group": "API",
       "pages": [
+        "api/reference",
         "api/authentication",
         "api/examples"
       ]
