@@ -181,3 +181,9 @@ body::before {
   0% { transform: translateY(0px); }
   100% { transform: translateY(-100px); }
 }
+
+/* Custom logo size */
+nav a[href="/"] img {
+  height: 80% !important;
+  width: auto !important;
+}
