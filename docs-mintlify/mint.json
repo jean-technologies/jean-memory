@@ -56,48 +56,46 @@
   ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "Start Here",
       "pages": [
         "introduction",
         "quickstart",
-        "development"
+        "five-line-magic"
       ]
     },
     {
-      "group": "Essentials",
+      "group": "SDK Libraries",
       "pages": [
-        "essentials/authentication",
-        "essentials/api-key",
-        "essentials/metadata",
-        "essentials/errors"
-      ]
-    },
-    {
-      "group": "API Documentation",
-      "pages": [
-        "api-reference/introduction",
-        "api-reference/endpoint/add-memories",
-        "api-reference/endpoint/search-memories",
-        "api-reference/endpoint/update-memory",
-        "api-reference/endpoint/delete-memory"
-      ]
-    },
-    {
-      "group": "SDK Documentation",
-      "pages": [
-        "sdk/introduction",
         "sdk/react",
         "sdk/python",
-        "sdk/nodejs"
+        "sdk/nodejs",
+        "sdk/examples"
       ]
     },
     {
-      "group": "MCP Protocol",
+      "group": "AI Platforms",
       "pages": [
-        "mcp/introduction",
-        "mcp/claude-desktop",
-        "mcp/chatgpt",
-        "mcp/cursor"
+        "platforms/claude",
+        "platforms/chatgpt",
+        "platforms/cursor",
+        "platforms/custom"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/overview",
+        "api/memories",
+        "api/search",
+        "api/tags"
+      ]
+    },
+    {
+      "group": "Concepts",
+      "pages": [
+        "concepts/memory-engine",
+        "concepts/smart-context",
+        "concepts/authentication"
       ]
     }
   ],

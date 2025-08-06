@@ -1,123 +1,186 @@
 ---
-title: Introduction
-description: 'Build AI applications with persistent, universal memory'
+title: Jean Memory
+description: 'The memory layer that makes AI actually useful'
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.svg"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.svg"
-  alt="Hero Dark"
-/>
+import { AICopyBlock } from '/components/AICopyBlock';
 
-## Welcome to Jean Memory
+<AICopyBlock 
+  title="Deploy Jean Memory in Your App"
+  content={`# Jean Memory - Quick Implementation Guide
 
-Jean Memory is the universal memory layer for AI applications. Add persistent, contextual memory to your AI agents in just 5 lines of code.
+## What You're Building
+A persistent memory system that lets AI remember everything across sessions.
 
-<CardGroup cols={2}>
-  <Card
-    title="5-Line Integration"
-    icon="code"
-    href="/quickstart"
-  >
-    Get started with our SDK in minutes
-  </Card>
-  <Card
-    title="MCP Compatible"
-    icon="plug"
-    href="/mcp/introduction"
-  >
-    Works with Claude, ChatGPT, and Cursor
-  </Card>
-  <Card
-    title="API Reference"
-    icon="book"
-    href="/api-reference/introduction"
-  >
-    Complete REST API documentation
-  </Card>
-  <Card
-    title="SDK Libraries"
-    icon="package"
-    href="/sdk/introduction"
-  >
-    React, Python, and Node.js SDKs
-  </Card>
-</CardGroup>
+## Installation & Setup
 
-## Key Features
+### React Implementation
+\`\`\`bash
+npm install @jeanmemory/react @assistant-ui/react
+\`\`\`
 
-<AccordionGroup>
-  <Accordion title="Universal Memory" icon="brain">
-    Your memories follow you across every AI application - from ChatGPT to Claude to your custom apps.
-  </Accordion>
-  <Accordion title="Smart Context" icon="sparkles">
-    AI-powered retrieval ensures your agents always have the right context at the right time.
-  </Accordion>
-  <Accordion title="Enterprise Ready" icon="building">
-    Production-grade infrastructure with metadata tagging, filtering, and multi-tenant support.
-  </Accordion>
-  <Accordion title="Privacy First" icon="shield">
-    Your memories are encrypted and only accessible by you. Full GDPR compliance.
-  </Accordion>
-</AccordionGroup>
-
-## Quick Example
-
-<CodeGroup>
-```javascript React
-import { useJeanAgent } from '@jeanmemory/react';
+\`\`\`javascript
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
 
 function App() {
   const { agent, signIn } = useJeanAgent({
-    apiKey: "jean_sk_...",
+    apiKey: process.env.REACT_APP_JEAN_API_KEY,
     systemPrompt: "You are a helpful assistant"
   });
 
   if (!agent) return <SignInWithJean onSuccess={signIn} />;
   return <JeanChat agent={agent} />;
 }
-```
+\`\`\`
 
-```python Python
+### Python Implementation
+\`\`\`bash
+pip install jeanmemory
+\`\`\`
+
+\`\`\`python
 from jeanmemory import JeanAgent
 
 agent = JeanAgent(
-    api_key="jean_sk_...",
+    api_key=os.getenv("JEAN_API_KEY"),
     system_prompt="You are a helpful assistant"
 )
 agent.run()
+\`\`\`
+
+## Environment Setup
+Create .env file:
+\`\`\`
+JEAN_API_KEY=jean_sk_your_api_key_here
+\`\`\`
+
+## Test It Works
+1. Run your app
+2. Have a conversation
+3. Close and reopen
+4. The AI remembers everything
+
+That's it! Your AI now has persistent memory.`}
+/>
+
+## The Problem
+
+Every time you start a new chat with AI, you're a stranger again. Your preferences, context, ongoing projects - all gone. It's like Groundhog Day, but worse.
+
+## The Solution
+
+**5 lines of code.** That's all it takes to give any AI persistent, intelligent memory that follows you everywhere.
+
+<CodeGroup>
+```javascript React (Literally 5 lines)
+import { useJeanAgent } from '@jeanmemory/react';
+
+function App() {
+  const { agent } = useJeanAgent({ apiKey: "jean_sk_..." });
+  return <JeanChat agent={agent} />;
+}
 ```
 
-```javascript Node.js
-import { JeanAgent } from '@jeanmemory/node';
+```python Python (Also 5 lines)
+from jeanmemory import JeanAgent
 
-const agent = new JeanAgent({
-  apiKey: "jean_sk_...",
-  systemPrompt: "You are a helpful assistant"
-});
-
-await agent.run();
+agent = JeanAgent(api_key="jean_sk_...")
+agent.run()
 ```
 </CodeGroup>
 
-## Get Started
+## What Makes Jean Different
+
+<CardGroup cols={2}>
+  <Card
+    title="Universal Memory"
+    icon="brain"
+  >
+    One memory system that works with ChatGPT, Claude, Cursor, and your custom apps. Your context follows you.
+  </Card>
+  <Card
+    title="Actually Smart"
+    icon="sparkles"
+  >
+    Not just keyword matching. AI-powered retrieval that understands context and surfaces what's relevant.
+  </Card>
+  <Card
+    title="Zero Config"
+    icon="zap"
+  >
+    No schemas. No setup. No database management. Just add your API key and go.
+  </Card>
+  <Card
+    title="Privacy First"
+    icon="shield"
+  >
+    Your memories are encrypted and only you can access them. We can't read them even if we wanted to.
+  </Card>
+</CardGroup>
+
+## See It In Action
+
+<Tabs>
+  <Tab title="Without Jean">
+    ```
+    You: What should I work on today?
+    AI: I don't have information about your current projects. 
+        Could you tell me what you're working on?
+    
+    You: *sighs and explains everything again*
+    ```
+  </Tab>
+  <Tab title="With Jean">
+    ```
+    You: What should I work on today?
+    AI: Based on our discussion yesterday, you wanted to:
+        1. Finish the API integration (you were stuck on auth)
+        2. Review Sarah's PR for the dashboard
+        3. Prep for tomorrow's standup about Q4 goals
+    ```
+  </Tab>
+</Tabs>
+
+## Start Building
 
 <Steps>
-  <Step title="Get your API Key">
-    Sign up at [jeanmemory.com](https://jeanmemory.com) and get your API key from the dashboard.
+  <Step title="Get Your API Key">
+    Takes 30 seconds at [jeanmemory.com](https://jeanmemory.com)
   </Step>
   <Step title="Install the SDK">
-    Choose your preferred SDK and install it with your package manager.
+    One command for your framework of choice
   </Step>
-  <Step title="Initialize Jean">
-    Add the 5 lines of code to your application.
-  </Step>
-  <Step title="Start Building">
-    Your AI now has persistent memory across sessions!
+  <Step title="Add 5 Lines">
+    Seriously, that's it
   </Step>
 </Steps>
+
+<Note>
+  **For AI Platforms**: If you're using Claude Desktop, ChatGPT, or Cursor, check out our [platform guides](/platforms/claude) - no code required.
+</Note>
+
+## Ready?
+
+<CardGroup cols={3}>
+  <Card
+    title="5-Line Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Be up and running in 2 minutes
+  </Card>
+  <Card
+    title="Platform Setup"
+    icon="plug"
+    href="/platforms/claude"
+  >
+    Connect to Claude, ChatGPT, or Cursor
+  </Card>
+  <Card
+    title="Live Examples"
+    icon="code"
+    href="/sdk/examples"
+  >
+    Copy-paste ready implementations
+  </Card>
+</CardGroup>
