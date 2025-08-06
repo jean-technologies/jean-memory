@@ -3,69 +3,43 @@ title: Overview
 description: 'Universal memory for AI applications'
 ---
 
-<div style={{
-  position: 'fixed',
-  top: '1rem',
-  right: '1rem',
-  zIndex: 50
-}}>
-  <button 
-    onClick={() => {
-      const content = `# Jean Memory - Complete Setup Guide
+<Note>
+**AI Agent Quick Deploy**: Copy the setup instructions below to paste into Claude, ChatGPT, or any AI coding assistant.
+</Note>
+
+```
+# Jean Memory - Complete Setup Guide
 
 ## Installation
 
 ### React
-\`\`\`bash
 npm install @jeanmemory/react
-\`\`\`
 
-\`\`\`javascript
 import { useJeanAgent, JeanChat } from '@jeanmemory/react';
 
 function App() {
   const { agent } = useJeanAgent({ apiKey: "jean_sk_..." });
   return <JeanChat agent={agent} />;
 }
-\`\`\`
 
 ### Python
-\`\`\`bash
 pip install jeanmemory
-\`\`\`
 
-\`\`\`python
 from jeanmemory import JeanAgent
 
 agent = JeanAgent(api_key="jean_sk_...")
 agent.run()
-\`\`\`
 
 ## API Key
 Get your key at https://jeanmemory.com/dashboard
 
 ## Testing
-1. Send a message: "Remember that my favorite color is blue"
-2. Close and reopen
+1. Send: "Remember that my favorite color is blue"
+2. Restart app
 3. Ask: "What's my favorite color?"
 
-The AI will remember!`;
-      navigator.clipboard.writeText(content);
-      alert('Copied! Paste into Claude or any AI assistant');
-    }}
-    style={{
-      padding: '0.5rem 1rem',
-      background: 'linear-gradient(to right, #9563FF, #7C3AED)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '0.5rem',
-      cursor: 'pointer',
-      fontWeight: 500
-    }}
-  >
-    Copy for AI Agent
-  </button>
-</div>
+The AI will remember!
+```
 
 ## What is Jean Memory?
 

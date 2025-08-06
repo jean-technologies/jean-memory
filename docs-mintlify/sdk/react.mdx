@@ -1,59 +1,35 @@
 ---
-title: 'React SDK'
-description: 'Build memory-powered React apps in minutes'
+title: React SDK
+description: 'React library for Jean Memory'
 ---
 
-import { AICopyBlock } from '/components/AICopyBlock';
-
-<AICopyBlock 
-  title="Complete React Implementation"
-  content={`# Jean Memory React SDK - Full Implementation
-
 ## Installation
-\`\`\`bash
+
+```bash
 npm install @jeanmemory/react @assistant-ui/react
-\`\`\`
+```
 
-## Basic Implementation (5 lines)
-\`\`\`javascript
-import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+## Basic Usage
 
-function App() {
-  const { agent } = useJeanAgent({ apiKey: process.env.REACT_APP_JEAN_API_KEY });
-  return <JeanChat agent={agent} />;
-}
-\`\`\`
-
-## With Custom Styling
-\`\`\`javascript
+```javascript
 import { useJeanAgent, JeanChat } from '@jeanmemory/react';
 
 function App() {
   const { agent } = useJeanAgent({ 
-    apiKey: process.env.REACT_APP_JEAN_API_KEY,
-    systemPrompt: "You are a helpful assistant with a friendly tone"
+    apiKey: process.env.REACT_APP_JEAN_API_KEY 
   });
   
-  return (
-    <div style={{ height: '100vh', padding: '20px' }}>
-      <JeanChat 
-        agent={agent}
-        theme={{
-          primaryColor: '#8b5cf6',
-          fontFamily: 'Inter, sans-serif'
-        }}
-      />
-    </div>
-  );
+  return <JeanChat agent={agent} />;
 }
-\`\`\`
+```
 
-## With Authentication Flow
-\`\`\`javascript
+## With Authentication
+
+```javascript
 import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
 
 function App() {
-  const { agent, signIn, signOut, isAuthenticated } = useJeanAgent({ 
+  const { agent, signIn, isAuthenticated } = useJeanAgent({ 
     apiKey: process.env.REACT_APP_JEAN_API_KEY 
   });
   
@@ -61,184 +37,53 @@ function App() {
     return <SignInWithJean onSuccess={signIn} />;
   }
   
-  return (
-    <>
-      <button onClick={signOut}>Sign Out</button>
-      <JeanChat agent={agent} />
-    </>
-  );
-}
-\`\`\`
-
-## Environment Variables
-Create .env file:
-\`\`\`
-REACT_APP_JEAN_API_KEY=jean_sk_your_actual_key_here
-\`\`\`
-
-## Next Steps
-1. Get your API key at https://jeanmemory.com
-2. Install the packages
-3. Copy one of the examples above
-4. Run npm start
-
-Your React app now has persistent AI memory!`}
-/>
-
-## Installation
-
-<CodeGroup>
-```bash npm
-npm install @jeanmemory/react @assistant-ui/react
-```
-
-```bash yarn
-yarn add @jeanmemory/react @assistant-ui/react
-```
-
-```bash pnpm
-pnpm add @jeanmemory/react @assistant-ui/react
-```
-</CodeGroup>
-
-## Quick Start
-
-The fastest way to add Jean Memory to your React app:
-
-```javascript
-import { useJeanAgent, JeanChat } from '@jeanmemory/react';
-
-function App() {
-  const { agent } = useJeanAgent({ 
-    apiKey: process.env.REACT_APP_JEAN_API_KEY 
-  });
-  
   return <JeanChat agent={agent} />;
 }
 ```
 
-That's literally it. You now have a full chat interface with persistent memory.
-
-## The Hook
-
-### `useJeanAgent`
-
-The main hook that manages everything:
+## Hook Options
 
 ```javascript
-const {
-  agent,           // The AI agent instance
-  signIn,          // Function to authenticate
-  signOut,         // Function to sign out
-  isAuthenticated, // Boolean auth state
-  isLoading,       // Loading state
-  error           // Error state
-} = useJeanAgent(options);
+const { agent, signIn, signOut, isAuthenticated, isLoading, error } = useJeanAgent({
+  apiKey: "jean_sk_...",        // Required
+  systemPrompt: "You are...",   // Optional
+  baseUrl: "https://...",       // Optional
+  debug: false                  // Optional
+});
 ```
 
-### Options
+## Component Props
 
-```javascript
-useJeanAgent({
-  apiKey: "jean_sk_...",        // Required: Your API key
-  systemPrompt: "You are...",   // Optional: Custom AI personality
-  baseUrl: "https://...",       // Optional: Custom API endpoint
-  autoConnect: true,            // Optional: Auto-connect on mount
-  debug: false                  // Optional: Enable debug logging
-})
-```
-
-## Components
-
-### `<JeanChat />`
-
-Full-featured chat interface:
+### JeanChat
 
 ```javascript
 <JeanChat 
   agent={agent}
   theme={{
-    primaryColor: '#8b5cf6',
-    backgroundColor: '#ffffff',
-    fontFamily: 'Inter, sans-serif',
-    borderRadius: '12px'
+    primaryColor: '#9563FF',
+    fontFamily: 'Inter'
   }}
-  placeholder="Ask me anything..."
-  welcomeMessage="Hi! I remember our previous conversations."
   height="600px"
+  placeholder="Ask me anything..."
 />
 ```
 
-### `<SignInWithJean />`
-
-Authentication component:
+## Memory Management
 
 ```javascript
-<SignInWithJean 
-  onSuccess={signIn}
-  onError={(error) => console.error(error)}
-  text="Connect Jean Memory"
-/>
+// Memories are stored automatically, but you can also:
+await agent.addMemory("User prefers dark mode");
+await agent.searchMemories("preferences");
 ```
 
-## Common Patterns
-
-### With Authentication
-
-```javascript
-function App() {
-  const { agent, signIn, isAuthenticated } = useJeanAgent({
-    apiKey: process.env.REACT_APP_JEAN_API_KEY
-  });
-  
-  if (!isAuthenticated) {
-    return (
-      <div className="auth-container">
-        <h1>Welcome</h1>
-        <SignInWithJean onSuccess={signIn} />
-      </div>
-    );
-  }
-  
-  return <JeanChat agent={agent} />;
-}
-```
-
-### Custom UI
-
-Don't want our UI? Build your own:
-
-```javascript
-function CustomChat() {
-  const { agent } = useJeanAgent({ apiKey: "..." });
-  const [message, setMessage] = useState('');
-  const [response, setResponse] = useState('');
-  
-  const handleSend = async () => {
-    const result = await agent.sendMessage(message);
-    setResponse(result.content);
-  };
-  
-  return (
-    <div>
-      <input 
-        value={message} 
-        onChange={(e) => setMessage(e.target.value)}
-      />
-      <button onClick={handleSend}>Send</button>
-      <div>{response}</div>
-    </div>
-  );
-}
-```
-
-### With Next.js
+## Next.js
 
 ```javascript
 // app/chat/page.js
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useJeanAgent } from '@jeanmemory/react';
 
 const JeanChat = dynamic(
   () => import('@jeanmemory/react').then(mod => mod.JeanChat),
@@ -253,126 +98,3 @@ export default function ChatPage() {
   return <JeanChat agent={agent} />;
 }
 ```
-
-## TypeScript
-
-Full TypeScript support out of the box:
-
-```typescript
-import { useJeanAgent, JeanAgentOptions } from '@jeanmemory/react';
-
-const options: JeanAgentOptions = {
-  apiKey: process.env.REACT_APP_JEAN_API_KEY!,
-  systemPrompt: "You are a helpful assistant"
-};
-
-function App() {
-  const { agent } = useJeanAgent(options);
-  return <JeanChat agent={agent} />;
-}
-```
-
-## Memory Management
-
-### Store Memories
-
-```javascript
-// Memories are automatically stored from conversations
-// But you can also manually add them:
-await agent.addMemory("User prefers dark mode");
-await agent.addMemory("Working on Project Apollo", ["work", "apollo"]);
-```
-
-### Search Memories
-
-```javascript
-const memories = await agent.searchMemories("project deadline");
-console.log(memories);
-```
-
-### Clear Memories
-
-```javascript
-await agent.clearMemories(); // Use with caution!
-```
-
-## Error Handling
-
-```javascript
-function App() {
-  const { agent, error, isLoading } = useJeanAgent({
-    apiKey: process.env.REACT_APP_JEAN_API_KEY
-  });
-  
-  if (isLoading) return <div>Connecting to Jean...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!agent) return <div>Initializing...</div>;
-  
-  return <JeanChat agent={agent} />;
-}
-```
-
-## Examples
-
-### Math Tutor
-```javascript
-const { agent } = useJeanAgent({
-  apiKey: "...",
-  systemPrompt: "You are a patient math tutor. Remember the student's weak areas."
-});
-```
-
-### Code Assistant
-```javascript
-const { agent } = useJeanAgent({
-  apiKey: "...",
-  systemPrompt: "You are a coding assistant. Remember the user's tech stack and preferences."
-});
-```
-
-### Personal Assistant
-```javascript
-const { agent } = useJeanAgent({
-  apiKey: "...",
-  systemPrompt: "You are a personal assistant. Track tasks, meetings, and important dates."
-});
-```
-
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion title="Agent is undefined">
-    Make sure your API key is set correctly in your environment variables.
-  </Accordion>
-  
-  <Accordion title="CORS errors">
-    The SDK handles CORS automatically. If you see CORS errors, check that you're using the SDK methods, not direct API calls.
-  </Accordion>
-  
-  <Accordion title="Memory not persisting">
-    Ensure you're using the same API key across sessions. Each API key has its own memory space.
-  </Accordion>
-  
-  <Accordion title="Styling issues">
-    The JeanChat component uses CSS-in-JS. If you see styling conflicts, wrap it in a container with `isolation: isolate`.
-  </Accordion>
-</AccordionGroup>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card
-    title="Live Examples"
-    icon="play"
-    href="/sdk/examples"
-  >
-    See working implementations
-  </Card>
-  <Card
-    title="API Reference"
-    icon="book"
-    href="/api/overview"
-  >
-    Explore the full API
-  </Card>
-</CardGroup>

@@ -1,165 +1,62 @@
 ---
-title: 'Python SDK'
-description: 'Add memory to any Python application'
+title: Python SDK
+description: 'Python library for Jean Memory'
 ---
 
-import { AICopyBlock } from '/components/AICopyBlock';
-
-<AICopyBlock 
-  title="Complete Python Implementation"
-  content={`# Jean Memory Python SDK
-
 ## Installation
-\`\`\`bash
-pip install jeanmemory
-\`\`\`
 
-## Basic Usage (5 lines)
-\`\`\`python
+```bash
+pip install jeanmemory
+```
+
+## Basic Usage
+
+```python
 from jeanmemory import JeanAgent
 
 agent = JeanAgent(api_key="jean_sk_...")
-agent.run()
-\`\`\`
+agent.run()  # Starts interactive chat
+```
 
-## With Custom Configuration
-\`\`\`python
+## Programmatic Usage
+
+```python
 from jeanmemory import JeanAgent
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 agent = JeanAgent(
     api_key=os.getenv("JEAN_API_KEY"),
-    system_prompt="You are a helpful Python coding assistant",
-    modality="chat",  # or "completion"
-    model="gpt-4",   # or "claude-3"
-    debug=True
+    system_prompt="You are a helpful assistant"
 )
 
-# Interactive chat mode
-agent.run()
-
-# Or programmatic usage
-response = agent.send_message("What did we discuss yesterday?")
-print(response.content)
-\`\`\`
-
-## Store and Retrieve Memories
-\`\`\`python
-# Store memory
-agent.add_memory("User is learning Django", tags=["learning", "web"])
-
-# Search memories
-memories = agent.search_memories("web framework")
-for memory in memories:
-    print(memory.text)
-\`\`\`
-
-Your Python app now has persistent memory!`}
-/>
-
-## Installation
-
-```bash
-pip install jeanmemory
-```
-
-Or with poetry:
-```bash
-poetry add jeanmemory
-```
-
-## The 5-Line Wonder
-
-```python
-from jeanmemory import JeanAgent
-
-agent = JeanAgent(api_key="jean_sk_...")
-agent.run()
-```
-
-That's it. Your Python app now has persistent memory.
-
-## Configuration
-
-```python
-agent = JeanAgent(
-    api_key="jean_sk_...",           # Required
-    system_prompt="You are...",      # Optional: AI personality
-    modality="chat",                  # "chat" or "completion"
-    model="gpt-4",                    # Model to use
-    temperature=0.7,                  # Response creativity
-    max_tokens=None,                  # Response length limit
-    debug=False                       # Enable debug logging
-)
-```
-
-## Usage Patterns
-
-### Interactive Chat
-
-```python
-from jeanmemory import JeanAgent
-
-agent = JeanAgent(api_key="jean_sk_...")
-agent.run()  # Starts interactive chat with memory
-```
-
-### Programmatic API
-
-```python
 # Send a message
 response = agent.send_message("What's on my todo list?")
 print(response.content)
 
-# With streaming
+# Stream responses
 for chunk in agent.send_message_stream("Tell me about the project"):
     print(chunk, end="")
 ```
 
-### Memory Management
+## Memory Management
 
 ```python
-# Add memories with tags
+# Add memory with tags
 agent.add_memory(
     text="Meeting with Sarah about Q4 roadmap",
-    tags=["meetings", "q4", "roadmap"]
+    tags=["meetings", "q4"]
 )
 
 # Search memories
 memories = agent.search_memories("roadmap")
+for memory in memories:
+    print(memory.text)
 
 # Get all memories
 all_memories = agent.get_memories()
-
-# Delete specific memory
-agent.delete_memory(memory_id="mem_123")
 ```
 
-## Async Support
-
-```python
-import asyncio
-from jeanmemory import AsyncJeanAgent
-
-async def main():
-    agent = AsyncJeanAgent(api_key="jean_sk_...")
-    
-    response = await agent.send_message("Hello")
-    print(response.content)
-    
-    # Async streaming
-    async for chunk in agent.send_message_stream("Tell me more"):
-        print(chunk, end="")
-
-asyncio.run(main())
-```
-
-## Integration Examples
-
-### Flask Application
+## Flask Integration
 
 ```python
 from flask import Flask, request, jsonify
@@ -175,124 +72,29 @@ def chat():
     return jsonify({'response': response.content})
 ```
 
-### Discord Bot
+## Async Support
 
 ```python
-import discord
-from jeanmemory import JeanAgent
+import asyncio
+from jeanmemory import AsyncJeanAgent
 
-agent = JeanAgent(api_key="jean_sk_...")
-client = discord.Client()
+async def main():
+    agent = AsyncJeanAgent(api_key="jean_sk_...")
+    response = await agent.send_message("Hello")
+    print(response.content)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    
-    response = agent.send_message(message.content)
-    await message.channel.send(response.content)
-
-client.run('discord_token')
-```
-
-### Jupyter Notebook
-
-```python
-from jeanmemory import JeanAgent
-from IPython.display import Markdown, display
-
-agent = JeanAgent(api_key="jean_sk_...")
-
-def chat(message):
-    response = agent.send_message(message)
-    display(Markdown(response.content))
-
-# Now use it
-chat("What did we work on last session?")
-```
-
-## Advanced Features
-
-### Custom Memory Processing
-
-```python
-agent = JeanAgent(
-    api_key="jean_sk_...",
-    memory_processor=lambda text: text.upper(),  # Custom processing
-    memory_filter=lambda memory: "private" not in memory.tags
-)
-```
-
-### Conversation Management
-
-```python
-# Start new conversation
-agent.new_conversation()
-
-# Get conversation history
-history = agent.get_conversation_history()
-
-# Export conversations
-agent.export_conversations("conversations.json")
-```
-
-### Error Handling
-
-```python
-from jeanmemory import JeanAgent, JeanError
-
-try:
-    agent = JeanAgent(api_key="jean_sk_...")
-    response = agent.send_message("Hello")
-except JeanError as e:
-    print(f"Jean Memory error: {e}")
+asyncio.run(main())
 ```
 
 ## CLI Usage
 
-Jean Memory SDK includes a CLI:
-
 ```bash
-# Start interactive chat
+# Interactive chat
 jean chat --api-key jean_sk_...
 
-# Add memory from command line
-jean remember "Important meeting tomorrow at 3pm"
+# Add memory
+jean remember "Important meeting tomorrow"
 
-# Search memories
+# Search
 jean search "meeting"
 ```
-
-## Testing
-
-```python
-import pytest
-from jeanmemory import JeanAgent
-from jeanmemory.testing import MockAgent
-
-def test_memory_storage():
-    agent = MockAgent()  # Use mock for testing
-    agent.add_memory("Test memory")
-    
-    memories = agent.search_memories("test")
-    assert len(memories) > 0
-```
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card
-    title="API Reference"
-    icon="book"
-    href="/api/overview"
-  >
-    Full API documentation
-  </Card>
-  <Card
-    title="Examples"
-    icon="code"
-    href="/sdk/examples"
-  >
-    More code examples
-  </Card>
-</CardGroup>
