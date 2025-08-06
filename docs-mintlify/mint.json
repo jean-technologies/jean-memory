@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Jean Memory",
   "logo": {
-    "dark": "/logo/light.png",
+    "dark": "/logo/jean-dark.png",
     "light": "/logo/dark.png"
   },
   "favicon": "/logo/jean-bug.png",
@@ -58,6 +58,13 @@
       "group": "Tools",
       "pages": [
         "tools"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/authentication",
+        "api-reference/examples"
       ]
     }
   ],
