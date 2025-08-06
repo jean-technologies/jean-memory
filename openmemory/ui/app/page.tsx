@@ -60,22 +60,22 @@ export default function LandingPage() {
     );
   }
 
-  const reactCode = `import { JeanChat, useJeanAgent } from '@jeanmemory/react';
+  const reactCode = `import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
 
-function MathTutorApp() {
+function App() {
   const { agent, signIn } = useJeanAgent({
-    systemPrompt: "A patient math tutor."
+    apiKey: "jean_sk_...",
+    systemPrompt: "You are a helpful assistant"
   });
 
   if (!agent) return <SignInWithJean onSuccess={signIn} />;
-
   return <JeanChat agent={agent} />;
 }`;
 
   return (
     <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <ParticleNetwork id="landing-particles-final" particleColor="#e5e7eb" particleCount={120} />
+        <ParticleNetwork id="landing-particles-final" particleCount={120} />
       </div>
 
       <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 min-h-screen">
@@ -133,17 +133,24 @@ function MathTutorApp() {
                         </Link>
                       </motion.div>
                   ) : (
-                    <motion.div key="dev-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full space-y-4">
-                      <Link href="https://calendly.com/jonathan-jeantechnologies/30min" passHref className="w-full">
-                        <Button size="lg" variant="outline" className="w-full text-md py-6 border-gray-300 bg-white/50 hover:bg-gray-200/50">
-                          Request a Demo
+                    <motion.div key="dev-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full space-y-3">
+                      <Link href="/api-docs" passHref className="w-full block">
+                        <Button size="lg" variant="outline" className="w-full text-md py-6 border-purple-400 bg-white/50 hover:bg-purple-100/50 hover:border-purple-500 transition-all">
+                          View Documentation
                         </Button>
                       </Link>
-                      <Link href={user ? "/dashboard" : "/auth?animate=true"} passHref className="w-full">
-                        <Button variant="ghost" size="lg" className="w-full text-md text-gray-500 hover:text-gray-800">
-                            {user ? "Go to Dashboard" : "Sign In"}
-                        </Button>
-                      </Link>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Link href="/api-docs/quickstart" passHref className="w-full block">
+                          <Button variant="outline" size="default" className="w-full text-sm py-3 text-gray-600 border-gray-200 hover:text-gray-900 hover:bg-gray-100/50 transition-all">
+                            Quick Start
+                          </Button>
+                        </Link>
+                        <Link href={user ? "/dashboard" : "/auth?animate=true"} passHref className="w-full block">
+                          <Button variant="outline" size="default" className="w-full text-sm py-3 text-gray-600 border-gray-200 hover:text-gray-900 hover:bg-gray-100/50 transition-all">
+                            Get API Key
+                          </Button>
+                        </Link>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
