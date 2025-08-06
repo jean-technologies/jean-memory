@@ -72,5 +72,6 @@
   "footerSocials": {
     "github": "https://github.com/jean-technologies",
     "twitter": "https://x.com/jeanmemory"
-  }
+  },
+  "generator": "mintlify"
 }
