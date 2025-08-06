@@ -5,7 +5,7 @@
     "dark": "/logo/light.svg",
     "light": "/logo/dark.svg"
   },
-  "favicon": "/logo/jean-bug-white.png",
+  "favicon": "/logo/jean-bug.png",
   "custom": {
     "css": ["styles.css"]
   },
@@ -61,7 +61,7 @@
       ]
     },
     {
-      "group": "API",
+      "group": "API Reference",
       "pages": [
         "api/authentication",
         "api/examples",
