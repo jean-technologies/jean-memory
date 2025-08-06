@@ -40,6 +40,12 @@
       ]
     },
     {
+      "group": "Use Cases",
+      "pages": [
+        "api-reference/examples"
+      ]
+    },
+    {
       "group": "SDK",
       "pages": [
         "sdk/react",
@@ -64,7 +70,7 @@
       "group": "API Reference",
       "pages": [
         "api-reference/authentication",
-        "api-reference/examples"
+        "api-reference/reference"
       ]
     }
   ],
