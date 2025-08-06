@@ -40,9 +40,9 @@
       ]
     },
     {
-      "group": "Use Cases",
+      "group": "Guides",
       "pages": [
-        "use-cases"
+        "guides/use-cases"
       ]
     },
     {
@@ -67,9 +67,9 @@
       ]
     },
     {
-      "group": "API Reference",
+      "group": "API",
       "pages": [
-        "api-reference/authentication"
+        "api/authentication"
       ]
     }
   ],
