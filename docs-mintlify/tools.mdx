@@ -1,90 +1,88 @@
 ---
 title: Tools
-description: 'Core tools that power Jean Memory'
+description: "The core MCP tools that power Jean Memory's intelligence."
 ---
 
-Jean Memory is built from powerful core tools that work together to provide intelligent memory management for your AI applications.
+Jean Memory is built on a foundation of powerful, modular tools that are orchestrated through the Model Context Protocol (MCP). This allows for a flexible and extensible system that can adapt to a wide range of use cases.
 
-## add_memory
+## The `jean_memory` Tool
 
-The foundation of Jean Memory's storage system. Intelligently processes and stores new memories with automatic deduplication.
+The `jean_memory` tool is the heart of the system. It is the primary interface for all conversational interactions and is responsible for orchestrating the other tools to provide intelligent, context-aware responses.
 
-<CodeGroup>
-```python Python
-from jeanmemory import add_memory
-
-add_memory(
-    user_id="user123",
-    content="I love hiking in the mountains",
-    metadata={"category": "personal", "source": "chat"}
-)
+```typescript
+interface JeanMemoryParams {
+  user_message: string;
+  is_new_conversation: boolean;
+  needs_context: boolean;
+}
 ```
 
-```javascript Node.js
-import { addMemory } from '@jeanmemory/node';
+**Usage:**
+- **ALWAYS** use for conversational interactions.
+- Set `is_new_conversation=true` for the first message in a new conversation.
+- Set `needs_context=false` for general knowledge questions that don't require personal context.
 
-await addMemory({
-  userId: 'user123',
-  content: 'I love hiking in the mountains',
-  metadata: { category: 'personal', source: 'chat' }
-});
+## Memory Tools
+
+These tools are the building blocks of Jean Memory's storage and retrieval system. They are used by the `jean_memory` tool to manage a user's memories.
+
+### `add_memories`
+
+Intelligently processes and stores new memories with automatic deduplication.
+
+```typescript
+add_memories(text: string, tags?: string[], priority?: boolean): string
 ```
 
-```bash REST API
-curl -X POST https://api.jeanmemory.com/v1/memories \
-  -H "Authorization: Bearer jean_sk_..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "user123",
-    "content": "I love hiking in the mountains",
-    "metadata": {"category": "personal", "source": "chat"}
-  }'
-```
-</CodeGroup>
-
-**Features:**
-- Automatic deduplication prevents memory bloat
-- Intelligent categorization and tagging
-- Metadata support for rich context
-- Background processing for optimal performance
-
-## search_memory
+### `search_memory`
 
 Advanced semantic search that finds relevant memories based on context, not just keywords.
 
-<CodeGroup>
-```python Python
-from jeanmemory import search_memory
-
-results = search_memory(
-    user_id="user123",
-    query="outdoor activities I enjoy",
-    limit=5
-)
+```typescript
+search_memory(query: string, limit?: number, tags_filter?: string[]): string
 ```
 
-```javascript Node.js
-import { searchMemory } from '@jeanmemory/node';
+### `list_memories`
 
-const results = await searchMemory({
-  userId: 'user123',
-  query: 'outdoor activities I enjoy',
-  limit: 5
-});
+Retrieves a paginated list of all memories for a user.
+
+```typescript
+list_memories(limit?: number, offset?: number): string
 ```
 
-```bash REST API
-curl -X GET "https://api.jeanmemory.com/v1/memories/search?user_id=user123&query=outdoor%20activities%20I%20enjoy&limit=5" \
-  -H "Authorization: Bearer jean_sk_..."
+## REST API
+
+For developers who prefer a more traditional RESTful approach, we also provide a comprehensive REST API for managing memories.
+
+### Authentication
+
+Authentication is handled via API key.
+
+```http
+Authorization: Bearer <token>
+# OR
+X-Api-Key: jean_sk_<key>
 ```
-</CodeGroup>
 
-**Features:**
-- Semantic understanding beyond keywords
-- Contextual relevance scoring
-- Configurable result limits
-- Real-time search performance
+### Common Endpoints
 
-## Getting Started
+**Create Memory**
+```http
+POST /api/v1/memories
+Content-Type: application/json
 
-Ready to use these tools? Check out our [SDK documentation](/sdk/react) or jump straight into the [API reference](/api/authentication) to start building with Jean Memory's core tools.
+{
+  "content": "User prefers dark mode",
+  "app_name": "my-app"
+}
+```
+
+**Search Memories**
+```http
+GET /api/v1/memories/search?q=preferences&limit=10
+```
+
+**Get Apps**
+```http
+GET /api/v1/apps
+```
