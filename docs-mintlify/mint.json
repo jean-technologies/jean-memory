@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Jean Memory",
   "logo": {
-    "dark": "/logo/light.svg",
-    "light": "/logo/dark.svg"
+    "dark": "/logo/light.png",
+    "light": "/logo/dark.png"
   },
   "favicon": "/logo/jean-bug.png",
   "custom": {
@@ -58,14 +58,6 @@
       "group": "Tools",
       "pages": [
         "tools"
-      ]
-    },
-    {
-      "group": "API Reference",
-      "pages": [
-        "api-reference/authentication",
-        "api-reference/examples",
-        "api-reference/reference"
       ]
     }
   ],

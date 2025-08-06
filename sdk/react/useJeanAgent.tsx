@@ -56,7 +56,7 @@ export function useJeanAgent(config: JeanAgentConfig = {}): JeanAgentHook {
         throw new Error(errorData.detail || 'Authentication failed');
       }
 
-      const userData = await response.json();
+      const userData: JeanUser = await response.json();
       setUser(userData);
       setIsLoading(false);
       return userData;
@@ -93,7 +93,7 @@ export function useJeanAgent(config: JeanAgentConfig = {}): JeanAgentHook {
         throw new Error('Chat request failed');
       }
 
-      const result = await response.json();
+      const result: { response?: string; enhanced_messages?: { content: string }[] } = await response.json();
       return result.response || result.enhanced_messages?.[0]?.content || 'No response received';
     }
   } : null;
@@ -144,7 +144,7 @@ export function SignInWithJean({
         throw new Error(errorData.detail || 'Authentication failed');
       }
 
-      const userData = await response.json();
+      const userData: JeanUser = await response.json();
       onSuccess?.(userData);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Authentication failed');
