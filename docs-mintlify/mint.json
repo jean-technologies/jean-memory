@@ -63,9 +63,9 @@
     {
       "group": "API",
       "pages": [
-        "api-temp/authentication",
-        "api-temp/examples",
-        "api-temp/reference"
+        "api/authentication",
+        "api/examples",
+        "api/reference"
       ]
     }
   ],
