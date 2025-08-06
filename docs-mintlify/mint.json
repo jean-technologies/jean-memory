@@ -22,18 +22,6 @@
       "to": "#9563FF"
     }
   },
-  "theme": {
-    "typography": {
-      "bodyColor": {
-        "light": "#1F2937",
-        "dark": "#F3F4F6"
-      },
-      "headingColor": {
-        "light": "#111827",
-        "dark": "#F9FAFB"
-      }
-    }
-  },
   "topbarLinks": [
     {
       "name": "Support",
