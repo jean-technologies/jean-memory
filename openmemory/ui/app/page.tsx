@@ -118,14 +118,14 @@ function MathTutorApp() {
                   </Link>
               ) : (
                 <>
-                  <Link href="https://calendly.com/jonathan-jeantechnologies/30min" passHref>
+                  <Link href="/api-docs" passHref>
                     <Button size="lg" variant="ghost" className={primaryButtonClass}>
-                      Request a Demo
+                      View Documentation
                     </Button>
                   </Link>
-                  <Link href={user ? "/dashboard" : "/auth?animate=true"} passHref>
+                  <Link href="https://calendly.com/jonathan-jeantechnologies/30min" passHref>
                     <Button variant="ghost" size="lg" className={secondaryButtonClass}>
-                        {user ? "Go to Dashboard" : "Sign In"}
+                        Request a Demo
                     </Button>
                   </Link>
                 </>
