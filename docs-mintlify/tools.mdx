@@ -50,6 +50,34 @@ Retrieves a paginated list of all memories for a user.
 list_memories(limit?: number, offset?: number): string
 ```
 
+### `deep_memory_query`
+
+Performs a deep, comprehensive search across ALL user content using Gemini. This is thorough but slower - use `search_memory` for simple queries.
+
+```typescript
+deep_memory_query(search_query: str, memory_limit?: int, chunk_limit?: int, include_full_docs?: bool): string
+```
+
+## Document Tools
+
+These tools are used to manage large documents, such as markdown files, code files, and essays.
+
+### `store_document`
+
+Lightweight document storage tool that queues processing in the background.
+
+```typescript
+store_document(title: str, content: str, document_type?: str, source_url?: str, metadata?: dict): str
+```
+
+### `get_document_status`
+
+Check the processing status of a document upload using the job ID returned by `store_document`.
+
+```typescript
+get_document_status(job_id: str): str
+```
+
 ## REST API
 
 For developers who prefer a more traditional RESTful approach, we also provide a comprehensive REST API for managing memories.

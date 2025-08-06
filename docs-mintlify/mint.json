@@ -42,7 +42,7 @@
     {
       "group": "Use Cases",
       "pages": [
-        "use-cases/examples"
+        "use-cases/index"
       ]
     },
     {
@@ -74,7 +74,7 @@
     }
   ],
   "footerSocials": {
-    "github": "https://github.com/jean-technologies",
+    "github": "https://github.com/jean-technologies/jean-memory",
     "twitter": "https://x.com/jeanmemory"
   },
   "generator": "mintlify"
