@@ -34,7 +34,7 @@ Want to just start building? We've consolidated all of our documentation into a 
           navigator.clipboard.writeText(text).then(() => {
             btn.innerHTML = 'Copied!';
             setTimeout(() => {
-              btn.innerHTML = '📋 Copy All Docs for AI';
+              btn.innerHTML = 'Copy All Docs for AI';
             }, 2000);
           });
         })
@@ -42,12 +42,12 @@ Want to just start building? We've consolidated all of our documentation into a 
           console.error('Failed to copy: ', err);
           btn.innerHTML = 'Failed to copy';
           setTimeout(() => {
-            btn.innerHTML = '📋 Copy All Docs for AI';
+            btn.innerHTML = 'Copy All Docs for AI';
           }, 2000);
         });
     }}
   >
-    📋 Copy All Docs for AI
+    Copy All Docs for AI
   </button>
 </Card>
 

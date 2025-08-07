@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const CopyToClipboard = () => {
-  const [buttonText, setButtonText] = useState('📋 Copy All Docs for AI');
+  const [buttonText, setButtonText] = useState('Copy All Docs for AI');
   const [isLoading, setIsLoading] = useState(false);
 
   const copyContent = async () => {
@@ -10,16 +10,16 @@ const CopyToClipboard = () => {
       const response = await fetch('/assets/consolidated-docs.md');
       const text = await response.text();
       await navigator.clipboard.writeText(text);
-      setButtonText('✅ Copied!');
+      setButtonText('Copied!');
       setTimeout(() => {
         setButtonText('Copy All Docs for AI');
         setIsLoading(false);
       }, 2000);
     } catch (err) {
       console.error('Failed to copy text: ', err);
-      setButtonText('❌ Failed to Copy');
+      setButtonText('Failed to Copy');
       setTimeout(() => {
-        setButtonText('📋 Copy All Docs for AI');
+        setButtonText('Copy All Docs for AI');
         setIsLoading(false);
       }, 2000);
     }
