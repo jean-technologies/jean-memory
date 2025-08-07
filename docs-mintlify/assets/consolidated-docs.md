@@ -1,16 +1,3 @@
----
-title: "AI Copilot"
-description: "Your AI coding assistant's best friend. A consolidated view of all our documentation for easy copy-pasting."
----
-
-import { CodeBlock } from 'mintlify/components';
-
-## Copy-Paste All Documentation
-
-Don't like reading docs? Paste this into your AI coding tool (Cursor, Claude, etc.), give it instructions for what you'd like to build, and have it build it for you.
-
-<CodeBlock language="markdown" showLineNumbers={false}>
-```markdown
 ## introduction.mdx\n\n---
 title: Introduction to MCP
 description: "A powerful, stateful protocol for building advanced agentic systems."
@@ -45,8 +32,7 @@ In short, if you are building a simple application and just need to store and re
 
 To get started with MCP, you'll need to connect to one of our MCP servers. The authentication is handled via a standard OAuth 2.1 flow, which is initiated when you connect.
 
-You can find more details on how to implement this in our SDK documentation.
-\n\n## authentication.mdx\n\n---
+You can find more details on how to implement this in our SDK documentation.\n\n## authentication.mdx\n\n---
 title: Authentication
 description: 'How to authenticate with the Jean Memory API.'
 ---
@@ -68,8 +54,7 @@ Our implementation of OAuth 2.1 is designed to be straightforward for developers
 
 The Model Context Protocol is a new standard for stateful, bidirectional communication between AI models and external tools. Jean Memory's support for OAuth 2.1 makes it a first-class citizen in the MCP ecosystem, allowing you to build powerful, agentic systems that can securely access a user's memories.
 
-You can learn more in the [MCP Introduction](/mcp/introduction).
-\n\n## context-engineering.mdx\n\n---
+You can learn more in the [MCP Introduction](/mcp/introduction).\n\n## context-engineering.mdx\n\n---
 title: Context Engineering
 description: "How Jean Memory intelligently orchestrates context."
 ---
@@ -167,8 +152,7 @@ The `SmartContextOrchestrator` is the brain behind the `jean_memory` tool. It us
 2.  **`relevant_context`**: Used for ongoing conversations to provide targeted, relevant information.
 3.  **`comprehensive_analysis`**: Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
 
-By using these strategies, Jean Memory ensures that the AI has the perfect amount of context to be helpful without being overwhelmed by information.
-\n\n## setup.mdx\n\n---
+By using these strategies, Jean Memory ensures that the AI has the perfect amount of context to be helpful without being overwhelmed by information.\n\n## setup.mdx\n\n---
 title: MCP Setup
 description: 'Connect Jean Memory to AI assistants'
 ---
@@ -359,8 +343,7 @@ export default function ChatPage() {
   
   return <JeanChat agent={agent} />;
 }
-```
-\n\n## nodejs.mdx\n\n---
+```\n\n## nodejs.mdx\n\n---
 title: 'Node.js SDK'
 description: 'Server-side memory for Node applications'
 ---
@@ -498,5 +481,3 @@ jean remember "Important meeting tomorrow"
 # Search
 jean search "meeting"
 ```\n\n
-```
-</CodeBlock>

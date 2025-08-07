@@ -1,9 +1,9 @@
 import os
+import re
 
 def create_consolidated_docs():
     """
-    Combines all API documentation files into a single markdown file
-    and embeds it into the ai-copilot.mdx page.
+    Combines all API documentation files into a single, raw markdown file.
     """
     doc_files = [
         "docs-mintlify/mcp/introduction.mdx",
@@ -15,34 +15,24 @@ def create_consolidated_docs():
         "docs-mintlify/sdk/python.mdx",
     ]
 
-    output_filename = "docs-mintlify/ai-copilot.mdx"
+    output_dir = "docs-mintlify/assets"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
+    output_filename = os.path.join(output_dir, "consolidated-docs.md")
     
-    consolidated_content = ""
-    for doc_file in doc_files:
-        if os.path.exists(doc_file):
-            with open(doc_file, "r") as infile:
-                consolidated_content += f"## {os.path.basename(doc_file)}\\n\\n"
-                consolidated_content += infile.read()
-                consolidated_content += "\\n\\n"
-        else:
-            print(f"Warning: {doc_file} not found.")
-
     with open(output_filename, "w") as outfile:
-        outfile.write(f"""---
-title: "AI Copilot"
-description: "Your AI coding assistant's best friend. A consolidated view of all our documentation for easy copy-pasting."
----
-
-import {{ CodeBlock }} from 'mintlify/components';
-
-## Copy-Paste All Documentation
-
-Don't like reading docs? Paste this into your AI coding tool (Cursor, Claude, etc.), give it instructions for what you'd like to build, and have it build it for you.
-
-<CodeBlock language="markdown" showLineNumbers={{false}}>
-{consolidated_content}
-</CodeBlock>
-""")
+        for doc_file in doc_files:
+            if os.path.exists(doc_file):
+                with open(doc_file, "r") as infile:
+                    content = infile.read()
+                    # Remove YAML frontmatter
+                    content = re.sub(r'^---[\\s\\S]*?---', '', content).strip()
+                    outfile.write(f"## {os.path.basename(doc_file)}\\n\\n")
+                    outfile.write(content)
+                    outfile.write("\\n\\n")
+            else:
+                print(f"Warning: {doc_file} not found.")
 
 if __name__ == "__main__":
     create_consolidated_docs()
