@@ -64,27 +64,51 @@ await agent.run();
 
 """
 
-    doc_files = [
-        ("docs-mintlify/overview.mdx", "Platform Overview"),
-        ("docs-mintlify/quickstart.mdx", "Quickstart Guide"), 
-        ("docs-mintlify/architecture.mdx", "System Architecture"),
-        ("docs-mintlify/sdk/react.mdx", "React SDK"),
-        ("docs-mintlify/sdk/nodejs.mdx", "Node.js SDK"), 
-        ("docs-mintlify/sdk/python.mdx", "Python SDK"),
-        ("docs-mintlify/mcp/introduction.mdx", "MCP Introduction"),
-        ("docs-mintlify/mcp/authentication.mdx", "Authentication Guide"),
-        ("docs-mintlify/oauth-troubleshooting.mdx", "OAuth Troubleshooting"),
-        ("docs-mintlify/mcp/context-engineering.mdx", "Context Engineering"),
-        ("docs-mintlify/mcp/setup.mdx", "MCP Setup"),
-        ("docs-mintlify/tools.mdx", "Available Tools"),
-        ("docs-mintlify/example-use-cases.mdx", "Example Use Cases"),
-    ]
+    # --- No longer needed, we will discover files dynamically ---
+    # doc_files = [
+    #     ("docs-mintlify/overview.mdx", "Platform Overview"),
+    #     ...
+    # ]
 
     output_dir = "docs-mintlify/assets"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
     output_filename = os.path.join(output_dir, "consolidated-docs.md")
+    
+    # --- Dynamic file discovery ---
+    doc_files = []
+    docs_root = "docs-mintlify"
+    excluded_dirs = ['assets', 'components', 'logo', 'platforms']
+
+    for root, dirs, files in os.walk(docs_root):
+        # Exclude specified directories
+        dirs[:] = [d for d in dirs if d not in excluded_dirs]
+        
+        for file in files:
+            if file.endswith(".mdx"):
+                file_path = os.path.join(root, file)
+                
+                # Create a sensible title from the path
+                relative_path = os.path.relpath(file_path, docs_root)
+                title_path = os.path.splitext(relative_path)[0]
+                # Capitalize and join parts, e.g., 'mcp/introduction' -> 'MCP: Introduction'
+                parts = title_path.split(os.sep)
+                section_title = ": ".join(part.replace('-', ' ').replace('_', ' ').title() for part in parts)
+                
+                doc_files.append((file_path, section_title))
+    
+    # Sort files for consistent order, putting overview and quickstart first
+    def sort_key(doc_tuple):
+        path = doc_tuple[0]
+        if 'overview' in path:
+            return (0,)
+        if 'quickstart' in path:
+            return (1,)
+        return (2, path)
+
+    doc_files.sort(key=sort_key)
+    # --- End of dynamic discovery ---
     
     with open(output_filename, "w", encoding='utf-8') as outfile:
         # Write AI context header

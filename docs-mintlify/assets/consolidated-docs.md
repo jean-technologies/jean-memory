@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-07 13:47:56
+**Generated on:** 2025-08-07 14:51:43
 
 ## What is Jean Memory?
 
@@ -52,7 +52,7 @@ await agent.run();
 
 # Complete Documentation
 
-## Platform Overview (overview.mdx)
+## Overview (overview.mdx)
 
 ## What is Jean Memory?
 
@@ -120,7 +120,7 @@ Ready to give your AI a memory?
 
 ---
 
-## Quickstart Guide (quickstart.mdx)
+## Quickstart (quickstart.mdx)
 
 ## For the AI Developers
 
@@ -278,7 +278,7 @@ It remembers across sessions automatically!
 
 ---
 
-## System Architecture (architecture.mdx)
+## Architecture (architecture.mdx)
 
 ## More Than a Database: An Intelligent Memory System
 
@@ -313,7 +313,573 @@ This combination of a powerful, multi-database backend and a sophisticated intel
 
 ---
 
-## React SDK (react.mdx)
+## Example Use Cases (example-use-cases.mdx)
+
+Jean Memory enables you to build AI applications that truly understand and remember your users. Our customers are using it in imaginative and creative ways, from building **AI career coaching platforms** to creating powerful **integrations with their favorite note-taking applications**.
+
+Here are some of the powerful possibilities, broken down by category, to inspire your own creations.
+
+## Personalized AI Experiences
+
+Create applications that adapt to individual users, providing a deeply personal and intelligent experience.
+
+<Card title="AI Career Coach" icon="rocket">
+  **A coach that remembers your journey.** Build an AI mentor that tracks a user's skills, experience, and career goals to provide personalized advice and tailored job recommendations.
+</Card>
+
+<Card title="Personalized Note-Taking" icon="book">
+  **Your second brain, supercharged.** Connect Jean Memory to note-taking apps to create a personal knowledge base. Allow users to query their own notes and ideas with an AI that understands the context.
+</Card>
+
+<Card title="Adaptive AI Tutors" icon="book">
+  **Learning that evolves with the student.** Develop an AI tutor that remembers a student's progress, learning style, and areas of difficulty, tailoring lessons for a truly adaptive educational experience.
+</Card>
+
+## Agentic & Automated Workflows
+
+Integrate Jean Memory into automated systems to create powerful, context-aware agents.
+
+<Card title="Agentic Memory with n8n" icon="code">
+  **Automate with memory.** Build powerful, automated workflows that can remember and act on information from a variety of sources, creating intelligent agents that can handle complex, multi-step tasks.
+</Card>
+
+<Card title="Programmatic Content Creation" icon="code">
+  **An AI that knows your voice.** Generate content that remembers your unique style, tone, and key messaging points, ensuring your brand is always consistent, whether it's writing emails, reports, or marketing copy.
+</Card>
+
+## Collaborative & Organizational Memory
+
+Use Jean Memory to create a shared source of truth for teams and businesses.
+
+<Card title="Long-Term Client Memory" icon="rocket">
+  **Never lose a client detail again.** Keep track of all your clients, their history, and their needs with a shared memory that can be accessed by your entire team, ensuring seamless handoffs and personalized service.
+</Card>
+
+<Card title="Working Memory Across Platforms" icon="rocket">
+  **A seamless, cross-platform experience.** Provide a unified user experience across all of your applications, with a shared memory that follows the user wherever they go, from web to mobile to desktop.
+</Card>
+
+<Card title="Shared Memory for Coworkers" icon="book">
+  **Unlock your team's collective intelligence.** Enable your team to collaborate more effectively with a shared knowledge base that can be accessed and contributed to by everyone, preventing knowledge silos.
+</Card>
+
+---
+
+## Mcp: Authentication (authentication.mdx)
+
+## OAuth 2.1 for Modern AI
+
+Jean Memory uses the OAuth 2.1 authorization framework, the industry-standard protocol for authorization. This ensures that your integration is secure, scalable, and compatible with the latest AI standards, including the **Model Context Protocol (MCP)**.
+
+Our implementation of OAuth 2.1 is designed to be straightforward for developers while providing robust security for end-users.
+
+### Key Features
+
+- **PKCE for Enhanced Security**: All of our OAuth flows use Proof Key for Code Exchange (PKCE) to protect against authorization code interception attacks.
+- **Granular Scopes**: You can request specific permissions from users, ensuring that your application only has access to the data it needs.
+- **Short-Lived Access Tokens**: Access tokens are short-lived, reducing the risk of them being compromised.
+- **Refresh Tokens**: Long-lived refresh tokens allow your application to maintain a persistent connection to the Jean Memory API without requiring users to re-authenticate.
+
+## SDK vs Manual Implementation
+
+### Using SDKs (Recommended)
+All our SDKs handle OAuth automatically:
+
+```javascript
+// React - OAuth handled automatically
+const { agent } = useJean({ apiKey: "your-api-key" });
+
+// Python - OAuth handled automatically  
+agent = JeanAgent(api_key="your-api-key")
+
+// Node.js - OAuth handled automatically
+const agent = new JeanAgent({ apiKey: "your-api-key" });
+```
+
+### Manual OAuth Implementation (Advanced)
+
+If you're building a custom client or testing framework, you'll need to implement the OAuth flow manually.
+
+#### Step 1: Register Your Application
+Contact support@jeanmemory.com to register your OAuth client and whitelist redirect URIs.
+
+#### Step 2: Authorization Request
+```javascript
+const authUrl = new URL('https://jean-memory-api-virginia.onrender.com/oauth/authorize');
+authUrl.searchParams.append('client_id', 'your-registered-client-id');
+authUrl.searchParams.append('redirect_uri', 'http://localhost:3000/callback'); // Must be whitelisted
+authUrl.searchParams.append('response_type', 'code');
+authUrl.searchParams.append('code_challenge', pkceChallenge);
+authUrl.searchParams.append('code_challenge_method', 'S256');
+authUrl.searchParams.append('state', randomState);
+```
+
+#### Step 3: Token Exchange
+```javascript
+const tokenResponse = await fetch('https://jean-memory-api-virginia.onrender.com/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: 'your-client-id',
+    code: authorizationCode,
+    redirect_uri: 'http://localhost:3000/callback',
+    code_verifier: pkceVerifier
+  })
+});
+```
+
+<Warning>
+**Common Issue:** "Invalid redirect URI" error means your URI isn't whitelisted. See our [OAuth Troubleshooting Guide](/oauth-troubleshooting) for solutions.
+</Warning>
+
+### The MCP Connection
+
+The Model Context Protocol is a new standard for stateful, bidirectional communication between AI models and external tools. Jean Memory's support for OAuth 2.1 makes it a first-class citizen in the MCP ecosystem, allowing you to build powerful, agentic systems that can securely access a user's memories.
+
+You can learn more in the [MCP Introduction](/mcp/introduction).
+
+---
+
+## Mcp: Context Engineering (context-engineering.mdx)
+
+## Context Engineering, Not Information Retrieval
+
+Jean Memory's core philosophy is **Context Engineering**, not just Information Retrieval. This means the system doesn't just store and retrieve memories—it intelligently engineers context for your AI assistant. This is the key to making AI truly personal and useful.
+
+The system is designed to:
+-   Select the *right* information at the *right* time.
+-   Synthesize insights from disparate memories.
+-   Understand relationships between memories.
+-   Predict what context will be most useful.
+
+This approach is inspired by Rich Sutton's "The Bitter Lesson," which argues that leveraging AI's intelligence is more effective than hand-coded heuristics. Jean Memory uses AI to decide what to remember, what context is relevant, and how to synthesize new insights.
+
+## The `jean_memory` Tool: A Tool of Tools
+
+The `jean_memory` tool is the heart of the system. It's the primary interface for your AI to interact with the memory layer. It's a "tool of tools" that orchestrates various underlying memory functions to provide the right context at the right depth, with built-in intelligence and long-context awareness.
+
+```mermaid
+graph TD;
+    subgraph "Jean Memory Tool"
+        jean_memory["jean_memory (API)"]
+    end
+
+    subgraph "Read (Retrieval)"
+        direction TB
+        jean_memory --> retrieval_strategies["Retrieval Strategies"];
+        
+        subgraph "Layers of Depth"
+            retrieval_strategies --> shallow["Shallow Search<br/><i>Fast, Targeted</i>"];
+            retrieval_strategies --> deep["Deep Search<br/><i>Comprehensive</i>"];
+        end
+
+        subgraph "Underlying Tools"
+            shallow --> search_memory_shallow["search_memory"];
+            deep --> search_memory_deep["search_memory"];
+            deep --> deep_memory_query["deep_memory_query"];
+        end
+    end
+
+    subgraph "Write (Storage)"
+        direction TB
+        jean_memory --> write_processor["Background Processor"];
+        write_processor --> add_memory["add_memory"];
+        write_processor --> store_document["store_document"];
+    end
+
+    classDef api fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef read fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef write fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef tools fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
+
+    class jean_memory api;
+    class retrieval_strategies,shallow,deep read;
+    class write_processor,add_memory,store_document write;
+    class search_memory_shallow,search_memory_deep,deep_memory_query tools;
+```
+
+```python
+@mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!!")
+async def jean_memory(
+    user_message: str, 
+    is_new_conversation: bool, 
+    needs_context: bool
+) -> str:
+```
+
+### Execution Flow
+
+The `jean_memory` tool uses a dual-path asynchronous process to provide a fast response while performing deeper analysis in the background.
+
+1.  **Immediate Path (< 3 seconds)**:
+    -   If `needs_context=false`, it returns immediately.
+    -   If `needs_context=true`, it runs a fast vector search to get the most relevant context instantly.
+
+2.  **Background Path 1 - Smart Triage**:
+    -   Triggered for **every** message.
+    -   Uses a fast AI model (Gemini Flash) to analyze the message and decide whether to **REMEMBER** or **SKIP** it.
+    -   If it decides to **REMEMBER**, it saves the memory in the background.
+
+3.  **Background Path 2 - Deep Analysis**:
+    -   Only runs if `needs_context=true`.
+    -   Performs a full context engineering pipeline to synthesize insights from multiple memories.
+    -   This can take 30-60 seconds and creates high-priority "insight memories."
+
+## Smart Context Orchestrator
+
+The `SmartContextOrchestrator` is the brain behind the `jean_memory` tool. It uses different strategies to create the best possible context for the AI.
+
+### Context Strategies
+
+1.  **`deep_understanding`**: Used for new conversations to provide comprehensive context about the user.
+2.  **`relevant_context`**: Used for ongoing conversations to provide targeted, relevant information.
+3.  **`comprehensive_analysis`**: Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
+
+By using these strategies, Jean Memory ensures that the AI has the perfect amount of context to be helpful without being overwhelmed by information.
+
+---
+
+## Mcp: Introduction (introduction.mdx)
+
+The Model Context Protocol (MCP) is an open standard designed to provide a more powerful and flexible way to connect AI agents to tools and data. It standardizes the piping of context and memory across the internet, enabling a new level of interoperability for AI systems.
+
+While our REST API is perfect for many use cases, MCP is the ideal choice for developers building sophisticated, agentic systems that require stateful connections, real-time communication, and dynamic tool use.
+
+## Why Choose MCP over the REST API?
+
+| Feature                       | REST API                                   | Model Context Protocol (MCP)                               |
+| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **Connection**                | Stateless (each request is independent)    | Stateful (a continuous, persistent connection)             |
+| **Communication**             | Request-Response (client-driven)           | Bidirectional (server can push updates to the agent)       |
+| **Tool Use**                  | Static (hard-coded to specific endpoints)  | Dynamic (agent can discover and learn to use new tools)    |
+| **Context Management**        | Handled in the prompt (can lead to bloat)  | Managed by the protocol (more efficient and scalable)      |
+
+In short, if you are building a simple application and just need to store and retrieve memories, our REST API is a great choice. If you are building a complex, autonomous agent that needs to interact with its environment in real-time, MCP is the way to go.
+
+## Key Benefits of MCP for Agentic Memory
+
+*   **Complex, Multi-Step Tasks**: Because MCP maintains a stateful connection, it's perfect for complex workflows where context needs to be preserved across multiple steps. The agent can have an ongoing "conversation" with a tool, rather than sending a series of disconnected requests.
+
+*   **Real-Time Reactivity**: MCP allows tools to proactively push information to the agent. This is essential for building agents that can react to live events, such as a file being updated, a new message arriving, or a change in a database.
+
+*   **Enhanced Autonomy and Adaptability**: With dynamic tool discovery, your agent can learn to use new tools and capabilities without being explicitly re-programmed. This allows you to build more adaptive and autonomous agents that can evolve over time.
+
+*   **Efficiency and Scalability**: By managing context and tool definitions outside of the prompt, MCP avoids the "prompt bloat" that can limit the performance and scalability of agents built on REST APIs.
+
+## How to Get Started
+
+To get started with MCP, you'll need to connect to one of our MCP servers. The authentication is handled via a standard OAuth 2.1 flow, which is initiated when you connect.
+
+You can find more details on how to implement this in our SDK documentation.
+
+---
+
+## Mcp: Setup (setup.mdx)
+
+## What is MCP?
+
+Model Context Protocol (MCP) lets AI assistants like Claude and ChatGPT connect to external tools.
+
+## Quick Setup
+
+### Claude Desktop
+
+1. Find your config file:
+   - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+2. Add Jean Memory:
+```json
+{
+  "mcpServers": {
+    "jean-memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop
+
+### ChatGPT
+
+Coming soon - use the API for now.
+
+### Cursor
+
+Add to your `.cursor/config.json`:
+```json
+{
+  "mcp": {
+    "servers": {
+      "jean-memory": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
+      }
+    }
+  }
+}
+```
+
+## How It Works
+
+Once connected, the AI can:
+- Store memories: "Remember that..."
+- Search memories: "What did we discuss about..."
+- Use context automatically in responses
+
+---
+
+## Oauth Troubleshooting (oauth-troubleshooting.mdx)
+
+## Common OAuth Issues
+
+### "Invalid redirect URI" Error
+
+**Problem:** `{"detail":"Invalid redirect URI"}` when testing OAuth flow.
+
+**Cause:** Your redirect URI isn't whitelisted on our server.
+
+**Solutions:**
+
+#### For Local Development
+```javascript
+// Use one of these whitelisted URIs for local testing:
+const redirectUri = 'http://localhost:3000/callback';
+// or
+const redirectUri = 'http://127.0.0.1:3000/callback';
+```
+
+#### For Production
+Contact support at support@jeanmemory.com to whitelist your production domain:
+- `https://yourdomain.com/callback`
+- `https://yourdomain.com/auth/callback`
+
+<Warning>
+Allow 10-15 minutes after whitelist approval for DNS propagation.
+</Warning>
+
+### Testing Without Full OAuth Setup
+
+For development and testing, you can use the SDK's built-in fallback mode:
+
+```javascript
+// React SDK - automatically handles fallback
+const { agent } = useJean({ 
+  apiKey: "your-api-key",
+  // Will work even without OAuth completion
+});
+
+// Python SDK - demo mode
+agent = JeanAgent(api_key="your-api-key", demo_mode=True)
+```
+
+## OAuth Flow Requirements
+
+### Required Parameters
+```javascript
+{
+  response_type: 'code',
+  client_id: 'your-registered-client-id', 
+  redirect_uri: 'https://yourdomain.com/callback', // Must be exact match
+  code_challenge: 'generated-pkce-challenge',
+  code_challenge_method: 'S256',
+  state: 'random-state-value'
+}
+```
+
+### Callback Handler
+```javascript
+// Your /callback endpoint must handle:
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get('code');
+const state = urlParams.get('state');
+
+// Then exchange code for token
+const tokenResponse = await fetch('/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: 'your-client-id',
+    code: code,
+    redirect_uri: 'https://yourdomain.com/callback',
+    code_verifier: 'stored-pkce-verifier'
+  })
+});
+```
+
+## Development Workflow
+
+### Phase 1: Mock Development
+- Use SDK fallback modes for UI development
+- Test application logic without OAuth
+
+### Phase 2: OAuth Setup  
+- Register application at [jeanmemory.com](https://jeanmemory.com)
+- Request redirect URI whitelist
+- Test authentication flow
+
+### Phase 3: Integration Testing
+- Full end-to-end testing with real tokens
+- Performance validation
+- Production deployment
+
+## Getting Help
+
+**For OAuth Issues:**
+- Email: support@jeanmemory.com
+- Subject: "OAuth Redirect URI Whitelist Request"
+- Include: Your domain(s) and redirect URI(s)
+
+**For Technical Issues:**
+- GitHub Issues: [jean-technologies/jean-memory](https://github.com/jean-technologies/jean-memory/issues)
+- Include: Error messages, code samples, browser console logs
+
+---
+
+## Sdk: Nodejs (nodejs.mdx)
+
+## Installation
+
+```bash
+npm install @jeanmemory/node
+```
+
+## Quick Start
+
+```javascript
+import { JeanAgent } from '@jeanmemory/node';
+
+const agent = new JeanAgent({
+  apiKey: process.env.JEAN_API_KEY
+});
+
+await agent.run();
+```
+
+## Express Integration
+
+```javascript
+import express from 'express';
+import { JeanAgent } from '@jeanmemory/node';
+
+const app = express();
+const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });
+
+app.post('/chat', async (req, res) => {
+  const response = await agent.sendMessage(req.body.message);
+  res.json({ response: response.content });
+});
+```
+
+Full documentation coming soon.
+
+---
+
+## Sdk: Python (python.mdx)
+
+## Installation
+
+```bash
+pip install jeanmemory
+```
+
+## Basic Usage
+
+```python
+from jeanmemory import JeanAgent
+
+agent = JeanAgent(api_key="jean_sk_...")
+agent.run()  # Starts interactive chat
+```
+
+## Programmatic Usage
+
+```python
+from jeanmemory import JeanAgent
+import os
+
+agent = JeanAgent(
+    api_key=os.getenv("JEAN_API_KEY"),
+    system_prompt="You are a helpful assistant"
+)
+
+# Send a message
+response = agent.send_message("What's on my todo list?")
+print(response.content)
+
+# Stream responses
+for chunk in agent.send_message_stream("Tell me about the project"):
+    print(chunk, end="")
+```
+
+## Memory Management
+
+```python
+# Add memory with tags
+agent.add_memory(
+    text="Meeting with Sarah about Q4 roadmap",
+    tags=["meetings", "q4"]
+)
+
+# Search memories
+memories = agent.search_memories("roadmap")
+for memory in memories:
+    print(memory.text)
+
+# Get all memories
+all_memories = agent.get_memories()
+```
+
+## Flask Integration
+
+```python
+from flask import Flask, request, jsonify
+from jeanmemory import JeanAgent
+
+app = Flask(__name__)
+agent = JeanAgent(api_key="jean_sk_...")
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    message = request.json['message']
+    response = agent.send_message(message)
+    return jsonify({'response': response.content})
+```
+
+## Async Support
+
+```python
+import asyncio
+from jeanmemory import AsyncJeanAgent
+
+async def main():
+    agent = AsyncJeanAgent(api_key="jean_sk_...")
+    response = await agent.send_message("Hello")
+    print(response.content)
+
+asyncio.run(main())
+```
+
+## CLI Usage
+
+```bash
+# Interactive chat
+jean chat --api-key jean_sk_...
+
+# Add memory
+jean remember "Important meeting tomorrow"
+
+# Search
+jean search "meeting"
+```
+
+---
+
+## Sdk: React (react.mdx)
 
 ## Installation
 
@@ -449,521 +1015,7 @@ export default function ChatPage() {
 
 ---
 
-## Node.js SDK (nodejs.mdx)
-
-## Installation
-
-```bash
-npm install @jeanmemory/node
-```
-
-## Quick Start
-
-```javascript
-import { JeanAgent } from '@jeanmemory/node';
-
-const agent = new JeanAgent({
-  apiKey: process.env.JEAN_API_KEY
-});
-
-await agent.run();
-```
-
-## Express Integration
-
-```javascript
-import express from 'express';
-import { JeanAgent } from '@jeanmemory/node';
-
-const app = express();
-const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });
-
-app.post('/chat', async (req, res) => {
-  const response = await agent.sendMessage(req.body.message);
-  res.json({ response: response.content });
-});
-```
-
-Full documentation coming soon.
-
----
-
-## Python SDK (python.mdx)
-
-## Installation
-
-```bash
-pip install jeanmemory
-```
-
-## Basic Usage
-
-```python
-from jeanmemory import JeanAgent
-
-agent = JeanAgent(api_key="jean_sk_...")
-agent.run()  # Starts interactive chat
-```
-
-## Programmatic Usage
-
-```python
-from jeanmemory import JeanAgent
-import os
-
-agent = JeanAgent(
-    api_key=os.getenv("JEAN_API_KEY"),
-    system_prompt="You are a helpful assistant"
-)
-
-# Send a message
-response = agent.send_message("What's on my todo list?")
-print(response.content)
-
-# Stream responses
-for chunk in agent.send_message_stream("Tell me about the project"):
-    print(chunk, end="")
-```
-
-## Memory Management
-
-```python
-# Add memory with tags
-agent.add_memory(
-    text="Meeting with Sarah about Q4 roadmap",
-    tags=["meetings", "q4"]
-)
-
-# Search memories
-memories = agent.search_memories("roadmap")
-for memory in memories:
-    print(memory.text)
-
-# Get all memories
-all_memories = agent.get_memories()
-```
-
-## Flask Integration
-
-```python
-from flask import Flask, request, jsonify
-from jeanmemory import JeanAgent
-
-app = Flask(__name__)
-agent = JeanAgent(api_key="jean_sk_...")
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    message = request.json['message']
-    response = agent.send_message(message)
-    return jsonify({'response': response.content})
-```
-
-## Async Support
-
-```python
-import asyncio
-from jeanmemory import AsyncJeanAgent
-
-async def main():
-    agent = AsyncJeanAgent(api_key="jean_sk_...")
-    response = await agent.send_message("Hello")
-    print(response.content)
-
-asyncio.run(main())
-```
-
-## CLI Usage
-
-```bash
-# Interactive chat
-jean chat --api-key jean_sk_...
-
-# Add memory
-jean remember "Important meeting tomorrow"
-
-# Search
-jean search "meeting"
-```
-
----
-
-## MCP Introduction (introduction.mdx)
-
-The Model Context Protocol (MCP) is an open standard designed to provide a more powerful and flexible way to connect AI agents to tools and data. It standardizes the piping of context and memory across the internet, enabling a new level of interoperability for AI systems.
-
-While our REST API is perfect for many use cases, MCP is the ideal choice for developers building sophisticated, agentic systems that require stateful connections, real-time communication, and dynamic tool use.
-
-## Why Choose MCP over the REST API?
-
-| Feature                       | REST API                                   | Model Context Protocol (MCP)                               |
-| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
-| **Connection**                | Stateless (each request is independent)    | Stateful (a continuous, persistent connection)             |
-| **Communication**             | Request-Response (client-driven)           | Bidirectional (server can push updates to the agent)       |
-| **Tool Use**                  | Static (hard-coded to specific endpoints)  | Dynamic (agent can discover and learn to use new tools)    |
-| **Context Management**        | Handled in the prompt (can lead to bloat)  | Managed by the protocol (more efficient and scalable)      |
-
-In short, if you are building a simple application and just need to store and retrieve memories, our REST API is a great choice. If you are building a complex, autonomous agent that needs to interact with its environment in real-time, MCP is the way to go.
-
-## Key Benefits of MCP for Agentic Memory
-
-*   **Complex, Multi-Step Tasks**: Because MCP maintains a stateful connection, it's perfect for complex workflows where context needs to be preserved across multiple steps. The agent can have an ongoing "conversation" with a tool, rather than sending a series of disconnected requests.
-
-*   **Real-Time Reactivity**: MCP allows tools to proactively push information to the agent. This is essential for building agents that can react to live events, such as a file being updated, a new message arriving, or a change in a database.
-
-*   **Enhanced Autonomy and Adaptability**: With dynamic tool discovery, your agent can learn to use new tools and capabilities without being explicitly re-programmed. This allows you to build more adaptive and autonomous agents that can evolve over time.
-
-*   **Efficiency and Scalability**: By managing context and tool definitions outside of the prompt, MCP avoids the "prompt bloat" that can limit the performance and scalability of agents built on REST APIs.
-
-## How to Get Started
-
-To get started with MCP, you'll need to connect to one of our MCP servers. The authentication is handled via a standard OAuth 2.1 flow, which is initiated when you connect.
-
-You can find more details on how to implement this in our SDK documentation.
-
----
-
-## Authentication Guide (authentication.mdx)
-
-## OAuth 2.1 for Modern AI
-
-Jean Memory uses the OAuth 2.1 authorization framework, the industry-standard protocol for authorization. This ensures that your integration is secure, scalable, and compatible with the latest AI standards, including the **Model Context Protocol (MCP)**.
-
-Our implementation of OAuth 2.1 is designed to be straightforward for developers while providing robust security for end-users.
-
-### Key Features
-
-- **PKCE for Enhanced Security**: All of our OAuth flows use Proof Key for Code Exchange (PKCE) to protect against authorization code interception attacks.
-- **Granular Scopes**: You can request specific permissions from users, ensuring that your application only has access to the data it needs.
-- **Short-Lived Access Tokens**: Access tokens are short-lived, reducing the risk of them being compromised.
-- **Refresh Tokens**: Long-lived refresh tokens allow your application to maintain a persistent connection to the Jean Memory API without requiring users to re-authenticate.
-
-## SDK vs Manual Implementation
-
-### Using SDKs (Recommended)
-All our SDKs handle OAuth automatically:
-
-```javascript
-// React - OAuth handled automatically
-const { agent } = useJean({ apiKey: "your-api-key" });
-
-// Python - OAuth handled automatically  
-agent = JeanAgent(api_key="your-api-key")
-
-// Node.js - OAuth handled automatically
-const agent = new JeanAgent({ apiKey: "your-api-key" });
-```
-
-### Manual OAuth Implementation (Advanced)
-
-If you're building a custom client or testing framework, you'll need to implement the OAuth flow manually.
-
-#### Step 1: Register Your Application
-Contact support@jeanmemory.com to register your OAuth client and whitelist redirect URIs.
-
-#### Step 2: Authorization Request
-```javascript
-const authUrl = new URL('https://jean-memory-api-virginia.onrender.com/oauth/authorize');
-authUrl.searchParams.append('client_id', 'your-registered-client-id');
-authUrl.searchParams.append('redirect_uri', 'http://localhost:3000/callback'); // Must be whitelisted
-authUrl.searchParams.append('response_type', 'code');
-authUrl.searchParams.append('code_challenge', pkceChallenge);
-authUrl.searchParams.append('code_challenge_method', 'S256');
-authUrl.searchParams.append('state', randomState);
-```
-
-#### Step 3: Token Exchange
-```javascript
-const tokenResponse = await fetch('https://jean-memory-api-virginia.onrender.com/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: new URLSearchParams({
-    grant_type: 'authorization_code',
-    client_id: 'your-client-id',
-    code: authorizationCode,
-    redirect_uri: 'http://localhost:3000/callback',
-    code_verifier: pkceVerifier
-  })
-});
-```
-
-<Warning>
-**Common Issue:** "Invalid redirect URI" error means your URI isn't whitelisted. See our [OAuth Troubleshooting Guide](/oauth-troubleshooting) for solutions.
-</Warning>
-
-### The MCP Connection
-
-The Model Context Protocol is a new standard for stateful, bidirectional communication between AI models and external tools. Jean Memory's support for OAuth 2.1 makes it a first-class citizen in the MCP ecosystem, allowing you to build powerful, agentic systems that can securely access a user's memories.
-
-You can learn more in the [MCP Introduction](/mcp/introduction).
-
----
-
-## OAuth Troubleshooting (oauth-troubleshooting.mdx)
-
-## Common OAuth Issues
-
-### "Invalid redirect URI" Error
-
-**Problem:** `{"detail":"Invalid redirect URI"}` when testing OAuth flow.
-
-**Cause:** Your redirect URI isn't whitelisted on our server.
-
-**Solutions:**
-
-#### For Local Development
-```javascript
-// Use one of these whitelisted URIs for local testing:
-const redirectUri = 'http://localhost:3000/callback';
-// or
-const redirectUri = 'http://127.0.0.1:3000/callback';
-```
-
-#### For Production
-Contact support at support@jeanmemory.com to whitelist your production domain:
-- `https://yourdomain.com/callback`
-- `https://yourdomain.com/auth/callback`
-
-<Warning>
-Allow 10-15 minutes after whitelist approval for DNS propagation.
-</Warning>
-
-### Testing Without Full OAuth Setup
-
-For development and testing, you can use the SDK's built-in fallback mode:
-
-```javascript
-// React SDK - automatically handles fallback
-const { agent } = useJean({ 
-  apiKey: "your-api-key",
-  // Will work even without OAuth completion
-});
-
-// Python SDK - demo mode
-agent = JeanAgent(api_key="your-api-key", demo_mode=True)
-```
-
-## OAuth Flow Requirements
-
-### Required Parameters
-```javascript
-{
-  response_type: 'code',
-  client_id: 'your-registered-client-id', 
-  redirect_uri: 'https://yourdomain.com/callback', // Must be exact match
-  code_challenge: 'generated-pkce-challenge',
-  code_challenge_method: 'S256',
-  state: 'random-state-value'
-}
-```
-
-### Callback Handler
-```javascript
-// Your /callback endpoint must handle:
-const urlParams = new URLSearchParams(window.location.search);
-const code = urlParams.get('code');
-const state = urlParams.get('state');
-
-// Then exchange code for token
-const tokenResponse = await fetch('/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: new URLSearchParams({
-    grant_type: 'authorization_code',
-    client_id: 'your-client-id',
-    code: code,
-    redirect_uri: 'https://yourdomain.com/callback',
-    code_verifier: 'stored-pkce-verifier'
-  })
-});
-```
-
-## Development Workflow
-
-### Phase 1: Mock Development
-- Use SDK fallback modes for UI development
-- Test application logic without OAuth
-
-### Phase 2: OAuth Setup  
-- Register application at [jeanmemory.com](https://jeanmemory.com)
-- Request redirect URI whitelist
-- Test authentication flow
-
-### Phase 3: Integration Testing
-- Full end-to-end testing with real tokens
-- Performance validation
-- Production deployment
-
-## Getting Help
-
-**For OAuth Issues:**
-- Email: support@jeanmemory.com
-- Subject: "OAuth Redirect URI Whitelist Request"
-- Include: Your domain(s) and redirect URI(s)
-
-**For Technical Issues:**
-- GitHub Issues: [jean-technologies/jean-memory](https://github.com/jean-technologies/jean-memory/issues)
-- Include: Error messages, code samples, browser console logs
-
----
-
-## Context Engineering (context-engineering.mdx)
-
-## Context Engineering, Not Information Retrieval
-
-Jean Memory's core philosophy is **Context Engineering**, not just Information Retrieval. This means the system doesn't just store and retrieve memories—it intelligently engineers context for your AI assistant. This is the key to making AI truly personal and useful.
-
-The system is designed to:
--   Select the *right* information at the *right* time.
--   Synthesize insights from disparate memories.
--   Understand relationships between memories.
--   Predict what context will be most useful.
-
-This approach is inspired by Rich Sutton's "The Bitter Lesson," which argues that leveraging AI's intelligence is more effective than hand-coded heuristics. Jean Memory uses AI to decide what to remember, what context is relevant, and how to synthesize new insights.
-
-## The `jean_memory` Tool: A Tool of Tools
-
-The `jean_memory` tool is the heart of the system. It's the primary interface for your AI to interact with the memory layer. It's a "tool of tools" that orchestrates various underlying memory functions to provide the right context at the right depth, with built-in intelligence and long-context awareness.
-
-```mermaid
-graph TD;
-    subgraph "Jean Memory Tool"
-        jean_memory["jean_memory (API)"]
-    end
-
-    subgraph "Read (Retrieval)"
-        direction TB
-        jean_memory --> retrieval_strategies["Retrieval Strategies"];
-        
-        subgraph "Layers of Depth"
-            retrieval_strategies --> shallow["Shallow Search<br/><i>Fast, Targeted</i>"];
-            retrieval_strategies --> deep["Deep Search<br/><i>Comprehensive</i>"];
-        end
-
-        subgraph "Underlying Tools"
-            shallow --> search_memory_shallow["search_memory"];
-            deep --> search_memory_deep["search_memory"];
-            deep --> deep_memory_query["deep_memory_query"];
-        end
-    end
-
-    subgraph "Write (Storage)"
-        direction TB
-        jean_memory --> write_processor["Background Processor"];
-        write_processor --> add_memory["add_memory"];
-        write_processor --> store_document["store_document"];
-    end
-
-    classDef api fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
-    classDef read fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
-    classDef write fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
-    classDef tools fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
-
-    class jean_memory api;
-    class retrieval_strategies,shallow,deep read;
-    class write_processor,add_memory,store_document write;
-    class search_memory_shallow,search_memory_deep,deep_memory_query tools;
-```
-
-```python
-@mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!!")
-async def jean_memory(
-    user_message: str, 
-    is_new_conversation: bool, 
-    needs_context: bool
-) -> str:
-```
-
-### Execution Flow
-
-The `jean_memory` tool uses a dual-path asynchronous process to provide a fast response while performing deeper analysis in the background.
-
-1.  **Immediate Path (< 3 seconds)**:
-    -   If `needs_context=false`, it returns immediately.
-    -   If `needs_context=true`, it runs a fast vector search to get the most relevant context instantly.
-
-2.  **Background Path 1 - Smart Triage**:
-    -   Triggered for **every** message.
-    -   Uses a fast AI model (Gemini Flash) to analyze the message and decide whether to **REMEMBER** or **SKIP** it.
-    -   If it decides to **REMEMBER**, it saves the memory in the background.
-
-3.  **Background Path 2 - Deep Analysis**:
-    -   Only runs if `needs_context=true`.
-    -   Performs a full context engineering pipeline to synthesize insights from multiple memories.
-    -   This can take 30-60 seconds and creates high-priority "insight memories."
-
-## Smart Context Orchestrator
-
-The `SmartContextOrchestrator` is the brain behind the `jean_memory` tool. It uses different strategies to create the best possible context for the AI.
-
-### Context Strategies
-
-1.  **`deep_understanding`**: Used for new conversations to provide comprehensive context about the user.
-2.  **`relevant_context`**: Used for ongoing conversations to provide targeted, relevant information.
-3.  **`comprehensive_analysis`**: Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
-
-By using these strategies, Jean Memory ensures that the AI has the perfect amount of context to be helpful without being overwhelmed by information.
-
----
-
-## MCP Setup (setup.mdx)
-
-## What is MCP?
-
-Model Context Protocol (MCP) lets AI assistants like Claude and ChatGPT connect to external tools.
-
-## Quick Setup
-
-### Claude Desktop
-
-1. Find your config file:
-   - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-2. Add Jean Memory:
-```json
-{
-  "mcpServers": {
-    "jean-memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
-    }
-  }
-}
-```
-
-3. Restart Claude Desktop
-
-### ChatGPT
-
-Coming soon - use the API for now.
-
-### Cursor
-
-Add to your `.cursor/config.json`:
-```json
-{
-  "mcp": {
-    "servers": {
-      "jean-memory": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-jean-memory"]
-      }
-    }
-  }
-}
-```
-
-## How It Works
-
-Once connected, the AI can:
-- Store memories: "Remember that..."
-- Search memories: "What did we discuss about..."
-- Use context automatically in responses
-
----
-
-## Available Tools (tools.mdx)
+## Tools (tools.mdx)
 
 Jean Memory is built on a foundation of powerful, modular tools that are orchestrated through the Model Context Protocol (MCP). This allows for a flexible and extensible system that can adapt to a wide range of use cases.
 
@@ -1076,58 +1128,6 @@ GET /api/v1/memories/search?q=preferences&limit=10
 ```http
 GET /api/v1/apps
 ```
-
----
-
-## Example Use Cases (example-use-cases.mdx)
-
-Jean Memory enables you to build AI applications that truly understand and remember your users. Our customers are using it in imaginative and creative ways, from building **AI career coaching platforms** to creating powerful **integrations with their favorite note-taking applications**.
-
-Here are some of the powerful possibilities, broken down by category, to inspire your own creations.
-
-## Personalized AI Experiences
-
-Create applications that adapt to individual users, providing a deeply personal and intelligent experience.
-
-<Card title="AI Career Coach" icon="rocket">
-  **A coach that remembers your journey.** Build an AI mentor that tracks a user's skills, experience, and career goals to provide personalized advice and tailored job recommendations.
-</Card>
-
-<Card title="Personalized Note-Taking" icon="book">
-  **Your second brain, supercharged.** Connect Jean Memory to note-taking apps to create a personal knowledge base. Allow users to query their own notes and ideas with an AI that understands the context.
-</Card>
-
-<Card title="Adaptive AI Tutors" icon="book">
-  **Learning that evolves with the student.** Develop an AI tutor that remembers a student's progress, learning style, and areas of difficulty, tailoring lessons for a truly adaptive educational experience.
-</Card>
-
-## Agentic & Automated Workflows
-
-Integrate Jean Memory into automated systems to create powerful, context-aware agents.
-
-<Card title="Agentic Memory with n8n" icon="code">
-  **Automate with memory.** Build powerful, automated workflows that can remember and act on information from a variety of sources, creating intelligent agents that can handle complex, multi-step tasks.
-</Card>
-
-<Card title="Programmatic Content Creation" icon="code">
-  **An AI that knows your voice.** Generate content that remembers your unique style, tone, and key messaging points, ensuring your brand is always consistent, whether it's writing emails, reports, or marketing copy.
-</Card>
-
-## Collaborative & Organizational Memory
-
-Use Jean Memory to create a shared source of truth for teams and businesses.
-
-<Card title="Long-Term Client Memory" icon="rocket">
-  **Never lose a client detail again.** Keep track of all your clients, their history, and their needs with a shared memory that can be accessed by your entire team, ensuring seamless handoffs and personalized service.
-</Card>
-
-<Card title="Working Memory Across Platforms" icon="rocket">
-  **A seamless, cross-platform experience.** Provide a unified user experience across all of your applications, with a shared memory that follows the user wherever they go, from web to mobile to desktop.
-</Card>
-
-<Card title="Shared Memory for Coworkers" icon="book">
-  **Unlock your team's collective intelligence.** Enable your team to collaborate more effectively with a shared knowledge base that can be accessed and contributed to by everyone, preventing knowledge silos.
-</Card>
 
 ---
 
