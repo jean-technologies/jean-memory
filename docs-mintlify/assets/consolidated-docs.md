@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-07 15:04:09
+**Generated on:** 2025-08-07 15:11:13
 
 ## What is Jean Memory?
 
@@ -52,7 +52,7 @@ await agent.run();
 
 # Complete Documentation
 
-## Overview (overview.mdx)
+## Overview
 
 ## What is Jean Memory?
 
@@ -120,7 +120,7 @@ Ready to give your AI a memory?
 
 ---
 
-## Quickstart (quickstart.mdx)
+## Quickstart
 
 ## For the AI Developers
 
@@ -278,7 +278,7 @@ It remembers across sessions automatically!
 
 ---
 
-## Architecture (architecture.mdx)
+## Architecture
 
 ## More Than a Database: An Intelligent Memory System
 
@@ -313,7 +313,7 @@ This combination of a powerful, multi-database backend and a sophisticated intel
 
 ---
 
-## Example Use Cases (example-use-cases.mdx)
+## Example Use Cases
 
 Jean Memory enables you to build AI applications that truly understand and remember your users. Our customers are using it in imaginative and creative ways, from building **AI career coaching platforms** to creating powerful **integrations with their favorite note-taking applications**.
 
@@ -365,7 +365,7 @@ Use Jean Memory to create a shared source of truth for teams and businesses.
 
 ---
 
-## Mcp: Authentication (authentication.mdx)
+## Mcp: Authentication
 
 ## OAuth 2.1 for Modern AI
 
@@ -441,7 +441,7 @@ You can learn more in the [MCP Introduction](/mcp/introduction).
 
 ---
 
-## Mcp: Context Engineering (context-engineering.mdx)
+## Mcp: Context Engineering
 
 ## Context Engineering, Not Information Retrieval
 
@@ -540,7 +540,7 @@ By using these strategies, Jean Memory ensures that the AI has the perfect amoun
 
 ---
 
-## Mcp: Introduction (introduction.mdx)
+## Mcp: Introduction
 
 The Model Context Protocol (MCP) is an open standard designed to provide a more powerful and flexible way to connect AI agents to tools and data. It standardizes the piping of context and memory across the internet, enabling a new level of interoperability for AI systems.
 
@@ -575,7 +575,7 @@ You can find more details on how to implement this in our SDK documentation.
 
 ---
 
-## Mcp: Setup (setup.mdx)
+## Mcp: Setup
 
 ## What is MCP?
 
@@ -632,7 +632,7 @@ Once connected, the AI can:
 
 ---
 
-## Oauth Troubleshooting (oauth-troubleshooting.mdx)
+## Oauth Troubleshooting
 
 ## Common OAuth Issues
 
@@ -740,7 +740,7 @@ const tokenResponse = await fetch('/oauth/token', {
 
 ---
 
-## Sdk: Nodejs (nodejs.mdx)
+## Sdk: Nodejs
 
 ## Installation
 
@@ -779,7 +779,7 @@ Full documentation coming soon.
 
 ---
 
-## Sdk: Python (python.mdx)
+## Sdk: Python
 
 ## Installation
 
@@ -879,7 +879,7 @@ jean search "meeting"
 
 ---
 
-## Sdk: React (react.mdx)
+## Sdk: React
 
 ## Installation
 
@@ -1015,7 +1015,7 @@ export default function ChatPage() {
 
 ---
 
-## Tools (tools.mdx)
+## Tools
 
 Jean Memory is built on a foundation of powerful, modular tools that are orchestrated through the Model Context Protocol (MCP). This allows for a flexible and extensible system that can adapt to a wide range of use cases.
 

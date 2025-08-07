@@ -110,6 +110,11 @@ await agent.run();
     doc_files.sort(key=sort_key)
     # --- End of dynamic discovery ---
     
+    print("--- Discovered Documentation Files ---")
+    for file_path, title in doc_files:
+        print(f"- {title} ({file_path})")
+    print("------------------------------------")
+
     with open(output_filename, "w", encoding='utf-8') as outfile:
         # Write AI context header
         outfile.write(ai_context_header)
@@ -120,7 +125,7 @@ await agent.run();
                     content = infile.read()
                     # Remove YAML frontmatter
                     content = re.sub(r'^---[\s\S]*?---', '', content).strip()
-                    outfile.write(f"## {section_title} ({os.path.basename(doc_file)})\n\n")
+                    outfile.write(f"## {section_title}\n\n")
                     outfile.write(content)
                     outfile.write("\n\n---\n\n")
             else:
