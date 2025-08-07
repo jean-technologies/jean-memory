@@ -7,7 +7,7 @@ description: 'Get running in 2 minutes'
 
 Want to just start building? We've consolidated all of our documentation into a single file for you to copy and paste into your favorite AI coding tool.
 
-<Card title="Skip the reading, start building" icon="lightning-bolt">
+<Card title="Skip the reading, start building" icon="code">
   Don't like reading docs? Copy all our documentation below and paste it into your AI coding tool (Cursor, Claude Code, etc.) with instructions for what you'd like to build.
   
   <button 
@@ -17,7 +17,7 @@ Want to just start building? We've consolidated all of our documentation into a 
       alignItems: 'center',
       gap: '0.5rem',
       padding: '0.5rem 1rem',
-      background: '#2563eb',
+      background: '#7c3aed',
       color: 'white',
       border: 'none',
       borderRadius: '0.375rem',
@@ -27,21 +27,22 @@ Want to just start building? We've consolidated all of our documentation into a 
       marginTop: '1rem'
     }}
     onClick={() => {
+      const btn = document.getElementById('copyDocsBtn');
       fetch('/assets/consolidated-docs.md')
         .then(response => response.text())
         .then(text => {
           navigator.clipboard.writeText(text).then(() => {
-            document.getElementById('copyDocsBtn').textContent = '✅ Copied!';
+            btn.innerHTML = 'Copied!';
             setTimeout(() => {
-              document.getElementById('copyDocsBtn').textContent = '📋 Copy All Docs for AI';
+              btn.innerHTML = '📋 Copy All Docs for AI';
             }, 2000);
           });
         })
         .catch(err => {
           console.error('Failed to copy: ', err);
-          document.getElementById('copyDocsBtn').textContent = '❌ Failed';
+          btn.innerHTML = 'Failed to copy';
           setTimeout(() => {
-            document.getElementById('copyDocsBtn').textContent = '📋 Copy All Docs for AI';
+            btn.innerHTML = '📋 Copy All Docs for AI';
           }, 2000);
         });
     }}
