@@ -52,7 +52,8 @@
       "group": "MCP",
       "pages": [
         "mcp/introduction",
-        "mcp/authentication"
+        "mcp/authentication",
+        "oauth-troubleshooting"
       ]
     },
     {

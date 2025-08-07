@@ -73,6 +73,7 @@ await agent.run();
         ("docs-mintlify/sdk/python.mdx", "Python SDK"),
         ("docs-mintlify/mcp/introduction.mdx", "MCP Introduction"),
         ("docs-mintlify/mcp/authentication.mdx", "Authentication Guide"),
+        ("docs-mintlify/oauth-troubleshooting.mdx", "OAuth Troubleshooting"),
         ("docs-mintlify/mcp/context-engineering.mdx", "Context Engineering"),
         ("docs-mintlify/mcp/setup.mdx", "MCP Setup"),
         ("docs-mintlify/tools.mdx", "Available Tools"),

@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-07 12:43:29
+**Generated on:** 2025-08-07 13:47:56
 
 ## What is Jean Memory?
 
@@ -122,13 +122,53 @@ Ready to give your AI a memory?
 
 ## Quickstart Guide (quickstart.mdx)
 
-import CopyToClipboard from '/components/CopyToClipboard';
-
 ## For the AI Developers
 
 Want to just start building? We've consolidated all of our documentation into a single file for you to copy and paste into your favorite AI coding tool.
 
-<CopyToClipboard />
+<Card title="Skip the reading, start building" icon="code">
+  Don't like reading docs? Copy all our documentation below and paste it into your AI coding tool (Cursor, Claude Code, etc.) with instructions for what you'd like to build.
+  
+  <button 
+    id="copyDocsBtn"
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.5rem 1rem',
+      background: '#7c3aed',
+      color: 'white',
+      border: 'none',
+      borderRadius: '0.375rem',
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      cursor: 'pointer',
+      marginTop: '1rem'
+    }}
+    onClick={() => {
+      const btn = document.getElementById('copyDocsBtn');
+      fetch('/assets/consolidated-docs.md')
+        .then(response => response.text())
+        .then(text => {
+          navigator.clipboard.writeText(text).then(() => {
+            btn.innerHTML = 'Copied!';
+            setTimeout(() => {
+              btn.innerHTML = 'Copy All Docs for AI';
+            }, 2000);
+          });
+        })
+        .catch(err => {
+          console.error('Failed to copy: ', err);
+          btn.innerHTML = 'Failed to copy';
+          setTimeout(() => {
+            btn.innerHTML = 'Copy All Docs for AI';
+          }, 2000);
+        });
+    }}
+  >
+    Copy All Docs for AI
+  </button>
+</Card>
 
 ## How Jean Memory Works
 
@@ -598,11 +638,172 @@ Our implementation of OAuth 2.1 is designed to be straightforward for developers
 - **Short-Lived Access Tokens**: Access tokens are short-lived, reducing the risk of them being compromised.
 - **Refresh Tokens**: Long-lived refresh tokens allow your application to maintain a persistent connection to the Jean Memory API without requiring users to re-authenticate.
 
+## SDK vs Manual Implementation
+
+### Using SDKs (Recommended)
+All our SDKs handle OAuth automatically:
+
+```javascript
+// React - OAuth handled automatically
+const { agent } = useJean({ apiKey: "your-api-key" });
+
+// Python - OAuth handled automatically  
+agent = JeanAgent(api_key="your-api-key")
+
+// Node.js - OAuth handled automatically
+const agent = new JeanAgent({ apiKey: "your-api-key" });
+```
+
+### Manual OAuth Implementation (Advanced)
+
+If you're building a custom client or testing framework, you'll need to implement the OAuth flow manually.
+
+#### Step 1: Register Your Application
+Contact support@jeanmemory.com to register your OAuth client and whitelist redirect URIs.
+
+#### Step 2: Authorization Request
+```javascript
+const authUrl = new URL('https://jean-memory-api-virginia.onrender.com/oauth/authorize');
+authUrl.searchParams.append('client_id', 'your-registered-client-id');
+authUrl.searchParams.append('redirect_uri', 'http://localhost:3000/callback'); // Must be whitelisted
+authUrl.searchParams.append('response_type', 'code');
+authUrl.searchParams.append('code_challenge', pkceChallenge);
+authUrl.searchParams.append('code_challenge_method', 'S256');
+authUrl.searchParams.append('state', randomState);
+```
+
+#### Step 3: Token Exchange
+```javascript
+const tokenResponse = await fetch('https://jean-memory-api-virginia.onrender.com/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: 'your-client-id',
+    code: authorizationCode,
+    redirect_uri: 'http://localhost:3000/callback',
+    code_verifier: pkceVerifier
+  })
+});
+```
+
+<Warning>
+**Common Issue:** "Invalid redirect URI" error means your URI isn't whitelisted. See our [OAuth Troubleshooting Guide](/oauth-troubleshooting) for solutions.
+</Warning>
+
 ### The MCP Connection
 
 The Model Context Protocol is a new standard for stateful, bidirectional communication between AI models and external tools. Jean Memory's support for OAuth 2.1 makes it a first-class citizen in the MCP ecosystem, allowing you to build powerful, agentic systems that can securely access a user's memories.
 
 You can learn more in the [MCP Introduction](/mcp/introduction).
+
+---
+
+## OAuth Troubleshooting (oauth-troubleshooting.mdx)
+
+## Common OAuth Issues
+
+### "Invalid redirect URI" Error
+
+**Problem:** `{"detail":"Invalid redirect URI"}` when testing OAuth flow.
+
+**Cause:** Your redirect URI isn't whitelisted on our server.
+
+**Solutions:**
+
+#### For Local Development
+```javascript
+// Use one of these whitelisted URIs for local testing:
+const redirectUri = 'http://localhost:3000/callback';
+// or
+const redirectUri = 'http://127.0.0.1:3000/callback';
+```
+
+#### For Production
+Contact support at support@jeanmemory.com to whitelist your production domain:
+- `https://yourdomain.com/callback`
+- `https://yourdomain.com/auth/callback`
+
+<Warning>
+Allow 10-15 minutes after whitelist approval for DNS propagation.
+</Warning>
+
+### Testing Without Full OAuth Setup
+
+For development and testing, you can use the SDK's built-in fallback mode:
+
+```javascript
+// React SDK - automatically handles fallback
+const { agent } = useJean({ 
+  apiKey: "your-api-key",
+  // Will work even without OAuth completion
+});
+
+// Python SDK - demo mode
+agent = JeanAgent(api_key="your-api-key", demo_mode=True)
+```
+
+## OAuth Flow Requirements
+
+### Required Parameters
+```javascript
+{
+  response_type: 'code',
+  client_id: 'your-registered-client-id', 
+  redirect_uri: 'https://yourdomain.com/callback', // Must be exact match
+  code_challenge: 'generated-pkce-challenge',
+  code_challenge_method: 'S256',
+  state: 'random-state-value'
+}
+```
+
+### Callback Handler
+```javascript
+// Your /callback endpoint must handle:
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get('code');
+const state = urlParams.get('state');
+
+// Then exchange code for token
+const tokenResponse = await fetch('/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: 'your-client-id',
+    code: code,
+    redirect_uri: 'https://yourdomain.com/callback',
+    code_verifier: 'stored-pkce-verifier'
+  })
+});
+```
+
+## Development Workflow
+
+### Phase 1: Mock Development
+- Use SDK fallback modes for UI development
+- Test application logic without OAuth
+
+### Phase 2: OAuth Setup  
+- Register application at [jeanmemory.com](https://jeanmemory.com)
+- Request redirect URI whitelist
+- Test authentication flow
+
+### Phase 3: Integration Testing
+- Full end-to-end testing with real tokens
+- Performance validation
+- Production deployment
+
+## Getting Help
+
+**For OAuth Issues:**
+- Email: support@jeanmemory.com
+- Subject: "OAuth Redirect URI Whitelist Request"
+- Include: Your domain(s) and redirect URI(s)
+
+**For Technical Issues:**
+- GitHub Issues: [jean-technologies/jean-memory](https://github.com/jean-technologies/jean-memory/issues)
+- Include: Error messages, code samples, browser console logs
 
 ---
 
