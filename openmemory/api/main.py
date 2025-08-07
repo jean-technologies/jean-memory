@@ -397,6 +397,10 @@ app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - 
 # OAuth 2.0 endpoints for Claude Web
 app.include_router(oauth_router)  # OAuth server at /oauth/*
 
+# SDK OAuth endpoints for React SDK
+from app.routers.sdk_oauth import sdk_oauth_router
+app.include_router(sdk_oauth_router)  # SDK OAuth server at /sdk/oauth/*
+
 # MCP server endpoint for Claude Web  
 app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp (Bearer token)
 app.include_router(mcp_v2_router)  # MCP v2 endpoints with multi-terminal support at /mcp/v2/* and legacy endpoints
