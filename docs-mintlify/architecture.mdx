@@ -1,0 +1,40 @@
+---
+title: Our Architecture
+description: "A look under the hood at our sophisticated RAG and Graph Database stack."
+---
+
+## Our Philosophy: Context Engineering
+
+At Jean Memory, our core philosophy is **Context Engineering, not just Information Retrieval**. While many systems can store and retrieve data, our goal is to intelligently understand, synthesize, and prepare the perfect context for your AI, right when it's needed. This requires a sophisticated backend architecture designed for both speed and intelligence.
+
+## The Tri-Database Stack
+
+To achieve this, we've built our system on a unique tri-database architecture, where each component is chosen for its specific strengths. This allows us to handle the complex demands of AI memory far more effectively than a single database could.
+
+<Card title="Qdrant (Vector DB for RAG)" icon="search">
+  **For semantic search and relevance.** We use Qdrant, a state-of-the-art vector database, to power our Retrieval-Augmented Generation (RAG) capabilities. When your AI needs to find relevant memories, Qdrant allows us to perform lightning-fast semantic searches to find the most contextually similar information.
+</Card>
+
+<Card title="Neo4j (Graph DB for Relationships)" icon="network">
+  **For understanding connections.** We use Neo4j to build a rich knowledge graph of the entities and relationships within a user's memories. This allows us to understand not just what a user has said, but how different concepts, people, and events are connected over time, providing a much deeper level of context.
+</Card>
+
+<Card title="PostgreSQL (Relational DB for Metadata)" icon="database">
+  **For structured data and reliability.** All of the metadata associated with your memories, users, and applications is stored in a robust PostgreSQL database. This ensures data integrity and provides a reliable foundation for the entire system.
+</Card>
+
+## Our Relationship with mem0
+
+We see `mem0` as a foundational part of the AI memory stack, much like how they might see Qdrant or Pinecone. We use the `mem0` library as a brilliant abstraction layer to simplify our interactions with the underlying vector and graph databases.
+
+However, where Jean Memory truly distinguishes itself is in the powerful intelligence layer we've built **on top of** `mem0`.
+
+### The Jean Memory Intelligence Layer
+
+Our custom-built orchestration engine is what transforms raw storage into intelligent, engineered context. This includes:
+
+- **Smart Triage:** An AI-powered system that automatically decides what information is important enough to remember, preventing your memory from becoming cluttered with irrelevant noise.
+- **Graphiti Enhancement:** A proprietary layer that adds a temporal dimension to our knowledge graph, allowing us to understand how relationships and context evolve over time.
+- **Dual-Path Asynchronous Processing:** A unique architecture that provides an immediate, fast response while performing deeper, more complex analysis in the background.
+
+This combination of a powerful, multi-database backend and a sophisticated intelligence layer allows Jean Memory to provide a level of context and understanding that goes far beyond simple storage and retrieval.

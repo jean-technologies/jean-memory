@@ -37,6 +37,7 @@
       "pages": [
         "overview",
         "quickstart",
+        "architecture",
         "authentication",
         "use-cases"
       ]
