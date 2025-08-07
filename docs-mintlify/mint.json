@@ -37,9 +37,7 @@
       "pages": [
         "overview",
         "quickstart",
-        "architecture",
-        "authentication",
-        "use-cases"
+        "architecture"
       ]
     },
     {
@@ -54,7 +52,19 @@
       "group": "MCP",
       "pages": [
         "mcp/introduction",
+        "mcp/authentication"
+      ]
+    },
+    {
+      "group": "Context Engineering",
+      "pages": [
         "mcp/context-engineering"
+      ]
+    },
+    {
+      "group": "Example Use Cases",
+      "pages": [
+        "example-use-cases"
       ]
     },
     {
