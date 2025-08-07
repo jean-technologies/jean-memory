@@ -2,35 +2,57 @@
  * Jean Memory React SDK - Example Usage
  * This demonstrates the 5-line integration working like the Python SDK
  */
-import React from 'react';
-import { useJeanAgent, SignInWithJean, JeanChat } from './index';
+import React, { useState } from 'react';
+import { useJean, SignInWithJean, JeanChat } from './index';
+import type { JeanUser } from './index';
 
-// Example 1: Math Tutor App (exact code from /api-docs page)
+// Example 1: Math Tutor App 
 function MathTutorApp() {
-  const { agent, signIn } = useJeanAgent({
-    systemPrompt: "You are a patient math tutor"
-  });
+  const [user, setUser] = useState<JeanUser | null>(null);
+  const { agent } = useJean({ user });
 
-  if (!agent) return <SignInWithJean onSuccess={signIn} />;
+  const handleSuccess = (authenticatedUser: JeanUser) => {
+    setUser(authenticatedUser);
+  };
+
+  if (!agent) {
+    return <SignInWithJean apiKey="your-api-key" onSuccess={handleSuccess} />;
+  }
   return <JeanChat agent={agent} />;
 }
 
 // Example 2: Therapist App (matching Python SDK example)
 function TherapistApp() {
-  const { agent, signIn } = useJeanAgent({
-    apiKey: "jean_sk_gdy4KGuspLZ82PHGI_3v8hEkP2iyFN4axYciKX8WqeA",
-    systemPrompt: "You are a supportive therapist"
-  });
+  const [user, setUser] = useState<JeanUser | null>(null);
+  const { agent } = useJean({ user });
 
-  if (!agent) return <SignInWithJean onSuccess={signIn} />;
+  const handleSuccess = (authenticatedUser: JeanUser) => {
+    setUser(authenticatedUser);
+  };
+
+  if (!agent) {
+    return <SignInWithJean 
+      apiKey="jean_sk_gdy4KGuspLZ82PHGI_3v8hEkP2iyFN4axYciKX8WqeA" 
+      onSuccess={handleSuccess} 
+    />;
+  }
   return <JeanChat agent={agent} />;
 }
 
 // Example 3: Custom styling
 function CustomStyledApp() {
-  const { agent, signIn, user, isLoading, error } = useJeanAgent({
-    systemPrompt: "You are a helpful assistant"
-  });
+  const [user, setUser] = useState<JeanUser | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { agent, isLoading } = useJean({ user });
+
+  const handleSuccess = (authenticatedUser: JeanUser) => {
+    setUser(authenticatedUser);
+    setError(null);
+  };
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   if (!agent) {
     return (
@@ -41,7 +63,9 @@ function CustomStyledApp() {
             Sign in with your Jean Memory account to get personalized assistance.
           </p>
           <SignInWithJean 
-            onSuccess={signIn}
+            apiKey="your-api-key"
+            onSuccess={handleSuccess}
+            onError={handleError}
             className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
           />
           {error && <p className="text-red-500 mt-2">{error}</p>}
