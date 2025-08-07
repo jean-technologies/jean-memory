@@ -9,7 +9,7 @@
   ·
   <a href="https://jeanmemory.com/dashboard-new">Dashboard</a>
   ·
-  <a href="https://jeanmemory.com/api-docs">API Docs</a>
+  <a href="https://docs.jeanmemory.com">API Docs</a>
   ·
   <a href="https://github.com/jean-technologies/jean-memory/issues">Report an Issue</a>
 </p>
@@ -117,7 +117,7 @@ Jean Memory exposes a granular API for memory operations, which is orchestrated 
 - Performing conversational Q&A (`ask_memory`)
 - Executing deep, analytical queries (`deep_memory_query`)
 
-For detailed information, please refer to our full **[API Documentation](https://jeanmemory.com/api-docs)**.
+For detailed information, please refer to our full **[API Documentation](https://docs.jeanmemory.com)**.
 
 ## Contributing
 
@@ -129,6 +129,6 @@ This project incorporates code from [mem0ai/mem0](https://github.com/mem0ai/mem0
 
 ## Support
 
-- **Documentation**: [jeanmemory.com/api-docs](https://jeanmemory.com/api-docs)
+- **Documentation**: [docs.jeanmemory.com](https://docs.jeanmemory.com)
 - **Bug Reports**: [GitHub Issues](https://github.com/jean-technologies/jean-memory/issues)
 - **General Inquiries**: [jonathan@jeantechnologies.com](mailto:jonathan@jeantechnologies.com)

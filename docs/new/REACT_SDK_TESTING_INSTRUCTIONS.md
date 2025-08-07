@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-Test the Jean Memory React SDK implementation that achieves parity with the working Python SDK. This follows the exact instructions and examples shown on the `/api-docs` page at https://jeanmemory.com/api-docs
+Test the Jean Memory React SDK implementation that achieves parity with the working Python SDK. This follows the exact instructions and examples shown on the `/api-docs` page at https://docs.jeanmemory.com
 
 ## ✅ What Works
 
@@ -146,7 +146,7 @@ The changes have been committed and pushed to deploy:
 - **React SDK**: Fixed to match Python SDK architecture
 
 **Live URLs**:
-- **API Docs**: https://jeanmemory.com/api-docs (includes React SDK example)  
+- **API Docs**: https://docs.jeanmemory.com (includes React SDK example)  
 - **Test App**: Running locally at http://localhost:3000
 
 ## 📝 What Was Fixed

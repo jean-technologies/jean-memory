@@ -19,6 +19,46 @@ This approach is inspired by Rich Sutton's "The Bitter Lesson," which argues tha
 
 The `jean_memory` tool is the heart of the system. It's the primary interface for your AI to interact with the memory layer. It's a "tool of tools" that orchestrates various underlying memory functions to provide the right context at the right depth, with built-in intelligence and long-context awareness.
 
+```mermaid
+graph TD;
+    subgraph "Jean Memory Tool"
+        jean_memory["jean_memory (API)"]
+    end
+
+    subgraph "Read (Retrieval)"
+        direction TB
+        jean_memory --> retrieval_strategies["Retrieval Strategies"];
+        
+        subgraph "Layers of Depth"
+            retrieval_strategies --> shallow["Shallow Search<br/><i>Fast, Targeted</i>"];
+            retrieval_strategies --> deep["Deep Search<br/><i>Comprehensive</i>"];
+        end
+
+        subgraph "Underlying Tools"
+            shallow --> search_memory_shallow["search_memory"];
+            deep --> search_memory_deep["search_memory"];
+            deep --> deep_memory_query["deep_memory_query"];
+        end
+    end
+
+    subgraph "Write (Storage)"
+        direction TB
+        jean_memory --> write_processor["Background Processor"];
+        write_processor --> add_memory["add_memory"];
+        write_processor --> store_document["store_document"];
+    end
+
+    classDef api fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef read fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef write fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef tools fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
+
+    class jean_memory api;
+    class retrieval_strategies,shallow,deep read;
+    class write_processor,add_memory,store_document write;
+    class search_memory_shallow,search_memory_deep,deep_memory_query tools;
+```
+
 ```python
 @mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!!")
 async def jean_memory(
