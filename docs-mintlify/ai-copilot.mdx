@@ -1,0 +1,16 @@
+---
+title: "AI Copilot"
+description: "Your AI coding assistant's best friend. A consolidated view of all our documentation for easy copy-pasting."
+---
+
+import { Steps } from 'mintlify/components';
+
+## Copy-Paste All Documentation
+
+Don't like reading docs? Paste this into your AI coding tool (Cursor, Claude, etc.), give it instructions for what you'd like to build, and have it build it for you.
+
+<CodeBlock language="markdown" showLineNumbers={false} collapsible={true}>
+  {
+    require('!!raw-loader!./consolidated-api-docs.mdx').default
+  }
+</CodeBlock>
