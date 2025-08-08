@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:jean-memory-api-virginia.onrender.com)"
+      "WebFetch(domain:jean-memory-api-virginia.onrender.com)",
+      "Bash(chmod:*)",
+      "Bash(pip install:*)",
+      "Bash(npm view:*)"
     ],
     "deny": []
   }

@@ -16,10 +16,10 @@ npm install jeanmemory-react @assistant-ui/react
 The easiest way to get started is with the `JeanChat` component. It provides a full-featured chat interface with memory enabled out of the box.
 
 ```javascript
-import { useJeanAgent, JeanChat } from 'jeanmemory-react';
+import { useJean, JeanChat } from 'jeanmemory-react';
 
 function App() {
-  const { agent } = useJeanAgent({ 
+  const { agent } = useJean({ 
     apiKey: process.env.REACT_APP_JEAN_API_KEY 
   });
   
@@ -61,7 +61,7 @@ You can adapt the text to best suit your user experience, for example:
 - "Bring Your Memories"
 - "Personalize"
 
-## `useJeanAgent` Hook
+## `useJean` Hook
 
 This is the core hook for interacting with the Jean Memory API.
 
@@ -73,7 +73,7 @@ const {
   isAuthenticated, 
   isLoading, 
   error 
-} = useJeanAgent({
+} = useJean({
   apiKey: "jean_sk_...",        // Required
   systemPrompt: "You are...",   // Optional: Customize the AI's personality
   baseUrl: "https://...",       // Optional: For self-hosted instances
@@ -119,7 +119,7 @@ For Next.js applications, you need to dynamically import the `JeanChat` componen
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useJeanAgent } from 'jeanmemory-react';
+import { useJean } from 'jeanmemory-react';
 
 const JeanChat = dynamic(
   () => import('jeanmemory-react').then(mod => mod.JeanChat),
@@ -127,7 +127,7 @@ const JeanChat = dynamic(
 );
 
 export default function ChatPage() {
-  const { agent } = useJeanAgent({ 
+  const { agent } = useJean({ 
     apiKey: process.env.NEXT_PUBLIC_JEAN_API_KEY 
   });
   

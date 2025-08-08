@@ -45,7 +45,10 @@ export class JeanAgent {
         })
       });
 
-      const { enhanced_messages, user_context } = await contextResponse.json();
+      const { enhanced_messages, user_context } = await contextResponse.json() as {
+        enhanced_messages: any[];
+        user_context: string;
+      };
       
       // Use enhanced messages with AI SDK
       const result = streamText({

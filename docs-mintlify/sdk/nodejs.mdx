@@ -6,13 +6,13 @@ description: 'Server-side memory for Node applications'
 ## Installation
 
 ```bash
-npm install @jeanmemory/node
+npm install jeanmemory-node
 ```
 
 ## Quick Start
 
 ```javascript
-import { JeanAgent } from '@jeanmemory/node';
+import { JeanAgent } from 'jeanmemory-node';
 
 const agent = new JeanAgent({
   apiKey: process.env.JEAN_API_KEY
@@ -25,7 +25,7 @@ await agent.run();
 
 ```javascript
 import express from 'express';
-import { JeanAgent } from '@jeanmemory/node';
+import { JeanAgent } from 'jeanmemory-node';
 
 const app = express();
 const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });

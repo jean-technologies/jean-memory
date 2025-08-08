@@ -97,7 +97,7 @@ Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
   </Tab>
   <Tab title="Node.js">
     ```bash
-    npm install @jeanmemory/node
+    npm install jeanmemory-node
     ```
   </Tab>
 </Tabs>
@@ -107,10 +107,10 @@ Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
 <Tabs>
   <Tab title="React">
     ```javascript
-    import { useJeanAgent, JeanChat } from 'jeanmemory-react';
+    import { useJean, JeanChat } from 'jeanmemory-react';
     
     function App() {
-      const { agent } = useJeanAgent({ 
+      const { agent } = useJean({ 
         apiKey: process.env.REACT_APP_JEAN_API_KEY 
       });
       return <JeanChat agent={agent} />;
@@ -130,7 +130,7 @@ Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
   </Tab>
   <Tab title="Node.js">
     ```javascript
-    import { JeanAgent } from '@jeanmemory/node';
+    import { JeanAgent } from 'jeanmemory-node';
     
     const agent = new JeanAgent({
       apiKey: process.env.JEAN_API_KEY

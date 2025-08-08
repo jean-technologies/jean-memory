@@ -235,3 +235,17 @@ complex_setup_backup/
 
 # Local configuration files
 claude_desktop_config.json
+
+# Root directory clutter - debugging and status files
+CHATGPT_SSE_STATUS.md
+DEBUG_OAUTH_FLOW.md
+FINAL_TEST_RESULTS.md
+TEST_RESULTS.md
+PUBLISH_SDKS_INSTRUCTIONS.md
+background_memory_add.log
+debug_initialize.py
+JeanMemoryReactExample.tsx
+multi_agent_coordination_migration.sql
+
+# Temporary publish scripts (proper ones are in sdk/scripts/)
+publish-*.sh
