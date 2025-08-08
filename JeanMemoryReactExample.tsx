@@ -5,13 +5,13 @@
  * Copy this code to test the 5-line integration working with real Jean Memory
  * 
  * Prerequisites:
- * 1. npm install @jeanmemory/react
+ * 1. npm install jeanmemory-react
  * 2. Have a Jean Memory account (sign up at jeanmemory.com)
  * 3. Run this in a React/Next.js application
  */
 
 import React, { useState } from 'react';
-import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJeanAgent, SignInWithJean, JeanChat } from 'jeanmemory-react';
 
 export default function JeanMemoryDemo() {
   const [activeDemo, setActiveDemo] = useState<'math' | 'therapist' | 'custom'>('math');
@@ -228,7 +228,7 @@ function CustomDemo() {
  * Test Instructions:
  * 
  * 1. Install the SDK:
- *    npm install @jeanmemory/react
+ *    npm install jeanmemory-react
  * 
  * 2. Import and use this component in your React app:
  *    import JeanMemoryDemo from './JeanMemoryReactExample';

@@ -9,7 +9,7 @@ const codeSnippets = [
   {
     lang: "jsx",
     title: "React Chat App",
-    code: `import { JeanChat, useJeanAgent } from '@jeanmemory/react';
+    code: `import { JeanChat, useJeanAgent } from 'jeanmemory-react';
 
 function MathTutorApp() {
   const { agent, signIn } = useJeanAgent({

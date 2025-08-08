@@ -12,7 +12,7 @@
 
 ```tsx
 import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
 
 function MyApp() {
   const [user, setUser] = useState(null);
@@ -62,8 +62,8 @@ function MyApp() {
 ### Immediate Actions (Ready to Execute):
 
 #### 3.1. Publish SDK to NPM ⏳ NEXT
-*   **Action:** Publish `@jeanmemory/react` to NPM registry
-*   **Details:** Enable `npm install @jeanmemory/react` for any developer worldwide
+*   **Action:** Publish `jeanmemory-react` to NPM registry
+*   **Details:** Enable `npm install jeanmemory-react` for any developer worldwide
 *   **Timeline:** Can be done immediately
 
 #### 3.2. Client Registration System ⏳ NEXT  

@@ -46,7 +46,7 @@ This phase is about testing our new SDK against your deployed dev server.
 *   **Owner:** Gemini
 
 #### 2.2. Configure the Test Application
-*   **Action:** Configure the test application to use the new `@jeanmemory/react` SDK and to point to your deployed dev server.
+*   **Action:** Configure the test application to use the new `jeanmemory-react` SDK and to point to your deployed dev server.
 *   **Details:** We will use the dev server URL and a valid API key from the dev environment.
 *   **Owner:** Gemini
 

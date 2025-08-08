@@ -2,7 +2,7 @@
  * Ultimate 5-Line Jean Memory Integration - React Example
  * Complete AI chatbot with personalized memory in 5 lines
  */
-import { SignInWithJean, JeanChat, useJeanAgent } from '@jeanmemory/react';
+import { SignInWithJean, JeanChat, useJeanAgent } from 'jeanmemory-react';
 
 function MathTutorApp() {
   const { agent, signIn } = useJeanAgent({

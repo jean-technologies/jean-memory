@@ -60,7 +60,7 @@ export default function LandingPage() {
     );
   }
 
-  const reactCode = `import { JeanChat, useJeanAgent } from '@jeanmemory/react';
+  const reactCode = `import { JeanChat, useJeanAgent } from 'jeanmemory-react';
 
 function MathTutorApp() {
   const { agent, signIn } = useJeanAgent({

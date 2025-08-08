@@ -93,7 +93,7 @@ Jean Memory SDK enables developers to build **multi-tenant AI chatbots** where *
 
 **React (All-in-One Component):**
 ```typescript
-import { JeanAgent } from '@jeanmemory/react';
+import { JeanAgent } from 'jeanmemory-react';
 
 function MyApp() {
   return <JeanAgent 
@@ -347,7 +347,7 @@ export const JeanChat = ({ agent }) => {
 
 ### 5. Frontend SDK Components
 
-**TypeScript/React SDK** (`@jeanmemory/react`):
+**TypeScript/React SDK** (`jeanmemory-react`):
 
 ```typescript
 // Core exports using Assistant-UI
@@ -394,7 +394,7 @@ class JeanAgent:
 ### Example 1: Multi-Tenant Math Tutor App (5 lines)
 
 ```jsx
-import { SignInWithJean, JeanChat, useJeanAgent } from '@jeanmemory/react';
+import { SignInWithJean, JeanChat, useJeanAgent } from 'jeanmemory-react';
 
 function MathTutorApp() {
   const { agent, signIn } = useJeanAgent({ 
@@ -418,7 +418,7 @@ function MathTutorApp() {
 
 ```jsx
 import { Thread } from '@assistant-ui/react';
-import { JeanMemoryProvider, SignInWithJean } from '@jeanmemory/react';
+import { JeanMemoryProvider, SignInWithJean } from 'jeanmemory-react';
 
 function App() {
   const [auth, setAuth] = useState(null);
@@ -465,7 +465,7 @@ export default async function handler(req, res) {
 }
 
 // pages/index.tsx
-import { SignInWithJean, useJeanChat } from '@jeanmemory/react';
+import { SignInWithJean, useJeanChat } from 'jeanmemory-react';
 
 export default function Home() {
   const { messages, sendMessage, signIn, isAuthenticated } = useJeanChat({
@@ -1532,7 +1532,7 @@ This implementation is now guaranteed to work because it follows the exact patte
 
 1. **Extract to NPM package**
    ```
-   @jeanmemory/react
+   jeanmemory-react
    ├── SignInWithJean.tsx
    ├── JeanChat.tsx  
    └── useJeanAgent.ts

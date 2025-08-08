@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-07 15:11:13
+**Generated on:** 2025-08-07 17:48:49
 
 ## What is Jean Memory?
 
@@ -206,7 +206,7 @@ Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
 <Tabs>
   <Tab title="React">
     ```bash
-    npm install @jeanmemory/react
+    npm install jeanmemory-react
     ```
   </Tab>
   <Tab title="Python">
@@ -226,7 +226,7 @@ Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
 <Tabs>
   <Tab title="React">
     ```javascript
-    import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+    import { useJeanAgent, JeanChat } from 'jeanmemory-react';
     
     function App() {
       const { agent } = useJeanAgent({ 
@@ -886,7 +886,7 @@ jean search "meeting"
 To get started, install the Jean Memory React SDK and its peer dependency, `@assistant-ui/react`.
 
 ```bash
-npm install @jeanmemory/react @assistant-ui/react
+npm install jeanmemory-react @assistant-ui/react
 ```
 
 ## Basic Usage
@@ -894,7 +894,7 @@ npm install @jeanmemory/react @assistant-ui/react
 The easiest way to get started is with the `JeanChat` component. It provides a full-featured chat interface with memory enabled out of the box.
 
 ```javascript
-import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+import { useJeanAgent, JeanChat } from 'jeanmemory-react';
 
 function App() {
   const { agent } = useJeanAgent({ 
@@ -997,10 +997,10 @@ For Next.js applications, you need to dynamically import the `JeanChat` componen
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useJeanAgent } from '@jeanmemory/react';
+import { useJeanAgent } from 'jeanmemory-react';
 
 const JeanChat = dynamic(
-  () => import('@jeanmemory/react').then(mod => mod.JeanChat),
+  () => import('jeanmemory-react').then(mod => mod.JeanChat),
   { ssr: false }
 );
 

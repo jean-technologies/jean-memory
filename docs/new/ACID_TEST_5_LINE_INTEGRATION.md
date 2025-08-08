@@ -20,7 +20,7 @@ cd my-jean-app
 ### Step 2: Install Jean Memory SDK (30 seconds)
 
 ```bash
-npm install @jeanmemory/react
+npm install jeanmemory-react
 ```
 
 **❌ BLOCKER:** If this fails, the SDK isn't published to NPM yet.
@@ -40,7 +40,7 @@ Replace `app/page.tsx` with:
 ```tsx
 'use client';
 import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -84,7 +84,7 @@ npm run dev
 Run this test internally and check every item:
 
 ### ⬜ NPM Package Status
-- [ ] `npm install @jeanmemory/react` works
+- [ ] `npm install jeanmemory-react` works
 - [ ] All exports are available: `useJean`, `SignInWithJean`, `JeanChat`
 - [ ] TypeScript definitions work correctly
 

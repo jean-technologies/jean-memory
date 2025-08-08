@@ -7,11 +7,11 @@ Build personalized AI chatbots with **5 lines of code** using Jean Memory's cont
 ### React/TypeScript
 
 ```bash
-npm install @jeanmemory/react @assistant-ui/react
+npm install jeanmemory-react @assistant-ui/react
 ```
 
 ```tsx
-import { useJeanAgent } from "@jeanmemory/react";
+import { useJeanAgent } from "jeanmemory-react";
 import { Thread, AssistantRuntimeProvider } from "@assistant-ui/react";
 
 function MyApp() {

@@ -61,7 +61,7 @@ The React SDK exists but has dependency/import issues preventing it from working
 
 ### Target React Code (from /api-docs page)
 ```tsx
-import { SignInWithJean, JeanChat, useJeanAgent } from '@jeanmemory/react';
+import { SignInWithJean, JeanChat, useJeanAgent } from 'jeanmemory-react';
 
 function MathTutorApp() {
   const { agent, signIn } = useJeanAgent({
@@ -217,7 +217,7 @@ Based on the architecture documents and Assistant-UI examples, the final integra
 ```tsx
 // Expected final structure from Assistant-UI docs
 import { AssistantRuntimeProvider, Thread } from '@assistant-ui/react';
-import { createJeanMemoryRuntime } from '@jeanmemory/react';
+import { createJeanMemoryRuntime } from 'jeanmemory-react';
 
 function JeanChat({ agent }) {
   const runtime = createJeanMemoryRuntime(agent);

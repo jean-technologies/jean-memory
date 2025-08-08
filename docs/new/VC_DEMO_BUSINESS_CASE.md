@@ -126,7 +126,7 @@ pip install jeanmemory openai
 python health_coach_demo.py
 
 # React Demo Environment  
-npm install @jeanmemory/react
+npm install jeanmemory-react
 npm start
 # Shows: Sign in → Data Permissions → Chat Interface
 ```
@@ -134,7 +134,7 @@ npm start
 ### Frontend SDK Demo (New)
 ```tsx
 // React Implementation - Same 5 lines
-import { JeanAgent } from '@jeanmemory/react';
+import { JeanAgent } from 'jeanmemory-react';
 
 function HealthCoachApp() {
   return <JeanAgent 

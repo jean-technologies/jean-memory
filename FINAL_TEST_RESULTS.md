@@ -27,7 +27,7 @@
 ```tsx
 'use client';
 import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
 
 export default function App() {
   const [user, setUser] = useState(null);

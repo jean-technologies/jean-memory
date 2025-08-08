@@ -8,7 +8,7 @@ description: 'The official React library for Jean Memory.'
 To get started, install the Jean Memory React SDK and its peer dependency, `@assistant-ui/react`.
 
 ```bash
-npm install @jeanmemory/react @assistant-ui/react
+npm install jeanmemory-react @assistant-ui/react
 ```
 
 ## Basic Usage
@@ -16,7 +16,7 @@ npm install @jeanmemory/react @assistant-ui/react
 The easiest way to get started is with the `JeanChat` component. It provides a full-featured chat interface with memory enabled out of the box.
 
 ```javascript
-import { useJeanAgent, JeanChat } from '@jeanmemory/react';
+import { useJeanAgent, JeanChat } from 'jeanmemory-react';
 
 function App() {
   const { agent } = useJeanAgent({ 
@@ -119,10 +119,10 @@ For Next.js applications, you need to dynamically import the `JeanChat` componen
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useJeanAgent } from '@jeanmemory/react';
+import { useJeanAgent } from 'jeanmemory-react';
 
 const JeanChat = dynamic(
-  () => import('@jeanmemory/react').then(mod => mod.JeanChat),
+  () => import('jeanmemory-react').then(mod => mod.JeanChat),
   { ssr: false }
 );
 

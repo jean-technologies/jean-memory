@@ -35,7 +35,7 @@ The test app is already running at http://localhost:3000
 ### Option 2: Copy the Example Code
 
 1. **Copy** the complete example from `JeanMemoryReactExample.tsx`
-2. **Install SDK**: `npm install @jeanmemory/react`
+2. **Install SDK**: `npm install jeanmemory-react`
 3. **Import and use** in your React app
 4. **Test** the three different demos
 

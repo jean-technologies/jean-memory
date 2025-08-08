@@ -74,12 +74,12 @@ jean_memory tool → jean_memory tool (with system prompt injection)
 
 ### 🔧 NEXT: Client SDK Wrappers (Phase 2)
 
-### Step 1: React SDK Hook (`@jeanmemory/react`)
+### Step 1: React SDK Hook (`jeanmemory-react`)
 **Goal**: 5-line React integration using assistant-ui
 
 ```typescript
 // Target developer experience - All-in-one component:
-import { JeanAgent } from "@jeanmemory/react";
+import { JeanAgent } from "jeanmemory-react";
 
 function MyApp() {
   return <JeanAgent 
@@ -251,7 +251,7 @@ app.include_router(sdk_router, dependencies=[Depends(get_current_supa_user)])
 ### Developer Experience:
 ```javascript
 // Future SDK usage (after MVP proves concept)
-import { JeanChat } from '@jeanmemory/react';
+import { JeanChat } from 'jeanmemory-react';
 
 function App() {
   return <JeanChat systemPrompt="You are a math tutor" />;
@@ -301,7 +301,7 @@ Once MVP proves the concept:
 2. **Add Assistant-UI**: Upgrade chat interface
 3. **Add Streaming**: Real-time responses
 4. **Add Customization**: Themes, branding
-5. **Create NPM Package**: `@jeanmemory/react`
+5. **Create NPM Package**: `jeanmemory-react`
 
 ## ✅ IMPLEMENTATION COMPLETE!
 
@@ -313,10 +313,10 @@ Once MVP proves the concept:
 - **POST /sdk/chat/enhance** - Context-aware chat enhancement ✅
 - **GET /sdk/health** - Health monitoring ✅
 
-#### ✅ React SDK (`@jeanmemory/react`)
+#### ✅ React SDK (`jeanmemory-react`)
 ```typescript
 // 5-line integration achieved!
-import { useJeanAgent } from "@jeanmemory/react";
+import { useJeanAgent } from "jeanmemory-react";
 
 function MyApp() {
   const { agent, signIn } = useJeanAgent({
@@ -385,7 +385,7 @@ agent.run()
 ## 🎯 Next Steps for Production
 
 ### Phase 3: Polish & Package (Optional)
-1. **Publish NPM Package**: `npm publish @jeanmemory/react`
+1. **Publish NPM Package**: `npm publish jeanmemory-react`
 2. **Publish PyPI Package**: `python setup.py sdist upload`
 3. **Create Demo Website**: Deploy live examples
 4. **Add Streaming Support**: Real-time responses

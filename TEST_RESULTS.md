@@ -29,7 +29,7 @@ curl -I "https://jean-memory-api-virginia.onrender.com/sdk/oauth/authorize?clien
 **Impact:** Breaks the "5-line integration" claim - developers need extra setup steps
 
 ### 🔴 BLOCKER 3: NPM Package Not Published
-**Issue:** `npm install @jeanmemory/react` will fail  
+**Issue:** `npm install jeanmemory-react` will fail  
 **Test:** Package exists locally but not on NPM registry  
 **Impact:** Developers cannot install the SDK
 
@@ -57,7 +57,7 @@ The core claim "5-line integration that just works" is **false** with these bloc
 
 ### 3. Publish NPM Package (CRITICAL)
 - [ ] `cd sdk/react && npm publish`
-- [ ] Test `npm install @jeanmemory/react` works
+- [ ] Test `npm install jeanmemory-react` works
 
 ### 4. Re-run Acid Test (CRITICAL)
 - [ ] Test complete flow with external developer perspective
@@ -77,7 +77,7 @@ The core claim "5-line integration that just works" is **false** with these bloc
 // This is what we tested (should work but doesn't):
 'use client';
 import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
 
 export default function App() {
   const [user, setUser] = useState(null);

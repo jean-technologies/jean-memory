@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { AssistantRuntimeProvider, Thread } from '@assistant-ui/react';
-import { useJeanAgent } from '@jeanmemory/react';
+import { useJeanAgent } from 'jeanmemory-react';
 
 // Replace with your actual API key
 const JEAN_API_KEY = "jean_sk_gdy4KGuspLZ82PHGI_3v8hEkP2iyFN4axYciKX8WqeA";

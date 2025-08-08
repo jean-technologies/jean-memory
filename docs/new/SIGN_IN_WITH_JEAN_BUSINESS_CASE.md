@@ -71,7 +71,7 @@ Jean Memory becomes the **universal identity provider for AI applications** - wh
 
 1. **Development**
    ```jsx
-   import { JeanAgent } from '@jeanmemory/react';
+   import { JeanAgent } from 'jeanmemory-react';
    
    function WriteWellAI() {
      return <JeanAgent 

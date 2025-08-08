@@ -7,12 +7,12 @@ Add universal memory to your React application with just a few lines of code. Yo
 ## Quick Start
 
 ```bash
-npm install @jeanmemory/react
+npm install jeanmemory-react
 ```
 
 ```tsx
 import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
 
 function MyApp() {
   const [user, setUser] = useState(null);
