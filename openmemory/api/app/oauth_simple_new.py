@@ -155,7 +155,33 @@ async def authorize(
         logger.info(f"📋 Restored session data: client_id={client_id}, redirect_uri={redirect_uri}")
     
     if client_id not in registered_clients:
-        if client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
+        # If the client is not registered, check if it's a local development client
+        is_local_dev = redirect_uri.startswith("http://localhost:") or redirect_uri.startswith("http://127.0.0.1:")
+        
+        if is_local_dev:
+            # Auto-register a "Default Local" client for local development
+            local_client_id = "local-dev-client"
+            if local_client_id not in registered_clients:
+                client_info = {
+                    "client_id": local_client_id,
+                    "client_name": "Default Local Client",
+                    "redirect_uris": [
+                        "http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback",
+                        "http://localhost:3000", "http://127.0.0.1:3000",
+                        "http://localhost:3001/auth/callback", "http://127.0.0.1:3001/auth/callback",
+                        "http://localhost:3001", "http://127.0.0.1:3001"
+                    ],
+                    "grant_types": ["authorization_code"],
+                    "response_types": ["code"],
+                    "scope": "read write mcp:tools mcp:resources mcp:prompts openid profile email",
+                    "token_endpoint_auth_method": "none"
+                }
+                registered_clients[local_client_id] = client_info
+                logger.info(f"Auto-registered local development client: {local_client_id}")
+            client_id = local_client_id # Use this client_id for the rest of the flow
+
+        elif client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
+            # Auto-register Claude client
             client_info = {
                 "client_id": client_id, "client_name": "Claude Web",
                 "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
