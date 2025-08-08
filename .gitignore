@@ -245,7 +245,15 @@ PUBLISH_SDKS_INSTRUCTIONS.md
 background_memory_add.log
 debug_initialize.py
 JeanMemoryReactExample.tsx
-multi_agent_coordination_migration.sql
 
 # Temporary publish scripts (proper ones are in sdk/scripts/)
 publish-*.sh
+
+# Claude Code local settings and development files
+.claude/
+**/.claude/
+settings.local.json
+
+# Development testing artifacts
+test-react-app/node_modules/
+test-*/
