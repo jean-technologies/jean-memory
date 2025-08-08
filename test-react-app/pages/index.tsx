@@ -30,8 +30,14 @@ export default function Home() {
             >
               🔐 Test OAuth Flow
             </a>
+            <a 
+              href="/jean-memory-tool-test" 
+              className="inline-block bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              🧠 Test Jean Memory Tool
+            </a>
             <p className="text-xs text-gray-500 mt-2">
-              Direct jean_memory tool integration (same as Claude Desktop) | OAuth 2.1 PKCE Testing
+              Direct jean_memory tool integration (same as Claude Desktop) | OAuth 2.1 PKCE Testing | Tool Depth Analysis
             </p>
           </div>
           

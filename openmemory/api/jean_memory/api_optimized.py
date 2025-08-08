@@ -196,6 +196,20 @@ class JeanMemoryAPIOptimized:
                         logger.warning(f"UUID index creation issue: {e}")
                 
                 logger.info(f"✅ Collection and {indexes_created} indexes created for {collection_name} (no wait)")
+            else:
+                # CRITICAL FIX: Ensure existing collections have required user_id indexes
+                # This fixes collections created before index setup existed
+                logger.info(f"🔧 Collection {collection_name} exists - ensuring indexes")
+                try:
+                    client.create_payload_index(
+                        collection_name=collection_name,
+                        field_name="user_id",
+                        field_schema=models.PayloadSchemaType.KEYWORD,
+                    )
+                    logger.info(f"✅ user_id KEYWORD index ensured for existing collection {collection_name}")
+                except Exception as idx_e:
+                    if "already exists" not in str(idx_e).lower():
+                        logger.warning(f"Index ensure issue for existing collection: {idx_e}")
             
             # OPTIMIZATION: No wait! Mark as ready immediately
             self._collection_states[user_id] = True
