@@ -91,8 +91,7 @@ class Config:
         self.NOTION_REDIRECT_URI = os.getenv("NOTION_REDIRECT_URI")
         
         if not self.NOTION_REDIRECT_URI:
-            # For local development, use port 8000 (configured in Notion app)
-            # Note: Even though API runs on 8765, we use 8000 for OAuth redirect
+            # For local development, use port 8000 (now API runs on 8000 to match Notion app)
             if self.is_local_development:
                 self.NOTION_REDIRECT_URI = "http://localhost:8000/api/v1/integrations/notion/callback"
             else:

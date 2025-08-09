@@ -89,7 +89,7 @@ dev:
 		echo "✅ Qdrant is running"; \
 	fi
 	@echo "🌐 Starting servers..."
-	@echo "   API: http://localhost:8765"
+	@echo "   API: http://localhost:8000"
 	@echo "   UI:  http://localhost:3000"
 	@echo ""
 	@echo "Press Ctrl+C to stop all servers..."
@@ -103,8 +103,8 @@ dev-api:
 	@$(MAKE) -s _ensure-venv
 	@$(MAKE) -s _ensure-supabase
 	@$(MAKE) -s _ensure-qdrant
-	@echo "🌐 API server starting at http://localhost:8765"
-	@cd api && ../../.venv/bin/python -m uvicorn main:app --reload --port 8765 --host 0.0.0.0
+	@echo "🌐 API server starting at http://localhost:8000"
+	@cd api && ../../.venv/bin/python -m uvicorn main:app --reload --port 8000 --host 0.0.0.0
 
 # Start only UI server  
 dev-ui:
@@ -151,8 +151,8 @@ status:
 	fi
 	@echo ""
 	@echo "🔧 API Server:"
-	@if curl -s http://localhost:8765/health >/dev/null 2>&1; then \
-		echo "   ✅ Running at http://localhost:8765"; \
+	@if curl -s http://localhost:8000/health >/dev/null 2>&1; then \
+		echo "   ✅ Running at http://localhost:8000"; \
 	else \
 		echo "   ❌ Not running"; \
 	fi
@@ -296,7 +296,7 @@ _ensure-qdrant:
 
 _start-servers:
 	@{ \
-		cd api && python -m uvicorn main:app --reload --port 8765 --host 0.0.0.0 & \
+		cd api && python -m uvicorn main:app --reload --port 8000 --host 0.0.0.0 & \
 		API_PID=$$!; \
 		echo $$API_PID > .api.pid; \
 		cd ui && npm run dev & \
