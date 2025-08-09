@@ -453,7 +453,7 @@ async def notion_oauth_callback(
     logger.info(f"🚀 NOTION CALLBACK: Processing OAuth callback for state={state}")
     
     # Determine frontend URL based on environment
-    frontend_base = "http://localhost:3000" if config.is_local_development else "https://app.jeanmemory.com"
+    frontend_base = "http://localhost:3000" if config.is_local_development else "https://jeanmemory.com"
     
     try:
         service = NotionService()
