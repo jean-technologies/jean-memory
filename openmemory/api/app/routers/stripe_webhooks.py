@@ -71,7 +71,7 @@ async def handle_subscription_created(subscription, db: Session):
     user.stripe_customer_id = customer_id
     user.stripe_subscription_id = subscription_id
     user.subscription_status = subscription['status']
-    user.subscription_tier = SubscriptionTier.PRO
+    user.subscription_tier = "PRO"
     user.subscription_current_period_end = datetime.datetime.fromtimestamp(
         subscription['current_period_end'], tz=datetime.timezone.utc
     )
@@ -96,9 +96,9 @@ async def handle_subscription_updated(subscription, db: Session):
     
     # Handle subscription status changes
     if subscription['status'] == 'active':
-        user.subscription_tier = SubscriptionTier.PRO
+        user.subscription_tier = "PRO"
     elif subscription['status'] in ['canceled', 'past_due', 'unpaid']:
-        user.subscription_tier = SubscriptionTier.FREE
+        user.subscription_tier = "FREE"
     
     db.commit()
     logger.info(f"Updated subscription for user {user.email}: {subscription['status']}")
@@ -113,7 +113,7 @@ async def handle_subscription_deleted(subscription, db: Session):
         return
     
     # Downgrade to free tier
-    user.subscription_tier = SubscriptionTier.FREE
+    user.subscription_tier = "FREE"
     user.subscription_status = 'canceled'
     user.stripe_subscription_id = None
     
@@ -130,7 +130,7 @@ async def handle_payment_succeeded(invoice, db: Session):
     
     # Ensure user is on Pro tier if payment succeeded
     if user.subscription_status == 'active':
-        user.subscription_tier = SubscriptionTier.PRO
+        user.subscription_tier = "PRO"
         db.commit()
         logger.info(f"Payment succeeded for user {user.email}")
 

@@ -521,9 +521,9 @@ class SMSRateLimit:
         from app.models import SubscriptionTier
         
         # Get rate limit based on subscription tier
-        if user.subscription_tier == SubscriptionTier.ENTERPRISE:
+        if user.subscription_tier == "ENTERPRISE":
             daily_limit = sms_config.SMS_RATE_LIMIT_ENTERPRISE
-        elif user.subscription_tier == SubscriptionTier.PRO:
+        elif user.subscription_tier == "PRO":
             daily_limit = sms_config.SMS_RATE_LIMIT_PRO
         else:
             return False, 0  # Free users can't use SMS

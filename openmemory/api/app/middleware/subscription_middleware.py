@@ -103,7 +103,7 @@ class SubscriptionChecker:
                 detail="Authentication required"
             )
         
-        if user.subscription_tier != SubscriptionTier.ENTERPRISE:
+        if user.subscription_tier != "ENTERPRISE":
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail={
@@ -132,7 +132,7 @@ class SubscriptionChecker:
     @staticmethod
     def get_api_limits(user: User) -> dict:
         """Get API rate limits based on subscription tier"""
-        if user.subscription_tier == SubscriptionTier.FREE:
+        if user.subscription_tier == "FREE":
             return {
                 "requests_per_minute": 10,
                 "requests_per_day": 100,
@@ -140,7 +140,7 @@ class SubscriptionChecker:
                 "metadata_tagging": False,
                 "advanced_search": False
             }
-        elif user.subscription_tier == SubscriptionTier.PRO:
+        elif user.subscription_tier == "PRO":
             return {
                 "requests_per_minute": 100,
                 "requests_per_day": 10000,

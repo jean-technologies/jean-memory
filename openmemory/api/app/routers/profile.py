@@ -122,11 +122,17 @@ async def update_profile(
     supabase_user_id_str = str(current_supa_user.id)
     user = get_or_create_user(db, supabase_user_id_str, current_supa_user.email)
     
-    # Update fields if provided
+    # Update fields if provided - store in metadata since these are not direct database columns
+    if not user.metadata_:
+        user.metadata_ = {}
+        
     if request.firstname is not None:
-        user.firstname = request.firstname
+        user.metadata_["firstname"] = request.firstname
     if request.lastname is not None:
-        user.lastname = request.lastname
+        user.metadata_["lastname"] = request.lastname
+        
+    # Flag the metadata field as modified to ensure the change is detected by SQLAlchemy
+    flag_modified(user, "metadata_")
     
     try:
         db.commit()
@@ -364,9 +370,9 @@ async def get_sms_usage(
     allowed, remaining = SMSRateLimit.check_rate_limit(user, db)
     
     # Get limit based on subscription tier
-    if user.subscription_tier == SubscriptionTier.ENTERPRISE:
+    if user.subscription_tier == "ENTERPRISE":
         daily_limit = sms_config.SMS_RATE_LIMIT_ENTERPRISE
-    elif user.subscription_tier == SubscriptionTier.PRO:
+    elif user.subscription_tier == "PRO":
         daily_limit = sms_config.SMS_RATE_LIMIT_PRO
     else:
         daily_limit = 0
@@ -377,7 +383,7 @@ async def get_sms_usage(
         "daily_limit": daily_limit,
         "used_today": used_today,
         "remaining_today": remaining,
-        "subscription_tier": user.subscription_tier.value,
+        "subscription_tier": user.subscription_tier,
         "phone_verified": user.phone_verified or False,
         "sms_enabled": user.sms_enabled if user.sms_enabled is not None else True
     } 

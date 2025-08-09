@@ -139,7 +139,7 @@ async def handle_sms(request: Request):
         from app.models import SubscriptionTier
         
         # Only Pro and Enterprise users can use the SMS memory features
-        if user.subscription_tier not in [SubscriptionTier.PRO, SubscriptionTier.ENTERPRISE]:
+        if user.subscription_tier not in ["PRO", "ENTERPRISE"]:
             logger.info(f"User {user.id} ({user.subscription_tier}) denied SMS access due to non-pro subscription.")
             sms_service.send_sms(
                 to_phone=user_phone,
