@@ -706,6 +706,28 @@ async def get_notion_status(
     db: Session = Depends(get_db)
 ):
     """Get Notion integration status for current user"""
+    
+    # EXTENSIVE DEBUG LOGGING FOR AUTH HEADER ISSUE
+    logger.error(f"🔍 NOTION STATUS ENDPOINT HIT")
+    logger.error(f"   Request URL: {request.url}")
+    logger.error(f"   Request method: {request.method}")
+    logger.error(f"   Client IP: {request.client}")
+    logger.error(f"   User agent: {request.headers.get('user-agent', 'NONE')}")
+    logger.error(f"   ALL HEADERS:")
+    for header_name, header_value in request.headers.items():
+        if 'auth' in header_name.lower():
+            logger.error(f"     🔑 {header_name}: {header_value[:50]}..." if len(header_value) > 50 else f"     🔑 {header_name}: {header_value}")
+        else:
+            logger.error(f"     📋 {header_name}: {header_value}")
+    
+    auth_header = request.headers.get("authorization")
+    logger.error(f"   🔐 Authorization header exists: {auth_header is not None}")
+    if auth_header:
+        logger.error(f"   🔐 Authorization header value: {auth_header[:20]}...")
+    else:
+        logger.error(f"   ❌ NO AUTHORIZATION HEADER FOUND!")
+        logger.error(f"   🔍 Available headers: {list(request.headers.keys())}")
+    
     try:
         service = NotionService()
         user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
