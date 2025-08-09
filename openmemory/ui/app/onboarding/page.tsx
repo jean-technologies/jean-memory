@@ -184,11 +184,9 @@ export default function OnboardingPage() {
     setSyncMessage('Starting sync...');
 
     try {
-      const response = await apiClient.post('/api/v1/integrations/notion/sync', null, {
-        params: {
-          page_ids: selectedPages
-        }
-      });
+      // Build URL with multiple page_ids parameters (FastAPI expects ?page_ids=id1&page_ids=id2)
+      const queryParams = selectedPages.map(id => `page_ids=${encodeURIComponent(id)}`).join('&');
+      const response = await apiClient.post(`/api/v1/integrations/notion/sync?${queryParams}`);
 
       setTaskId(response.data.task_id);
       toast({
