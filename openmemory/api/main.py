@@ -386,7 +386,7 @@ app.include_router(local_auth_router, prefix="/api/v1")
 app.include_router(memories_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])
 app.include_router(apps_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])
 app.include_router(stats_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])
-app.include_router(integrations_router, dependencies=[Depends(get_current_supa_user)])
+app.include_router(integrations_router)  # OAuth callbacks can't have global auth - endpoints handle their own
 app.include_router(profile_router, dependencies=[Depends(get_current_supa_user)])  # SMS profile management
 app.include_router(webhooks_router)  # SMS webhooks (no auth - verified by Twilio signature)
 app.include_router(admin_router)  # Admin router has its own authentication

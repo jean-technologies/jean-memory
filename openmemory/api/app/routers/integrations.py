@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from typing import Dict, List
@@ -440,6 +440,7 @@ async def notion_auth_start(
 
 @router.get("/notion/callback")
 async def notion_oauth_callback(
+    request: Request,
     code: str = Query(..., description="OAuth authorization code from Notion"),
     state: str = Query(None, description="State parameter for security"),
     db: Session = Depends(get_db)
@@ -448,6 +449,11 @@ async def notion_oauth_callback(
     from fastapi.responses import RedirectResponse
     import json
     import base64
+    
+    logger.info(f"🚀 NOTION CALLBACK: Received callback with code={code[:10]}..., state={state}")
+    logger.info(f"🚀 NOTION CALLBACK: Headers: {dict(request.headers)}")
+    logger.info(f"🚀 NOTION CALLBACK: URL: {request.url}")
+    logger.info(f"🚀 NOTION CALLBACK: Method: {request.method}")
     
     # Determine frontend URL based on environment
     frontend_base = "http://localhost:3000" if config.is_local_development else "https://app.jeanmemory.com"
