@@ -135,26 +135,52 @@ class NotionService:
         """Extract plain text content from Notion blocks"""
         text_content = []
         
+        logger.info(f"Processing {len(blocks.get('results', []))} blocks")
         for block in blocks.get("results", []):
             block_type = block.get("type")
+            logger.info(f"Processing block type: {block_type}")
             
-            if block_type in ["paragraph", "heading_1", "heading_2", "heading_3", "bulleted_list_item", "numbered_list_item"]:
+            # Handle blocks with rich_text property
+            if block_type in ["paragraph", "heading_1", "heading_2", "heading_3", "bulleted_list_item", "numbered_list_item", "toggle", "callout"]:
                 rich_text = block.get(block_type, {}).get("rich_text", [])
                 for text_obj in rich_text:
                     if text_obj.get("type") == "text":
-                        text_content.append(text_obj.get("text", {}).get("content", ""))
+                        content = text_obj.get("text", {}).get("content", "")
+                        if content.strip():
+                            text_content.append(content)
             
             elif block_type == "quote":
                 rich_text = block.get("quote", {}).get("rich_text", [])
                 for text_obj in rich_text:
                     if text_obj.get("type") == "text":
-                        text_content.append(f">{text_obj.get('text', {}).get('content', '')}")
+                        content = text_obj.get("text", {}).get("content", "")
+                        if content.strip():
+                            text_content.append(f">{content}")
             
             elif block_type == "code":
                 rich_text = block.get("code", {}).get("rich_text", [])
                 for text_obj in rich_text:
                     if text_obj.get("type") == "text":
-                        text_content.append(f"```\n{text_obj.get('text', {}).get('content', '')}\n```")
+                        content = text_obj.get("text", {}).get("content", "")
+                        if content.strip():
+                            text_content.append(f"```\n{content}\n```")
+            
+            elif block_type == "to_do":
+                rich_text = block.get("to_do", {}).get("rich_text", [])
+                checked = block.get("to_do", {}).get("checked", False)
+                checkbox = "☑" if checked else "☐"
+                for text_obj in rich_text:
+                    if text_obj.get("type") == "text":
+                        content = text_obj.get("text", {}).get("content", "")
+                        if content.strip():
+                            text_content.append(f"{checkbox} {content}")
+            
+            elif block_type == "divider":
+                text_content.append("---")
+            
+            # Log unsupported block types for debugging
+            else:
+                logger.info(f"Unsupported block type: {block_type}")
         
         return "\n\n".join(text_content)
     
