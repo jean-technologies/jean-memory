@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import Dict
+from sqlalchemy.orm.attributes import flag_modified
+from typing import Dict, List
 from app.database import get_db
 from app.auth import get_current_supa_user
 from gotrue.types import User as SupabaseUser
 from app.utils.db import get_or_create_user, get_user_and_app
 from app.models import User, Document, App, Memory, MemoryState
 from app.integrations.substack_service import SubstackService
+from app.integrations.notion_service import NotionService
 import asyncio
 from app.services.chunking_service import ChunkingService
 from app.integrations.twitter_service import sync_twitter_to_memory
@@ -409,6 +411,355 @@ async def sync_substack_simple(
             status_code=500,
             detail=f"Failed to start Substack sync: {str(e)}"
         ) 
+
+
+# Notion Integration Endpoints
+
+@router.get("/notion/auth")
+async def notion_auth_start(
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Start Notion OAuth flow"""
+    try:
+        service = NotionService()
+        user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
+        
+        # Generate OAuth URL with user ID as state
+        oauth_url = service.get_oauth_url(user.user_id, state=str(current_supa_user.id))
+        
+        return {
+            "oauth_url": oauth_url,
+            "message": "Redirect user to this URL to authorize Notion access"
+        }
+    except Exception as e:
+        logger.error(f"Error starting Notion auth for user {current_supa_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start Notion auth: {str(e)}")
+
+
+@router.get("/notion/callback")
+async def notion_oauth_callback(
+    code: str = Query(..., description="OAuth authorization code from Notion"),
+    state: str = Query(None, description="State parameter for security"),
+    db: Session = Depends(get_db)
+):
+    """Handle Notion OAuth callback and redirect to frontend"""
+    from fastapi.responses import RedirectResponse
+    import json
+    import base64
+    
+    # Determine frontend URL based on environment
+    frontend_base = "http://localhost:3000" if config.is_local_development else "https://app.jeanmemory.com"
+    
+    try:
+        service = NotionService()
+        
+        # Exchange code for access token
+        token_data = await service.exchange_code_for_token(code)
+        
+        # Get user info from Notion
+        user_info = await service.get_user_info(token_data.get("access_token"))
+        
+        # Find user by state parameter (which contains supabase user ID)
+        if not state:
+            # Redirect to frontend with error
+            return RedirectResponse(url=f"{frontend_base}/onboarding?error=missing_state")
+        
+        user = get_or_create_user(db, state, None)  # state contains supabase user ID
+        if not user:
+            return RedirectResponse(url=f"{frontend_base}/onboarding?error=user_not_found")
+        
+        # Store token in user metadata
+        service.store_access_token(db, user, token_data)
+        
+        # Redirect to frontend with success
+        success_data = base64.urlsafe_b64encode(json.dumps({
+            "workspace_name": token_data.get("workspace_name"),
+            "workspace_icon": token_data.get("workspace_icon")
+        }).encode()).decode()
+        
+        return RedirectResponse(
+            url=f"{frontend_base}/onboarding?success=true&data={success_data}",
+            status_code=302
+        )
+        
+    except HTTPException as e:
+        logger.error(f"HTTP error in Notion OAuth callback: {e.detail}")
+        return RedirectResponse(url=f"{frontend_base}/onboarding?error={e.detail}")
+    except Exception as e:
+        logger.error(f"Error in Notion OAuth callback: {e}")
+        return RedirectResponse(url=f"{frontend_base}/onboarding?error=oauth_failed")
+
+
+@router.get("/notion/pages")
+async def get_notion_pages(
+    search_query: str = Query("", description="Optional search query"),
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Get list of pages from user's Notion workspace"""
+    try:
+        service = NotionService()
+        user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
+        
+        # Check if user has Notion integration
+        if not service.has_notion_integration(user):
+            raise HTTPException(
+                status_code=400, 
+                detail="Notion integration not connected. Please authorize first."
+            )
+        
+        access_token = service.get_access_token(user)
+        
+        # Search for pages
+        pages_data = await service.search_pages(access_token, search_query)
+        
+        # Format response for frontend
+        pages = []
+        for page in pages_data.get("results", []):
+            title = "Untitled"
+            
+            # Extract title from properties
+            if "properties" in page:
+                for prop_name, prop_data in page["properties"].items():
+                    if prop_data.get("type") == "title":
+                        title_array = prop_data.get("title", [])
+                        if title_array and len(title_array) > 0:
+                            title = title_array[0].get("text", {}).get("content", "Untitled")
+                            break
+            
+            pages.append({
+                "id": page["id"],
+                "title": title,
+                "url": page.get("url", ""),
+                "created_time": page.get("created_time"),
+                "last_edited_time": page.get("last_edited_time")
+            })
+        
+        return {
+            "pages": pages,
+            "total": len(pages),
+            "has_more": pages_data.get("has_more", False)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting Notion pages for user {current_supa_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get pages: {str(e)}")
+
+
+@router.post("/notion/sync")
+async def sync_notion_pages(
+    page_ids: List[str] = Query(..., description="List of page IDs to sync"),
+    background_tasks: BackgroundTasks = None,
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Sync selected Notion pages to memory"""
+    try:
+        service = NotionService()
+        user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
+        
+        # Check if user has Notion integration
+        if not service.has_notion_integration(user):
+            raise HTTPException(
+                status_code=400, 
+                detail="Notion integration not connected. Please authorize first."
+            )
+        
+        # Get user and Notion app (create if doesn't exist)
+        user, app = get_user_and_app(
+            db,
+            supabase_user_id=str(current_supa_user.id),
+            app_name="notion",
+            email=current_supa_user.email
+        )
+        
+        if not app.is_active:
+            raise HTTPException(
+                status_code=400,
+                detail="Notion app is paused. Cannot sync pages."
+            )
+        
+        # Limit number of pages to prevent resource exhaustion
+        if len(page_ids) > 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot sync more than 50 pages at once"
+            )
+        
+        # Create a background task
+        task_id = create_task("notion_sync", str(current_supa_user.id))
+        
+        # Define the sync function
+        def execute_notion_sync():
+            """Non-blocking Notion sync execution"""
+            import asyncio
+            from app.utils.memory import create_memory
+            
+            async def notion_sync_task():
+                # Create a new database session for the background task
+                from app.database import SessionLocal
+                db_session = SessionLocal()
+                try:
+                    access_token = service.get_access_token(user)
+                    synced_count = 0
+                    
+                    for i, page_id in enumerate(page_ids):
+                        try:
+                            update_task_progress(
+                                task_id, 
+                                (i / len(page_ids)) * 100, 
+                                f"Syncing page {i+1} of {len(page_ids)}"
+                            )
+                            
+                            # Get page content
+                            page_data = await service.get_page_content(access_token, page_id)
+                            
+                            # Extract text content
+                            text_content = service.extract_text_from_blocks(page_data["blocks"])
+                            
+                            if not text_content.strip():
+                                logger.warning(f"Skipping empty page {page_id}")
+                                continue
+                            
+                            # Create memory
+                            await create_memory(
+                                content=text_content,
+                                user_id=str(current_supa_user.id),
+                                app_name="notion",
+                                metadata={
+                                    "notion_page_id": page_id,
+                                    "notion_title": page_data["page"].get("properties", {}).get("title", {}).get("title", [{}])[0].get("text", {}).get("content", "Untitled"),
+                                    "notion_url": page_data["page"].get("url", ""),
+                                    "source": "notion"
+                                }
+                            )
+                            
+                            synced_count += 1
+                            
+                        except Exception as e:
+                            logger.error(f"Error syncing page {page_id}: {e}")
+                            continue
+                    
+                    update_task_progress(task_id, 100, f"Completed: {synced_count} pages synced")
+                    
+                    return {
+                        "synced_count": synced_count,
+                        "total_requested": len(page_ids),
+                        "message": f"Successfully synced {synced_count} of {len(page_ids)} pages"
+                    }
+                    
+                finally:
+                    db_session.close()
+            
+            # Create new event loop for this task
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Use asyncio timeout for Notion sync (20 minutes)
+                result = loop.run_until_complete(
+                    asyncio.wait_for(notion_sync_task(), timeout=1200)  # 20 minutes timeout
+                )
+                
+                mark_task_completed(task_id, result)
+                logger.info(f"Notion task {task_id} completed successfully: {result}")
+                
+            except asyncio.TimeoutError:
+                mark_task_failed(task_id, "Notion sync timed out after 20 minutes")
+                logger.error(f"Notion task {task_id} timed out")
+            except Exception as e:
+                mark_task_failed(task_id, str(e))
+                logger.error(f"Notion task {task_id} failed: {e}")
+            finally:
+                try:
+                    loop.close()
+                except:
+                    pass
+        
+        # Add to background tasks
+        background_tasks.add_task(execute_notion_sync)
+        
+        return {
+            "task_id": task_id,
+            "status": "started",
+            "message": f"Notion sync started for {len(page_ids)} pages. Use /api/v1/integrations/tasks/{task_id} to check progress."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting Notion sync for user {current_supa_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start Notion sync: {str(e)}")
+
+
+@router.get("/notion/status")
+async def get_notion_status(
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Get Notion integration status for current user"""
+    try:
+        service = NotionService()
+        user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
+        
+        is_connected = service.has_notion_integration(user)
+        
+        workspace_info = {}
+        if is_connected and user.metadata_:
+            workspace_info = {
+                "workspace_name": user.metadata_.get("notion_workspace_name"),
+                "workspace_icon": user.metadata_.get("notion_workspace_icon"),
+                "bot_id": user.metadata_.get("notion_bot_id")
+            }
+        
+        return {
+            "connected": is_connected,
+            "workspace": workspace_info
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting Notion status for user {current_supa_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+
+
+@router.delete("/notion/disconnect")
+async def disconnect_notion(
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user),
+    db: Session = Depends(get_db)
+):
+    """Disconnect Notion integration"""
+    try:
+        user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
+        
+        if not user.metadata_:
+            user.metadata_ = {}
+        
+        # Remove Notion-related keys
+        keys_to_remove = [
+            "notion_access_token", 
+            "notion_token_type", 
+            "notion_bot_id",
+            "notion_workspace_name", 
+            "notion_workspace_icon", 
+            "notion_owner"
+        ]
+        
+        for key in keys_to_remove:
+            user.metadata_.pop(key, None)
+        
+        # Mark the metadata field as modified
+        flag_modified(user, "metadata_")
+        db.commit()
+        
+        return {"message": "Notion integration disconnected successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error disconnecting Notion for user {current_supa_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to disconnect: {str(e)}")
+
 
 @router.get("/health")
 async def get_integration_health():

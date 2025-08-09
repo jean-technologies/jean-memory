@@ -54,24 +54,7 @@ class User(Base):
     user_id = Column(String, nullable=False, unique=True, index=True)
     name = Column(String, nullable=True, index=True)
     email = Column(String, unique=True, nullable=True, index=True)
-    firstname = Column(String(100), nullable=True, index=True)
-    lastname = Column(String(100), nullable=True, index=True)
     metadata_ = Column('metadata', JSON, default=dict)
-    
-    # Subscription fields
-    subscription_tier = Column(Enum(SubscriptionTier), default=SubscriptionTier.FREE, index=True)
-    stripe_customer_id = Column(String, nullable=True, index=True)
-    stripe_subscription_id = Column(String, nullable=True, index=True)
-    subscription_status = Column(String, nullable=True)  # active, canceled, past_due, etc.
-    subscription_current_period_end = Column(DateTime, nullable=True)
-    
-    # SMS fields
-    phone_number = Column(String(20), nullable=True, unique=True, index=True)
-    phone_verified = Column(Boolean, nullable=True, default=False, index=True)
-    phone_verification_attempts = Column(Integer, nullable=True, default=0)
-    phone_verified_at = Column(DateTime, nullable=True)
-    sms_enabled = Column(Boolean, nullable=True, default=True)
-    
     created_at = Column(DateTime, default=get_current_utc_time, index=True)
     updated_at = Column(DateTime,
                         default=get_current_utc_time,

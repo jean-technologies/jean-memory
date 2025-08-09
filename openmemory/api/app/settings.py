@@ -78,8 +78,26 @@ class Config:
         self.ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
         self.APIFY_TOKEN = os.getenv("APIFY_TOKEN")
         
+        # Notion OAuth configuration
+        self.NOTION_CLIENT_ID = os.getenv("NOTION_CLIENT_ID")
+        self.NOTION_CLIENT_SECRET = os.getenv("NOTION_CLIENT_SECRET")
+        
         # API Base URL configuration for OAuth and MCP endpoints
         self.API_BASE_URL = self._get_api_base_url()
+        
+        # Set Notion redirect URI after API_BASE_URL is determined
+        # IMPORTANT: This must match EXACTLY what's configured in your Notion OAuth app
+        # Check if there's an explicit override first (for local testing with different ports)
+        self.NOTION_REDIRECT_URI = os.getenv("NOTION_REDIRECT_URI")
+        
+        if not self.NOTION_REDIRECT_URI:
+            # For local development, use port 8000 (configured in Notion app)
+            # Note: Even though API runs on 8765, we use 8000 for OAuth redirect
+            if self.is_local_development:
+                self.NOTION_REDIRECT_URI = "http://localhost:8000/api/v1/integrations/notion/callback"
+            else:
+                # For production/dev, use the full API path
+                self.NOTION_REDIRECT_URI = f"{self.API_BASE_URL}/api/v1/integrations/notion/callback"
         
         # SMS service always uses production (Twilio only configured there)
         self.SMS_SERVICE_URL = "https://jean-memory-api-virginia.onrender.com"
