@@ -13,6 +13,7 @@ import asyncio
 from app.services.chunking_service import ChunkingService
 from app.integrations.twitter_service import sync_twitter_to_memory
 from app.integrations.substack_service import sync_substack_to_memory
+from app.settings import config
 import logging
 from sqlalchemy import text
 from app.background_tasks import create_task, get_task, update_task_progress, run_task_async, mark_task_started, mark_task_completed, mark_task_failed, get_task_health_status

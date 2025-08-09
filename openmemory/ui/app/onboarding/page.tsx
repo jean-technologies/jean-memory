@@ -89,7 +89,7 @@ export default function OnboardingPage() {
 
   // Check current Notion connection status
   const checkNotionStatus = async () => {
-    if (!user) return;
+    // if (!user) return; // Disabled for testing
     
     try {
       const response = await apiClient.get('/api/v1/integrations/notion/status');
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
 
   // Start OAuth flow
   const startOAuthFlow = async () => {
-    if (!user) return;
+    // if (!user) return; // Disabled for testing
     
     setIsLoading(true);
     setLoadingMessage('Redirecting to Notion...');
@@ -517,14 +517,14 @@ export default function OnboardingPage() {
     </motion.div>
   );
 
-  // Show loading if no user
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  // Show loading if no user (disabled for testing)
+  // if (!user) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <Loader2 className="w-8 h-8 animate-spin" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
