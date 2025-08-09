@@ -461,6 +461,10 @@ async def notion_oauth_callback(
         # Exchange code for access token
         token_data = await service.exchange_code_for_token(code)
         
+        logger.info(f"🔍 Token data keys: {list(token_data.keys())}")
+        logger.info(f"🔍 Workspace name: {token_data.get('workspace_name')}")
+        logger.info(f"🔍 Workspace icon: {token_data.get('workspace_icon')}")
+        
         # Get user info from Notion
         user_info = await service.get_user_info(token_data.get("access_token"))
         
@@ -477,13 +481,20 @@ async def notion_oauth_callback(
         service.store_access_token(db, user, token_data)
         
         # Redirect to frontend with success
-        success_data = base64.urlsafe_b64encode(json.dumps({
-            "workspace_name": token_data.get("workspace_name"),
+        workspace_data = {
+            "workspace_name": token_data.get("workspace_name") or "Notion Workspace",
             "workspace_icon": token_data.get("workspace_icon")
-        }).encode()).decode()
+        }
+        
+        logger.info(f"🎯 OAuth redirect data: {workspace_data}")
+        
+        success_data = base64.urlsafe_b64encode(json.dumps(workspace_data).encode()).decode()
+        redirect_url = f"{frontend_base}/onboarding?success=true&data={success_data}"
+        
+        logger.info(f"🚀 Redirecting to: {redirect_url}")
         
         return RedirectResponse(
-            url=f"{frontend_base}/onboarding?success=true&data={success_data}",
+            url=redirect_url,
             status_code=302
         )
         
