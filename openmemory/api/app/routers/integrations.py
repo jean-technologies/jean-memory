@@ -600,7 +600,7 @@ async def sync_notion_pages(
         def execute_notion_sync():
             """Non-blocking Notion sync execution"""
             import asyncio
-            from app.utils.memory import create_memory
+            from app.utils.memory import get_async_memory_client
             
             async def notion_sync_task():
                 # Create a new database session for the background task
@@ -628,18 +628,32 @@ async def sync_notion_pages(
                                 logger.warning(f"Skipping empty page {page_id}")
                                 continue
                             
-                            # Create memory
-                            await create_memory(
-                                content=text_content,
-                                user_id=str(current_supa_user.id),
-                                app_name="notion",
-                                metadata={
+                            # Create memory using Jean Memory client
+                            try:
+                                memory_client = await get_async_memory_client()
+                                
+                                # Prepare metadata for Jean Memory V2
+                                jean_metadata = {
+                                    'app_name': 'notion',
+                                    'created_via': 'notion_sync',
                                     "notion_page_id": page_id,
                                     "notion_title": page_data["page"].get("properties", {}).get("title", {}).get("title", [{}])[0].get("text", {}).get("content", "Untitled"),
                                     "notion_url": page_data["page"].get("url", ""),
                                     "source": "notion"
                                 }
-                            )
+                                
+                                # Add to Jean Memory V2
+                                result = await memory_client.add(
+                                    messages=[{"role": "user", "content": text_content}],
+                                    user_id=str(current_supa_user.id),
+                                    metadata=jean_metadata
+                                )
+                                
+                                logger.info(f"Successfully created memory for Notion page {page_id}")
+                                
+                            except Exception as memory_error:
+                                logger.error(f"Failed to create memory for page {page_id}: {memory_error}")
+                                continue
                             
                             synced_count += 1
                             
