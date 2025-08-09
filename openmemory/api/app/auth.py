@@ -131,17 +131,16 @@ async def get_current_user(
 
 # This is the original, untouched dependency for the UI and production services.
 async def get_current_supa_user(request: Request) -> SupabaseUser:
-    # EXTENSIVE DEBUG LOGGING FOR NOTION STATUS AUTH ISSUE
-    if "/notion/status" in str(request.url.path):
-        logger.error(f"🚨 AUTH MIDDLEWARE HIT FOR NOTION STATUS")
-        logger.error(f"   Request path: {request.url.path}")
-        logger.error(f"   Request method: {request.method}")
-        logger.error(f"   Headers received in auth middleware:")
-        for header_name, header_value in request.headers.items():
-            if 'auth' in header_name.lower():
-                logger.error(f"     🔑 {header_name}: {header_value[:30]}...")
-            else:
-                logger.error(f"     📋 {header_name}: {header_value}")
+    # Handle browser prefetch requests gracefully
+    purpose = request.headers.get("purpose")
+    sec_purpose = request.headers.get("sec-purpose", "")
+    
+    if purpose == "prefetch" or "prefetch" in sec_purpose:
+        logger.info(f"Ignoring browser prefetch request to {request.url.path}")
+        raise HTTPException(
+            status_code=HTTP_204_NO_CONTENT,
+            detail="Prefetch request ignored"
+        )
     
     if config.is_local_development:
         logger.debug(f"Using local authentication with USER_ID: {config.USER_ID}")
@@ -157,9 +156,6 @@ async def get_current_supa_user(request: Request) -> SupabaseUser:
     # Extract Bearer token from Authorization header
     auth_header = request.headers.get("Authorization")
     if not auth_header:
-        if "/notion/status" in str(request.url.path):
-            logger.error(f"🚨 AUTH HEADER MISSING IN MIDDLEWARE FOR NOTION STATUS")
-            logger.error(f"   Available headers: {list(request.headers.keys())}")
         logger.debug(f"No Authorization header for {request.method} {request.url.path}")
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, 
