@@ -22,6 +22,8 @@ The Notion integration is **95% complete and functional**. OAuth flow works, pag
 
 ## 🚨 **CRITICAL ISSUE - ROOT CAUSE IDENTIFIED**
 
+**UPDATE - January 10, 2025: The following analysis is CORRECT about the prefetch issue, but it is NOT the root cause of the deployment failures.**
+
 ### The Browser Prefetch Problem
 
 **Latest logs reveal the exact issue:**
@@ -336,6 +338,24 @@ This integration is **production-ready**. The "auth header missing" issue is act
 - Production-ready architecture
 
 **FINAL STEP: 30-minute fix for prefetch detection → 100% complete**
+
+---
+## 🚨 POST-MORTEM & NEW FINDINGS - January 10, 2025
+
+The initial diagnosis of the prefetch issue was correct, but it was a red herring. The repeated `DEPLOYMENT_NOT_FOUND` errors were caused by a series of incorrect fixes that led to application instability and crashes.
+
+### Key Learnings:
+
+1.  **The Real Root Cause:** The deployment was crashing due to a `TypeError` during application shutdown. The `background_processor.stop()` function was being called with `await` when it was not an `async` function. This was introduced in an attempt to fix the original problem.
+2.  **The `lifespan` Function is Critical:** The application's startup and shutdown logic in `openmemory/api/main.py` is extremely sensitive. Any changes to the `lifespan` function must be made with extreme care, as they can have a profound impact on the application's stability.
+3.  **The Background Processor is a Red Herring:** The background processor is used by many features, and while it was involved in the crash, it was not the root cause. The root cause was the incorrect handling of the processor in the `lifespan` function.
+4.  **The Prefetch Issue is Real, but Not Critical:** The 401 errors on the `/notion/status` endpoint are a real issue, but they are not the cause of the deployment failures. This is a logging and monitoring issue, not a critical bug.
+
+### Recommendations for Next Steps:
+
+1.  **Fix the Prefetch Issue Carefully:** The prefetch issue should be fixed, but it must be done in a way that does not affect the application's stability. The recommended solution in this document (ignoring prefetch requests in the auth middleware) is still the correct approach, but it must be implemented with extreme care.
+2.  **Add Robust Integration Tests:** The application needs a suite of integration tests that can be run in a production-like environment. This will help to catch regressions and prevent a repeat of this incident.
+3.  **Review the `lifespan` Function:** The `lifespan` function should be reviewed and refactored to make it more robust and less prone to errors.
 
 ---
 
