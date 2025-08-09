@@ -140,7 +140,7 @@ async def handle_sms(request: Request):
         
         # Only Pro and Enterprise users can use the SMS memory features
         if user.subscription_tier not in [SubscriptionTier.PRO, SubscriptionTier.ENTERPRISE]:
-            logger.info(f"User {user.id} ({user.subscription_tier.value}) denied SMS access due to non-pro subscription.")
+            logger.info(f"User {user.id} ({user.subscription_tier}) denied SMS access due to non-pro subscription.")
             sms_service.send_sms(
                 to_phone=user_phone,
                 message="Hi! SMS memory access is a Pro feature. To save and search memories via text, please upgrade your account at jeanmemory.com. Thanks!"
@@ -150,7 +150,7 @@ async def handle_sms(request: Request):
         # For subscribed users, check their rate limit
         from app.utils.sms import SMSRateLimit
         allowed, remaining = SMSRateLimit.check_rate_limit(user, db)
-        logger.info(f"User {user.id} ({user.subscription_tier.value}) SMS check: allowed={allowed}, remaining={remaining}")
+        logger.info(f"User {user.id} ({user.subscription_tier}) SMS check: allowed={allowed}, remaining={remaining}")
         
         if not allowed:
             # This will only trigger for Pro/Enterprise users who have hit their daily cap

@@ -90,7 +90,7 @@ class SubscriptionChecker:
                     "text": "Upgrade to Pro",
                     "url": "/pro"
                 },
-                "current_tier": user.subscription_tier.value if user.subscription_tier else "FREE"
+                "current_tier": user.subscription_tier if user.subscription_tier else "FREE"
             }
         )
     
@@ -123,7 +123,7 @@ class SubscriptionChecker:
                         "text": "Contact Sales",
                         "url": "mailto:jonathan@jeantechnologies.com?subject=Enterprise Subscription Inquiry"
                     },
-                    "current_tier": user.subscription_tier.value if user.subscription_tier else "FREE"
+                    "current_tier": user.subscription_tier if user.subscription_tier else "FREE"
                 }
             )
         
