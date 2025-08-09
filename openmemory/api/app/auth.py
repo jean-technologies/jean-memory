@@ -144,8 +144,9 @@ async def get_current_supa_user(request: Request) -> SupabaseUser:
 
     # Extract Bearer token from Authorization header
     auth_header = request.headers.get("Authorization")
+    logger.error(f"🔐 AUTH DEBUG: {request.method} {request.url.path} - Headers: {dict(request.headers)}")
     if not auth_header:
-        logger.debug("No Authorization header provided")
+        logger.error(f"🚨 AUTH FAILED: No Authorization header for {request.method} {request.url.path}")
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, 
             detail="Authorization header missing"
