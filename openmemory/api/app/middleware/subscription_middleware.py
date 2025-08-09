@@ -50,8 +50,8 @@ class SubscriptionChecker:
                 detail="Authentication required"
             )
         
-        # Allow if user has Pro or Enterprise tier
-        if user.subscription_tier in [SubscriptionTier.PRO, SubscriptionTier.ENTERPRISE]:
+        # Allow if user has Pro or Enterprise tier (subscription_tier is now stored as varchar in database)
+        if user.subscription_tier in ["PRO", "ENTERPRISE"]:
             # Additional check: ensure subscription is still active
             if user.subscription_status == 'active':
                 return True
