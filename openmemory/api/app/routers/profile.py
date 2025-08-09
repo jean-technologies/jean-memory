@@ -103,8 +103,8 @@ async def get_profile(
         user_id=user.user_id,
         email=user.email,
         name=user.name,
-        firstname=user.metadata_.get("firstname") if user.metadata_ else None,
-        lastname=user.metadata_.get("lastname") if user.metadata_ else None,
+        firstname=user.firstname,
+        lastname=user.lastname,
         subscription_tier=user.subscription_tier or "FREE",
         subscription_status=user.subscription_status,
         phone_number=user.metadata_.get("phone_number") if user.metadata_ else None,
@@ -122,17 +122,11 @@ async def update_profile(
     supabase_user_id_str = str(current_supa_user.id)
     user = get_or_create_user(db, supabase_user_id_str, current_supa_user.email)
     
-    # Update fields if provided - store in metadata since these are not direct database columns
-    if not user.metadata_:
-        user.metadata_ = {}
-        
+    # Update fields if provided - now using direct database columns
     if request.firstname is not None:
-        user.metadata_["firstname"] = request.firstname
+        user.firstname = request.firstname
     if request.lastname is not None:
-        user.metadata_["lastname"] = request.lastname
-        
-    # Flag the metadata field as modified to ensure the change is detected by SQLAlchemy
-    flag_modified(user, "metadata_")
+        user.lastname = request.lastname
     
     try:
         db.commit()
@@ -146,8 +140,8 @@ async def update_profile(
         user_id=user.user_id,
         email=user.email,
         name=user.name,
-        firstname=user.metadata_.get("firstname") if user.metadata_ else None,
-        lastname=user.metadata_.get("lastname") if user.metadata_ else None,
+        firstname=user.firstname,
+        lastname=user.lastname,
         subscription_tier=user.subscription_tier or "FREE",
         subscription_status=user.subscription_status,
         phone_number=user.metadata_.get("phone_number") if user.metadata_ else None,
