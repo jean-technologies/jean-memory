@@ -450,10 +450,7 @@ async def notion_oauth_callback(
     import json
     import base64
     
-    logger.info(f"🚀 NOTION CALLBACK: Received callback with code={code[:10]}..., state={state}")
-    logger.info(f"🚀 NOTION CALLBACK: Headers: {dict(request.headers)}")
-    logger.info(f"🚀 NOTION CALLBACK: URL: {request.url}")
-    logger.info(f"🚀 NOTION CALLBACK: Method: {request.method}")
+    logger.info(f"🚀 NOTION CALLBACK: Processing OAuth callback for state={state}")
     
     # Determine frontend URL based on environment
     frontend_base = "http://localhost:3000" if config.is_local_development else "https://app.jeanmemory.com"
@@ -767,6 +764,17 @@ async def disconnect_notion(
         logger.error(f"Error disconnecting Notion for user {current_supa_user.id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to disconnect: {str(e)}")
 
+
+@router.get("/test-auth")
+async def test_auth(
+    current_supa_user: SupabaseUser = Depends(get_current_supa_user)
+):
+    """Test endpoint to verify auth is working"""
+    return {
+        "user_id": current_supa_user.id,
+        "email": current_supa_user.email,
+        "message": "Authentication working correctly"
+    }
 
 @router.get("/health")
 async def get_integration_health():
