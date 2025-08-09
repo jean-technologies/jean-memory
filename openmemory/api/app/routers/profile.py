@@ -103,13 +103,13 @@ async def get_profile(
         user_id=user.user_id,
         email=user.email,
         name=user.name,
-        firstname=user.firstname,
-        lastname=user.lastname,
-        subscription_tier=user.subscription_tier.value,
+        firstname=user.metadata_.get("firstname") if user.metadata_ else None,
+        lastname=user.metadata_.get("lastname") if user.metadata_ else None,
+        subscription_tier=user.subscription_tier or "FREE",
         subscription_status=user.subscription_status,
-        phone_number=user.phone_number,
-        phone_verified=user.phone_verified or False,
-        sms_enabled=user.sms_enabled if user.sms_enabled is not None else True
+        phone_number=user.metadata_.get("phone_number") if user.metadata_ else None,
+        phone_verified=user.metadata_.get("phone_verified", False) if user.metadata_ else False,
+        sms_enabled=user.metadata_.get("sms_enabled", True) if user.metadata_ else True
     )
 
 @router.put("", response_model=ProfileResponse)
@@ -140,13 +140,13 @@ async def update_profile(
         user_id=user.user_id,
         email=user.email,
         name=user.name,
-        firstname=user.firstname,
-        lastname=user.lastname,
-        subscription_tier=user.subscription_tier.value,
+        firstname=user.metadata_.get("firstname") if user.metadata_ else None,
+        lastname=user.metadata_.get("lastname") if user.metadata_ else None,
+        subscription_tier=user.subscription_tier or "FREE",
         subscription_status=user.subscription_status,
-        phone_number=user.phone_number,
-        phone_verified=user.phone_verified or False,
-        sms_enabled=user.sms_enabled if user.sms_enabled is not None else True
+        phone_number=user.metadata_.get("phone_number") if user.metadata_ else None,
+        phone_verified=user.metadata_.get("phone_verified", False) if user.metadata_ else False,
+        sms_enabled=user.metadata_.get("sms_enabled", True) if user.metadata_ else True
     )
 
 @router.post("/phone/add")

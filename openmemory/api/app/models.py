@@ -55,6 +55,14 @@ class User(Base):
     name = Column(String, nullable=True, index=True)
     email = Column(String, unique=True, nullable=True, index=True)
     metadata_ = Column('metadata', JSON, default=dict)
+    
+    # Subscription fields that exist in production database
+    subscription_tier = Column(String(10), nullable=True, index=True)
+    subscription_status = Column(String, nullable=True)
+    stripe_customer_id = Column(String, nullable=True, index=True)
+    stripe_subscription_id = Column(String, nullable=True, index=True)
+    subscription_current_period_end = Column(DateTime, nullable=True)
+    
     created_at = Column(DateTime, default=get_current_utc_time, index=True)
     updated_at = Column(DateTime,
                         default=get_current_utc_time,
