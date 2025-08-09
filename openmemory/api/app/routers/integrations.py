@@ -706,7 +706,6 @@ async def get_notion_status(
     db: Session = Depends(get_db)
 ):
     """Get Notion integration status for current user"""
-    logger.error(f"🎯 NOTION STATUS: Called with user {current_supa_user.id}")
     try:
         service = NotionService()
         user = get_or_create_user(db, str(current_supa_user.id), current_supa_user.email)
@@ -773,7 +772,6 @@ async def test_auth(
     current_supa_user: SupabaseUser = Depends(get_current_supa_user)
 ):
     """Test endpoint to verify auth is working"""
-    logger.error(f"🧪 TEST AUTH: Success for {current_supa_user.id}")
     return {
         "user_id": current_supa_user.id,
         "email": current_supa_user.email,
