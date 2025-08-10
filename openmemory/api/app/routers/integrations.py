@@ -631,9 +631,19 @@ async def sync_notion_pages(
                             ).first()
 
                             if existing_doc:
-                                logger.info(f"🔵 [NOTION SYNC] Skipping page {page_id} as it already exists in the database (Document ID: {existing_doc.id})")
-                                continue
+                                # Document exists, now check if it has an active memory
+                                has_active_memory = db_session.query(Memory).join(document_memories).filter(
+                                    document_memories.c.document_id == existing_doc.id,
+                                    Memory.state == MemoryState.active
+                                ).count() > 0
 
+                                if has_active_memory:
+                                    logger.info(f"🔵 [NOTION SYNC] Skipping page {page_id} as it has an active memory (Document ID: {existing_doc.id})")
+                                    continue
+                                else:
+                                    logger.info(f"🔄 [NOTION SYNC] Document {existing_doc.id} found for page {page_id}, but no active memory. Re-creating memory.")
+                                    # We will proceed to create a new memory for this existing document
+                            
                             update_task_progress(
                                 task_id, 
                                 (i / len(page_ids)) * 100, 
