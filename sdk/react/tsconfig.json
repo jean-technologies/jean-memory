@@ -18,8 +18,8 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx"
+    "index.ts",
+    "useJeanAgent.tsx"
   ],
   "exclude": [
     "node_modules",

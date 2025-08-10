@@ -1,136 +1,331 @@
 ---
 title: React SDK
-description: 'The official React library for Jean Memory.'
+description: 'The official React library for Jean Memory - 5-line integration for personalized AI chatbots using MCP (Model Context Protocol).'
 ---
 
 ## Installation
 
-To get started, install the Jean Memory React SDK and its peer dependency, `@assistant-ui/react`.
+Install the Jean Memory React SDK:
 
 ```bash
-npm install jeanmemory-react @assistant-ui/react
+npm install @jeanmemory/react
 ```
 
-## Basic Usage
+<Warning>
+**Account Requirement**: This SDK only works with Jean Memory accounts created using email/password. Accounts created via Google or GitHub sign-in are not currently supported.
+</Warning>
 
-The easiest way to get started is with the `JeanChat` component. It provides a full-featured chat interface with memory enabled out of the box.
+## Quick Start (5 lines of code)
 
-```javascript
-import { useJean, JeanChat } from 'jeanmemory-react';
+The simplest way to add personalized AI to your React app:
+
+```jsx
+import { JeanAgent } from '@jeanmemory/react';
 
 function App() {
-  const { agent } = useJean({ 
-    apiKey: process.env.REACT_APP_JEAN_API_KEY 
+  return <JeanAgent 
+    apiKey="jean_sk_your_api_key_here"
+    systemPrompt="You are a helpful assistant"
+  />;
+}
+```
+
+That's it! This creates a complete personalized AI chatbot that:
+- 🧠 **Remembers the user** via Jean Memory
+- 💬 **Provides intelligent responses** using MCP jean_memory tool
+- 🎯 **Acts according to your system prompt** (math tutor, writing coach, etc.)
+- 🔐 **Handles authentication** automatically
+
+## Real-World Examples
+
+### Math Tutor
+
+```jsx
+import { JeanAgent } from '@jeanmemory/react';
+
+function MathTutorApp() {
+  return <JeanAgent 
+    apiKey="jean_sk_your_api_key_here"
+    systemPrompt="You are an expert math tutor who helps students with algebra, calculus, and statistics"
+  />;
+}
+```
+
+### Writing Coach
+
+```jsx
+import { JeanAgent } from '@jeanmemory/react';
+
+function WriteWellAI() {
+  return <JeanAgent 
+    apiKey="jean_sk_your_api_key_here"
+    systemPrompt="You are an expert writing coach who helps improve clarity and engagement"
+  />;
+}
+```
+
+### Fitness Coach
+
+```jsx
+import { JeanAgent } from '@jeanmemory/react';
+
+function FitnessApp() {
+  return <JeanAgent 
+    apiKey="jean_sk_your_api_key_here"
+    systemPrompt="You are a fitness coach who creates personalized workout plans"
+    className="h-96"
+  />;
+}
+```
+
+## How It Works - MCP Integration
+
+The Jean Memory React SDK uses **Model Context Protocol (MCP)** to provide truly intelligent, personalized AI responses:
+
+1. **User signs in** with their Jean Memory account
+2. **MCP jean_memory tool** automatically retrieves personal context about the user
+3. **AI synthesis** generates natural responses using the user's context + your system prompt
+4. **Conversations are stored** back to Jean Memory for future context
+
+This means your AI **actually knows the user** - not just generic responses!
+
+## Advanced Usage with `useJeanAgent` Hook
+
+If you need custom UI or more control, use the hook directly:
+
+```jsx
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+
+function CustomApp() {
+  const agent = useJeanAgent({
+    apiKey: "jean_sk_your_api_key_here",
+    systemPrompt: "You are a helpful assistant"
   });
-  
+
+  if (!agent.isAuthenticated) {
+    return <SignInWithJean onSuccess={agent.signIn} />;
+  }
+
   return <JeanChat agent={agent} />;
 }
 ```
 
-## Customizable Authentication
+### useJeanAgent Returns
 
-Jean Memory provides a flexible authentication flow that you can tailor to your application's branding. The "Sign In with Jean" button can be customized to fit your needs.
+- **user**: Current user (`JeanUser | null`)
+- **isLoading**: Authentication loading state
+- **error**: Error message if any
+- **messages**: Conversation history
+- **isAuthenticated**: Boolean for auth state
+- **signIn(email, password)**: Sign in function
+- **sendMessage(message)**: Send message to AI
+- **storeDocument(title, content)**: Store document to Jean Memory
+- **clearConversation()**: Clear current chat
 
-<div style={{
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    margin: '2rem 0'
-}}>
-    <button style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.25rem 0.9rem',
-        borderRadius: '8px',
-        background: '#FFFFFF',
-        color: '#000000',
-        fontWeight: '500',
-        fontSize: '14px',
-        border: '1px solid #E5E7EB',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-    }}>
-        Sign In with Jean
-        <img src="/logo/jean-bug-white.png" alt="Jean Memory Logo" style={{height: '18px', width: '18px'}}/>
-    </button>
-</div>
+## Full Custom Implementation Example
 
-You can adapt the text to best suit your user experience, for example:
+For complete control over styling and layout:
 
-- "Add Memory to X"
-- "Bring Your Memories"
-- "Personalize"
+```jsx
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
 
-## `useJean` Hook
+function CustomApp() {
+  const agent = useJeanAgent({
+    apiKey: process.env.REACT_APP_JEAN_API_KEY,
+    systemPrompt: "You are a fitness coach who creates personalized workout plans"
+  });
 
-This is the core hook for interacting with the Jean Memory API.
+  if (!agent.isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-4">🏋️ Fitness Coach AI</h1>
+          <p className="text-gray-600 mb-4">
+            Sign in with your Jean Memory account to get personalized fitness coaching.
+          </p>
+          <SignInWithJean onSuccess={agent.signIn} />
+        </div>
+      </div>
+    );
+  }
 
-```javascript
-const { 
-  agent, 
-  signIn, 
-  signOut, 
-  isAuthenticated, 
-  isLoading, 
-  error 
-} = useJean({
-  apiKey: "jean_sk_...",        // Required
-  systemPrompt: "You are...",   // Optional: Customize the AI's personality
-  baseUrl: "https://...",       // Optional: For self-hosted instances
-  debug: false                  // Optional: Enable debug logging
-});
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">🏋️ Fitness Coach AI</h1>
+            <div className="text-sm text-gray-600">
+              Welcome, {agent.user?.email} | 
+              <button onClick={agent.signOut} className="ml-2 text-red-600">
+                Sign Out
+              </button>
+            </div>
+          </div>
+          <JeanChat agent={agent} className="h-96" />
+        </div>
+      </div>
+    </div>
+  );
+}
 ```
 
-## `JeanChat` Component
+## Configuration Options
 
-A fully-featured, customizable chat component.
+### JeanAgent Props
 
-```javascript
-<JeanChat 
-  agent={agent}
-  theme={{
-    primaryColor: '#9563FF',
-    fontFamily: 'Inter'
-  }}
-  height="600px"
-  placeholder="Ask me anything..."
+```jsx
+<JeanAgent 
+  apiKey="jean_sk_your_api_key_here"          // Required: Your API key
+  systemPrompt="You are a helpful assistant"  // Required: AI persona
+  clientName="your-app"                       // Optional: Client identifier  
+  className="h-96"                            // Optional: CSS classes
 />
 ```
 
-## Manual Memory Management
+### Environment Variables
 
-While conversations are automatically saved, you can also manage memories manually.
+Create a `.env` file in your project root:
 
-```javascript
-// Add a new memory
-await agent.addMemory("User prefers to be addressed by their first name, Alex.");
-
-// Search for memories
-const results = await agent.searchMemories("user preferences");
-console.log(results);
+```bash
+# .env
+REACT_APP_JEAN_API_KEY=jean_sk_your_actual_api_key_here
 ```
+
+Get your API key from [jeanmemory.com](https://jeanmemory.com).
+
+## TypeScript Support
+
+The SDK includes full TypeScript definitions:
+
+```typescript
+import { useJeanAgent, JeanUser, JeanAgentConfig, Message } from '@jeanmemory/react';
+
+const config: JeanAgentConfig = {
+  apiKey: "jean_sk_...",
+  systemPrompt: "You are a helpful assistant",
+  clientName: "my-app"
+};
+
+const agent = useJeanAgent(config);
+
+// All return values are properly typed
+if (agent.user) {
+  console.log(agent.user.email); // string
+}
+
+agent.messages.forEach((msg: Message) => {
+  console.log(msg.content, msg.timestamp); // All typed
+});
+```
+
+## Under The Hood - MCP Architecture
+
+Jean Memory React SDK uses **Model Context Protocol (MCP)** for intelligent personalization:
+
+1. **Sign In**: User authenticates with Jean Memory account
+2. **Context Retrieval**: `jean_memory` MCP tool fetches user's personal context
+3. **AI Synthesis**: Server-side LLM generates responses using context + system prompt
+4. **Memory Storage**: `store_document` MCP tool saves conversations back to Jean Memory
+5. **Continuous Learning**: Each interaction improves future personalization
+
+This architecture ensures your AI actually **knows and remembers** each user!
 
 ## Next.js Integration
 
-For Next.js applications, you need to dynamically import the `JeanChat` component to disable server-side rendering (SSR), as it relies on browser APIs.
+For Next.js applications, use the `'use client'` directive:
 
-```javascript
-// app/chat/page.js
+```jsx
 'use client';
 
-import dynamic from 'next/dynamic';
-import { useJean } from 'jeanmemory-react';
-
-const JeanChat = dynamic(
-  () => import('jeanmemory-react').then(mod => mod.JeanChat),
-  { ssr: false }
-);
+import { JeanAgent } from '@jeanmemory/react';
 
 export default function ChatPage() {
-  const { agent } = useJean({ 
-    apiKey: process.env.NEXT_PUBLIC_JEAN_API_KEY 
-  });
-  
-  return <JeanChat agent={agent} />;
+  return <JeanAgent 
+    apiKey={process.env.NEXT_PUBLIC_JEAN_API_KEY}
+    systemPrompt="You are a helpful assistant"
+  />;
 }
 ```
+
+**Important**: Use `NEXT_PUBLIC_JEAN_API_KEY` for client-side access in Next.js.
+
+## Development Setup
+
+For local development, add a proxy to your `package.json` to avoid CORS issues:
+
+```json
+{
+  "name": "my-app",
+  "scripts": { ... },
+  "proxy": "https://jean-memory-api-virginia.onrender.com"
+}
+```
+
+Then restart your development server with `npm start`.
+
+## Production Deployment
+
+<Warning>
+**Domain Whitelisting Required**: Custom domains must be whitelisted by the Jean Memory team for CORS access.
+</Warning>
+
+**Domains that work out of the box:**
+- `http://localhost:3000` (development)
+- `http://localhost:3001` (development)
+
+**For production domains** like `https://yourdomain.com`, contact the Jean Memory team at **support@jeanmemory.com** with:
+- Your API key
+- Production domain(s) 
+- Expected launch date
+- Brief description of your application
+
+We'll whitelist your domain within 24 hours for production deployment.
+
+## Troubleshooting
+
+### Common Issues
+
+**"API key validation failed"**
+- Ensure your API key starts with `jean_sk_`
+- Get a valid API key from [jeanmemory.com](https://jeanmemory.com)
+- Check that your API key is not expired
+
+**"Authentication failed"**
+- Verify you have a Jean Memory account created with email/password at [jeanmemory.com](https://jeanmemory.com)
+- ⚠️ Google/GitHub accounts are not supported - create a new account with email/password
+- Check your email and password are correct
+- Ensure your account is active
+
+**"MCP request failed"**
+- Check browser network tab for specific error details
+- Verify your API key has MCP tool permissions
+- Try refreshing and signing in again
+
+**CORS errors (Access Control Allow Origin)**
+- Add proxy to `package.json` for development (see Development Setup above)
+- For production, contact Jean Memory team to whitelist your domain
+- Ensure you're using the correct API endpoint
+
+**No AI responses**
+- Check browser console for errors
+- Ensure the `systemPrompt` is provided
+- Verify the jean_memory MCP tool is working
+
+### Getting Help
+
+- **Account Setup**: Visit [jeanmemory.com](https://jeanmemory.com)
+- **Technical Issues**: Check browser console for detailed error messages
+- **API Problems**: Verify your API key permissions and limits
+
+## What Makes This Special
+
+Unlike generic chatbots, Jean Memory AI with MCP:
+
+- 🧠 **Actually knows you**: Uses MCP jean_memory tool to access your personal context
+- 🎯 **Role-specific**: Math tutors act like math tutors, writing coaches like writing coaches  
+- 🔄 **Learns continuously**: Each conversation improves future interactions
+- 🌐 **Cross-platform**: Same memory across all your apps and devices
+- ⚡ **Instant setup**: Just 5 lines of code for full personalization
+
+Experience truly intelligent, personalized AI that remembers and adapts to you! 🧠✨
