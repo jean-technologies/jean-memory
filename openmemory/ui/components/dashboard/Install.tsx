@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubstackIntegration } from "./SubstackIntegration";
 import { TwitterIntegration } from "./TwitterIntegration";
+import { NotionIntegration } from "./NotionIntegration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ const mainApps = [
   { key: "vscode", label: "VS Code", icon: "/images/vscode.svg" },
   { key: "substack", label: "Substack", icon: "/images/substack.png", isIntegration: true },
   { key: "twitter", label: "Twitter/X", icon: "🐦", isIntegration: true },
+  { key: "notion", label: "Notion", icon: "/images/notion.svg", isIntegration: true },
   { key: "windsurf", label: "Windsurf", icon: "/images/windsurf.png" },
 ];
 
@@ -258,6 +260,8 @@ export const Install = () => {
               />
             ) : key === "twitter" ? (
               <TwitterIntegration />
+            ) : key === "notion" ? (
+              <NotionIntegration />
             ) : (
               renderInstallCard(key, `${label} Installation`, key === "mcp")
             )}
