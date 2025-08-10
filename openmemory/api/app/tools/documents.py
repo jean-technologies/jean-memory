@@ -283,7 +283,6 @@ async def _process_document_background(
                         try:
                             # Create Memory record in PostgreSQL (following Substack pattern)
                             from app.models import Memory
-                            import uuid
                             
                             # Prepare memory metadata (include document reference)
                             memory_metadata = {
