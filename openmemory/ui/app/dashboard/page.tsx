@@ -70,7 +70,7 @@ const availableApps: AvailableApp[] = [
   { id: 'substack', name: 'Substack', description: 'For writers for substack', priority: 9, category: 'Content', trustScore: 95 },
   { id: 'twitter', name: 'X', description: 'Social media', priority: 8, category: 'Social', trustScore: 93 },
   { id: 'obsidian', name: 'Obsidian', description: 'Powerful knowledge base application', priority: 7, category: 'Productivity', trustScore: 94, isComingSoon: true },
-  { id: 'notion', name: 'Notion', description: 'Connected workspace for notes & projects', priority: 6, category: 'Productivity', trustScore: 92, isComingSoon: true },
+  { id: 'notion', name: 'Notion', description: 'Connected workspace for notes & projects', priority: 6, category: 'Productivity', trustScore: 92, isComingSoon: false },
   { id: 'windsurf', name: 'Windsurf', description: 'AI-powered code editor', priority: 5, category: 'Development', trustScore: 94 },
   { id: 'mcp-generic', name: 'MCP Link', description: 'Connect to any mcp', priority: -2, category: 'Integration', trustScore: 91 },
   { id: 'cline', name: 'Cline', description: 'Command line interface tool', priority: 3, category: 'Development', trustScore: 92 },
