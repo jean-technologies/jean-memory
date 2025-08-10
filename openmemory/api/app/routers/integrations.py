@@ -623,6 +623,17 @@ async def sync_notion_pages(
                     
                     for i, page_id in enumerate(page_ids):
                         try:
+                            # Check if a document with this Notion page_id already exists
+                            existing_doc = db_session.query(Document).filter(
+                                Document.user_id == user.id,
+                                Document.document_type == 'notion',
+                                Document.metadata_['notion_page_id'].astext == page_id
+                            ).first()
+
+                            if existing_doc:
+                                logger.info(f"🔵 [NOTION SYNC] Skipping page {page_id} as it already exists in the database (Document ID: {existing_doc.id})")
+                                continue
+
                             update_task_progress(
                                 task_id, 
                                 (i / len(page_ids)) * 100, 
