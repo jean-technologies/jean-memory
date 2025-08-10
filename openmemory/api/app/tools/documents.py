@@ -88,16 +88,17 @@ async def _process_document_background(
             else:
                 # This path is for the store_document tool
                 logger.info(f"📱 [{job_id}] No document ID provided, creating a new document...")
-                from app.utils.db import get_or_create_app
-                app = get_or_create_app(db, user, "document_storage")
-                app_id = app.id
-                logger.info(f"✅ [{job_id}] App for new document: {app.id} (name: {app.name})")
-
+                
                 # Validate input for new document
                 if not title or not title.strip():
                     raise ValueError("Document title cannot be empty for new documents")
                 if not content or not content.strip():
                     raise ValueError("Document content cannot be empty for new documents")
+
+                from app.utils.db import get_or_create_app
+                app = get_or_create_app(db, user, "document_storage")
+                app_id = app.id
+                logger.info(f"✅ [{job_id}] App for new document: {app.id} (name: {app.name})")
 
                 # 3. Store the full document in database
                 new_document_id = str(uuid.uuid4())
