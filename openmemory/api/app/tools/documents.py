@@ -265,64 +265,63 @@ async def _process_document_background(
                     logger.error(f"❌ [{job_id}] Strategy '{strategy['name']}' failed: {strategy_error}")
                     continue
             
-            # Handle results based on success/failure
+            # ALWAYS create Memory record in PostgreSQL (following Substack pattern)
+            # This ensures documents appear in memories dashboard regardless of Jean Memory V2 status
+            logger.info(f"🔧 [{job_id}] Creating Memory record in PostgreSQL for dashboard visibility...")
+            
+            try:
+                # Create Memory record in PostgreSQL (following Substack pattern)
+                from app.models import Memory
+                
+                # Prepare memory metadata (include document reference)
+                memory_metadata = {
+                    **metadata,  # Include all original metadata
+                    'document_id': document_id,
+                    'created_via': 'document_processing',
+                    'type': 'document_summary',
+                    'source_url': source_url or '',
+                    'title': title,
+                    'is_document_summary': True
+                }
+                
+                # Create Memory record with summary content
+                memory_content = f"Document: {title}"
+                if len(content) > 1000:
+                    memory_content += f" - {content[:800]}..."
+                else:
+                    memory_content += f" - {content}"
+                
+                # Create Memory record
+                db_memory = Memory(
+                    user_id=user.id,
+                    app_id=app.id,
+                    content=memory_content,
+                    metadata_=memory_metadata
+                )
+                db.add(db_memory)
+                db.flush()
+                logger.info(f"✅ [{job_id}] Memory record created in PostgreSQL with ID: {db_memory.id}")
+                
+                # Link document to memory using SQLAlchemy (same as Substack sync)
+                from app.models import document_memories
+                db.execute(
+                    document_memories.insert().values(
+                        document_id=doc.id,
+                        memory_id=db_memory.id
+                    )
+                )
+                logger.info(f"✅ [{job_id}] Document-memory link created successfully")
+                
+            except Exception as memory_create_error:
+                logger.error(f"💥 [{job_id}] Failed to create Memory record: {memory_create_error}", exc_info=True)
+                # Continue - the document is still saved
+            
+            # Also try Jean Memory V2 (but don't depend on it for dashboard visibility)
             if memory_result and isinstance(memory_result, dict) and 'results' in memory_result and memory_result['results']:
-                logger.info(f"🎉 [{job_id}] Memory creation SUCCESS using '{successful_strategy}' strategy!")
-                
-                # CRITICAL FIX: Also create Memory records in PostgreSQL (like Substack does)
-                # This is why documents weren't showing in memories dashboard!
-                logger.info(f"🔧 [{job_id}] Creating Memory records in PostgreSQL for dashboard visibility...")
-                
-                for result in memory_result['results']:
-                    mem0_memory_id_str = result.get('id')
-                    memory_text = result.get('text', '')
-                    
-                    if mem0_memory_id_str and result.get('event') == 'ADD':
-                        logger.info(f"🆔 [{job_id}] Creating Memory record with ID: {mem0_memory_id_str}")
-                        
-                        try:
-                            # Create Memory record in PostgreSQL (following Substack pattern)
-                            from app.models import Memory
-                            
-                            # Prepare memory metadata (include document reference)
-                            memory_metadata = {
-                                **metadata,  # Include all original metadata
-                                'document_id': document_id,
-                                'created_via': 'document_processing',
-                                'mem0_memory_id': mem0_memory_id_str,
-                                'is_document_summary': True
-                            }
-                            
-                            # Create Memory record
-                            db_memory = Memory(
-                                id=uuid.UUID(mem0_memory_id_str),  # Use same ID as Jean Memory V2
-                                user_id=user.id,
-                                app_id=app.id,
-                                content=memory_text or f"Document: {title}",  # Use extracted text or fallback
-                                metadata_=memory_metadata
-                            )
-                            db.add(db_memory)
-                            db.flush()
-                            logger.info(f"✅ [{job_id}] Memory record created in PostgreSQL with ID: {mem0_memory_id_str}")
-                            
-                            # Link document to memory using SQLAlchemy (same as Substack sync)
-                            from app.models import document_memories
-                            db.execute(
-                                document_memories.insert().values(
-                                    document_id=doc.id,
-                                    memory_id=uuid.UUID(mem0_memory_id_str)
-                                )
-                            )
-                            logger.info(f"✅ [{job_id}] Document-memory link created successfully")
-                            break  # Only process first successfully created memory
-                            
-                        except Exception as memory_create_error:
-                            logger.error(f"💥 [{job_id}] Failed to create Memory record: {memory_create_error}", exc_info=True)
-                            # Continue - the document is still saved
+                logger.info(f"🎉 [{job_id}] Jean Memory V2 creation also succeeded using '{successful_strategy}' strategy!")
             else:
-                logger.error(f"💥 [{job_id}] ALL MEMORY STRATEGIES FAILED - document stored but not indexed in mem0")
-                logger.error(f"💥 [{job_id}] Final result: {memory_result}")
-                # Don't raise exception - document is still stored and retrievable via deep_memory_query
+                logger.warning(f"⚠️ [{job_id}] Jean Memory V2 creation failed, but Memory record was created for dashboard visibility")
+                logger.warning(f"⚠️ [{job_id}] Jean Memory V2 result: {memory_result}")
                 
             # Commit all changes (same as Substack sync)
             db.commit()
