@@ -291,8 +291,8 @@ async def _process_document_background(
                 
                 # Check if a summary memory for this document already exists
                 existing_memory = db.query(Memory).filter(
-                    Memory.metadata_['document_id'].astext == str(document_id),
-                    Memory.metadata_['type'].astext == 'document_summary'
+                    Memory.metadata_.contains({'document_id': str(document_id)}),
+                    Memory.metadata_.contains({'type': 'document_summary'})
                 ).first()
 
                 if existing_memory:
