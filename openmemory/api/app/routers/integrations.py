@@ -616,6 +616,7 @@ async def sync_notion_pages(
             async def notion_sync_task():
                 # Create a new database session for the background task
                 from app.database import SessionLocal
+                from app.models import Memory, document_memories, MemoryState
                 db_session = SessionLocal()
                 try:
                     access_token = service.get_access_token(user)
@@ -729,7 +730,6 @@ async def sync_notion_pages(
                                 logger.info(f"🧠 [NOTION SYNC] Creating Memory record in PostgreSQL for dashboard visibility...")
                                 
                                 try:
-                                    from app.models import Memory, document_memories
                                     
                                     # Prepare memory metadata (same as Substack)
                                     memory_metadata = {
