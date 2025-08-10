@@ -20,13 +20,14 @@ document_processing_status = {}
 
 async def _process_document_background(
     job_id: str,
-    title: str, 
-    content: str, 
-    document_type: str,
-    source_url: Optional[str],
-    metadata: Optional[dict],
     supa_uid: str,
-    client_name: str
+    client_name: str,
+    document_id: Optional[str] = None,
+    title: Optional[str] = None, 
+    content: Optional[str] = None, 
+    document_type: Optional[str] = None,
+    source_url: Optional[str] = None,
+    metadata: Optional[dict] = None,
 ):
     """
     Background task to handle heavy document processing:
@@ -39,7 +40,7 @@ async def _process_document_background(
         from app.utils.db import get_or_create_user
         import functools
 
-        logger.info(f"🔄 Starting background processing for document '{title}' (job: {job_id})")
+        logger.info(f"🔄 Starting background processing for document (job: {job_id})")
         document_processing_status[job_id] = {
             "status": "processing",
             "message": "Processing document...",
@@ -67,12 +68,58 @@ async def _process_document_background(
                 raise ValueError("Failed to get user information")
             logger.info(f"✅ [{job_id}] User retrieved successfully: {user.id} (type: {type(user.id)})")
             
-            # Import and get/create app for document storage
-            logger.info(f"📱 [{job_id}] Getting or creating app for document storage...")
-            from app.utils.db import get_or_create_app
-            app = get_or_create_app(db, user, "document_storage")
-            logger.info(f"✅ [{job_id}] App retrieved/created: {app.id} (name: {app.name})")
-            
+            # If document_id is provided, fetch the existing document. Otherwise, create a new one.
+            if document_id:
+                logger.info(f"🔍 [{job_id}] Fetching existing document with ID: {document_id}")
+                from app.models import Document
+                doc = db.query(Document).filter(Document.id == uuid.UUID(document_id)).first()
+                if not doc:
+                    raise ValueError(f"Document with ID {document_id} not found.")
+                logger.info(f"✅ [{job_id}] Successfully fetched existing document: '{doc.title}'")
+                
+                # Use existing document's attributes
+                title = doc.title
+                content = doc.content
+                document_type = doc.document_type
+                source_url = doc.source_url
+                metadata = doc.metadata_ or {}
+                app_id = doc.app_id
+
+            else:
+                # This path is for the store_document tool
+                logger.info(f"📱 [{job_id}] No document ID provided, creating a new document...")
+                from app.utils.db import get_or_create_app
+                app = get_or_create_app(db, user, "document_storage")
+                app_id = app.id
+                logger.info(f"✅ [{job_id}] App for new document: {app.id} (name: {app.name})")
+
+                # Validate input for new document
+                if not title or not title.strip():
+                    raise ValueError("Document title cannot be empty for new documents")
+                if not content or not content.strip():
+                    raise ValueError("Document content cannot be empty for new documents")
+
+                # 3. Store the full document in database
+                new_document_id = str(uuid.uuid4())
+                logger.info(f"🗄️ [{job_id}] Generated new document ID: {new_document_id}")
+                
+                from app.models import Document
+                doc = Document(
+                    id=uuid.UUID(new_document_id),
+                    user_id=user.id,
+                    app_id=app_id,
+                    title=title,
+                    content=content,
+                    document_type=document_type,
+                    source_url=source_url,
+                    metadata_=metadata or {}
+                )
+                db.add(doc)
+                db.flush()
+                document_id = new_document_id # Use the new ID for the rest of the process
+                logger.info(f"✅ [{job_id}] New document stored successfully in database")
+
+
             # Import and initialize async memory client
             logger.info(f"🧠 [{job_id}] Initializing async memory client...")
             from app.utils.memory import get_async_memory_client
@@ -82,30 +129,6 @@ async def _process_document_background(
             document_processing_status[job_id]["progress"] = 30
             document_processing_status[job_id]["message"] = "Storing document..."
             
-            # 3. Store the full document in database
-            document_id = str(uuid.uuid4())
-            logger.info(f"🗄️ [{job_id}] Generated document ID: {document_id}")
-            
-            # Insert into documents table using SQLAlchemy ORM (same as Substack sync)
-            logger.info(f"💾 [{job_id}] Creating document using SQLAlchemy ORM...")
-            
-            # Use SQLAlchemy ORM directly - same approach as Substack sync
-            from app.models import Document
-            doc = Document(
-                id=uuid.UUID(document_id),
-                user_id=user.id,
-                app_id=app.id,
-                title=title,
-                content=content,
-                document_type=document_type,
-                source_url=source_url,
-                metadata_=metadata or {}
-            )
-            
-            db.add(doc)
-            db.flush()  # Get the ID without committing yet
-            logger.info(f"✅ [{job_id}] Document stored successfully in database using SQLAlchemy ORM")
-                
             document_processing_status[job_id]["progress"] = 50
             document_processing_status[job_id]["message"] = "Creating searchable chunks..."
             
@@ -136,7 +159,7 @@ async def _process_document_background(
                         for chunk in chunks:
                             chunk_obj = DocumentChunk(
                                 id=uuid.UUID(chunk["id"]),
-                                document_id=uuid.UUID(chunk["document_id"]),
+                                document_id=uuid.UUID(document_id), # Use the correct document_id
                                 content=chunk["content"],
                                 chunk_index=chunk["chunk_index"]
                             )
@@ -267,50 +290,59 @@ async def _process_document_background(
             
             # ALWAYS create Memory record in PostgreSQL (following Substack pattern)
             # This ensures documents appear in memories dashboard regardless of Jean Memory V2 status
-            logger.info(f"🔧 [{job_id}] Creating Memory record in PostgreSQL for dashboard visibility...")
+            logger.info(f"🔧 [{job_id}] Creating/updating Memory record in PostgreSQL for dashboard visibility...")
             
             try:
                 # Create Memory record in PostgreSQL (following Substack pattern)
-                from app.models import Memory
+                from app.models import Memory, document_memories
                 
-                # Prepare memory metadata (include document reference)
-                memory_metadata = {
-                    **metadata,  # Include all original metadata
-                    'document_id': document_id,
-                    'created_via': 'document_processing',
-                    'type': 'document_summary',
-                    'source_url': source_url or '',
-                    'title': title,
-                    'is_document_summary': True
-                }
-                
-                # Create Memory record with summary content
-                memory_content = f"Document: {title}"
-                if len(content) > 1000:
-                    memory_content += f" - {content[:800]}..."
+                # Check if a summary memory for this document already exists
+                existing_memory = db.query(Memory).filter(
+                    Memory.metadata_['document_id'].astext == str(document_id),
+                    Memory.metadata_['type'].astext == 'document_summary'
+                ).first()
+
+                if existing_memory:
+                    logger.info(f"🧠 [{job_id}] Found existing summary memory {existing_memory.id}. Skipping creation.")
                 else:
-                    memory_content += f" - {content}"
-                
-                # Create Memory record
-                db_memory = Memory(
-                    user_id=user.id,
-                    app_id=app.id,
-                    content=memory_content,
-                    metadata_=memory_metadata
-                )
-                db.add(db_memory)
-                db.flush()
-                logger.info(f"✅ [{job_id}] Memory record created in PostgreSQL with ID: {db_memory.id}")
-                
-                # Link document to memory using SQLAlchemy (same as Substack sync)
-                from app.models import document_memories
-                db.execute(
-                    document_memories.insert().values(
-                        document_id=doc.id,
-                        memory_id=db_memory.id
+                    logger.info(f"🧠 [{job_id}] No existing summary memory found. Creating a new one...")
+                    # Prepare memory metadata (include document reference)
+                    memory_metadata = {
+                        **(metadata or {}),
+                        'document_id': str(document_id),
+                        'created_via': 'document_processing',
+                        'type': 'document_summary',
+                        'source_url': source_url or '',
+                        'title': title,
+                        'is_document_summary': True
+                    }
+                    
+                    # Create Memory record with summary content
+                    memory_content = f"Document: {title}"
+                    if len(content) > 1000:
+                        memory_content += f" - {content[:800]}..."
+                    else:
+                        memory_content += f" - {content}"
+                    
+                    # Create Memory record
+                    db_memory = Memory(
+                        user_id=user.id,
+                        app_id=app_id, # Use the correct app_id
+                        content=memory_content,
+                        metadata_=memory_metadata
                     )
-                )
-                logger.info(f"✅ [{job_id}] Document-memory link created successfully")
+                    db.add(db_memory)
+                    db.flush()
+                    logger.info(f"✅ [{job_id}] Memory record created in PostgreSQL with ID: {db_memory.id}")
+                    
+                    # Link document to memory using SQLAlchemy (same as Substack sync)
+                    db.execute(
+                        document_memories.insert().values(
+                            document_id=doc.id,
+                            memory_id=db_memory.id
+                        )
+                    )
+                    logger.info(f"✅ [{job_id}] Document-memory link created successfully")
                 
             except Exception as memory_create_error:
                 logger.error(f"💥 [{job_id}] Failed to create Memory record: {memory_create_error}", exc_info=True)
@@ -334,7 +366,7 @@ async def _process_document_background(
             "status": "completed",
             "message": f"✅ Document '{title}' successfully stored and indexed",
             "progress": 100,
-            "document_id": document_id,
+            "document_id": str(document_id),
             "completed_at": datetime.datetime.now(datetime.UTC).isoformat(),
             "started_at": document_processing_status[job_id]["started_at"]
         }
@@ -421,26 +453,26 @@ async def store_document(
             background_tasks.add_task(
                 _process_document_background,
                 job_id=job_id,
+                supa_uid=supa_uid,
+                client_name=client_name,
                 title=title,
                 content=content,
                 document_type=document_type,
                 source_url=source_url,
-                metadata=metadata,
-                supa_uid=supa_uid,
-                client_name=client_name
+                metadata=metadata
             )
         else:
             # Fallback: create simple BackgroundTasks if not available
             logger.info(f"⚡ [QUEUE] Scheduling background task via asyncio.create_task for job {job_id}")
             asyncio.create_task(_process_document_background(
                 job_id=job_id,
+                supa_uid=supa_uid,
+                client_name=client_name,
                 title=title,
                 content=content,
                 document_type=document_type,
                 source_url=source_url,
-                metadata=metadata,
-                supa_uid=supa_uid,
-                client_name=client_name
+                metadata=metadata
             ))
         
         # Immediate lightweight response

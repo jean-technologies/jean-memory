@@ -771,14 +771,10 @@ async def sync_notion_pages(
                                 # BUG FIX: Use background_tasks.add_task instead of asyncio.create_task
                                 # This ensures the task is not destroyed when the request completes.
                                 background_tasks.add_task(_process_document_background,
-                                    job_id=f"notion_{document_id[:8]}",
-                                    title=title,
-                                    content=text_content,
-                                    document_type="notion",
-                                    source_url=page_data["page"].get("url", ""),
-                                    metadata=document_metadata,
+                                    job_id=f"notion_{document.id.hex[:12]}",
                                     supa_uid=str(current_supa_user.id),
-                                    client_name="notion_sync"
+                                    client_name="notion_sync",
+                                    document_id=str(document.id)
                                 )
                                 
                                 logger.info(f"✅ [NOTION SYNC] Successfully created document AND memory record for Notion page {page_id}")
