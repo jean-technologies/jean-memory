@@ -20,6 +20,8 @@ import { RequestIntegrationModal } from '@/components/dashboard/RequestIntegrati
 import { MigrationBanner } from "./MigrationBanner";
 import { ProfileCompletionBanner } from "./ProfileCompletionBanner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/apiClient';
 
 // Define available apps with priorities
 interface AvailableApp {
@@ -134,6 +136,7 @@ export default function Dashboard() {
   const [syncingApps, setSyncingApps] = useState<Record<string, boolean>>({});
   const [appTaskIds, setAppTaskIds] = useState<Record<string, string | null>>({});
   const { toast } = useToast();
+  const router = useRouter();
 
   // Memoize the app merging logic to prevent unnecessary re-renders
   const { sortedApps, connectedCount } = useMemo(() => {
@@ -308,9 +311,7 @@ export default function Dashboard() {
   
   const displayedApps = sortedApps;
 
-  const handleConnectApp = (app: DashboardApp) => {
-    if (app.is_connected || app.isComingSoon) return;
-
+  const handleConnect = async (app: DashboardApp) => {
     // Handle request integration specially
     if (app.id === 'request-integration') {
       setIsRequestIntegrationModalOpen(true);
@@ -325,21 +326,30 @@ export default function Dashboard() {
       return;
     }
 
-    // Twitter and Substack have their own connection flow within the AppCard
-    if (app.id === 'twitter' || app.id === 'substack') {
+    // Handle Notion's OAuth flow
+    if (app.id === 'notion') {
+      try {
+        const response = await apiClient.get("/api/v1/integrations/notion/auth");
+        window.location.href = response.data.oauth_url;
+      } catch (error) {
+        console.error("Error starting Notion auth:", error);
+        toast({
+          title: "Error",
+          description: "Could not start Notion connection. Please try again.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Handle apps that need a sync modal (Substack, Twitter)
+    if (app.connectionType === 'sync') {
       setSelectedApp(app);
       setIsSyncModalOpen(true);
       return;
     }
     
-    // For the SMS app, we will use the InstallModal as a mockup.
-    // We don't need a special handler here as the modal logic is what's important for review.
-    if (app.id === 'sms') {
-      setSelectedApp(app);
-      setIsInstallModalOpen(true);
-      return;
-    }
-
+    // Default to the install modal for other apps
     setSelectedApp(app);
     setIsInstallModalOpen(true);
     
@@ -439,7 +449,7 @@ export default function Dashboard() {
                       <AppCard
                         key={app.id || index}
                         app={app}
-                        onConnect={handleConnectApp}
+                        onConnect={handleConnect}
                         index={index}
                         isSyncing={syncingApps[app.id] || !!appTaskIds[app.id]}
                         onSyncStart={(appId, taskId) => {
