@@ -134,8 +134,14 @@ async def get_current_supa_user(request: Request) -> SupabaseUser:
     # Handle browser prefetch requests gracefully
     purpose = request.headers.get("purpose")
     sec_purpose = request.headers.get("sec-purpose", "")
-    
-    if purpose == "prefetch" or "prefetch" in sec_purpose:
+    is_prefetch = purpose == "prefetch" or "prefetch" in sec_purpose
+
+    # Also check for Next.js specific prefetch headers
+    if not is_prefetch:
+        if request.headers.get("next-action") or request.headers.get("next-router-prefetch"):
+             is_prefetch = True
+
+    if is_prefetch:
         logger.info(f"Ignoring browser prefetch request to {request.url.path}")
         raise HTTPException(
             status_code=HTTP_204_NO_CONTENT,

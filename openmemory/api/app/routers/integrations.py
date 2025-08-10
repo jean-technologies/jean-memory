@@ -616,6 +616,7 @@ async def sync_notion_pages(
             async def notion_sync_task():
                 # Create a new database session for the background task
                 from app.database import SessionLocal
+                from app.models import Memory, document_memories, MemoryState
                 db_session = SessionLocal()
                 try:
                     access_token = service.get_access_token(user)
@@ -623,9 +624,30 @@ async def sync_notion_pages(
                     
                     for i, page_id in enumerate(page_ids):
                         try:
+                            # Check if a document with this Notion page_id already exists
+                            existing_doc = db_session.query(Document).filter(
+                                Document.user_id == user.id,
+                                Document.document_type == 'notion',
+                                Document.metadata_['notion_page_id'].astext == page_id
+                            ).first()
+
+                            if existing_doc:
+                                # Document exists, now check if it has an active memory
+                                has_active_memory = db_session.query(Memory).join(document_memories).filter(
+                                    document_memories.c.document_id == existing_doc.id,
+                                    Memory.state == MemoryState.active
+                                ).count() > 0
+
+                                if has_active_memory:
+                                    logger.info(f"🔵 [NOTION SYNC] Skipping page {page_id} as it has an active memory (Document ID: {existing_doc.id})")
+                                    continue
+                                else:
+                                    logger.info(f"🔄 [NOTION SYNC] Document {existing_doc.id} found for page {page_id}, but no active memory. Re-creating memory.")
+                                    # We will proceed to create a new memory for this existing document
+                            
                             update_task_progress(
                                 task_id, 
-                                (i / len(page_ids)) * 100, 
+                                int((i / len(page_ids)) * 100), 
                                 f"Syncing page {i+1} of {len(page_ids)}"
                             )
                             
@@ -703,25 +725,69 @@ async def sync_notion_pages(
                                 db_session.flush()  # Get the ID without committing
                                 logger.info(f"💾 [NOTION SYNC] Document added to PostgreSQL session (not committed yet)")
                                 
-                                # Process document in background using same pattern as store_document
+                                # CREATE MEMORY RECORD IMMEDIATELY (following Substack pattern)
+                                # This ensures documents appear in memories dashboard regardless of background processing
+                                logger.info(f"🧠 [NOTION SYNC] Creating Memory record in PostgreSQL for dashboard visibility...")
+                                
+                                try:
+                                    
+                                    # Prepare memory metadata (same as Substack)
+                                    memory_metadata = {
+                                        **document_metadata,  # Include all document metadata
+                                        'document_id': document_id,
+                                        'type': 'document_summary',
+                                        'source_url': page_data["page"].get("url", ""),
+                                        'title': title,
+                                        'created_via': 'notion_sync'
+                                    }
+                                    
+                                    # Create Memory record with summary content (same as Substack)
+                                    memory_content = f"Document: {title}"
+                                    if len(text_content) > 1000:
+                                        memory_content += f" - {text_content[:800]}..."
+                                    else:
+                                        memory_content += f" - {text_content}"
+                                    
+                                    # Create Memory record (same as Substack sync)
+                                    summary_memory = Memory(
+                                        user_id=user.id,
+                                        app_id=notion_app.id,
+                                        content=memory_content,
+                                        metadata_=memory_metadata
+                                    )
+                                    db_session.add(summary_memory)
+                                    db_session.flush()
+                                    logger.info(f"✅ [NOTION SYNC] Memory record created with ID: {summary_memory.id}")
+                                    
+                                    # Link document to memory (same as Substack sync)
+                                    db_session.execute(
+                                        document_memories.insert().values(
+                                            document_id=document.id,
+                                            memory_id=summary_memory.id
+                                        )
+                                    )
+                                    logger.info(f"✅ [NOTION SYNC] Document-memory link created successfully")
+                                    
+                                except Exception as memory_error:
+                                    logger.error(f"❌ [NOTION SYNC] Failed to create Memory record: {memory_error}", exc_info=True)
+                                    # Continue - document is still saved
+                                
+                                # OPTIONAL: Process document in background for additional processing
                                 from app.tools.documents import _process_document_background
                                 import asyncio
                                 
-                                logger.info(f"🚀 [NOTION SYNC] Queuing background processing for document...")
+                                logger.info(f"🚀 [NOTION SYNC] Queuing background processing for additional document processing via BackgroundTasks...")
                                 
-                                # Queue for background processing (like store_document does)
-                                asyncio.create_task(_process_document_background(
-                                    job_id=f"notion_{document_id[:8]}",
-                                    title=title,
-                                    content=text_content,
-                                    document_type="notion",
-                                    source_url=page_data["page"].get("url", ""),
-                                    metadata=document_metadata,
+                                # BUG FIX: Use background_tasks.add_task instead of asyncio.create_task
+                                # This ensures the task is not destroyed when the request completes.
+                                background_tasks.add_task(_process_document_background,
+                                    job_id=f"notion_{document.id.hex[:12]}",
                                     supa_uid=str(current_supa_user.id),
-                                    client_name="notion_sync"
-                                ))
+                                    client_name="notion_sync",
+                                    document_id=str(document.id)
+                                )
                                 
-                                logger.info(f"✅ [NOTION SYNC] Successfully created document for Notion page {page_id}")
+                                logger.info(f"✅ [NOTION SYNC] Successfully created document AND memory record for Notion page {page_id}")
                                 
                             except Exception as document_error:
                                 logger.error(f"❌ [NOTION SYNC] Failed to create document for page {page_id}: {document_error}", exc_info=True)

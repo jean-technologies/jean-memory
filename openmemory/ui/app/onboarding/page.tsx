@@ -49,6 +49,9 @@ export default function OnboardingPage() {
 
   // Check for OAuth callback or redirect from backend
   useEffect(() => {
+    // Wait for user to be authenticated before processing
+    if (!user) return;
+
     const success = searchParams.get('success');
     const error = searchParams.get('error');
     const data = searchParams.get('data');
@@ -85,7 +88,7 @@ export default function OnboardingPage() {
       // Check if user already has Notion connected
       checkNotionStatus();
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   // Check current Notion connection status
   const checkNotionStatus = async () => {
@@ -515,11 +518,12 @@ export default function OnboardingPage() {
     </motion.div>
   );
 
-  // Show loading if no user
-  if (!user) {
+  // Show loading if no user or still connecting
+  if (!user || (isLoading && currentStep === 'connect')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin" />
+        {isLoading && <p className="ml-2">{loadingMessage || 'Connecting to Notion...'}</p>}
       </div>
     );
   }
