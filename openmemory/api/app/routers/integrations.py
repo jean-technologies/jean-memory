@@ -597,11 +597,11 @@ async def sync_notion_pages(
                 detail="Notion app is paused. Cannot sync pages."
             )
         
-        # Limit number of pages to prevent resource exhaustion
-        if len(page_ids) > 50:
+        # Limit number of pages to prevent resource exhaustion (reduced to 10 for now)
+        if len(page_ids) > 10:
             raise HTTPException(
                 status_code=400,
-                detail="Cannot sync more than 50 pages at once"
+                detail="Cannot sync more than 10 pages at once for now. Please select fewer pages."
             )
         
         # Create a background task
@@ -641,15 +641,21 @@ async def sync_notion_pages(
                             
                             # Store as document using document storage pattern (like Substack essays)
                             try:
+                                logger.info(f"🔄 [NOTION SYNC] Processing page {page_id} for user {current_supa_user.id}")
+                                
                                 # Extract title from page properties  
                                 title = "Untitled"
                                 page_properties = page_data["page"].get("properties", {})
+                                logger.info(f"🔍 [NOTION SYNC] Page properties keys: {list(page_properties.keys())}")
+                                
                                 for prop_name, prop_data in page_properties.items():
                                     if prop_data.get("type") == "title":
                                         title_array = prop_data.get("title", [])
                                         if title_array and len(title_array) > 0:
                                             title = title_array[0].get("text", {}).get("content", "Untitled")
                                             break
+                                
+                                logger.info(f"📝 [NOTION SYNC] Extracted title: '{title}' ({len(text_content)} chars)")
                                 
                                 # Prepare metadata for document storage
                                 document_metadata = {
@@ -665,15 +671,24 @@ async def sync_notion_pages(
                                 # Store as full document in PostgreSQL documents table
                                 import uuid
                                 document_id = str(uuid.uuid4())
+                                logger.info(f"🆔 [NOTION SYNC] Generated document ID: {document_id}")
                                 
-                                # Get or create document storage app
+                                # Get or create notion app
                                 notion_app = db_session.query(App).filter(App.name == "notion").first()
                                 if not notion_app:
+                                    logger.info(f"🔧 [NOTION SYNC] Creating new Notion app")
                                     notion_app = App(name="notion", description="Notion Integration")
                                     db_session.add(notion_app)
                                     db_session.flush()
+                                    logger.info(f"✅ [NOTION SYNC] Created Notion app with ID: {notion_app.id}")
+                                else:
+                                    logger.info(f"✅ [NOTION SYNC] Using existing Notion app ID: {notion_app.id}")
                                 
                                 # Create document record
+                                logger.info(f"📄 [NOTION SYNC] Creating Document record in PostgreSQL...")
+                                logger.info(f"🔍 [NOTION SYNC] Document details - User ID: {user.id} (type: {type(user.id)})")
+                                logger.info(f"🔍 [NOTION SYNC] Document details - App ID: {notion_app.id} (type: {type(notion_app.id)})")
+                                
                                 document = Document(
                                     id=uuid.UUID(document_id),
                                     user_id=user.id,
@@ -686,10 +701,13 @@ async def sync_notion_pages(
                                 )
                                 db_session.add(document)
                                 db_session.flush()  # Get the ID without committing
+                                logger.info(f"💾 [NOTION SYNC] Document added to PostgreSQL session (not committed yet)")
                                 
                                 # Process document in background using same pattern as store_document
                                 from app.tools.documents import _process_document_background
                                 import asyncio
+                                
+                                logger.info(f"🚀 [NOTION SYNC] Queuing background processing for document...")
                                 
                                 # Queue for background processing (like store_document does)
                                 asyncio.create_task(_process_document_background(
@@ -703,10 +721,10 @@ async def sync_notion_pages(
                                     client_name="notion_sync"
                                 ))
                                 
-                                logger.info(f"Successfully created document for Notion page {page_id}")
+                                logger.info(f"✅ [NOTION SYNC] Successfully created document for Notion page {page_id}")
                                 
                             except Exception as document_error:
-                                logger.error(f"Failed to create document for page {page_id}: {document_error}")
+                                logger.error(f"❌ [NOTION SYNC] Failed to create document for page {page_id}: {document_error}", exc_info=True)
                                 db_session.rollback()
                                 continue
                             
@@ -718,10 +736,30 @@ async def sync_notion_pages(
                     
                     # Commit all document records to database
                     try:
+                        logger.info(f"🔄 [NOTION SYNC] Attempting to commit {synced_count} Notion documents to PostgreSQL...")
                         db_session.commit()
-                        logger.info(f"Committed {synced_count} Notion documents to database")
+                        logger.info(f"✅ [NOTION SYNC] Successfully committed {synced_count} Notion documents to PostgreSQL!")
+                        
+                        # Verify documents were actually saved by querying them back
+                        logger.info(f"🔍 [NOTION SYNC] Verifying documents were saved by querying PostgreSQL...")
+                        saved_docs = db_session.query(Document).filter(
+                            Document.user_id == user.id,
+                            Document.document_type == "notion"
+                        ).all()
+                        logger.info(f"📊 [NOTION SYNC] Found {len(saved_docs)} total Notion documents for user {user.id} in PostgreSQL")
+                        
+                        # Log the most recent documents
+                        recent_docs = db_session.query(Document).filter(
+                            Document.user_id == user.id,
+                            Document.document_type == "notion"
+                        ).order_by(Document.created_at.desc()).limit(5).all()
+                        
+                        logger.info(f"📋 [NOTION SYNC] Most recent 5 Notion documents for user:")
+                        for doc in recent_docs:
+                            logger.info(f"   - ID: {doc.id}, Title: '{doc.title}', Created: {doc.created_at}")
+                        
                     except Exception as commit_error:
-                        logger.error(f"Failed to commit Notion documents to database: {commit_error}")
+                        logger.error(f"❌ [NOTION SYNC] Failed to commit Notion documents to PostgreSQL: {commit_error}", exc_info=True)
                         db_session.rollback()
                     
                     update_task_progress(task_id, 100, f"Completed: {synced_count} pages synced")
