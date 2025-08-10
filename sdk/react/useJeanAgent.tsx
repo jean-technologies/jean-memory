@@ -703,14 +703,55 @@ export const JeanAgent: React.FC<JeanAgentProps> = ({
   className = "h-96" 
 }) => {
   const agent = useJeanAgent({ apiKey, systemPrompt, clientName });
+  const [showLoginForm, setShowLoginForm] = useState(false);
 
-  if (!agent.isAuthenticated) {
+  // Show "Sign In with Jean" button first
+  if (!agent.isAuthenticated && !showLoginForm) {
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <div className="text-center p-8">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gray-50 flex items-center justify-center border">
+            <img 
+              src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBzdHJva2U9IiM2MzYzNjMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo="
+              alt="Jean" 
+              className="w-8 h-8"
+            />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Connect with Jean Memory</h3>
+          <p className="text-gray-600 text-sm mb-6 max-w-sm">
+            Access your personalized AI assistant with persistent memory across all your applications.
+          </p>
+          <button
+            onClick={() => setShowLoginForm(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-black font-medium text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            Sign In with Jean
+            <img 
+              src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo="
+              alt="Jean Logo" 
+              className="w-4 h-4"
+            />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form after button click
+  if (!agent.isAuthenticated && showLoginForm) {
     return (
       <div className={`p-4 border rounded-lg ${className}`}>
-        <SignInWithJean 
-          onSuccess={agent.signIn}
-          className="max-w-md mx-auto"
-        />
+        <div className="max-w-md mx-auto">
+          <button 
+            onClick={() => setShowLoginForm(false)}
+            className="text-sm text-gray-500 hover:text-gray-700 mb-4 flex items-center gap-1"
+          >
+            ← Back
+          </button>
+          <SignInWithJean 
+            onSuccess={agent.signIn}
+          />
+        </div>
       </div>
     );
   }

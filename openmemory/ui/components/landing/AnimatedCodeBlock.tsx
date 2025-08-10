@@ -9,15 +9,15 @@ const codeSnippets = [
   {
     lang: "jsx",
     title: "React Chat App",
-    code: `import { JeanChat, useJeanAgent } from 'jeanmemory-react';
+    code: `import { JeanAgent } from '@jeanmemory/react';
 
 function MathTutorApp() {
-  const { agent, signIn } = useJeanAgent({
-    systemPrompt: "You are a patient math tutor..."
-  });
-
-  if (!agent) return <SignInWithJean onSuccess={signIn} />;
-  return <JeanChat agent={agent} />;
+  return (
+    <JeanAgent
+      apiKey="your_api_key_here"
+      systemPrompt="You are a patient math tutor..."
+    />
+  );
 }`,
   },
   {

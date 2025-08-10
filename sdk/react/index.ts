@@ -4,12 +4,16 @@
  * Using MCP (Model Context Protocol) for direct jean_memory tool access
  */
 
+// Original Components (Working, but basic UI)
 export { 
   useJeanAgent,
   SignInWithJean, 
-  JeanChat,
+  JeanChat as JeanChatLegacy,
   JeanAgent
 } from './useJeanAgent';
+
+// New Professional UI Component (Pixel-Perfect Assistant-UI Design)
+export { JeanChat } from './JeanChatProfessional';
 
 export type { 
   JeanUser, 
@@ -17,5 +21,5 @@ export type {
   Message 
 } from './useJeanAgent';
 
-// Default export for business case integration
-export { default } from './useJeanAgent';
+// Default export - Original working JeanAgent (for backwards compatibility)
+export { JeanAgent as default } from './useJeanAgent';
