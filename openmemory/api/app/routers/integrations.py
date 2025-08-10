@@ -755,10 +755,11 @@ async def sync_notion_pages(
                                 from app.tools.documents import _process_document_background
                                 import asyncio
                                 
-                                logger.info(f"🚀 [NOTION SYNC] Queuing background processing for additional document processing...")
+                                logger.info(f"🚀 [NOTION SYNC] Queuing background processing for additional document processing via BackgroundTasks...")
                                 
-                                # Queue for background processing (optional for Jean Memory V2)
-                                asyncio.create_task(_process_document_background(
+                                # BUG FIX: Use background_tasks.add_task instead of asyncio.create_task
+                                # This ensures the task is not destroyed when the request completes.
+                                background_tasks.add_task(_process_document_background,
                                     job_id=f"notion_{document_id[:8]}",
                                     title=title,
                                     content=text_content,
@@ -767,7 +768,7 @@ async def sync_notion_pages(
                                     metadata=document_metadata,
                                     supa_uid=str(current_supa_user.id),
                                     client_name="notion_sync"
-                                ))
+                                )
                                 
                                 logger.info(f"✅ [NOTION SYNC] Successfully created document AND memory record for Notion page {page_id}")
                                 
