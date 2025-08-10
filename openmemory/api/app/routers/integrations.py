@@ -639,31 +639,75 @@ async def sync_notion_pages(
                                 logger.warning(f"Skipping empty page {page_id}")
                                 continue
                             
-                            # Create memory using Jean Memory client
+                            # Store as document using document storage pattern (like Substack essays)
                             try:
-                                memory_client = await get_async_memory_client()
+                                # Extract title from page properties  
+                                title = "Untitled"
+                                page_properties = page_data["page"].get("properties", {})
+                                for prop_name, prop_data in page_properties.items():
+                                    if prop_data.get("type") == "title":
+                                        title_array = prop_data.get("title", [])
+                                        if title_array and len(title_array) > 0:
+                                            title = title_array[0].get("text", {}).get("content", "Untitled")
+                                            break
                                 
-                                # Prepare metadata for Jean Memory V2
-                                jean_metadata = {
-                                    'app_name': 'notion',
+                                # Prepare metadata for document storage
+                                document_metadata = {
+                                    'source': 'notion',
+                                    'source_app': 'notion',
                                     'created_via': 'notion_sync',
                                     "notion_page_id": page_id,
-                                    "notion_title": page_data["page"].get("properties", {}).get("title", {}).get("title", [{}])[0].get("text", {}).get("content", "Untitled"),
+                                    "notion_title": title,
                                     "notion_url": page_data["page"].get("url", ""),
-                                    "source": "notion"
+                                    "synced_at": datetime.utcnow().isoformat()
                                 }
                                 
-                                # Add to Jean Memory V2
-                                result = await memory_client.add(
-                                    messages=[{"role": "user", "content": text_content}],
-                                    user_id=str(current_supa_user.id),
-                                    metadata=jean_metadata
+                                # Store as full document in PostgreSQL documents table
+                                import uuid
+                                document_id = str(uuid.uuid4())
+                                
+                                # Get or create document storage app
+                                notion_app = db_session.query(App).filter(App.name == "notion").first()
+                                if not notion_app:
+                                    notion_app = App(name="notion", description="Notion Integration")
+                                    db_session.add(notion_app)
+                                    db_session.flush()
+                                
+                                # Create document record
+                                document = Document(
+                                    id=uuid.UUID(document_id),
+                                    user_id=user.id,
+                                    app_id=notion_app.id,
+                                    title=title,
+                                    content=text_content,
+                                    document_type="notion",
+                                    source_url=page_data["page"].get("url", ""),
+                                    metadata_=document_metadata
                                 )
+                                db_session.add(document)
+                                db_session.flush()  # Get the ID without committing
                                 
-                                logger.info(f"Successfully created memory for Notion page {page_id}")
+                                # Process document in background using same pattern as store_document
+                                from app.tools.documents import _process_document_background
+                                import asyncio
                                 
-                            except Exception as memory_error:
-                                logger.error(f"Failed to create memory for page {page_id}: {memory_error}")
+                                # Queue for background processing (like store_document does)
+                                asyncio.create_task(_process_document_background(
+                                    job_id=f"notion_{document_id[:8]}",
+                                    title=title,
+                                    content=text_content,
+                                    document_type="notion",
+                                    source_url=page_data["page"].get("url", ""),
+                                    metadata=document_metadata,
+                                    supa_uid=str(current_supa_user.id),
+                                    client_name="notion_sync"
+                                ))
+                                
+                                logger.info(f"Successfully created document for Notion page {page_id}")
+                                
+                            except Exception as document_error:
+                                logger.error(f"Failed to create document for page {page_id}: {document_error}")
+                                db_session.rollback()
                                 continue
                             
                             synced_count += 1
@@ -671,6 +715,14 @@ async def sync_notion_pages(
                         except Exception as e:
                             logger.error(f"Error syncing page {page_id}: {e}")
                             continue
+                    
+                    # Commit all document records to database
+                    try:
+                        db_session.commit()
+                        logger.info(f"Committed {synced_count} Notion documents to database")
+                    except Exception as commit_error:
+                        logger.error(f"Failed to commit Notion documents to database: {commit_error}")
+                        db_session.rollback()
                     
                     update_task_progress(task_id, 100, f"Completed: {synced_count} pages synced")
                     
