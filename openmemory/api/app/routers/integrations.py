@@ -647,7 +647,7 @@ async def sync_notion_pages(
                             
                             update_task_progress(
                                 task_id, 
-                                (i / len(page_ids)) * 100, 
+                                int((i / len(page_ids)) * 100), 
                                 f"Syncing page {i+1} of {len(page_ids)}"
                             )
                             

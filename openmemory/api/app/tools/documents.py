@@ -48,16 +48,8 @@ async def _process_document_background(
             "started_at": datetime.datetime.now(datetime.UTC).isoformat()
         }
         
-        # 1. Validate input
-        if not title.strip():
-            raise ValueError("Document title cannot be empty")
-        if not content.strip():
-            raise ValueError("Document content cannot be empty")
-        if len(content) < 50:
-            raise ValueError("Document content too short (minimum 50 characters)")
-            
         document_processing_status[job_id]["progress"] = 20
-        document_processing_status[job_id]["message"] = "Validating content..."
+        document_processing_status[job_id]["message"] = "Processing document..."
         
         # 2. Get user and initialize services
         logger.info(f"📝 [{job_id}] Getting user and initializing services for user {supa_uid}")
