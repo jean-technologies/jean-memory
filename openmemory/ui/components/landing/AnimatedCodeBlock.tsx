@@ -11,11 +11,11 @@ const codeSnippets = [
     title: "React Chat App",
     code: `import { JeanAgent } from '@jeanmemory/react';
 
-function MathTutorApp() {
+function CareerCoachApp() {
   return (
     <JeanAgent
-      apiKey="your_api_key_here"
-      systemPrompt="You are a patient math tutor..."
+      apiKey="jean_sk_your_api_key_here"
+      systemPrompt="You are an expert career coach who helps professionals navigate career transitions, develop skills, and achieve their professional goals with personalized guidance."
     />
   );
 }`,
