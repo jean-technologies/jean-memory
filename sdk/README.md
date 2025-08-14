@@ -1,50 +1,69 @@
-# Jean Memory SDK
+# Jean Memory SDKs
 
-Build personalized AI chatbots with **5 lines of code** using Jean Memory's context-aware AI platform.
+Official SDKs for integrating Jean Memory into your applications.
 
 ## 🚀 Quick Start
 
-### React/TypeScript
+### React SDK (`@jeanmemory/react`)
 
 ```bash
-npm install jeanmemory-react @assistant-ui/react
+npm install @jeanmemory/react
 ```
 
-```tsx
-import { useJeanAgent } from "jeanmemory-react";
-import { Thread, AssistantRuntimeProvider } from "@assistant-ui/react";
+```jsx
+import { JeanProvider, JeanChat } from '@jeanmemory/react';
 
-function MyApp() {
-  const { agent, signIn } = useJeanAgent({
-    apiKey: "jean_sk_your_api_key_here",
-    systemPrompt: "You are a helpful tutor."
-  });
-
-  if (!agent) return <button onClick={signIn}>Sign in with Jean</button>;
-
+function App() {
   return (
-    <AssistantRuntimeProvider runtime={agent.runtime}>
-      <Thread />
-    </AssistantRuntimeProvider>
+    <JeanProvider apiKey={process.env.REACT_APP_JEAN_API_KEY}>
+      <JeanChat />
+    </JeanProvider>
   );
 }
 ```
 
-### Python
+### Python SDK (`jeanmemory`)
 
 ```bash
 pip install jeanmemory
 ```
 
 ```python
-from jeanmemory import JeanAgent
+from jeanmemory import JeanClient
+from openai import OpenAI
 
-agent = JeanAgent(
-    api_key="jean_sk_your_api_key_here", 
-    system_prompt="You are a helpful tutor.",
-    modality="chat"
+jean = JeanClient(api_key="your_api_key")
+openai = OpenAI()
+
+# Get context from Jean Memory
+context = jean.get_context(
+    user_token=user_token,
+    message="What was discussed in the last meeting?"
 )
-agent.run()
+
+# Use context with your LLM
+response = openai.chat.completions.create(
+    model="gpt-4-turbo",
+    messages=[{"role": "user", "content": f"Context: {context.text}\n\nQuestion: {message}"}]
+)
+```
+
+### Node.js SDK (`@jeanmemory/node`)
+
+```bash
+npm install @jeanmemory/node
+```
+
+```typescript
+import { JeanClient } from '@jeanmemory/node';
+
+const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
+
+// Get context from Jean Memory
+const context = await jean.getContext({
+  user_token: userToken,
+  message: currentMessage
+});
 ```
 
 ## ✨ Features
@@ -100,44 +119,64 @@ graph LR
 
 ## 📚 API Reference
 
-### React Hook: `useJeanAgent`
+### React: `useJean` Hook
 
 ```typescript
-interface JeanAgentConfig {
-  apiKey: string;
-  systemPrompt?: string;
-  clientName?: string;
-}
-
 const {
-  agent,           // Assistant-UI compatible agent config
-  user,            // Current authenticated user
-  messages,        // Conversation history
-  isLoading,       // Loading state
-  error,           // Error state
-  signIn,          // Authentication function
-  signOut,         // Sign out function
-  sendMessage      // Send message function
-} = useJeanAgent(config);
+  isAuthenticated: boolean,
+  user: JeanUser | null,
+  messages: JeanMessage[],
+  sendMessage: (message: string, options?: MessageOptions) => Promise<void>,
+  storeDocument: (title: string, content: string) => Promise<void>,
+  connect: (service: 'notion' | 'slack' | 'gdrive') => void,
+  clearConversation: () => void,
+  setUser: (user: JeanUser) => void,
+  signOut: () => void,
+  tools: {
+    add_memory: (content: string) => Promise<any>,
+    search_memory: (query: string) => Promise<any>
+  }
+} = useJean();
 ```
 
-### Python Class: `JeanAgent`
+### Python: `JeanClient` Class
 
 ```python
-class JeanAgent:
-    def __init__(
-        self,
-        api_key: str,
-        system_prompt: str = "You are a helpful assistant.",
-        modality: str = "chat",
-        client_name: str = "Python App"
-    )
+class JeanClient:
+    def __init__(self, api_key: str)
     
-    def authenticate(self, email=None, password=None) -> bool
-    def send_message(self, message: str) -> str
-    def run(self, auto_auth=True)  # Start interactive chat
-    def get_conversation_history(self) -> List[Dict]
-    def clear_conversation(self)
+    def get_context(
+        self,
+        user_token: str,
+        message: str,
+        speed: str = "balanced",  # fast | balanced | comprehensive
+        tool: str = "jean_memory",  # jean_memory | search_memory
+        format: str = "enhanced"  # simple | enhanced
+    ) -> ContextResponse
+    
+    # Direct tool access
+    tools.add_memory(user_token: str, content: str) -> dict
+    tools.search_memory(user_token: str, query: str, limit: int = 10) -> dict
+```
+
+### Node.js: `JeanClient` Class
+
+```typescript
+class JeanClient {
+  constructor(config: { apiKey: string })
+  
+  async getContext(options: {
+    user_token: string,
+    message: string,
+    speed?: 'fast' | 'balanced' | 'comprehensive',
+    tool?: 'jean_memory' | 'search_memory',
+    format?: 'simple' | 'enhanced'
+  }): Promise<ContextResponse>
+  
+  // Direct tool access
+  tools.add_memory(options: { user_token: string, content: string }): Promise<any>
+  tools.search_memory(options: { user_token: string, query: string, limit?: number }): Promise<any>
+}
 ```
 
 ## 🔑 Getting Your API Key
@@ -156,10 +195,10 @@ class JeanAgent:
 
 ## 📖 Examples
 
-- [React Chatbot with Assistant-UI](./examples/react-chatbot/)
-- [Python CLI Chatbot](./examples/python-chatbot/)
-- [Next.js Integration](./examples/nextjs-app/)
-- [FastAPI Backend](./examples/fastapi-backend/)
+- [React Chatbot](./examples/react-chatbot/) - Simple React chatbot with JeanChat component
+- [Python + OpenAI](./examples/python-chatbot/) - Python CLI chatbot using OpenAI
+- [Next.js Full Stack](./examples/ultimate-nextjs/) - Complete Next.js app with streaming
+- [React Ultimate](./examples/ultimate-react/) - Complete React application
 
 ## 🤝 Support
 

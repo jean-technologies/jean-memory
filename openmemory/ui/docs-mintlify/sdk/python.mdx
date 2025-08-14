@@ -35,7 +35,7 @@ user_token = get_user_token_from_request()
 user_message = "What were the key takeaways from our last meeting about Project Phoenix?"
 context_response = jean.get_context(
     user_token=user_token,
-    message=user_message
+    message=user_message,
     # All defaults: tool="jean_memory", speed="balanced", format="enhanced"
 )
 

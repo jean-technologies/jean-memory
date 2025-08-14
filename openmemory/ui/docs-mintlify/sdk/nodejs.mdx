@@ -42,7 +42,7 @@ export default async function POST(req: Request) {
   // 2. Get context from Jean Memory
   const contextResponse = await jean.getContext({
     user_token: userToken,
-    message: currentMessage
+    message: currentMessage,
     // All defaults: tool="jean_memory", speed="balanced", format="enhanced"
   });
 

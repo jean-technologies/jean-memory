@@ -1,25 +1,18 @@
 /**
  * Jean Memory React SDK
- * 5-line integration for personalized AI chatbots
- * Using MCP (Model Context Protocol) for direct jean_memory tool access
+ * The fastest way to add a context-aware AI to your React application
+ * @version 1.0.0
  */
 
-// Original Components (Working, but basic UI)
-export { 
-  useJeanAgent,
-  SignInWithJean, 
-  JeanChat as JeanChatLegacy,
-  JeanAgent
-} from './useJeanAgent';
+// Core Provider and Hook
+export { JeanProvider, useJean } from './provider';
 
-// New Professional UI Component (Pixel-Perfect Assistant-UI Design)
-export { JeanChat } from './JeanChatProfessional';
+// Components
+export { JeanChat } from './JeanChat';
+export { SignInWithJean } from './SignInWithJean';
 
-export type { 
-  JeanUser, 
-  JeanAgentConfig, 
-  Message 
-} from './useJeanAgent';
+// Advanced MCP Hook (for direct tool access)
+export { useJeanMCP } from './useJeanMCP';
 
-// Default export - Original working JeanAgent (for backwards compatibility)
-export { JeanAgent as default } from './useJeanAgent';
+// Types
+export type { JeanUser, JeanMessage, MessageOptions } from './provider';

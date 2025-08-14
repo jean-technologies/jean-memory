@@ -162,16 +162,57 @@ await sendMessage("What's my schedule?", { tool: "search_memory" });
 await sendMessage("What's my schedule?", { format: "simple" });
 ```
 
-## Advanced: Direct Tool Access
+## Advanced: Direct MCP Tool Access
 
-For advanced use cases, the `useJean` hook also provides direct access to the core memory tools. This allows for more deterministic control over the memory layer.
+For advanced use cases where you need fine-grained control over Jean Memory tools, use the `useJeanMCP` hook. This provides direct access to the same MCP tools used by Claude Desktop and Cursor.
 
 ```typescript
-const { tools } = useJean();
+import { useJeanMCP, useJean } from '@jeanmemory/react';
 
-// Directly add a memory
-await tools.add_memory("My dog's name is Max.");
-
-// Perform a direct vector search
-const results = await tools.search_memory("information about my pets");
+function AdvancedComponent() {
+  const agent = useJean();
+  const mcpTools = useJeanMCP({ apiKey: 'your-api-key' });
+  
+  const handleDirectMemoryAdd = async () => {
+    if (!agent.user) return;
+    
+    // Direct MCP tool call
+    const result = await mcpTools.addMemory(
+      agent.user, 
+      "My dog's name is Max."
+    );
+    
+    console.log('Memory added:', result);
+  };
+  
+  const handleSearch = async () => {
+    if (!agent.user) return;
+    
+    const results = await mcpTools.searchMemory(
+      agent.user,
+      "information about my pets"
+    );
+    
+    console.log('Search results:', results);
+  };
+  
+  // Store documents directly
+  const handleStoreDocument = async () => {
+    if (!agent.user) return;
+    
+    await mcpTools.storeDocument(
+      agent.user,
+      "Meeting Notes",
+      "# Team Meeting\n\n- Discussed project timeline\n- Next steps defined",
+      "markdown"
+    );
+  };
+}
 ```
+
+### MCP Tools Available
+
+- `callJeanMemory(user, message, isNewConversation?)` - Full jean_memory tool
+- `addMemory(user, content)` - Add a specific memory
+- `searchMemory(user, query)` - Search existing memories
+- `storeDocument(user, title, content, type?)` - Store structured documents

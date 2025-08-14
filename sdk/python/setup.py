@@ -9,10 +9,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="jeanmemory",
-    version="0.1.0",
+    version="1.0.0",
     author="Jean Memory",
     author_email="support@jeanmemory.com",
-    description="Python SDK for Jean Memory - Build personalized AI chatbots in 5 lines of code",
+    description="Python SDK for Jean Memory - Add long-term memory to your Python agents and backend services",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jean-technologies/jean-memory",
@@ -39,7 +39,9 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "requests>=2.25.0",
-        "openai>=1.0.0",
     ],
+    extras_require={
+        "openai": ["openai>=1.0.0"],
+    },
     keywords="jean-memory ai chatbot personalization sdk",
 )

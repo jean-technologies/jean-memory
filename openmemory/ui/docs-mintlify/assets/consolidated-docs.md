@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-13 22:21:16
+**Generated on:** 2025-08-13 22:41:32
 
 ## What is Jean Memory?
 
@@ -302,7 +302,7 @@ user_token = get_user_token_from_request()
 user_message = "What were the key takeaways from our last meeting about Project Phoenix?"
 context_response = jean.get_context(
     user_token=user_token,
-    message=user_message
+    message=user_message,
     # All defaults: tool="jean_memory", speed="balanced", format="enhanced"
 )
 
@@ -427,7 +427,7 @@ export default async function POST(req: Request) {
   // 2. Get context from Jean Memory
   const contextResponse = await jean.getContext({
     user_token: userToken,
-    message: currentMessage
+    message: currentMessage,
     // All defaults: tool="jean_memory", speed="balanced", format="enhanced"
   });
 

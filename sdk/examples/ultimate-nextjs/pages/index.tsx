@@ -1,14 +1,15 @@
 /**
- * Ultimate 5-Line Jean Memory Integration - Next.js Frontend
+ * Jean Memory React SDK - Next.js Frontend Example
  * Complete chat interface with Jean Memory integration
  */
-import { SignInWithJean, useJeanChat } from 'jeanmemory-react';
+import { JeanProvider, JeanChat } from '@jeanmemory/react';
 
 export default function Home() {
-  const { messages, sendMessage, signIn, isAuthenticated } = useJeanChat({
-    endpoint: '/api/chat'
-  });
-
-  if (!isAuthenticated) return <SignInWithJean onSuccess={signIn} />;
-  return <ChatInterface messages={messages} onSend={sendMessage} />;
+  return (
+    <JeanProvider apiKey={process.env.NEXT_PUBLIC_JEAN_API_KEY!}>
+      <div style={{ height: '100vh' }}>
+        <JeanChat />
+      </div>
+    </JeanProvider>
+  );
 }

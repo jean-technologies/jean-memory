@@ -1,16 +1,15 @@
 /**
- * Ultimate 5-Line Jean Memory Integration - React Example
- * Complete AI chatbot with personalized memory in 5 lines
+ * Jean Memory React SDK - Ultimate Example
+ * Complete AI chatbot with personalized memory
  */
-import { SignInWithJean, JeanChat, useJeanAgent } from 'jeanmemory-react';
+import { JeanProvider, JeanChat } from '@jeanmemory/react';
 
 function MathTutorApp() {
-  const { agent, signIn } = useJeanAgent({
-    systemPrompt: "You are a patient math tutor who explains concepts step by step"
-  });
-
-  if (!agent) return <SignInWithJean onSuccess={signIn} />;
-  return <JeanChat agent={agent} />; // Powered by Assistant-UI
+  return (
+    <JeanProvider apiKey={process.env.REACT_APP_JEAN_API_KEY!}>
+      <JeanChat />
+    </JeanProvider>
+  );
 }
 
 export default MathTutorApp;

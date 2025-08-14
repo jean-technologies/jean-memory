@@ -68,5 +68,6 @@
     "github": "https://github.com/jean-technologies",
     "twitter": "https://x.com/jeanmemory"
   },
+  "ignorePaths": ["assets/**"],
   "generator": "mintlify"
 }
