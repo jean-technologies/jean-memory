@@ -15,6 +15,10 @@ pip install jeanmemory
 from jeanmemory import JeanAgent
 
 agent = JeanAgent(api_key="jean_sk_...")
+
+# NOTE: This direct email/password method is a convenience for local 
+# development and testing. For production applications, you should implement 
+# a secure server-to-server OAuth 2.1 flow.
 agent.run()  # Starts interactive chat
 ```
 

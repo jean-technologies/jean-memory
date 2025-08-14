@@ -1,0 +1,129 @@
+---
+title: React SDK - Advanced Examples & Recipes
+description: "Advanced use cases, full implementation examples, and configuration guides for the Jean Memory React SDK."
+---
+
+## Real-World Examples
+
+You can customize the assistant's personality and purpose using the `systemPrompt` prop. Here are a few examples to inspire you.
+
+### Math Tutor
+
+```jsx
+import { JeanAgent } from '@jeanmemory/react';
+
+function MathTutorApp() {
+  return <JeanAgent 
+    apiKey="jean_sk_your_api_key_here"
+    systemPrompt="You are an expert math tutor who helps students with algebra, calculus, and statistics"
+  />;
+}
+```
+
+### Writing Coach
+
+```jsx
+import { JeanAgent } from '@jeanmemory/react';
+
+function WriteWellAI() {
+  return <JeanAgent 
+    apiKey="jean_sk_your_api_key_here"
+    systemPrompt="You are an expert writing coach who helps improve clarity and engagement"
+  />;
+}
+```
+
+## Full Custom Implementation Example
+
+For complete control over styling and layout, you can use the `useJeanAgent` hook and build your own UI from scratch.
+
+```jsx
+import { useJeanAgent, SignInWithJean } from '@jeanmemory/react';
+
+function CustomFitnessApp() {
+  const agent = useJeanAgent({
+    apiKey: process.env.REACT_APP_JEAN_API_KEY,
+    systemPrompt: "You are a fitness coach who creates personalized workout plans"
+  });
+
+  if (!agent.isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-4">Fitness Coach AI</h1>
+          <p className="text-gray-600 mb-4">
+            Sign in with your Jean Memory account to get personalized fitness coaching.
+          </p>
+          <SignInWithJean
+            apiKey={agent.config.apiKey}
+            onSuccess={(user) => agent.setUser(user)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Your custom chat component would go here
+  // You can build it using agent.messages, agent.sendMessage, etc.
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">Fitness Coach AI</h1>
+            <div className="text-sm text-gray-600">
+              Welcome, {agent.user?.email} | 
+              <button onClick={agent.signOut} className="ml-2 text-red-600">
+                Sign Out
+              </button>
+            </div>
+          </div>
+          {/* <YourCustomChatComponent agent={agent} /> */}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+## Configuration & Deployment
+
+### Environment Variables
+
+It's best practice to store your API key in an environment variable. For a Create React App project, create a `.env` file in your project root:
+
+```bash
+# .env
+REACT_APP_JEAN_API_KEY=jean_sk_your_actual_api_key_here
+```
+
+### Next.js Integration
+
+For Next.js applications, use the `'use client'` directive at the top of your component file.
+
+```jsx
+'use client';
+
+import { JeanAgent } from '@jeanmemory/react';
+
+export default function ChatPage() {
+  return <JeanAgent 
+    apiKey={process.env.NEXT_PUBLIC_JEAN_API_KEY}
+    systemPrompt="You are a helpful assistant"
+  />;
+}
+```
+**Important**: Remember to prefix your environment variable with `NEXT_PUBLIC_` for client-side access in Next.js.
+
+### Production Deployment & CORS
+
+For security, our API uses a CORS (Cross-Origin Resource Sharing) policy.
+
+**Domains that work out of the box for development:**
+- `http://localhost:3000`
+- `http://localhost:3001`
+
+**For your production domain** (e.g., `https://yourdomain.com`), you must whitelist it in your Jean Memory dashboard.
+1.  Go to the "Developers" section.
+2.  Select your API Key.
+3.  Add your domain to the "Allowed Origins" list.

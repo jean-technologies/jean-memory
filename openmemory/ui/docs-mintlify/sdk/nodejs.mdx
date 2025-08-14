@@ -11,14 +11,18 @@ npm install jeanmemory-node
 
 ## Quick Start
 
-```javascript
-import { JeanAgent } from 'jeanmemory-node';
+```typescript {{ title: '/pages/api/chat.ts' }}
+import { createJeanHandler } from 'jeanmemory-node';
 
-const agent = new JeanAgent({
+// This handler is compatible with the Vercel AI SDK and edge runtimes
+export const config = {
+  runtime: 'edge',
+};
+
+// This one line creates the entire API endpoint
+export default createJeanHandler({
   apiKey: process.env.JEAN_API_KEY
 });
-
-await agent.run();
 ```
 
 ## Express Integration
