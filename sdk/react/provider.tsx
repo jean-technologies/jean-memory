@@ -104,9 +104,6 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     setIsLoading(true);
     setRawError(null);
 
-    // Extract configuration options with defaults
-    const { speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
-
     try {
       // Add user message to conversation
       const userMessage: JeanMessage = {
@@ -125,7 +122,6 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
           user_message: message,
           is_new_conversation: messages.length <= 1,
           needs_context: true
-          // Removed ...options spread - backend doesn't support speed/format yet
         }
       );
 

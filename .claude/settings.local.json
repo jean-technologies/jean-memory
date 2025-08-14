@@ -6,6 +6,7 @@
       "Bash(pip install:*)",
       "Bash(npm view:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }
