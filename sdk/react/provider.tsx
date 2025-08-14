@@ -23,30 +23,17 @@ export interface JeanMessage {
 }
 
 interface JeanContextValue {
-  // State
+  // Essential state
   isAuthenticated: boolean;
+  isLoading: boolean;
   user: JeanUser | null;
   messages: JeanMessage[];
-  isLoading: boolean;
   error: string | null;
   
-  // Methods
-  sendMessage: (message: string, options?: MessageOptions) => Promise<void>;
-  storeDocument: (title: string, content: string) => Promise<void>;
-  connect: (service: 'notion' | 'slack' | 'gdrive') => void;
-  clearConversation: () => void;
-  setUser: (user: JeanUser) => void;
+  // Essential methods
+  signIn: () => void;
   signOut: () => void;
-  setError: (error: string | null) => void;
-  
-  // Tools
-  tools: {
-    add_memory: (content: string) => Promise<any>;
-    search_memory: (query: string) => Promise<any>;
-  };
-  
-  // Config
-  apiKey?: string;
+  sendMessage: (message: string, options?: MessageOptions) => Promise<void>;
 }
 
 export interface MessageOptions {
@@ -56,6 +43,29 @@ export interface MessageOptions {
 }
 
 const JeanContext = createContext<JeanContextValue | null>(null);
+
+// Generate code verifier and challenge for PKCE
+function generatePKCE() {
+  const verifier = generateRandomString(128);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  
+  return crypto.subtle.digest('SHA-256', data).then(digest => {
+    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
+    return { verifier, challenge };
+  });
+}
+
+function generateRandomString(length: number): string {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const values = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(values)
+    .map(x => charset[x % charset.length])
+    .join('');
+}
 
 interface JeanProviderProps {
   apiKey: string;
@@ -184,8 +194,37 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }, 1000);
   };
 
-  const clearConversation = () => {
-    setMessages([]);
+
+  const signIn = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Generate PKCE parameters
+      const { verifier, challenge } = await generatePKCE();
+      const state = generateRandomString(32);
+      
+      // Store for callback
+      sessionStorage.setItem('jean_oauth_state', state);
+      sessionStorage.setItem('jean_oauth_verifier', verifier);
+      
+      // Build OAuth URL
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: apiKey || 'default_client',
+        redirect_uri: window.location.origin + window.location.pathname,
+        state,
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+        scope: 'read write'
+      });
+      
+      // Redirect to OAuth provider
+      window.location.href = `${JEAN_API_BASE}/oauth/authorize?${params.toString()}`;
+    } catch (error) {
+      setIsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
+      setRawError(errorMessage);
+    }
   };
 
   const handleSetUser = (newUser: JeanUser) => {
@@ -199,52 +238,18 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     localStorage.removeItem('jean_user');
   };
 
-  const setError = (error: string | null) => {
-    setRawError(error);
-  };
-
-  const tools = {
-    add_memory: async (content: string) => {
-      if (!user) throw new Error('User not authenticated');
-      const response = await makeMCPRequest(user, apiKey, 'add_memories', { text: content });
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-      return response;
-    },
-    
-    search_memory: async (query: string) => {
-      if (!user) throw new Error('User not authenticated');
-      const response = await makeMCPRequest(user, apiKey, 'search_memory', { query });
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-      return response;
-    }
-  };
-
   const contextValue: JeanContextValue = {
-    // State
+    // Essential state
     isAuthenticated: !!user,
+    isLoading,
     user,
     messages,
-    isLoading,
     error: rawError,
     
-    // Methods
-    sendMessage,
-    storeDocument,
-    connect,
-    clearConversation,
-    setUser: handleSetUser,
+    // Essential methods
+    signIn,
     signOut,
-    setError: setRawError,
-    
-    // Tools
-    tools,
-    
-    // Config
-    apiKey
+    sendMessage
   };
 
   return (

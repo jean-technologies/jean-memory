@@ -79,10 +79,16 @@ export function JeanChat({
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
             Access your personalized AI assistant with persistent memory across all your applications.
           </p>
-          <SignInWithJean
-            onSuccess={agent.setUser}
-            apiKey={agent.apiKey}
-          />
+          <button 
+            onClick={agent.signIn}
+            className="inline-flex items-center justify-center gap-2.5 px-5 py-2.5 bg-black text-white font-medium text-sm border border-transparent rounded-lg hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:focus:ring-gray-300 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z" 
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Sign In with Jean</span>
+          </button>
         </div>
       </div>
     );
@@ -109,7 +115,7 @@ export function JeanChat({
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <button
-              onClick={agent.clearConversation}
+              onClick={() => window.location.reload()}
               disabled={agent.messages.length === 0}
               className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Clear Conversation"
@@ -220,7 +226,7 @@ export function JeanChat({
               <p className="text-red-600 dark:text-red-400 text-sm">{agent.error}</p>
             </div>
             <button 
-              onClick={() => agent.setError(null)} 
+              onClick={() => window.location.reload()} 
               className="p-1 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full"
             >
               <X size={16}/>
