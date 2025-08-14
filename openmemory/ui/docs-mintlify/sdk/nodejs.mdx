@@ -1,7 +1,9 @@
 ---
-title: 'Node.js SDK'
-description: 'Server-side memory for Node applications'
+title: "Node.js SDK"
+description: "Create server-side API endpoints that use Jean Memory as a context engine for your LLM calls."
 ---
+
+import { Card } from '@mintlify/components';
 
 ## Installation
 
@@ -9,7 +11,32 @@ description: 'Server-side memory for Node applications'
 npm install jeanmemory-node
 ```
 
-## Quick Start
+## Core SDK Usage (Headless)
+
+The Jean Memory Node.js SDK is designed primarily for backend services. Its purpose is to act as a secure, server-side "context engine." You send it a user's message, and it returns the rich, relevant context from that user's memory. You then pass this context, along with your own system prompt, to your preferred LLM.
+
+```javascript {{ title: 'server.js' }}
+import { JeanAgent } from 'jeanmemory-node';
+
+const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });
+
+async function getContextForUser(message, userToken) {
+  // The process method gets the context and returns a streamable response
+  // that can be piped or converted to text.
+  const stream = await agent.process(message, userToken);
+  
+  // You would then take this context and use it in your own LLM prompt.
+  return stream;
+}
+```
+
+### Authentication
+
+The Node.js SDK is designed to work in tandem with a frontend client. It expects that the user has already authenticated using a frontend SDK (like our React SDK) and has received a JWT. The client should send this JWT in the `Authorization` header of its request to your backend.
+
+## Quick Start: Next.js API Route
+
+For convenience, the SDK provides a `createJeanHandler` function that creates a complete, production-ready API endpoint for Next.js. This handler performs both the context retrieval *and* the final LLM call.
 
 ```typescript {{ title: '/pages/api/chat.ts' }}
 import { createJeanHandler } from 'jeanmemory-node';
@@ -21,23 +48,14 @@ export const config = {
 
 // This one line creates the entire API endpoint
 export default createJeanHandler({
-  apiKey: process.env.JEAN_API_KEY
+  apiKey: process.env.JEAN_API_KEY,
+  systemPrompt: 'You are a financial advisor who uses personal context to give better advice.'
 });
 ```
-
-## Express Integration
-
-```javascript
-import express from 'express';
-import { JeanAgent } from 'jeanmemory-node';
-
-const app = express();
-const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });
-
-app.post('/chat', async (req, res) => {
-  const response = await agent.sendMessage(req.body.message);
-  res.json({ response: response.content });
-});
-```
-
-Full documentation coming soon.
+<Card
+  title="Looking for advanced examples?"
+  icon="arrow-right"
+  href="/sdk/react-examples"
+>
+  Check out our Advanced Examples & Recipes for custom implementation guides, configuration details, and more.
+</Card>

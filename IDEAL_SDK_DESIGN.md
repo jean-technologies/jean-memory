@@ -1,6 +1,9 @@
-# Jean Connect: The Ideal SDK Design
+---
+title: Jean Connect - The Ideal SDK & API Design
+description: "The strategic vision for the Jean Connect SDKs, APIs, and developer experience."
+---
 
-**Version:** 2.0 (Draft)
+**Version:** 2.1 (Draft)
 **Status:** Strategic Vision
 
 ## Part 1: Core Philosophy & Vision
@@ -8,8 +11,8 @@
 Our goal is to build the infrastructure for computers to understand us. The Jean Connect SDK is the bridge that allows developers to embed this understanding into their applications. This document outlines the ideal design for this SDK, optimizing for developer experience, user trust, and architectural flexibility.
 
 **Our Core Tenets:**
-1.  **We are a Context Engine, Not a Chatbot:** Our primary function is to provide rich, relevant, and synthesized context. We do not generate the final AI response. We empower the developer's chosen LLM with unparalleled user understanding.
-2.  **Simplicity Through Modularity:** We will offer a powerful, headless core for maximum flexibility and an optional, pre-built UI for maximum speed. Developers choose their level of integration.
+1.  **We are a Context Engine, Not a Chatbot:** Our primary function is to provide rich, relevant, and assembled context. We do not generate the final AI response. We empower the developer's chosen LLM with unparalleled user understanding.
+2.  **Simplicity Through Modularity:** We will offer a powerful, headless core SDK for maximum flexibility and optional, pre-built UI components for maximum speed. Developers choose their level of integration.
 3.  **User Trust is Paramount:** All user-facing interactions, especially authentication and data connection, must be transparent, secure, and user-controlled. We follow the principle of "Connect, Don't Collect."
 4.  **Developer Experience is Our Product:** Our documentation will be beautiful, our APIs will be intuitive and industry-standard, and getting started should take minutes, not days.
 
@@ -17,25 +20,29 @@ Our goal is to build the infrastructure for computers to understand us. The Jean
 
 ## Part 2: The Ideal Message & Data Flow
 
-This clarifies the flow of data from the end-user to the LLM, with Jean Memory acting as the critical context-enrichment step.
+This clarifies the flow of data from the end-user to the LLM, with Jean Memory acting as the critical context-enrichment step. This is the "headless" or "core" use case that our SDKs should prioritize.
 
 ```mermaid
 sequenceDiagram
     participant User
     participant DevApp as "Developer's App (Frontend)"
     participant DevServer as "Developer's Backend"
-    participant JeanAPI as "Jean Memory API"
+    participant JeanSDK as "Jean SDK (Core)"
+    participant JeanAPI as "Jean Memory API (MCP)"
     participant DevLLM as "Developer's LLM (OpenAI, etc.)"
 
     User->>DevApp: Sends message: "I need a new jacket"
     DevApp->>DevServer: POST /api/chat { message: "..." }
     
-    DevServer->>JeanAPI: POST /v1/context/enhance { userId: "...", message: "..." }
-    note right of DevServer: Calls the Jean Memory context engine
+    DevServer->>JeanSDK: const { context } = await jean.getContext({ userId, message });
+    note right of DevServer: Uses the headless SDK
     
-    JeanAPI->>JeanAPI: 1. Search memory graph & vectors
-    JeanAPI->>JeanAPI: 2. Assemble & Rank Context
-    JeanAPI-->>DevServer: Returns { context: "User prefers dark colors, size L, has previously bought from BrandX..." }
+    JeanSDK->>JeanAPI: Calls the Jean Memory MCP/API
+    
+    JeanAPI->>JeanAPI: 1. Search memory graph & vectors<br/>2. Assemble & Rank Context
+    JeanAPI-->>JeanSDK: Returns context string
+    
+    JeanSDK-->>DevServer: Returns { context: "User prefers dark colors, size L..." }
     
     DevServer->>DevLLM: createChatCompletion({ system_prompt, context, message })
     note right of DevServer: Combines its own prompt, our context, and the user's message
@@ -49,34 +56,34 @@ This architecture ensures that Jean Memory does one thing and does it exceptiona
 
 ---
 
-## Part 3: The Ideal Authentication & Connection Flow
+## Part 3: Authentication & Connection Flow
+
+(This section is up-to-date and aligns with our vision for a secure, OAuth-first approach.)
 
 This flow is designed to be secure, seamless, and user-centric.
 
 ### 3.1 Primary Authentication ("Sign In with Jean")
 
 1.  **Initiation:** The user clicks a "Sign In with Jean" button in the developer's app.
-2.  **Secure Redirect:** The user is redirected to `https://jeanmemory.com/oauth/authorize`. The full-page redirect is a critical security step, allowing the user to verify they are on our legitimate domain before entering credentials.
-3.  **Authentication:** The user signs in using their primary Jean Memory account (powered by our existing Supabase authentication).
+2.  **Secure Redirect:** The user is redirected to `https://jeanmemory.com/oauth/authorize`.
+3.  **Authentication:** The user signs in using their primary Jean Memory account.
 4.  **Consent:** The user grants the developer's application permission to access their memory.
-5.  **Onboarding & Redirection:** The user lands on a simple, hosted success page on our domain. This page will offer two clear paths:
-    *   A primary button: **"Return to [Developer's App]"**
-    *   An optional section for new users: **"Enhance Your Memory: Connect sources like Notion or Twitter."**
-6.  **Completion:** The user is redirected back to the developer's app with an authorization code. The Jean SDK in the background securely exchanges this code for a JWT access token using the OAuth 2.1 PKCE standard.
+5.  **Onboarding & Redirection:** The user lands on a simple, hosted success page on our domain.
+6.  **Completion:** The user is redirected back to the developer's app with an authorization code, which the SDK exchanges for a JWT.
 
 ### 3.2 Connecting External Services
 
-This flow occurs *after* the user is authenticated and is handled via a controlled popup to avoid disrupting the user's experience in the host application. The technical implementation will follow the detailed plan in `SDK_OVERVIEW.md`.
+This flow occurs *after* the user is authenticated and is handled via a controlled popup.
 
 ---
 
 ## Part 4: A Two-Layer SDK Architecture
 
-To serve both developers who want speed and those who want control, we will structure our SDKs (starting with React) into two layers.
+To serve both developers who want speed and those who want control, we will structure our SDKs into two layers.
 
 ### 4.1 The Core Layer (e.g., `@jeanmemory/core`)
 
-This is the headless engine. It contains no UI. Its purpose is to provide a clean, promise-based interface to the Jean Memory API.
+This is the headless engine. It contains no UI. Its purpose is to provide a clean, promise-based interface to the Jean Memory API (MCP). This is the primary product for developers who want to integrate Jean into their backend.
 
 ```typescript
 // Example usage of the core library
@@ -85,7 +92,7 @@ import JeanMemory from '@jeanmemory/core';
 const jean = new JeanMemory({ apiKey: 'jean_sk_...' });
 
 async function handleMessage(userId: string, message: string) {
-  const { context } = await jean.context.enhance({ userId, message });
+  const { context } = await jean.getContext({ userId, message });
   
   // Now, use this context in your LLM call
   const response = await myLLM.chat({
@@ -96,11 +103,9 @@ async function handleMessage(userId: string, message: string) {
 }
 ```
 
-This core library would also handle the authentication client-side, managing token storage and refresh.
-
 ### 4.2 The UI Layer (e.g., `@jeanmemory/react-ui`)
 
-This is an optional library that provides pre-built React components for a beautiful, out-of-the-box experience. It is built on top of the core library.
+This is an optional library that provides pre-built React components for a beautiful, out-of-the-box experience. It is a thin wrapper around the core library.
 
 ```tsx
 // Example usage of the UI library
@@ -111,52 +116,36 @@ function ChatComponent() {
   return (
     <JeanChat 
       apiKey="jean_sk_..."
-      // The UI component handles the full auth flow and chat state
+      // This component uses the Core SDK and handles the full auth and chat flow
     />
   );
 }
 ```
 
-This two-layer approach provides the best of both worlds:
-*   **For speed:** A single component (`<JeanChat />`) for a "Chatbase-like" 5-line integration.
-*   **For flexibility:** A powerful core library (`@jeanmemory/core`) that gives developers full control over their UI and application logic.
-
 ---
 
-## Part 5: The API - Designed from First Principles
+## Part 5: API & Protocol - A Clearer Definition
 
-Our public API should be clean, RESTful, and industry-standard. It should directly reflect our core philosophy. The confusing collection of endpoints (`/mcp`, `/sdk/synthesize`, `/sdk/chat/enhance`) will be consolidated.
+Our backend is accessible through two distinct layers, designed for different use cases. The SDK is the primary way for developers to interact with the highest-level protocol (MCP).
 
-**Proposed API Endpoint Structure:**
+*   **Layer 1: Core REST API (The Foundation)**
+    *   **Purpose:** The lowest-level interface, providing direct access to core functions. This is not the primary integration path for most developers.
+    *   **Example Endpoint:** `POST /v1/memory/search`
 
-*   `POST /v1/context/enhance`
-    *   **Purpose:** The primary endpoint of our product. Takes a user ID and a message, and returns the engineered context.
-    *   **Request Body:** `{ "userId": "...", "message": "...", "context_bias": "shopping" }`
-    *   **Response Body:** `{ "context": "...", "usage": {...} }`
+*   **Layer 2: Model Context Protocol (MCP - The AI's Smart Outlet)**
+    *   **Purpose:** A structured, tool-oriented protocol (JSON-RPC) built on top of the Core API. It's designed for AI agents (like Claude) and our own SDKs to use our system as a "tool." This is the primary, high-level interface that our SDKs will target.
+    *   **Primary Tool:** `jean_memory`
 
-*   `GET /v1/integrations`
-    *   **Purpose:** Lists available integrations (Notion, etc.) and their status for the user.
+*   **Layer 3: The Jean Connect SDK (The Developer's Power Cord)**
+    *   **Purpose:** The primary, recommended way for developers to integrate. The SDK provides a clean, language-specific interface that communicates with the MCP protocol, abstracting away its complexity.
+    *   **Example Method:** `jean.getContext({ userId, message })`
 
-*   `POST /v1/integrations/{service}/connect`
-    *   **Purpose:** Initiates the OAuth flow for connecting an external service.
-
-*   `/oauth/*`
-    *   **Purpose:** Standard OAuth 2.1 endpoints for user authentication (`/authorize`, `/token`).
-
-The key takeaway is that we will deprecate endpoints that perform tasks outside our core "context engine" mandate, such as `/sdk/synthesize`.
+This clarifies that developers should almost always be using the **SDK**, which in turn uses the **MCP**.
 
 ---
 
 ## Part 6: The Future - True Contextual Bias
 
-The `system_prompt` discussion raises a powerful product concept. We should evolve beyond a simple passthrough parameter.
+(This section is up-to-date and aligns with our vision.)
 
-**Vision for `context_bias`:**
-
-The `/v1/context/enhance` endpoint will accept an optional `context_bias` parameter (e.g., `'shopping'`, `'learning'`, `'professional'`). This parameter will directly influence the context engineering process:
-
-1.  **Weighted Search:** When querying the memory graph and vector stores, memories tagged with metadata relevant to the bias will be up-weighted.
-2.  **Prompt Synthesis:** The internal prompts used by Jean Memory to synthesize the final context block will be tailored. For a "shopping" bias, the prompt might be, *"Synthesize the user's shopping preferences, including sizes, favorite brands, and budget considerations."*
-3.  **Entity Extraction:** The system could prioritize extracting and returning entities relevant to the domain (e.g., product names for shopping, technical terms for learning).
-
-This feature transforms Jean Memory from a generic memory layer into a truly intelligent context engine that adapts to the specific needs of the developer's application.
+The `getContext` method will accept an optional `context_bias` parameter (e.g., `'shopping'`, `'learning'`). This parameter will directly influence the context engineering process by intelligently weighting search results and tailoring internal prompts to assemble the most relevant context for the developer's specific domain.

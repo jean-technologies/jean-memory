@@ -1,6 +1,6 @@
 ---
 title: Python SDK
-description: 'Python library for Jean Memory'
+description: "The official Python library for Jean Memory, ideal for backend services and programmatic access to the context engine."
 ---
 
 ## Installation
@@ -9,96 +9,69 @@ description: 'Python library for Jean Memory'
 pip install jeanmemory
 ```
 
-## Basic Usage
+## Core SDK Usage
+
+The Python SDK allows you to interact with the Jean Memory context engine from your backend services. Its primary purpose is to get context that you can then use in your own prompts with your own LLM.
+
+### 1. Initialize the Agent
+
+First, create an instance of the `JeanAgentMCP`, providing your API key.
 
 ```python
-from jeanmemory import JeanAgent
+from jeanmemory import JeanAgentMCP
 
-agent = JeanAgent(api_key="jean_sk_...")
+agent = JeanAgentMCP(
+    api_key="YOUR_JEAN_SK_API_KEY"
+)
+```
 
+### 2. Authenticate a User
+
+Before you can process messages, you must have an authenticated user. 
+
+```python
 # NOTE: This direct email/password method is a convenience for local 
 # development and testing. For production applications, you should implement 
 # a secure server-to-server OAuth 2.1 flow.
-agent.run()  # Starts interactive chat
+agent.authenticate(
+    email="user@example.com", 
+    password="user_password"
+)
 ```
 
-## Programmatic Usage
+### 3. Get Context for a Message
+
+Now you can get context for any user message. This is the core function of the SDK.
 
 ```python
-from jeanmemory import JeanAgent
-import os
-
-agent = JeanAgent(
-    api_key=os.getenv("JEAN_API_KEY"),
-    system_prompt="You are a helpful assistant"
+# This is the primary method of the SDK
+context = agent.get_context(
+    "What were we just talking about?"
 )
 
-# Send a message
-response = agent.send_message("What's on my todo list?")
-print(response.content)
-
-# Stream responses
-for chunk in agent.send_message_stream("Tell me about the project"):
-    print(chunk, end="")
+# Now, you can use this context in your own prompt to your own LLM
+print(f"Retrieved Context: {context}")
 ```
 
-## Memory Management
+## All-in-One Chat (Convenience Method)
+
+For quick testing or simple applications, the SDK also provides an all-in-one `send_message` method that handles both getting context and calling the LLM to get a final response.
 
 ```python
-# Add memory with tags
-agent.add_memory(
-    text="Meeting with Sarah about Q4 roadmap",
-    tags=["meetings", "q4"]
+response = agent.send_message(
+    "Remind me that I need to prepare for the board meeting tomorrow."
 )
 
-# Search memories
-memories = agent.search_memories("roadmap")
-for memory in memories:
-    print(memory.text)
-
-# Get all memories
-all_memories = agent.get_memories()
+print(f"Assistant: {response}")
 ```
 
-## Flask Integration
+## Storing Documents
+
+You can also programmatically add documents to a user's memory.
 
 ```python
-from flask import Flask, request, jsonify
-from jeanmemory import JeanAgent
-
-app = Flask(__name__)
-agent = JeanAgent(api_key="jean_sk_...")
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    message = request.json['message']
-    response = agent.send_message(message)
-    return jsonify({'response': response.content})
-```
-
-## Async Support
-
-```python
-import asyncio
-from jeanmemory import AsyncJeanAgent
-
-async def main():
-    agent = AsyncJeanAgent(api_key="jean_sk_...")
-    response = await agent.send_message("Hello")
-    print(response.content)
-
-asyncio.run(main())
-```
-
-## CLI Usage
-
-```bash
-# Interactive chat
-jean chat --api-key jean_sk_...
-
-# Add memory
-jean remember "Important meeting tomorrow"
-
-# Search
-jean search "meeting"
+agent.store_document(
+    title="Important Meeting Prep",
+    content="The board meeting is at 10 AM. Key topics are Q3 financials and the Project Alpha launch."
+)
 ```

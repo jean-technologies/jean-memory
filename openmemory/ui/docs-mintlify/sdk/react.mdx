@@ -17,47 +17,26 @@ We offer two primary ways to use the React SDK, allowing you to choose between m
 
 <CardGroup cols={2}>
   <Card
-    title="1. The UI Component (Fastest)"
+    title="1. Core SDK (Headless)"
+    icon="layer-group"
+    href="#core-sdk-usage-the-usejeanagent-hook"
+  >
+    For full control, use the `useJeanAgent` hook directly. It provides the core logic and state, allowing you to build any interface you can imagine and integrate Jean Memory into any backend.
+  </Card>
+  <Card
+    title="2. UI Component (Fastest)"
     icon="rocket"
     href="#quick-start-the-jeanagent-component"
   >
     For the quickest integration, use our all-in-one `<JeanAgent />` component. It provides a complete, production-ready chat interface in just a few lines of code.
   </Card>
-  <Card
-    title="2. The Core Hook (Most Flexible)"
-    icon="layer-group"
-    href="#advanced-usage-the-usejeanagent-hook"
-  >
-    For full control over your UI, use the `useJeanAgent` hook directly. It provides the core logic and state management, allowing you to build any interface you can imagine.
-  </Card>
 </CardGroup>
 
 ---
 
-## Quick Start: The `<JeanAgent />` Component
+## Core SDK Usage: The `useJeanAgent` Hook
 
-This is the simplest way to add a complete, memory-enabled AI chatbot to your application. It handles authentication, UI, and state management automatically.
-
-```tsx {{ title: 'src/App.tsx' }}
-import { JeanAgent } from 'jeanmemory-react';
-import 'jeanmemory-react/dist/style.css'; // Optional: for default styling
-
-function App() {
-  return (
-    <div style={{ height: '600px', width: '400px', margin: 'auto' }}>
-      <JeanAgent apiKey="YOUR_JEAN_SK_API_KEY" />
-    </div>
-  );
-}
-```
-
-This single component provides a secure "Sign In with Jean" button and a beautiful, production-ready chat interface.
-
----
-
-## Advanced Usage: The `useJeanAgent` Hook
-
-For developers who need to build a custom UI, the `useJeanAgent` hook is the core of the SDK. It provides all the necessary state and logic, giving you complete control over the user experience.
+This is the primary, most flexible way to use Jean Memory. The `useJeanAgent` hook is the core of the SDK. It provides all the necessary state and logic, giving you complete control over the user experience.
 
 ```tsx {{ title: 'src/MyCustomChat.tsx' }}
 import { useJeanAgent, SignInWithJean } from 'jeanmemory-react';
@@ -80,6 +59,13 @@ function CustomChatExperience() {
   }
 
   // Build your custom chat UI using agent state and methods
+  // This example shows how you might get context to use in your own LLM call
+  async function handleGetContext(message) {
+      const { context } = await agent.getContext(message);
+      // Now you can use this context in your own prompt to your own LLM
+      console.log(context);
+  }
+
   return (
     <div>
       {/* Your custom UI here... */}
@@ -96,36 +82,29 @@ The `agent` object returned by `useJeanAgent` contains everything you need:
 | ----------------------- | ---------------------------------------- | ----------------------------------------------------------- |
 | `isAuthenticated`       | `boolean`                                | True if the user is authenticated.                          |
 | `user`                  | `JeanUser | null`                        | The authenticated user object.                              |
-| `messages`              | `Message[]`                              | An array of the current conversation messages.              |
-| `isLoading`             | `boolean`                                | True when a message is being processed.                     |
-| `error`                 | `string | null`                         | Any error messages from the API.                            |
-| `sendMessage(msg)`      | `(msg: string) => Promise<void>`         | Sends a message to the assistant.                           |
+| `getContext(msg)`       | `(msg: string) => Promise<{context: string}>` | **Primary Method:** Gets the context for a user message.     |
+| `sendMessage(msg)`      | `(msg: string) => Promise<void>`         | Convenience method for the all-in-one chat component.       |
 | `connect(service)`      | `(service: 'notion') => Promise<string>` | Initiates the connection flow for an external service.      |
 | `setUser(user)`         | `(user: JeanUser) => void`               | Manually sets the user state (used by `SignInWithJean`).    |
 | `signOut()`             | `() => void`                             | Signs the user out and clears their state.                  |
 
-## TypeScript Support
+---
 
-The SDK is written in TypeScript and exports all relevant types for a fully typed development experience.
+## Quick Start: The `<JeanAgent />` Component
 
-```typescript
-import { useJeanAgent, JeanUser, JeanAgentConfig } from 'jeanmemory-react';
+This optional UI component is the simplest way to add a complete, memory-enabled AI chatbot to your application. It is a thin wrapper around the `useJeanAgent` hook.
 
-const config: JeanAgentConfig = {
-  apiKey: "jean_sk_...",
-};
+```tsx {{ title: 'src/App.tsx' }}
+import { JeanAgent } from 'jeanmemory-react';
+import 'jeanmemory-react/dist/style.css'; // Optional: for default styling
 
-const agent = useJeanAgent(config);
-
-if (agent.user) {
-  console.log(agent.user.email); // string
+function App() {
+  return (
+    <div style={{ height: '600px', width: '400px', margin: 'auto' }}>
+      <JeanAgent apiKey="YOUR_JEAN_SK_API_KEY" />
+    </div>
+  );
 }
 ```
 
-<Card
-  title="Looking for more?"
-  icon="arrow-right"
-  href="/sdk/react-examples"
->
-  Check out our Advanced Examples & Recipes for custom implementation guides, configuration details, and more.
-</Card>
+This single component provides a secure "Sign In with Jean" button and a beautiful, production-ready chat interface.
