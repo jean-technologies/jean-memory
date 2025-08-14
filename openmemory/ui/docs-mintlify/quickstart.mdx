@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: "Get started with Jean Memory in 5 minutes with our 5-line React integration."
+description: "Get started with Jean Memory in 5 minutes. Add a complete chatbot UI to your app or add context to your backend."
 ---
 
 import { Card, CardGroup } from '@mintlify/components';
@@ -51,68 +51,60 @@ import { Card, CardGroup } from '@mintlify/components';
   </button>
 </Card>
 
-## 1. Get Your API Key
+## Two Paths to Get Started
 
-First, you'll need a Jean Memory SDK key.
-
-1.  Sign in to your [Jean Memory dashboard](https://jeanmemory.com/dashboard).
-2.  Navigate to the **Developers** section in the sidebar.
-3.  Create a new SDK key. It will be prefixed with `jean_sk_...`.
-4.  Copy the key and keep it somewhere safe. You'll need it in the next step.
-
-## 2. Install the React SDK
-
-Our React SDK is the fastest way to get a full-featured, memory-enabled chatbot running in your application. We recommend starting here.
-
-```bash
-npm install jeanmemory-react
-```
-
-## 3. Add the JeanAgent Component
-
-The `<JeanAgent />` component is an all-in-one solution that handles authentication, chat UI, and state management. Just pass it your API key.
-
-```tsx {{ title: 'src/App.tsx' }}
-import { JeanAgent } from 'jeanmemory-react';
-import 'jeanmemory-react/dist/style.css'; // Optional: for default styling
-
-function App() {
-  return (
-    <div style={{ height: '600px', width: '400px', margin: 'auto' }}>
-      <JeanAgent apiKey="YOUR_JEAN_SK_API_KEY" />
-    </div>
-  );
-}
-
-export default App;
-```
-
-That's it! You now have a fully functional, context-aware AI chatbot in your React application. When a user interacts with it for the first time, they will be guided through a secure "Sign In with Jean" flow.
-
-<Card
-  title="What's happening under the hood?"
-  icon="rocket"
->
-  The `<JeanAgent />` component uses our powerful `useJeanAgent` hook to orchestrate the entire experience. It displays a secure `<SignInWithJean />` button that uses an OAuth 2.1 PKCE flow. Once authenticated, each message is sent to the Jean Memory backend to be enhanced with the user's personal context before being sent to the LLM.
-</Card>
-
-## 4. Next Steps
-
-Now that you have a basic integration, you can explore the full power of Jean Memory:
+There are two primary ways to get value from Jean Memory in under 5 minutes. Choose the path that fits your goal.
 
 <CardGroup cols={2}>
   <Card
-    title="Build a Custom UI"
-    icon="palette"
-    href="/sdk/react#building-a-custom-ui"
+    title="Path A: Add a Chatbot UI"
+    icon="rocket"
   >
-    Learn how to use the `useJeanAgent` hook to build a completely custom chat experience.
+    If you want to quickly add a complete, pre-built chat interface to your React application.
+    
+    ```tsx
+    import { JeanAgent } from 'jeanmemory-react';
+
+    function App() {
+      return <JeanAgent apiKey="..." />;
+    }
+    ```
   </Card>
   <Card
-    title="Python & Node.js SDKs"
-    icon="server"
-    href="/sdk/python"
+    title="Path B: Add Context to Your Backend"
+    icon="layer-group"
   >
-    Integrate Jean Memory into your backend services for programmatic access.
+    If you have your own AI agent and just want to inject our context into your existing LLM calls.
+    
+    ```typescript
+    // In your backend API route:
+    import { JeanMemory } from '@jeanmemory/node';
+    
+    const jean = new JeanMemory({ apiKey: "..." });
+    
+    const { context } = await jean.getContext({
+      token: userToken,
+      message: userMessage
+    });
+    ```
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Full-Stack Workflow Guide"
+    icon="book-open"
+    href="/guides/full-stack-workflow"
+  >
+    Learn how to connect the frontend authentication with the headless backend SDK.
+  </Card>
+  <Card
+    title="Core Concepts"
+    icon="brain-circuit"
+    href="/core-concepts"
+  >
+    Understand the "Pyramid of Integration" and how our system is architected.
   </Card>
 </CardGroup>

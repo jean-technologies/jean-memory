@@ -33,32 +33,23 @@
   },
   "navigation": [
     {
-      "group": "Documentation",
+      "group": "Getting Started",
       "pages": [
-        "overview",
+        "introduction",
         "quickstart",
-        "architecture"
-      ]
-    },
-    {
-      "group": "SDK",
-      "pages": [
-        "sdk/react",
-        "sdk/python",
-        "sdk/nodejs"
+        "core-concepts"
       ]
     },
     {
       "group": "Guides",
       "pages": [
-        "oauth-troubleshooting",
-        "context-engineering"
+        "guides/full-stack-workflow"
       ]
     },
     {
-      "group": "Example Use Cases",
+      "group": "API Reference",
       "pages": [
-        "example-use-cases"
+        "api-reference/authentication"
       ]
     }
   ],

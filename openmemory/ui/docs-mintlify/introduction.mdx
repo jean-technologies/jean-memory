@@ -1,0 +1,31 @@
+---
+title: Introduction
+description: "An overview of Jean Memory, the context engine for AI."
+---
+
+import { Card, CardGroup } from '@mintlify/components';
+
+## What is Jean Memory & Why Does It Exist?
+
+Jean Memory is an intelligent, persistent memory layer that sits between your application and an AI model. It ensures every interaction is informed by relevant, long-term user context.
+
+**The Problem:** Today, your digital identity is fragmented across dozens of apps. This makes it impossible for AI to act as a truly helpful assistant because it lacks the context of who you are.
+
+**The Solution:** Jean Memory breaks down these data silos by creating a unified, persistent memory layer. By integrating with Jean Memory, your application can access a rich, holistic understanding of the user, enabling truly personalized experiences.
+
+### How It Works
+
+<CardGroup cols={4}>
+    <Card title="Your Application" icon="cloud-arrow-up">
+        The user-facing application that initiates a request via a Jean Connect SDK.
+    </Card>
+    <Card title="Jean Memory" icon="brain-circuit">
+        The context engine. It intelligently orchestrates memory storage, retrieval, and ranking.
+    </Card>
+    <Card title="External Services" icon="plug">
+        Users can securely connect services like Notion or Substack via OAuth 2.1, enriching their memory layer without sharing credentials.
+    </Card>
+    <Card title="AI Model" icon="sparkles">
+        Receives the enhanced context from Jean Memory to provide deeply personalized and accurate responses.
+    </Card>
+</CardGroup>
