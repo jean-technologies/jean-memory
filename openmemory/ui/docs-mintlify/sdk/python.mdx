@@ -9,7 +9,7 @@ description: "The official Python library for Jean Memory, ideal for backend ser
 pip install jeanmemory
 ```
 
-## Core SDK Usage
+## Core SDK Usage (Headless)
 
 The Python SDK allows you to interact with the Jean Memory context engine from your backend services. Its primary purpose is to get context that you can then use in your own prompts with your own LLM.
 
@@ -27,7 +27,7 @@ agent = JeanAgentMCP(
 
 ### 2. Authenticate a User
 
-Before you can process messages, you must have an authenticated user. 
+Before you can process messages, you must have an authenticated user.
 
 ```python
 # NOTE: This direct email/password method is a convenience for local 
@@ -50,12 +50,16 @@ context = agent.get_context(
 )
 
 # Now, you can use this context in your own prompt to your own LLM
+# For example:
+# final_prompt = f"Context: {context}\n\nUser says: What were we just talking about?"
+# response = openai.Completion.create(..., prompt=final_prompt)
+
 print(f"Retrieved Context: {context}")
 ```
 
 ## All-in-One Chat (Convenience Method)
 
-For quick testing or simple applications, the SDK also provides an all-in-one `send_message` method that handles both getting context and calling the LLM to get a final response.
+For quick testing or simple applications, the SDK also provides an all-in-one `send_message` method that handles both getting context and calling an LLM to get a final response.
 
 ```python
 response = agent.send_message(
