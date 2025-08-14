@@ -1,7 +1,9 @@
 ---
 title: Python SDK
-description: 'Python library for Jean Memory'
+description: "Add long-term memory to your Python agents and backend services."
 ---
+
+The Jean Memory Python SDK provides a simple, headless interface to our powerful Context API. It's designed to be integrated directly into your backend services, AI agents, or data processing pipelines.
 
 ## Installation
 
@@ -9,92 +11,61 @@ description: 'Python library for Jean Memory'
 pip install jeanmemory
 ```
 
-## Basic Usage
+## Usage: Adding Context to an Agent
+
+The primary use case for the Python SDK is to retrieve context that you can then inject into a prompt for your chosen Large Language Model.
+
+The example below shows a typical workflow where we get context from Jean Memory before calling the OpenAI API.
 
 ```python
-from jeanmemory import JeanAgent
-
-agent = JeanAgent(api_key="jean_sk_...")
-agent.run()  # Starts interactive chat
-```
-
-## Programmatic Usage
-
-```python
-from jeanmemory import JeanAgent
 import os
+from openai import OpenAI
+from jeanmemory import JeanClient
 
-agent = JeanAgent(
-    api_key=os.getenv("JEAN_API_KEY"),
-    system_prompt="You are a helpful assistant"
+# 1. Initialize the clients
+jean = JeanClient(api_key=os.environ.get("JEAN_API_KEY"))
+openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+# 2. Get the user token from your frontend
+# This token is securely obtained via the OAuth flow handled by
+# our frontend components, like @jeanmemory/react.
+user_token = get_user_token_from_request() 
+
+# 3. Get context from Jean Memory
+user_message = "What were the key takeaways from our last meeting about Project Phoenix?"
+context_response = jean.get_context(
+    user_token=user_token,
+    message=user_message
 )
 
-# Send a message
-response = agent.send_message("What's on my todo list?")
-print(response.content)
+# 4. Engineer your final prompt
+final_prompt = f"""
+Using the following context, please answer the user's question.
+The context is a summary of the user's memories related to their question.
 
-# Stream responses
-for chunk in agent.send_message_stream("Tell me about the project"):
-    print(chunk, end="")
-```
+Context:
+---
+{context_response.text}
+---
 
-## Memory Management
+User Question: {user_message}
+"""
 
-```python
-# Add memory with tags
-agent.add_memory(
-    text="Meeting with Sarah about Q4 roadmap",
-    tags=["meetings", "q4"]
+# 5. Call your LLM
+completion = openai.chat.completions.create(
+    model="gpt-4-turbo",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": final_prompt},
+    ],
 )
 
-# Search memories
-memories = agent.search_memories("roadmap")
-for memory in memories:
-    print(memory.text)
+print(completion.choices[0].message.content)
 
-# Get all memories
-all_memories = agent.get_memories()
 ```
 
-## Flask Integration
+### A Note on Authentication
 
-```python
-from flask import Flask, request, jsonify
-from jeanmemory import JeanAgent
+The `user_token` is the critical piece that connects a request to a specific user's memory. In a production application, your frontend should use our React SDK's `<SignInWithJean />` component (or a manual OAuth 2.1 PKCE flow) to authenticate the user and receive this token. Your frontend then passes this token to your backend, which uses it to make authenticated requests with the Python SDK.
 
-app = Flask(__name__)
-agent = JeanAgent(api_key="jean_sk_...")
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    message = request.json['message']
-    response = agent.send_message(message)
-    return jsonify({'response': response.content})
-```
-
-## Async Support
-
-```python
-import asyncio
-from jeanmemory import AsyncJeanAgent
-
-async def main():
-    agent = AsyncJeanAgent(api_key="jean_sk_...")
-    response = await agent.send_message("Hello")
-    print(response.content)
-
-asyncio.run(main())
-```
-
-## CLI Usage
-
-```bash
-# Interactive chat
-jean chat --api-key jean_sk_...
-
-# Add memory
-jean remember "Important meeting tomorrow"
-
-# Search
-jean search "meeting"
-```
+For information on implementing a secure server-to-server OAuth flow for backend services, see the [Authentication](/authentication) guide.

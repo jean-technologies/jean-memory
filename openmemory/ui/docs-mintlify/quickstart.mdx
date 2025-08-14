@@ -1,158 +1,31 @@
 ---
 title: Quickstart
-description: 'Get running in 2 minutes'
+description: "Go from zero to a fully context-aware AI application in 5 minutes."
 ---
 
-## For the AI Developers
+import { Card, Cards } from 'mintlify/components';
 
+<Note>
 Want to just start building? We've consolidated all of our documentation into a single file for you to copy and paste into your favorite AI coding tool.
 
-<Card title="Skip the reading, start building" icon="code">
-  Don't like reading docs? Copy all our documentation below and paste it into your AI coding tool (Cursor, Claude Code, etc.) with instructions for what you'd like to build.
-  
-  <button 
-    id="copyDocsBtn"
-    style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      padding: '0.5rem 1rem',
-      background: '#7c3aed',
-      color: 'white',
-      border: 'none',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      cursor: 'pointer',
-      marginTop: '1rem'
-    }}
-    onClick={() => {
-      const btn = document.getElementById('copyDocsBtn');
-      fetch('/assets/consolidated-docs.md')
-        .then(response => response.text())
-        .then(text => {
-          navigator.clipboard.writeText(text).then(() => {
-            btn.innerHTML = 'Copied!';
-            setTimeout(() => {
-              btn.innerHTML = 'Copy All Docs for AI';
-            }, 2000);
-          });
-        })
-        .catch(err => {
-          console.error('Failed to copy: ', err);
-          btn.innerHTML = 'Failed to copy';
-          setTimeout(() => {
-            btn.innerHTML = 'Copy All Docs for AI';
-          }, 2000);
-        });
-    }}
-  >
-    Copy All Docs for AI
-  </button>
-</Card>
+<a href="/assets/consolidated-docs.md" download="jean_memory_docs.md" className="button-mint">
+  Download All Docs
+</a>
+</Note>
 
-## How Jean Memory Works
+Choose your path to get started. Whether you want a complete UI out of the box or a powerful backend library, we have you covered.
 
-Jean Memory acts as an intelligent memory layer between your application and your AI model, ensuring that every interaction is informed by relevant, long-term context.
-
-<CardGroup cols={3}>
-    <Card title="Your Application" icon="cloud">
-        The user-facing application that initiates a request.
-    </Card>
-    <Card title="Jean Memory" icon="brain">
-        Intelligently orchestrates memory storage, retrieval, and deduplication.
-    </Card>
-    <Card title="AI Model" icon="sparkles">
-        Receives enhanced context to provide personalized responses.
-    </Card>
-</CardGroup>
-
-
-<iframe 
-    width="100%" 
-    style={{aspectRatio: "16 / 9", margin: '2rem 0'}} 
-    src="https://www.youtube.com/embed/kO6f7doPjSI" 
-    title="YouTube video player" 
-    frameBorder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowFullScreen>
-</iframe>
-
-## 1. Get Your API Key
-
-Sign up at [jeanmemory.com](https://jeanmemory.com) and grab your API key.
-
-## 2. Install
-
-<Tabs>
-  <Tab title="React">
-    ```bash
-    npm install jeanmemory-react
-    ```
-  </Tab>
-  <Tab title="Python">
-    ```bash
-    pip install jeanmemory
-    ```
-  </Tab>
-  <Tab title="Node.js">
-    ```bash
-    npm install jeanmemory-node
-    ```
-  </Tab>
-</Tabs>
-
-## 3. Add to Your App
-
-<Tabs>
-  <Tab title="React">
-    ```javascript
-    import { useJean, JeanChat } from 'jeanmemory-react';
-    
-    function App() {
-      const { agent } = useJean({ 
-        apiKey: process.env.REACT_APP_JEAN_API_KEY 
-      });
-      return <JeanChat agent={agent} />;
-    }
-    ```
-  </Tab>
-  <Tab title="Python">
-    ```python
-    from jeanmemory import JeanAgent
-    import os
-    
-    agent = JeanAgent(
-        api_key=os.getenv("JEAN_API_KEY")
-    )
-    agent.run()
-    ```
-  </Tab>
-  <Tab title="Node.js">
-    ```javascript
-    import { JeanAgent } from 'jeanmemory-node';
-    
-    const agent = new JeanAgent({
-      apiKey: process.env.JEAN_API_KEY
-    });
-    
-    await agent.run();
-    ```
-  </Tab>
-</Tabs>
-
-## 4. Set Environment Variable
-
-```bash
-# .env file
-JEAN_API_KEY=jean_sk_your_api_key_here
-```
-
-## That's It!
-
-Your AI now has persistent memory. Test it:
-
-1. Tell it something: "My favorite color is blue"
-2. Ask: "What's my favorite color?"
-
-It remembers across sessions automatically!
+<Cards>
+  <Card
+    title="Add an AI Chatbot to Your React App"
+    icon="react"
+    href="/sdk/react">
+    The fastest way to get a full-featured, context-aware chatbot running in your application.
+  </Card>
+  <Card
+    title="Add Context to Your Backend Agent"
+    icon="code"
+    href="/sdk/nodejs">
+    For developers who want to power their existing AI agents with our headless SDK.
+  </Card>
+</Cards>

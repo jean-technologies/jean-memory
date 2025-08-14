@@ -1,31 +1,50 @@
 ---
 title: Introduction
-description: "An overview of Jean Memory, the context engine for AI."
+description: "Stop building chatbots. Start building copilots."
 ---
 
-import { Card, CardGroup } from '@mintlify/components';
+## What is Jean Memory?
 
-## What is Jean Memory & Why Does It Exist?
+**Jean Memory is a developer-first context engine that gives your AI application a perfect, long-term memory.**
 
-Jean Memory is an intelligent, persistent memory layer that sits between your application and an AI model. It ensures every interaction is informed by relevant, long-term user context.
+Instead of just responding to one-off questions, your app can now understand, anticipate, and reason based on your user's entire history. We provide the rich, personal context that transforms a simple chatbot into a powerful copilot.
 
-**The Problem:** Today, your digital identity is fragmented across dozens of apps. This makes it impossible for AI to act as a truly helpful assistant because it lacks the context of who you are.
-
-**The Solution:** Jean Memory breaks down these data silos by creating a unified, persistent memory layer. By integrating with Jean Memory, your application can access a rich, holistic understanding of the user, enabling truly personalized experiences.
+<img
+  className="rounded-xl"
+  src="/images/jean-architecture-diagram.png" 
+/>
 
 ### How It Works
 
-<CardGroup cols={4}>
-    <Card title="Your Application" icon="cloud-arrow-up">
-        The user-facing application that initiates a request via a Jean Connect SDK.
-    </Card>
-    <Card title="Jean Memory" icon="brain-circuit">
-        The context engine. It intelligently orchestrates memory storage, retrieval, and ranking.
-    </Card>
-    <Card title="External Services" icon="plug">
-        Users can securely connect services like Notion or Substack via OAuth 2.1, enriching their memory layer without sharing credentials.
-    </Card>
-    <Card title="AI Model" icon="sparkles">
-        Receives the enhanced context from Jean Memory to provide deeply personalized and accurate responses.
-    </Card>
-</CardGroup>
+Jean sits between your application and your user's scattered data sources (like Notion, Slack, Google Drive, etc.), transforming a chaotic stream of information into a coherent block of context.
+
+1.  **You Authenticate:** A user grants your app secure access to their memory via a simple, one-click OAuth flow.
+2.  **We Engineer Context:** Our API searches the user's memory graph, ranks information for relevance, and assembles the perfect context for the task at hand.
+3.  **You Build Intelligence:** We hand off a clean block of context to your backend. You combine it with your prompt and send it to your LLM of choice.
+
+### Key Use Cases
+
+With a powerful context engine, you can build next-generation AI applications:
+
+-   **Agentic AI:** Build agents that can execute complex, multi-step tasks because they have the user's entire project history as context.
+-   **Personalized Experiences:** Create an AI tutor that remembers a student's knowledge gaps or a financial advisor that understands a user's goals.
+-   **Proactive Assistants:** Power AI that can anticipate a user's needs (e.g., *"I see you have a flight to London tomorrow, should I check for delays?"*) by having access to their calendar and travel history.
+
+### The Gateway to Memory
+
+Ready to get started? The `SignInWithJean` component is the simple, secure way to connect your users.
+
+```jsx
+import { SignInWithJean } from '@jeanmemory/react';
+
+function App() {
+  return (
+    <SignInWithJean
+      apiKey="YOUR_JEAN_SK_API_KEY"
+      onSuccess={(user) => console.log('User authenticated!', user)}
+    />
+  );
+}
+```
+
+This single component handles the entire authentication flow, allowing you to focus on building, not on boilerplate.

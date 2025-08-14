@@ -1,39 +1,78 @@
 ---
-title: 'Node.js SDK'
-description: 'Server-side memory for Node applications'
+title: Node.js SDK
+description: "Power your Next.js and other Node.js backends with a perfect memory."
 ---
+
+The Jean Memory Node.js SDK is a headless library for integrating our Context API into your backend services. It's perfect for developers building API routes, serverless functions, or stateful agents in a Node.js environment.
 
 ## Installation
 
 ```bash
-npm install jeanmemory-node
+npm install @jeanmemory/node
 ```
 
-## Quick Start
+## Usage: Creating a Context-Aware API Route
 
-```javascript
-import { JeanAgent } from 'jeanmemory-node';
+A common use case is to create an API endpoint that your frontend can call. This endpoint will securely fetch context from Jean Memory and then stream a response from your chosen LLM.
 
-const agent = new JeanAgent({
-  apiKey: process.env.JEAN_API_KEY
-});
+The example below shows how to create a Next.js API route that is compatible with edge runtimes and the Vercel AI SDK.
 
-await agent.run();
+```typescript {{ title: 'pages/api/chat.ts' }}
+import { JeanClient } from '@jeanmemory/node';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
+import OpenAI from 'openai';
+
+// Create the clients
+const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Set the runtime to edge for best performance
+export const runtime = 'edge';
+
+export default async function POST(req: Request) {
+  // 1. Get the user's message and token from the request body
+  const { messages, userToken } = await req.json();
+  const currentMessage = messages[messages.length - 1].content;
+
+  // Ensure the user token is present
+  if (!userToken) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // 2. Get context from Jean Memory
+  const contextResponse = await jean.getContext({
+    user_token: userToken,
+    message: currentMessage,
+  });
+
+  // 3. Engineer your final prompt
+  const finalPrompt = `
+    Using the following context, please answer the user's question.
+    The context is a summary of the user's memories related to their question.
+
+    Context:
+    ---
+    ${contextResponse.text}
+    ---
+
+    User Question: ${currentMessage}
+  `;
+  
+  // 4. Call your LLM and stream the response
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4-turbo',
+    stream: true,
+    messages: [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: finalPrompt },
+    ],
+  });
+
+  const stream = OpenAIStream(response);
+  return new StreamingTextResponse(stream);
+}
 ```
 
-## Express Integration
+### Authentication Flow
 
-```javascript
-import express from 'express';
-import { JeanAgent } from 'jeanmemory-node';
-
-const app = express();
-const agent = new JeanAgent({ apiKey: process.env.JEAN_API_KEY });
-
-app.post('/chat', async (req, res) => {
-  const response = await agent.sendMessage(req.body.message);
-  res.json({ response: response.content });
-});
-```
-
-Full documentation coming soon.
+As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.

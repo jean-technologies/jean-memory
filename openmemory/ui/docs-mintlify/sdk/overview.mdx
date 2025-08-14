@@ -1,0 +1,47 @@
+---
+title: "SDK Overview"
+description: "An overview of our modular SDKs, designed for maximum flexibility and power."
+---
+
+## The Two-Layer SDK Model
+
+To support both headless and UI-based integrations, our SDKs are designed with a modular, two-layer architecture. This allows you to choose the perfect level of abstraction for your project.
+
+<Card
+  title="The Core SDK (e.g., @jeanmemory/node)"
+  icon="code-branch"
+  href="/sdk/nodejs">
+  A headless, UI-agnostic library that provides direct access to our Context API. Its primary method is `getContext()`. This is the product for most backend developers who want to integrate Jean's context into their existing agents or LLM calls.
+</Card>
+
+<Card
+  title="The UI SDK (e.g., @jeanmemory/react)"
+  icon="react"
+  href="/sdk/react">
+  An optional wrapper around the Core SDK that provides pre-built React components like `<JeanProvider>` and `<JeanChat />` for the fastest possible visual integration. It's the perfect choice for developers who want a "Chatbase-like" experience out of the box.
+</Card>
+
+## Supported Languages
+
+Click on a language below to dive into the detailed documentation for that SDK.
+
+<Cards>
+  <Card
+    title="React"
+    icon="react"
+    href="/sdk/react"
+  >
+  </Card>
+  <Card
+    title="Python"
+    icon="python"
+    href="/sdk/python"
+  >
+  </Card>
+  <Card
+    title="Node.js"
+    icon="node"
+    href="/sdk/nodejs"
+  >
+  </Card>
+</Cards>

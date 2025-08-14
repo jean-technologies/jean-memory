@@ -1,0 +1,70 @@
+---
+title: Context Engineering
+description: "How Jean Memory intelligently orchestrates context to power your AI."
+---
+
+## The Core Philosophy: Engineering, Not Retrieval
+
+Jean Memory's power doesn't come from just storing and retrieving data—it comes from **Context Engineering**.
+
+This is the sophisticated process of selecting the *right* information at the *right* time, synthesizing insights from disparate memories, and predicting what context will be most useful for your AI. This is what allows an application to feel truly personal and intelligent.
+
+This approach is inspired by Rich Sutton's "The Bitter Lesson," which argues that general-purpose methods that leverage computation are ultimately the most effective. We use AI to decide what to remember, what context is relevant, and how to create new insights automatically.
+
+## The Context API: An Engine of Engines
+
+When your application calls `jean.getContext()`, it's not just fetching a document. It's kicking off a powerful orchestration process managed by our Context API. This API is an "engine of engines" that intelligently manages multiple underlying services to build the perfect context.
+
+```mermaid
+graph TD;
+    subgraph "Your Application"
+        direction LR
+        A[SDK Call: `getContext()`]
+    end
+
+    subgraph "Jean Memory Context API"
+        direction TB
+        B[Context Orchestrator]
+        C{Selects Strategy}
+        D[Fast Path: Vector Search]
+        E[Deep Path: Graph Analysis]
+        F[Synthesizes Final Context]
+    end
+    
+    A --> B;
+    B --> C;
+    C --> D;
+    C --> E;
+    D --> F;
+    E --> F;
+
+    style A fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef jean fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+    class B,C,D,E,F jean;
+```
+
+### The Dual-Path Process
+
+To ensure a fast user experience while performing deep analysis, the process is split:
+
+1.  **Immediate Path (< 3 seconds):** When your request hits our API, we instantly perform a fast vector search to get the most relevant context and return it to you immediately. Your user never waits.
+
+2.  **Background Path (Asynchronous):**
+    *   **Smart Triage:** In the background, a fast AI model (like Gemini Flash) analyzes every user message to decide if it's meaningful enough to be saved as a new memory. This prevents "clutter."
+    *   **Deep Analysis:** For complex queries, the engine might also kick off a deeper analysis, traversing our knowledge graph to find hidden relationships and create new, high-level "insight memories" that will be available for future queries.
+
+### Context Strategies
+
+The `SmartContextOrchestrator` is the brain behind the API. It intelligently chooses from several strategies to build the best context for any situation:
+
+*   **`deep_understanding`:** Used for new conversations to provide a comprehensive overview of a user and their history.
+*   **`relevant_context`:** The standard mode for ongoing conversations, providing targeted, relevant information based on the immediate conversational history.
+*   **`comprehensive_analysis`:** Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
+
+## Your Logic, Our Engine
+
+While we provide powerful, pre-built context strategies, we understand that advanced applications have unique needs. Our platform is built to be extensible.
+
+**We are currently developing capabilities to allow developers to define their own custom context engineering flows.**
+
+If you have a unique challenge that requires a bespoke context strategy—such as a specific way of ranking financial data or a custom logic for educational content—please reach out to our solutions team. We are actively looking for partners to help us build the future of context engineering.

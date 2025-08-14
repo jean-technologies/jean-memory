@@ -1,0 +1,65 @@
+---
+title: Authentication
+description: "Securely connect your users to their memory with OAuth 2.1."
+---
+
+## Our Philosophy: Secure by Design
+
+Jean Memory handles sensitive personal data, and we take that responsibility seriously. That's why we've built our authentication system on the industry-standard **OAuth 2.1 protocol**. This ensures that user credentials are never shared with third-party applications and that users have full control over who can access their memory.
+
+We provide two clear authentication flows to support different types of applications.
+
+---
+
+## Flow 1: Browser-Based Apps (PKCE Grant)
+
+This flow is designed for frontend applications (e.g., React, Vue, Svelte) running in a user's browser. It uses the **Proof Key for Code Exchange (PKCE)** grant type, which is the current best practice for securing public clients.
+
+### The Easy Way: `<SignInWithJean />`
+
+For React developers, we've made this incredibly simple. Our `<SignInWithJean />` component is a complete, one-line solution that handles the entire PKCE flow for you.
+
+```jsx
+import { useJean, SignInWithJean } from '@jeanmemory/react';
+
+function MyComponent() {
+  const agent = useJean();
+
+  if (agent.isAuthenticated) {
+    return <div>Welcome, {agent.user.name}!</div>;
+  }
+
+  // This component redirects to Jean Memory for authentication
+  // and securely handles the token exchange on return.
+  return (
+    <SignInWithJean
+      onSuccess={(user) => {
+        // The user object, including the all-important `userToken`,
+        // is returned on success.
+        agent.setUser(user);
+      }}
+      onError={(error) => console.error(error)}
+    />
+  );
+}
+```
+
+When a user clicks the button, they are redirected to `jeanmemory.com` to sign in and grant your application permission. After they approve, they are redirected back to your app, and the `onSuccess` callback is fired with the user's information, including the `userToken` needed for backend requests.
+
+---
+
+## Flow 2: Backend Services (Authorization Code Grant)
+
+This flow is for trusted backend services that need to access a user's memory on their behalf, even when the user is not actively present (e.g., for a background data sync). It uses the standard **Authorization Code Grant**.
+
+This is a more involved flow that requires server-side handling of secrets.
+
+### High-Level Steps
+
+1.  **User Authorization:** Your application redirects the user to the Jean Memory authorization URL with your `client_id` and a `redirect_uri`.
+2.  **Grant Authorization Code:** The user logs in and approves the request. Jean Memory redirects back to your `redirect_uri` with a temporary `code`.
+3.  **Exchange Code for Token:** Your backend service makes a secure, server-to-server request to the Jean Memory token endpoint, exchanging the `code` (along with your `client_id` and `client_secret`) for an `access_token` and a `refresh_token`.
+4.  **Access API:** Your service can now use the `access_token` to make authenticated requests to the Jean Memory API on the user's behalf.
+5.  **Refresh Token:** When the `access_token` expires, use the `refresh_token` to obtain a new one without requiring the user to log in again.
+
+For detailed instructions on implementing this flow, please consult standard OAuth 2.1 documentation and contact our support team for your `client_id` and `client_secret`.
