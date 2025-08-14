@@ -1,0 +1,100 @@
+---
+title: Python SDK
+description: 'Python library for Jean Memory'
+---
+
+## Installation
+
+```bash
+pip install jeanmemory
+```
+
+## Basic Usage
+
+```python
+from jeanmemory import JeanAgent
+
+agent = JeanAgent(api_key="jean_sk_...")
+agent.run()  # Starts interactive chat
+```
+
+## Programmatic Usage
+
+```python
+from jeanmemory import JeanAgent
+import os
+
+agent = JeanAgent(
+    api_key=os.getenv("JEAN_API_KEY"),
+    system_prompt="You are a helpful assistant"
+)
+
+# Send a message
+response = agent.send_message("What's on my todo list?")
+print(response.content)
+
+# Stream responses
+for chunk in agent.send_message_stream("Tell me about the project"):
+    print(chunk, end="")
+```
+
+## Memory Management
+
+```python
+# Add memory with tags
+agent.add_memory(
+    text="Meeting with Sarah about Q4 roadmap",
+    tags=["meetings", "q4"]
+)
+
+# Search memories
+memories = agent.search_memories("roadmap")
+for memory in memories:
+    print(memory.text)
+
+# Get all memories
+all_memories = agent.get_memories()
+```
+
+## Flask Integration
+
+```python
+from flask import Flask, request, jsonify
+from jeanmemory import JeanAgent
+
+app = Flask(__name__)
+agent = JeanAgent(api_key="jean_sk_...")
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    message = request.json['message']
+    response = agent.send_message(message)
+    return jsonify({'response': response.content})
+```
+
+## Async Support
+
+```python
+import asyncio
+from jeanmemory import AsyncJeanAgent
+
+async def main():
+    agent = AsyncJeanAgent(api_key="jean_sk_...")
+    response = await agent.send_message("Hello")
+    print(response.content)
+
+asyncio.run(main())
+```
+
+## CLI Usage
+
+```bash
+# Interactive chat
+jean chat --api-key jean_sk_...
+
+# Add memory
+jean remember "Important meeting tomorrow"
+
+# Search
+jean search "meeting"
+```

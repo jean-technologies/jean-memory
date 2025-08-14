@@ -1,0 +1,35 @@
+---
+title: Introduction to MCP
+description: "A powerful, stateful protocol for building advanced agentic systems."
+---
+
+The Model Context Protocol (MCP) is an open standard designed to provide a more powerful and flexible way to connect AI agents to tools and data. It standardizes the piping of context and memory across the internet, enabling a new level of interoperability for AI systems.
+
+While our REST API is perfect for many use cases, MCP is the ideal choice for developers building sophisticated, agentic systems that require stateful connections, real-time communication, and dynamic tool use.
+
+## Why Choose MCP over the REST API?
+
+| Feature                       | REST API                                   | Model Context Protocol (MCP)                               |
+| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **Connection**                | Stateless (each request is independent)    | Stateful (a continuous, persistent connection)             |
+| **Communication**             | Request-Response (client-driven)           | Bidirectional (server can push updates to the agent)       |
+| **Tool Use**                  | Static (hard-coded to specific endpoints)  | Dynamic (agent can discover and learn to use new tools)    |
+| **Context Management**        | Handled in the prompt (can lead to bloat)  | Managed by the protocol (more efficient and scalable)      |
+
+In short, if you are building a simple application and just need to store and retrieve memories, our REST API is a great choice. If you are building a complex, autonomous agent that needs to interact with its environment in real-time, MCP is the way to go.
+
+## Key Benefits of MCP for Agentic Memory
+
+*   **Complex, Multi-Step Tasks**: Because MCP maintains a stateful connection, it's perfect for complex workflows where context needs to be preserved across multiple steps. The agent can have an ongoing "conversation" with a tool, rather than sending a series of disconnected requests.
+
+*   **Real-Time Reactivity**: MCP allows tools to proactively push information to the agent. This is essential for building agents that can react to live events, such as a file being updated, a new message arriving, or a change in a database.
+
+*   **Enhanced Autonomy and Adaptability**: With dynamic tool discovery, your agent can learn to use new tools and capabilities without being explicitly re-programmed. This allows you to build more adaptive and autonomous agents that can evolve over time.
+
+*   **Efficiency and Scalability**: By managing context and tool definitions outside of the prompt, MCP avoids the "prompt bloat" that can limit the performance and scalability of agents built on REST APIs.
+
+## How to Get Started
+
+To get started with MCP, you'll need to connect to one of our MCP servers. The authentication is handled via a standard OAuth 2.1 flow, which is initiated when you connect.
+
+You can find more details on how to implement this in our SDK documentation.

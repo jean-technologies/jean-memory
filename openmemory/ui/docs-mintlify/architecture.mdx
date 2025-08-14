@@ -1,0 +1,35 @@
+---
+title: Our Architecture
+description: "A look under the hood at our sophisticated RAG and Graph Database stack."
+---
+
+## More Than a Database: An Intelligent Memory System
+
+At Jean Memory, our core philosophy is **Context Engineering, not just Information Retrieval**. While many systems can store and retrieve data, our goal is to build an intelligent memory system that mirrors the human brain—understanding, synthesizing, and anticipating what you need to know.
+
+To achieve this, we've built our system on a unique tri-database architecture, where each component is chosen for its specific strengths. This allows us to handle the complex demands of AI memory far more effectively than a single database could.
+
+### The Tri-Database Stack
+
+<Card title="Qdrant (Vector DB for RAG)" icon="rocket">
+  **For semantic search and relevance.** We use Qdrant for Retrieval-Augmented Generation (RAG). It's powerful and quick, allowing us to perform lightning-fast semantic searches to find the most contextually similar information.
+</Card>
+
+<Card title="Neo4j (Graph DB for Relationships)" icon="code">
+  **For understanding connections.** We use Neo4j to build a rich knowledge graph of the entities and relationships within a user's memories. Graph databases enable the forming of connections between information, so you see the full picture.
+</Card>
+
+<Card title="PostgreSQL (Relational DB for Metadata)" icon="book">
+  **For structured data and reliability.** All of the metadata associated with your memories, users, and applications is stored in a robust PostgreSQL database. This ensures data integrity and provides a reliable foundation for the entire system.
+</Card>
+
+<img src="/logo/graph-system.png" alt="Jean Memory Graph System" class="mt-6"/>
+
+### The Future of Intelligent Memory
+
+We see `mem0` as a powerful layer of abstraction, and we've built our intelligent layer of agentic memory and context engineering on top of it. Our system is designed to intelligently manage memory over time, much like the human brain. This includes:
+
+- **De-duplication:** To prevent your memory from becoming crowded.
+- **Self-Organization:** Rearranging and optimizing data during periods of unuse, similar to how the human brain processes information during sleep.
+
+This combination of a powerful, multi-database backend and a sophisticated intelligence layer is what we see as the future of intelligent memory systems.

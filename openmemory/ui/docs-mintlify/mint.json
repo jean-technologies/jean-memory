@@ -33,23 +33,45 @@
   },
   "navigation": [
     {
-      "group": "Getting Started",
+      "group": "Documentation",
       "pages": [
-        "introduction",
+        "overview",
         "quickstart",
-        "core-concepts"
+        "architecture"
       ]
     },
     {
-      "group": "Guides",
+      "group": "SDK",
       "pages": [
-        "guides/full-stack-workflow"
+        "sdk/react",
+        "sdk/python",
+        "sdk/nodejs"
       ]
     },
     {
-      "group": "API Reference",
+      "group": "MCP",
       "pages": [
-        "api-reference/authentication"
+        "mcp/introduction",
+        "mcp/authentication",
+        "oauth-troubleshooting"
+      ]
+    },
+    {
+      "group": "Context Engineering",
+      "pages": [
+        "mcp/context-engineering"
+      ]
+    },
+    {
+      "group": "Example Use Cases",
+      "pages": [
+        "example-use-cases"
+      ]
+    },
+    {
+      "group": "Tools",
+      "pages": [
+        "tools"
       ]
     }
   ],

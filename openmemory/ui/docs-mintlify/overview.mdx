@@ -1,0 +1,107 @@
+---
+title: Overview
+description: 'Universal memory for AI applications'
+---
+
+## What is Jean Memory?
+
+Jean Memory is a universal memory layer for AI applications. It gives your AI a persistent, cross-platform memory, allowing it to remember past conversations and context.
+
+The core philosophy is **Context Engineering, not just Information Retrieval**. This means Jean Memory doesn't just store data—it intelligently understands, synthesizes, and prepares the perfect context for your AI, right when it's needed.
+
+This is all orchestrated through a single, powerful `jean_memory` tool, which acts as a "tool of tools" to provide intelligent, agentic memory with long-term context.
+
+## High-Level Architecture
+
+Jean Memory sits between your application and your AI models, acting as an intelligent orchestration layer. It receives requests, retrieves and synthesizes the necessary context, and provides it to the AI model to generate a personalized and relevant response.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+```mermaid
+graph TD
+    A[Your Application] --> B{Jean Memory API};
+    B --> C(Intelligent Context Orchestration);
+    C --> D[Secure Memory Storage];
+    C --> E[AI Platforms];
+    subgraph Jean Memory
+        B; C; D;
+    end
+
+    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style E fill:#f9f9f9,stroke:#333,stroke-width:2px
+```
+</div>
+
+## Key Features
+
+-   **Universal**: Works with ChatGPT, Claude, Cursor, and any custom AI application.
+-   **Persistent**: Memories survive across sessions and platforms.
+-   **Intelligent Context**: AI-powered context engineering, not just keyword matching.
+-   **Simple Integration**: Add memory to any AI with just a few lines of code.
+-   **Asynchronous by Design**: Fast responses with complex processing in the background.
+
+## Ready-to-Use UI Components (React SDK)
+
+For React applications, Jean Memory provides production-ready UI components that handle the entire user experience:
+
+### Customizable Authentication
+
+Jean Memory provides a flexible authentication flow that you can tailor to your application's branding. The "Sign In with Jean" button can be customized to fit your needs.
+
+<div style={{
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    margin: '2rem 0'
+}}>
+    <button style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.25rem 0.9rem',
+        borderRadius: '8px',
+        background: '#FFFFFF',
+        color: '#000000',
+        fontWeight: '500',
+        fontSize: '14px',
+        border: '1px solid #E5E7EB',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+    }}>
+        Sign In with Jean
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    </button>
+</div>
+
+You can adapt the text to best suit your user experience, for example: "Add Memory to X", "Bring Your Memories", "Personalize".
+
+### JeanAgent Component  
+A complete chat interface with memory integration and "Sign In with Jean" flow. Users get personalized responses based on their history across all applications.
+
+## Getting Started
+
+Ready to give your AI a memory?
+
+<CardGroup cols={3}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get running in 2 minutes
+  </Card>
+  <Card
+    title="SDK Docs"
+    icon="code"
+    href="/sdk/react"
+  >
+    Full library documentation
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api/authentication"
+  >
+    Learn how to authenticate
+  </Card>
+</CardGroup>

@@ -1,91 +1,108 @@
 ---
-title: Authentication
-description: "An overview of the secure OAuth 2.1 flows for authenticating users with Jean Memory."
+title: OAuth Troubleshooting
+description: 'Common OAuth issues and solutions for Jean Memory integration'
 ---
 
-import { Steps, Card } from '@mintlify/components';
+## Common OAuth Issues
 
-## Two Authentication Flows
+### "Invalid redirect URI" Error
 
-Jean Memory provides two distinct, secure OAuth 2.1 flows depending on your application's architecture.
+**Problem:** `{"detail":"Invalid redirect URI"}` when testing OAuth flow.
 
-<Card
-  title="Frontend / Public Clients (e.g., React, Vue)"
-  icon="browsers"
->
-  This is the most common path for web applications. It uses the highly secure **OAuth 2.1 with PKCE** flow. Our React SDK and `<SignInWithJean />` component handle this automatically.
-</Card>
+**Cause:** Your redirect URI isn't whitelisted on our server.
 
-<Card
-  title="Backend / Confidential Clients (e.g., Python, Node.js)"
-  icon="server"
->
-  This is for server-to-server integrations. It uses the standard **OAuth 2.1 Authorization Code** flow. This is the recommended path for production backend services.
-</Card>
+**Solutions:**
 
+#### For Local Development
+```javascript
+// Use one of these whitelisted URIs for local testing:
+const redirectUri = 'http://localhost:3000/callback';
+// or
+const redirectUri = 'http://127.0.0.1:3000/callback';
+```
 
-## Understanding the Frontend (PKCE) Flow
-
-This is the flow handled by our React SDK. Understanding the steps can help you troubleshoot issues.
-
-<Steps>
-  <Step>
-    #### 1. Authorization Request
-    Your app redirects the user to `https://jeanmemory.com/oauth/authorize` with your `client_id` and a `redirect_uri`.
-  </Step>
-  <Step>
-    #### 2. User Consent
-    The user signs into their Jean Memory account and grants your application permission.
-  </Step>
-  <Step>
-    #### 3. Redirect Back with Code
-    We redirect the user back to the `redirect_uri` you provided, including a temporary authorization `code`.
-  </Step>
-  <Step>
-    #### 4. Token Exchange
-    The Jean SDK securely exchanges the `code` for an `access_token` in the background.
-  </Step>
-</Steps>
-
----
-
-## The Most Common Issue: "Invalid Redirect URI"
-
-This error means the `redirect_uri` your application sent in Step 1 does **not exactly match** the URL registered for your API Key in our system.
-
-### Troubleshooting Checklist
-
-1.  **Check Your Jean Dashboard:**
-    *   Go to the "Developers" section in your [Jean Memory dashboard](https://jeanmemory.com/dashboard).
-    *   Find your SDK Key and look at the "Allowed Callback URLs" field.
-
-2.  **Ensure an Exact Match:**
-    *   The URI in your application code must be an **exact, character-for-character match** to one of the URLs in that list.
-    *   **Common mistakes include:**
-        *   `http://` vs. `https://`
-        *   A trailing slash (`/`) at the end of one but not the other.
-        *   `localhost` vs. `127.0.0.1`.
-
-3.  **Local Development:**
-    *   By default, all SDK keys are pre-configured with these callback URLs for local development:
-        *   `http://localhost:3000/callback`
-        *   `http://localhost:3001/callback`
-
-4.  **Production Environments:**
-    *   You must add your production callback URLs to the "Allowed Callback URLs" list in your Jean Memory dashboard.
-    *   For example: `https://www.your-awesome-app.com/auth/callback`
+#### For Production
+Contact support at support@jeanmemory.com to whitelist your production domain:
+- `https://yourdomain.com/callback`
+- `https://yourdomain.com/auth/callback`
 
 <Warning>
-**Security First:** For security, we require an exact match to prevent authorization codes from being intercepted by malicious actors.
+Allow 10-15 minutes after whitelist approval for DNS propagation.
 </Warning>
+
+### Testing Without Full OAuth Setup
+
+For development and testing, you can use the SDK's built-in fallback mode:
+
+```javascript
+// React SDK - automatically handles fallback
+const { agent } = useJean({ 
+  apiKey: "your-api-key",
+  // Will work even without OAuth completion
+});
+
+// Python SDK - demo mode
+agent = JeanAgent(api_key="your-api-key", demo_mode=True)
+```
+
+## OAuth Flow Requirements
+
+### Required Parameters
+```javascript
+{
+  response_type: 'code',
+  client_id: 'your-registered-client-id', 
+  redirect_uri: 'https://yourdomain.com/callback', // Must be exact match
+  code_challenge: 'generated-pkce-challenge',
+  code_challenge_method: 'S256',
+  state: 'random-state-value'
+}
+```
+
+### Callback Handler
+```javascript
+// Your /callback endpoint must handle:
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get('code');
+const state = urlParams.get('state');
+
+// Then exchange code for token
+const tokenResponse = await fetch('/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: 'your-client-id',
+    code: code,
+    redirect_uri: 'https://yourdomain.com/callback',
+    code_verifier: 'stored-pkce-verifier'
+  })
+});
+```
+
+## Development Workflow
+
+### Phase 1: Mock Development
+- Use SDK fallback modes for UI development
+- Test application logic without OAuth
+
+### Phase 2: OAuth Setup  
+- Register application at [jeanmemory.com](https://jeanmemory.com)
+- Request redirect URI whitelist
+- Test authentication flow
+
+### Phase 3: Integration Testing
+- Full end-to-end testing with real tokens
+- Performance validation
+- Production deployment
 
 ## Getting Help
 
-If you've gone through the checklist and are still facing issues, we're here to help.
+**For OAuth Issues:**
+- Email: support@jeanmemory.com
+- Subject: "OAuth Redirect URI Whitelist Request"
+- Include: Your domain(s) and redirect URI(s)
 
-*   **Email:** support@jeanmemory.com
-*   **Subject:** "OAuth Integration Issue"
-*   **Please Include:**
-    *   Your Jean Memory SDK Key (`jean_sk_...`).
-    *   The `redirect_uri` you are trying to use.
-    *   A screenshot of the error message if possible.
+**For Technical Issues:**
+- GitHub Issues: [jean-technologies/jean-memory](https://github.com/jean-technologies/jean-memory/issues)
+- Include: Error messages, code samples, browser console logs
