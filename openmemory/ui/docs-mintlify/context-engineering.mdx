@@ -27,19 +27,20 @@ graph TD;
         jean_memory["jean_memory (API)"]
     end
 
-    subgraph "Read (Retrieval)"
+    subgraph "Read (Retrieval & Orchestration)"
         direction TB
         jean_memory --> retrieval_strategies["Retrieval Strategies"];
         
-        subgraph "Layers of Depth"
-            retrieval_strategies --> shallow["Shallow Search<br/><i>Fast, Targeted</i>"];
-            retrieval_strategies --> deep["Deep Search<br/><i>Comprehensive</i>"];
+        subgraph "Three Paths of Context"
+            retrieval_strategies --> primer["Path 1: Narrative Primer<br/><i>(New Conversation)</i>"];
+            retrieval_strategies --> targeted["Path 2: Targeted Search<br/><i>(Continuing Conversation)</i>"];
+            retrieval_strategies --> acknowledge["Path 3: Acknowledge Only<br/><i>(No Context Needed)</i>"];
         end
 
         subgraph "Underlying Tools"
-            shallow --> search_memory_shallow["search_memory"];
-            deep --> search_memory_deep["search_memory"];
-            deep --> deep_memory_query["deep_memory_query"];
+            primer --> search_memory_primer["search_memory (for narrative)"];
+            targeted --> search_memory_targeted["search_memory"];
+            targeted --> deep_memory_query["deep_memory_query (optional)"];
         end
     end
 
@@ -56,19 +57,18 @@ graph TD;
     classDef tools fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
 
     class jean_memory api;
-    class retrieval_strategies,shallow,deep read;
+    class retrieval_strategies,primer,targeted,acknowledge read;
     class write_processor,add_memory,store_document write;
-    class search_memory_shallow,search_memory_deep,deep_memory_query tools;
+    class search_memory_primer,search_memory_targeted,deep_memory_query tools;
 ```
 
 ### Context Strategies
 
-The orchestrator uses different strategies to create the best possible context for the AI.
+The orchestrator uses three primary strategies to provide the right context at the right time:
 
-1.  **`deep_understanding`**: Used for new conversations to provide comprehensive context about the user.
-2.  **`relevant_context`**: Used for ongoing conversations to provide targeted, relevant information.
-3.  **`comprehensive_analysis`**: Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
-                                                        
+1.  **Narrative Primer**: For new conversations, the system retrieves a high-level user narrative to provide immediate, foundational context.
+2.  **Targeted Search**: For continuing conversations that require context, the system performs a targeted search for the most relevant memories, optionally using a deep query for more complex questions.
+3.  **Acknowledge Only**: When a client specifies that no context is needed, the system simply acknowledges the message and processes it in the background, optimizing for speed.
 
 ### Opinionated Context Flows
 
