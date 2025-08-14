@@ -4,6 +4,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { JEAN_API_BASE } from './config';
+import { makeMCPRequest } from './mcp';
 
 const JEAN_API_BASE_OLD = 'https://jean-memory-api-virginia.onrender.com';
 
@@ -115,54 +116,26 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       };
       setMessages(prev => [...prev, userMessage]);
 
-      // Use MCP endpoint with configuration
-      const mcpRequest = {
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: tool,
-          arguments: tool === 'jean_memory' ? {
-            user_message: message,
-            is_new_conversation: false,
-            needs_context: true,
-            speed: speed,
-            format: format
-          } : {
-            query: message,
-            speed: speed,
-            format: format
-          }
+      const response = await makeMCPRequest(
+        user,
+        apiKey,
+        options.tool || 'jean_memory',
+        {
+          user_message: message,
+          is_new_conversation: messages.length <= 1,
+          needs_context: true,
+          ...options
         }
-      };
+      );
 
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user.user_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        body: JSON.stringify(mcpRequest)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get context');
-      }
-
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(`MCP Error: ${data.error.message}`);
+      if (response.error) {
+        throw new Error(response.error.message);
       }
       
-      // Extract text from MCP response
-      const resultText = data.result?.content?.[0]?.text || 'I understood and saved that information.';
-      
-      // Add assistant response to conversation
       const assistantMessage: JeanMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: resultText,
+        content: response.result?.content?.[0]?.text || 'I understood and saved that information.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);
@@ -179,10 +152,15 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     if (!user) {
       throw new Error('User not authenticated');
     }
-
-    // Store as a memory with special formatting
-    const formattedContent = `# ${title}\n\n${content}`;
-    return tools.add_memory(formattedContent);
+    const response = await makeMCPRequest(user, apiKey, 'store_document', {
+      title,
+      content,
+      document_type: 'markdown'
+    });
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+    return response;
   };
 
   const connect = (service: 'notion' | 'slack' | 'gdrive') => {
@@ -228,52 +206,20 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   const tools = {
     add_memory: async (content: string) => {
       if (!user) throw new Error('User not authenticated');
-      
-      // Use MCP tool endpoint
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user.user_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: Date.now(),
-          method: 'tools/call',
-          params: {
-            name: 'add_memories',
-            arguments: { text: content }
-          }
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to add memory');
-      return response.json();
+      const response = await makeMCPRequest(user, apiKey, 'add_memories', { text: content });
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      return response;
     },
     
     search_memory: async (query: string) => {
       if (!user) throw new Error('User not authenticated');
-      
-      // Use MCP tool endpoint
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user.user_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: Date.now(),
-          method: 'tools/call',
-          params: {
-            name: 'search_memory',
-            arguments: { query }
-          }
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to search memory');
-      return response.json();
+      const response = await makeMCPRequest(user, apiKey, 'search_memory', { query });
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      return response;
     }
   };
 

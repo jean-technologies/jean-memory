@@ -3,10 +3,11 @@
  * Power your Next.js and other Node.js backends with a perfect memory
  */
 
-const JEAN_API_BASE = 'https://jean-memory-api-virginia.onrender.com';
+const DEFAULT_JEAN_API_BASE = 'https://jean-memory-api-virginia.onrender.com';
 
 interface JeanClientConfig {
   apiKey: string;
+  apiBase?: string;
 }
 
 interface GetContextOptions {
@@ -21,11 +22,29 @@ interface ContextResponse {
   text: string;
   enhanced: boolean;
   memories_used: number;
+  raw_data: any;
+}
+
+interface MCPResponse {
+  jsonrpc: string;
+  id: number;
+  result?: {
+    content: Array<{
+      type: string;
+      text: string;
+    }>;
+  };
+  error?: {
+    code: number;
+    message: string;
+  };
 }
 
 export class JeanClient {
-  private apiKey: string;
+  protected apiKey: string;
+  protected apiBase: string;
   public tools: Tools;
+  private requestId: number = 0;
   
   constructor(config: JeanClientConfig) {
     if (!config.apiKey) {
@@ -37,185 +56,112 @@ export class JeanClient {
     }
     
     this.apiKey = config.apiKey;
+    this.apiBase = config.apiBase || process.env.JEAN_API_BASE || DEFAULT_JEAN_API_BASE;
     this.tools = new Tools(this);
-    
-    // Validate API key
-    this.validateApiKey();
-  }
-  
-  private async validateApiKey(): Promise<void> {
-    try {
-      // Use MCP health endpoint to validate connectivity
-      const response = await fetch(`${JEAN_API_BASE}/mcp`, {
-        headers: { 'X-API-Key': this.apiKey }
-      });
-      
-      if (![200, 404].includes(response.status)) {
-        throw new Error('Invalid API key or connection failed');
-      }
-      
-      console.log('✅ Jean Memory client initialized');
-    } catch (error) {
-      throw new Error(`API key validation failed: ${error}`);
-    }
   }
 
-  /**
-   * Get context from Jean Memory for a user message
-   */
-  async getContext(options: GetContextOptions): Promise<ContextResponse> {
-    const { user_token, message, speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
+  protected _getUserIdFromToken = (user_token: string): string => {
+    /**
+     * WARNING: This method does not validate the JWT signature. In a production
+     * environment, you should use a library like `jose` or `jsonwebtoken` to
+     * decode and validate the token against the appropriate public key.
+     */
+    try {
+      const payload = JSON.parse(Buffer.from(user_token.split('.')[1], 'base64').toString('utf8'));
+      if (!payload.sub) {
+        throw new Error("No 'sub' claim in JWT payload");
+      }
+      return payload.sub;
+    } catch (error) {
+      return user_token;
+    }
+  }
+  
+  protected _makeMcpRequest = async (user_id: string, tool_name: string, args: any): Promise<any> => {
+    this.requestId++;
+    const mcpRequest = {
+      jsonrpc: '2.0',
+      id: this.requestId,
+      method: 'tools/call',
+      params: {
+        name: tool_name,
+        arguments: args
+      }
+    };
     
     try {
-      // Extract user_id from token (simplified)
-      let user_id: string;
-      try {
-        const payload = JSON.parse(atob(user_token.split('.')[1]));
-        user_id = payload.sub || user_token;
-      } catch {
-        user_id = user_token; // Fallback
-      }
-      
-      // Use MCP endpoint with configuration
-      const mcpRequest = {
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: tool,
-          arguments: tool === 'jean_memory' ? {
-            user_message: message,
-            is_new_conversation: false,
-            needs_context: true,
-            speed: speed,  // Pass speed parameter
-            format: format  // Pass format parameter
-          } : {
-            query: message,
-            speed: speed,
-            format: format
-          }
-        }
-      };
-      
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user_id}`, {
+      const response = await fetch(`${this.apiBase}/mcp/node-sdk/messages/${user_id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey
+          'X-API-Key': this.apiKey,
+          'X-User-Id': user_id,
         },
         body: JSON.stringify(mcpRequest)
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to get context: ${response.statusText}`);
+        const errorBody = await response.text();
+        throw new Error(`MCP request failed: ${response.statusText} - ${errorBody}`);
       }
       
-      const data = await response.json();
+      const data = (await response.json()) as MCPResponse;
       if (data.error) {
         throw new Error(`MCP Error: ${data.error.message}`);
       }
       
-      const resultText = data.result?.content?.[0]?.text || '';
-      
-      return {
-        text: resultText,
-        enhanced: format === 'enhanced',
-        memories_used: 1
-      };
+      return data;
     } catch (error) {
-      throw new Error(`Failed to get context: ${error}`);
+      throw new Error(`MCP request failed: ${error}`);
     }
+  }
+
+  public getContext = async (options: GetContextOptions): Promise<ContextResponse> => {
+    const { user_token, message, speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
+    const user_id = this._getUserIdFromToken(user_token);
+
+    let args: any;
+    if (tool === 'jean_memory') {
+      args = {
+        user_message: message,
+        is_new_conversation: false,
+        needs_context: true,
+        speed,
+        format
+      };
+    } else {
+      args = {
+        query: message,
+        speed,
+        format
+      };
+    }
+
+    const data = await this._makeMcpRequest(user_id, tool, args);
+    const resultText = data.result?.content?.[0]?.text || '';
+      
+    return {
+      text: resultText,
+      enhanced: format === 'enhanced',
+      memories_used: 1,
+      raw_data: data
+    };
   }
 }
 
-/**
- * Direct access to memory manipulation tools
- */
 class Tools {
   constructor(private client: JeanClient) {}
   
-  async add_memory(options: { user_token: string; content: string }): Promise<any> {
+  public add_memory = async (options: { user_token: string; content: string }): Promise<any> => {
     const { user_token, content } = options;
-    
-    try {
-      // Extract user_id from token
-      let user_id: string;
-      try {
-        const payload = JSON.parse(atob(user_token.split('.')[1]));
-        user_id = payload.sub || user_token;
-      } catch {
-        user_id = user_token;
-      }
-      
-      const mcpRequest = {
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: 'add_memories',
-          arguments: { text: content }
-        }
-      };
-      
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.client['apiKey']
-        },
-        body: JSON.stringify(mcpRequest)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to add memory: ${response.statusText}`);
-      }
-      
-      return response.json();
-    } catch (error) {
-      throw new Error(`Failed to add memory: ${error}`);
-    }
+    const user_id = (this.client as any)._getUserIdFromToken(user_token);
+    return (this.client as any)._makeMcpRequest(user_id, 'add_memories', { text: content });
   }
   
-  async search_memory(options: { user_token: string; query: string; limit?: number }): Promise<any> {
+  public search_memory = async (options: { user_token: string; query: string; limit?: number }): Promise<any> => {
     const { user_token, query, limit = 10 } = options;
-    
-    try {
-      // Extract user_id from token
-      let user_id: string;
-      try {
-        const payload = JSON.parse(atob(user_token.split('.')[1]));
-        user_id = payload.sub || user_token;
-      } catch {
-        user_id = user_token;
-      }
-      
-      const mcpRequest = {
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: 'search_memory',
-          arguments: { query }
-        }
-      };
-      
-      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.client['apiKey']
-        },
-        body: JSON.stringify(mcpRequest)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to search memory: ${response.statusText}`);
-      }
-      
-      return response.json();
-    } catch (error) {
-      throw new Error(`Failed to search memory: ${error}`);
-    }
+    const user_id = (this.client as any)._getUserIdFromToken(user_token);
+    return (this.client as any)._makeMcpRequest(user_id, 'search_memory', { query, limit });
   }
 }
 
@@ -257,9 +203,6 @@ export class JeanAgent {
     throw new Error('process() is deprecated. Use JeanClient.getContext() instead.');
   }
 
-  /**
-   * Create Next.js API route handler
-   */
   createHandler() {
     return async (req: any, res: any) => {
       if (req.method !== 'POST') {
@@ -284,12 +227,8 @@ export class JeanAgent {
   }
 
   private async getUserFromToken(token: string) {
-    // Extract user info from the Jean Memory token
-    // This would validate the token and return user details
     const cleanToken = token.replace('Bearer ', '');
-    
-    // For now, we'll extract from JWT payload (simplified)
-    const payload = JSON.parse(atob(cleanToken.split('.')[1]));
+    const payload = JSON.parse(Buffer.from(cleanToken.split('.')[1], 'base64').toString('utf8'));
     return {
       user_id: payload.sub,
       email: payload.email
@@ -297,8 +236,5 @@ export class JeanAgent {
   }
 }
 
-// Export types
 export type { JeanClientConfig, GetContextOptions, ContextResponse, JeanAgentConfig };
-
-// Default export
 export default JeanClient;

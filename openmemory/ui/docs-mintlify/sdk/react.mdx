@@ -79,6 +79,12 @@ const {
   clearConversation: () => void,
   setUser: (user: JeanUser) => void,
   signOut: () => void,
+
+  // Tools
+  tools: {
+    add_memory: (content: string) => Promise<any>;
+    search_memory: (query: string) => Promise<any>;
+  };
 } = useJean();
 ```
 
