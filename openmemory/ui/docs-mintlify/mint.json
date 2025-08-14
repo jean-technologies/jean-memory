@@ -44,18 +44,9 @@
       "group": "SDK",
       "pages": [
         "sdk/overview",
-        {
-          "group": "React",
-          "pages": ["sdk/react"]
-        },
-        {
-          "group": "Python",
-          "pages": ["sdk/python"]
-        },
-        {
-          "group": "Node.js",
-          "pages": ["sdk/nodejs"]
-        }
+        "sdk/react",
+        "sdk/python",
+        "sdk/nodejs"
       ]
     },
     {

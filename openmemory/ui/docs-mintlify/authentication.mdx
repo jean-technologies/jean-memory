@@ -62,4 +62,8 @@ This is a more involved flow that requires server-side handling of secrets.
 4.  **Access API:** Your service can now use the `access_token` to make authenticated requests to the Jean Memory API on the user's behalf.
 5.  **Refresh Token:** When the `access_token` expires, use the `refresh_token` to obtain a new one without requiring the user to log in again.
 
-For detailed instructions on implementing this flow, please consult standard OAuth 2.1 documentation and contact our support team for your `client_id` and `client_secret`.
+<Info>
+  **Getting Credentials:** The server-to-server flow is intended for trusted partners and high-volume applications. Please contact our team to discuss your use case and receive a `client_id` and `client_secret`.
+</Info>
+
+For detailed instructions on implementing this flow, please consult standard OAuth 2.1 documentation.

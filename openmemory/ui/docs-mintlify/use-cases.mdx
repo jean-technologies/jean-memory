@@ -2,7 +2,6 @@
 title: Example Use Cases
 description: "See what's possible when your AI has a perfect memory."
 ---
-
 import { Card, Cards } from 'mintlify/components';
 
 Jean Memory is more than just a chatbot enhancement; it's a foundational layer for building next-generation AI applications. Below are a few examples to inspire you.
@@ -11,99 +10,29 @@ Jean Memory is more than just a chatbot enhancement; it's a foundational layer f
 We are actively building out interactive, live-code examples for these use cases. Stay tuned!
 </Note>
 
----
+<Cards>
+  <Card
+    title="The Truly Agentic AI"
+    icon="robot"
+  >
+    An AI agent's ability to perform complex, multi-step tasks is directly limited by the quality of its context. With Jean Memory, your agent has access to the user's entire project history, enabling it to reason and act with unprecedented intelligence.
 
-## 1. The Truly Agentic AI
+    **Example:** An AI project manager that can autonomously draft a full project plan based on a user's scattered notes and previous conversations.
+  </Card>
+  <Card
+    title="The Personalized AI Tutor"
+    icon="graduation-cap"
+  >
+    Imagine an AI tutor that remembers every one of a student's past questions, struggles, and successes. It could adapt its teaching style in real-time and create practice problems that target specific knowledge gaps.
+    
+    **Example:** An AI language tutor that notices a student consistently makes the same grammatical error and proactively creates a mini-lesson to address it.
+  </Card>
+  <Card
+    title="The Proactive Personal Assistant"
+    icon="user-shield"
+  >
+    By connecting to a user's calendar, email, and other data sources, a personal assistant powered by Jean Memory can move from being reactive to proactive. It can anticipate needs and offer help before the user even thinks to ask.
 
-An AI agent's ability to perform complex, multi-step tasks is directly limited by the quality of its context. With Jean Memory, your agent has access to the user's entire project history, enabling it to reason and act with unprecedented intelligence.
-
-**Use Case:** An AI project manager that can autonomously draft a full project plan based on a user's scattered notes, previous conversations, and connected documents.
-
-```python {{ title: "agent.py" }}
-# This is a simplified, conceptual example
-
-class ProjectManagerAgent:
-    def __init__(self, user_token):
-        self.jean = JeanClient(api_key=os.environ["JEAN_API_KEY"])
-        self.user_token = user_token
-
-    def create_project_plan(self, objective):
-        # Get deep context on the entire project
-        context = self.jean.get_context(
-            user_token=self.user_token,
-            message=f"Give me all context related to '{objective}'",
-            strategy="comprehensive_analysis" 
-        )
-
-        # Use the rich context to draft a plan
-        prompt = f"""
-        Context: {context.text}
-        Objective: {objective}
-        ---
-        Based on all the provided context, generate a detailed project plan with phases, milestones, and potential risks.
-        """
-        return call_llm(prompt)
-
-```
-
----
-
-## 2. The Personalized AI Tutor
-
-Imagine an AI tutor that remembers every one of a student's past questions, struggles, and successes. It could adapt its teaching style in real-time, explain concepts in a way the student understands, and create practice problems that target specific knowledge gaps.
-
-**Use Case:** An AI language tutor that notices a student consistently makes the same grammatical error and proactively creates a mini-lesson to address it.
-
-```typescript {{ title: "tutor.ts" }}
-// This is a simplified, conceptual example
-
-async function getTutorResponse(studentToken, latestMessage) {
-  const context = await jean.getContext({
-    user_token: studentToken,
-    message: latestMessage
-  });
-
-  const prompt = `
-    Student's historical context (strengths, weaknesses, etc.): 
-    ${context.text}
-    ---
-    Student's latest message: ${latestMessage}
-    ---
-    Based on the student's history and latest message, provide a helpful and personalized response. If you notice a recurring mistake in their history, gently correct it and provide a brief explanation.
-  `;
-
-  return callLLM(prompt);
-}
-```
-
----
-
-## 3. The Proactive Personal Assistant
-
-By connecting to a user's calendar, email, and other data sources, a personal assistant powered by Jean Memory can move from being reactive to proactive. It can anticipate needs and offer help before the user even thinks to ask.
-
-**Use Case:** An AI assistant that sees an upcoming flight in a user's calendar, cross-references it with their email for the booking confirmation, and proactively asks, "I see your flight to London is tomorrow. Would you like me to check for delays or arrange a taxi to the airport?"
-
-```javascript {{ title: "assistant.js" }}
-// This is a simplified, conceptual example
-
-async function checkForProactiveTasks(userToken) {
-  // Jean Memory can be configured to scan connected sources
-  // and create "insight memories" in the background.
-  
-  const insightContext = await jean.getContext({
-    user_token: userToken,
-    message: "Are there any upcoming events I should be aware of?"
-  });
-
-  if (insightContext.text.includes("upcoming flight")) {
-    const prompt = `
-      Context: ${insightContext.text}
-      ---
-      This user has an upcoming flight. Generate a helpful, proactive message offering assistance.
-    `;
-    const suggestion = await callLLM(prompt);
-    sendNotification(suggestion);
-  }
-}
-```
+    **Example:** An AI assistant that sees an upcoming flight and proactively asks, "I see your flight to London is tomorrow. Would you like me to check for delays?"
+  </Card>
+</Cards>

@@ -1,70 +1,68 @@
 ---
 title: Context Engineering
-description: "How Jean Memory intelligently orchestrates context to power your AI."
+description: "How Jean Memory intelligently orchestrates context."
 ---
 
-## The Core Philosophy: Engineering, Not Retrieval
+## Context Engineering, Not Information Retrieval
 
-Jean Memory's power doesn't come from just storing and retrieving data—it comes from **Context Engineering**.
+Jean Memory's core philosophy is **Context Engineering**, not just Information Retrieval. This means the system doesn't just store and retrieve memories—it intelligently engineers context for your AI assistant. This is the key to making AI truly personal and useful.
 
-This is the sophisticated process of selecting the *right* information at the *right* time, synthesizing insights from disparate memories, and predicting what context will be most useful for your AI. This is what allows an application to feel truly personal and intelligent.
+The system is designed to:
+-   Select the *right* information at the *right* time.
+-   Synthesize insights from disparate memories.
+-   Understand relationships between memories.
+-   Predict what context will be most useful.
 
-This approach is inspired by Rich Sutton's "The Bitter Lesson," which argues that general-purpose methods that leverage computation are ultimately the most effective. We use AI to decide what to remember, what context is relevant, and how to create new insights automatically.
+This is a continuous process. Memories are constantly being saved and analyzed in the background. When a query comes in, the system intelligently decides whether new context is required and, if so, what depth of search is necessary to provide the most relevant response.
 
-## The Context API: An Engine of Engines
+## The Orchestration Engine
 
-When your application calls `jean.getContext()`, it's not just fetching a document. It's kicking off a powerful orchestration process managed by our Context API. This API is an "engine of engines" that intelligently manages multiple underlying services to build the perfect context.
+The `jean_memory` API is the heart of the system. It's the primary interface for your AI to interact with the memory layer, orchestrating various underlying functions to provide the right context at the right depth.
 
 ```mermaid
 graph TD;
-    subgraph "Your Application"
-        direction LR
-        A[SDK Call: `getContext()`]
+    subgraph "Jean Memory Tool"
+        jean_memory["jean_memory (API)"]
     end
 
-    subgraph "Jean Memory Context API"
+    subgraph "Read (Retrieval)"
         direction TB
-        B[Context Orchestrator]
-        C{Selects Strategy}
-        D[Fast Path: Vector Search]
-        E[Deep Path: Graph Analysis]
-        F[Synthesizes Final Context]
+        jean_memory --> retrieval_strategies["Retrieval Strategies"];
+        
+        subgraph "Layers of Depth"
+            retrieval_strategies --> shallow["Shallow Search<br/><i>Fast, Targeted</i>"];
+            retrieval_strategies --> deep["Deep Search<br/><i>Comprehensive</i>"];
+        end
+
+        subgraph "Underlying Tools"
+            shallow --> search_memory_shallow["search_memory"];
+            deep --> search_memory_deep["search_memory"];
+            deep --> deep_memory_query["deep_memory_query"];
+        end
     end
-    
-    A --> B;
-    B --> C;
-    C --> D;
-    C --> E;
-    D --> F;
-    E --> F;
 
-    style A fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
-    classDef jean fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
-    class B,C,D,E,F jean;
+    subgraph "Write (Storage)"
+        direction TB
+        jean_memory --> write_processor["Background Processor"];
+        write_processor --> add_memory["add_memory"];
+        write_processor --> store_document["store_document"];
+    end
+
+    classDef api fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef read fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef write fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef tools fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
+
+    class jean_memory api;
+    class retrieval_strategies,shallow,deep read;
+    class write_processor,add_memory,store_document write;
+    class search_memory_shallow,search_memory_deep,deep_memory_query tools;
 ```
-
-### The Dual-Path Process
-
-To ensure a fast user experience while performing deep analysis, the process is split:
-
-1.  **Immediate Path (< 3 seconds):** When your request hits our API, we instantly perform a fast vector search to get the most relevant context and return it to you immediately. Your user never waits.
-
-2.  **Background Path (Asynchronous):**
-    *   **Smart Triage:** In the background, a fast AI model (like Gemini Flash) analyzes every user message to decide if it's meaningful enough to be saved as a new memory. This prevents "clutter."
-    *   **Deep Analysis:** For complex queries, the engine might also kick off a deeper analysis, traversing our knowledge graph to find hidden relationships and create new, high-level "insight memories" that will be available for future queries.
 
 ### Context Strategies
 
-The `SmartContextOrchestrator` is the brain behind the API. It intelligently chooses from several strategies to build the best context for any situation:
+The orchestrator uses different strategies to create the best possible context for the AI.
 
-*   **`deep_understanding`:** Used for new conversations to provide a comprehensive overview of a user and their history.
-*   **`relevant_context`:** The standard mode for ongoing conversations, providing targeted, relevant information based on the immediate conversational history.
-*   **`comprehensive_analysis`:** Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
-
-## Your Logic, Our Engine
-
-While we provide powerful, pre-built context strategies, we understand that advanced applications have unique needs. Our platform is built to be extensible.
-
-**We are currently developing capabilities to allow developers to define their own custom context engineering flows.**
-
-If you have a unique challenge that requires a bespoke context strategy—such as a specific way of ranking financial data or a custom logic for educational content—please reach out to our solutions team. We are actively looking for partners to help us build the future of context engineering.
+1.  **`deep_understanding`**: Used for new conversations to provide comprehensive context about the user.
+2.  **`relevant_context`**: Used for ongoing conversations to provide targeted, relevant information.
+3.  **`comprehensive_analysis`**: Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.

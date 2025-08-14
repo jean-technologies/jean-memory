@@ -1,46 +1,36 @@
 ---
 title: Architecture
-description: "A look under the hood at our sophisticated context engineering engine."
+description: "A look under the hood at our intelligent memory system."
 ---
+import { Card } from 'mintlify/components';
 
-## The Pyramid of Integration
+## More Than a Database: An Intelligent Memory System
 
-Our platform is designed as a pyramid, allowing you to integrate at the layer that best suits your needs. While most developers will use our powerful SDKs, you have the flexibility to access deeper layers of the system if required.
+At Jean Memory, our core philosophy is **Context Engineering, not just Information Retrieval**. While many systems can store and retrieve data, our goal is to build an intelligent memory system that mirrors the human brain—understanding, synthesizing, and anticipating what you need to know.
 
-```mermaid
-graph TD
-    D[**Layer 4: The Appliance**<br/>Optional UI Component<br/>`@jeanmemory/react`] --> C;
-    C[**Layer 3: The SDK**<br/>The Developer's Power Cord<br/>`@jeanmemory/node`] --> B;
-    B[**Layer 2: The Context API**<br/>The Engine's Entrypoint<br/>`POST /v1/context/enhance`] --> A;
-    A[**Layer 1: The Foundation**<br/>Core Infrastructure<br/>`Tri-Database & Engineering Services`]
+To achieve this, we've built our system on a unique tri-database architecture, where each component is chosen for its specific strengths. This allows us to handle the complex demands of AI memory far more effectively than a single database could.
 
-    style D fill:#c9d1d9,stroke:#1e293b,stroke-width:2px
-    style C fill:#9fb0c4,stroke:#1e293b,stroke-width:2px
-    style B fill:#708090,stroke:#1e293b,stroke-width:2px
-    style A fill:#475569,stroke:#1e293b,stroke-width:2px
-```
+### The Tri-Database Stack
 
--   **Layer 1 (The Foundation):** The core infrastructure, including our specialized database stack and context engineering services.
--   **Layer 2 (The Context API):** The primary, centralized API endpoint that our SDKs communicate with. All the magic happens here.
--   **Layer 3 (The SDK):** **This is the primary product for developers.** A headless, language-specific wrapper that makes it simple to call the Context API.
--   **Layer 4 (The Appliance):** An optional, pre-built UI component (`JeanChat`) for the fastest possible visual integration.
+<Card title="Qdrant (Vector DB for RAG)" icon="rocket">
+  **For semantic search and relevance.** We use Qdrant for Retrieval-Augmented Generation (RAG). It's powerful and quick, allowing us to perform lightning-fast semantic searches to find the most contextually similar information.
+</Card>
 
-## The Tri-Database Design
+<Card title="Neo4j (Graph DB for Relationships)" icon="code-branch">
+  **For understanding connections.** We use Neo4j to build a rich knowledge graph of the entities and relationships within a user's memories. Graph databases enable the forming of connections between information, so you see the full picture.
+</Card>
 
-To deliver powerful, real-time context, we use a specialized, multi-database architecture. We use the right tool for every job.
+<Card title="PostgreSQL (Relational DB for Metadata)" icon="database">
+  **For structured data and reliability.** All of the metadata associated with your memories, users, and applications is stored in a robust PostgreSQL database. This ensures data integrity and provides a reliable foundation for the entire system.
+</Card>
 
--   **PostgreSQL:** The reliable foundation for structured metadata like users, memories, and applications.
--   **Qdrant (Vector DB):** Used for lightning-fast semantic search and relevance ranking (RAG).
--   **Neo4j (Graph DB):** The key to our deep understanding. It maps the relationships and connections between memories, allowing for sophisticated reasoning.
+<img src="/logo/graph-system.png" alt="Jean Memory Graph System" class="mt-6"/>
 
-## Introduction to Context Engineering
+### The Future of Intelligent Memory
+Our system is designed to intelligently manage memory over time, much like the human brain. This includes:
 
-This is our key differentiator. We don't just fetch data; we **engineer context**. This is a sophisticated process that transforms raw, noisy data into a coherent, relevant block of information that your LLM can actually use.
+- **De-duplication:** To prevent your memory from becoming crowded.
+- **Self-Organization:** Rearranging and optimizing data during periods of unuse, similar to how the human brain processes information during sleep.
+- **Intelligent Orchestration:** Deciding whether, how much, and what context is relevant to respond well to a user, doing all the thinking under the hood.
 
-Our engine uses several strategies, including:
-
--   **Smart Triage:** An AI-powered filter that decides what information is meaningful enough to remember in the first place.
--   **Dual-Path Processing:** A fast, immediate search for instant context, followed by a deeper, asynchronous analysis that creates new "insight memories."
--   **Strategic Orchestration:** Dynamically choosing the right context-building strategy based on the user's query and needs.
-
-For a full deep-dive, see the [Context Engineering](/context-engineering) page.
+This combination of a powerful, multi-database backend and a sophisticated intelligence layer is what makes Jean Memory a true context engine.

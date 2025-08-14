@@ -1,47 +1,33 @@
 ---
 title: "SDK Overview"
-description: "An overview of our modular SDKs, designed for maximum flexibility and power."
+description: "Our SDKs: The right tool for every part of your stack."
 ---
+import { Card, Cards } from 'mintlify/components';
 
-## The Two-Layer SDK Model
+We provide a suite of specialized SDKs, each designed for a specific part of the modern application stack. This lets you use the right tool for the job, whether you're building a user interface or a backend agent.
 
-To support both headless and UI-based integrations, our SDKs are designed with a modular, two-layer architecture. This allows you to choose the perfect level of abstraction for your project.
-
-<Card
-  title="The Core SDK (e.g., @jeanmemory/node)"
-  icon="code-branch"
-  href="/sdk/nodejs">
-  A headless, UI-agnostic library that provides direct access to our Context API. Its primary method is `getContext()`. This is the product for most backend developers who want to integrate Jean's context into their existing agents or LLM calls.
-</Card>
-
-<Card
-  title="The UI SDK (e.g., @jeanmemory/react)"
-  icon="react"
-  href="/sdk/react">
-  An optional wrapper around the Core SDK that provides pre-built React components like `<JeanProvider>` and `<JeanChat />` for the fastest possible visual integration. It's the perfect choice for developers who want a "Chatbase-like" experience out of the box.
-</Card>
-
-## Supported Languages
-
-Click on a language below to dive into the detailed documentation for that SDK.
+## The SDKs
 
 <Cards>
   <Card
-    title="React"
+    title="React SDK"
     icon="react"
     href="/sdk/react"
   >
+    **For the Frontend.** The React SDK is designed for building user-facing components. It includes the `<JeanChat />` appliance for instant setup and the `useJean` hook for building custom UIs. Its main job is to handle the UI and secure user authentication.
   </Card>
   <Card
-    title="Python"
-    icon="python"
-    href="/sdk/python"
-  >
-  </Card>
-  <Card
-    title="Node.js"
+    title="Node.js SDK"
     icon="node"
     href="/sdk/nodejs"
   >
+    **For the Backend.** The Node.js SDK is a headless library for your server. It's built to be used in API routes and serverless functions to fetch context for your LLM calls. It's the bridge between your application logic and the Jean Memory engine.
+  </Card>
+    <Card
+    title="Python SDK"
+    icon="python"
+    href="/sdk/python"
+  >
+    **For Backend & Data Science.** The Python SDK is also a headless library, perfect for backend agents, data processing pipelines, and Jupyter notebooks. If your AI logic is in Python, this is the SDK for you.
   </Card>
 </Cards>

@@ -2,30 +2,96 @@
 title: Quickstart
 description: "Go from zero to a fully context-aware AI application in 5 minutes."
 ---
-
-import { Card, Cards } from 'mintlify/components';
-
-<Note>
-Want to just start building? We've consolidated all of our documentation into a single file for you to copy and paste into your favorite AI coding tool.
-
-<a href="/assets/consolidated-docs.md" download="jean_memory_docs.md" className="button-mint">
-  Download All Docs
-</a>
-</Note>
+import { CodeGroup } from 'mintlify/components';
 
 Choose your path to get started. Whether you want a complete UI out of the box or a powerful backend library, we have you covered.
 
-<Cards>
-  <Card
-    title="Add an AI Chatbot to Your React App"
-    icon="react"
-    href="/sdk/react">
-    The fastest way to get a full-featured, context-aware chatbot running in your application.
-  </Card>
-  <Card
-    title="Add Context to Your Backend Agent"
-    icon="code"
-    href="/sdk/nodejs">
-    For developers who want to power their existing AI agents with our headless SDK.
-  </Card>
-</Cards>
+<CodeGroup>
+```jsx {{ title: 'UI Appliance' }}
+// 1. Install the React SDK
+// npm install @jeanmemory/react
+
+// 2. Wrap your app in the provider
+import { JeanProvider } from '@jeanmemory/react';
+function App({ children }) {
+  return (
+    <JeanProvider>
+      {children}
+    </JeanProvider>
+  );
+}
+
+// 3. Add the chat component
+import { JeanChat } from '@jeanmemory/react';
+function MyPage() {
+  return <JeanChat />;
+}
+```
+```python {{ title: 'Headless Backend' }}
+# 1. Install the Python SDK
+# pip install jeanmemory openai
+
+# 2. Get context before calling your LLM
+import os
+from jeanmemory import JeanClient
+from openai import OpenAI
+
+jean = JeanClient(api_key=os.environ["JEAN_API_KEY"])
+openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+context = jean.get_context(
+    user_token="USER_TOKEN_FROM_FRONTEND",
+    message="What was our last conversation about?"
+).text
+
+prompt = f"Context: {context}\\n\\nUser question: What was our last conversation about?"
+
+# 3. Use the context in your LLM call
+completion = openai.chat.completions.create(
+    model="gpt-4-turbo",
+    messages=[{"role": "user", "content": prompt}]
+)
+```
+</CodeGroup>
+
+<br/>
+<Tip>
+Want to just start building? We've consolidated all of our documentation into a single file.
+<button
+  id="copyDocsBtn"
+  className="bg-primary-light text-white font-bold py-1 px-2 rounded text-xs ml-2"
+>
+  Copy All Docs
+</button>
+</Tip>
+
+<script
+  dangerouslySetInnerHTML={{
+    __html: `
+      const copyToClipboard = (text) => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(() => {
+            console.log('Docs copied to clipboard');
+          }, (err) => {
+            console.error('Failed to copy: ', err);
+          });
+        }
+      };
+
+      const btn = document.getElementById('copyDocsBtn');
+      if (btn) {
+        btn.onclick = () => {
+          fetch('/assets/consolidated-docs.md')
+            .then(response => response.text())
+            .then(data => {
+              copyToClipboard(data);
+              btn.innerHTML = 'Copied!';
+              setTimeout(() => {
+                btn.innerHTML = 'Copy All Docs';
+              }, 2000);
+            });
+        };
+      }
+    `,
+  }}
+/>
