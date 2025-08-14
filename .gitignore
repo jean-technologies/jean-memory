@@ -43,3 +43,4 @@ chaos-testing/react-chaos-app/node_modules/
 *.tgz
 dist/
 coverage/
+*.egg-info/
