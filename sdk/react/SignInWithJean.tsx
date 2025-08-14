@@ -3,9 +3,7 @@
  * OAuth 2.1 PKCE authentication flow
  */
 import React, { useEffect, useState } from 'react';
-
-const JEAN_API_BASE = 'https://jean-memory-api-virginia.onrender.com';
-const JEAN_OAUTH_BASE = 'https://jeanmemory.com';
+import { JEAN_API_BASE, JEAN_OAUTH_BASE } from './config';
 
 interface SignInWithJeanProps {
   onSuccess: (user: any) => void;

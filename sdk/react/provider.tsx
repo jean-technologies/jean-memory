@@ -3,8 +3,9 @@
  * Manages authentication state and API client
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { JEAN_API_BASE } from './config';
 
-const JEAN_API_BASE = 'https://jean-memory-api-virginia.onrender.com';
+const JEAN_API_BASE_OLD = 'https://jean-memory-api-virginia.onrender.com';
 
 interface JeanUser {
   user_id: string;
@@ -101,6 +102,9 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     setIsLoading(true);
     setError(null);
 
+    // Extract configuration options with defaults
+    const { speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
+
     try {
       // Add user message to conversation
       const userMessage: JeanMessage = {
@@ -111,17 +115,34 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       };
       setMessages(prev => [...prev, userMessage]);
 
-      // Use MCP endpoint to get context
-      const response = await fetch(`${JEAN_API_BASE}/api/v1/sdk/mcp/chat`, {
+      // Use MCP endpoint with configuration
+      const mcpRequest = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: tool,
+          arguments: tool === 'jean_memory' ? {
+            user_message: message,
+            is_new_conversation: false,
+            needs_context: true,
+            speed: speed,
+            format: format
+          } : {
+            query: message,
+            speed: speed,
+            format: format
+          }
+        }
+      };
+
+      const response = await fetch(`${JEAN_API_BASE}/mcp/messages/${user.user_id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-API-Key': apiKey
         },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: message }],
-          user_id: user.user_id
-        })
+        body: JSON.stringify(mcpRequest)
       });
 
       if (!response.ok) {
@@ -130,11 +151,18 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
 
       const data = await response.json();
       
+      if (data.error) {
+        throw new Error(`MCP Error: ${data.error.message}`);
+      }
+      
+      // Extract text from MCP response
+      const resultText = data.result?.content?.[0]?.text || 'I understood and saved that information.';
+      
       // Add assistant response to conversation
       const assistantMessage: JeanMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || data.text || 'I understood and saved that information.',
+        content: resultText,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);

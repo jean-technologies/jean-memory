@@ -76,7 +76,7 @@ export class JeanClient {
         user_id = user_token; // Fallback
       }
       
-      // Use MCP endpoint
+      // Use MCP endpoint with configuration
       const mcpRequest = {
         jsonrpc: '2.0',
         id: Date.now(),
@@ -86,9 +86,13 @@ export class JeanClient {
           arguments: tool === 'jean_memory' ? {
             user_message: message,
             is_new_conversation: false,
-            needs_context: true
+            needs_context: true,
+            speed: speed,  // Pass speed parameter
+            format: format  // Pass format parameter
           } : {
-            query: message
+            query: message,
+            speed: speed,
+            format: format
           }
         }
       };

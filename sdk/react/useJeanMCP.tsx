@@ -4,8 +4,7 @@
  * Uses the jean_memory MCP tool directly (same as Claude Desktop/Cursor)
  */
 import { useState, useCallback } from 'react';
-
-const JEAN_API_BASE = 'https://jean-memory-api-virginia.onrender.com';
+import { JEAN_API_BASE } from './config';
 
 interface JeanUser {
   user_id: string;

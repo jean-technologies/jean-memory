@@ -88,20 +88,29 @@ class JeanClient:
             except:
                 user_id = user_token  # Fallback if not JWT
             
-            # Use MCP jean_memory tool
+            # Use MCP jean_memory tool with configuration
+            if tool == "jean_memory":
+                arguments = {
+                    "user_message": message,
+                    "is_new_conversation": False,
+                    "needs_context": True,
+                    "speed": speed,  # Pass speed parameter
+                    "format": format  # Pass format parameter
+                }
+            else:  # search_memory
+                arguments = {
+                    "query": message,
+                    "speed": speed,
+                    "format": format
+                }
+            
             mcp_request = {
                 "jsonrpc": "2.0",
                 "id": 1,
                 "method": "tools/call",
                 "params": {
                     "name": tool,
-                    "arguments": {
-                        "user_message": message,
-                        "is_new_conversation": False,
-                        "needs_context": True
-                    } if tool == "jean_memory" else {
-                        "query": message
-                    }
+                    "arguments": arguments
                 }
             }
             
