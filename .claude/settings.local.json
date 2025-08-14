@@ -4,7 +4,12 @@
       "WebFetch(domain:jean-memory-api-virginia.onrender.com)",
       "Bash(chmod:*)",
       "Bash(pip install:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(cd:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npm install:*)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
