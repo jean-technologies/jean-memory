@@ -8,14 +8,14 @@ import { makeMCPRequest } from './mcp';
 
 const JEAN_API_BASE_OLD = 'https://jean-memory-api-virginia.onrender.com';
 
-interface JeanUser {
+export interface JeanUser {
   user_id: string;
   email: string;
   name?: string;
   access_token: string;
 }
 
-interface JeanMessage {
+export interface JeanMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -37,6 +37,7 @@ interface JeanContextValue {
   clearConversation: () => void;
   setUser: (user: JeanUser) => void;
   signOut: () => void;
+  setError: (error: string | null) => void;
   
   // Tools
   tools: {
@@ -48,7 +49,7 @@ interface JeanContextValue {
   apiKey?: string;
 }
 
-interface MessageOptions {
+export interface MessageOptions {
   speed?: 'fast' | 'balanced' | 'comprehensive';
   tool?: 'jean_memory' | 'search_memory';
   format?: 'simple' | 'enhanced';
@@ -65,17 +66,17 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   const [user, setUser] = useState<JeanUser | null>(null);
   const [messages, setMessages] = useState<JeanMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [rawError, setRawError] = useState<string | null>(null);
 
   // Validate API key on mount
   useEffect(() => {
     if (!apiKey) {
-      setError('API key is required');
+      setRawError('API key is required');
       return;
     }
     
     if (!apiKey.startsWith('jean_sk_')) {
-      setError('Invalid API key format');
+      setRawError('Invalid API key format');
       return;
     }
 
@@ -101,7 +102,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }
 
     setIsLoading(true);
-    setError(null);
+    setRawError(null);
 
     // Extract configuration options with defaults
     const { speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
@@ -141,16 +142,16 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      setError(errorMessage);
+      setRawError(errorMessage);
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const storeDocument = async (title: string, content: string) => {
+  const storeDocument = async (title: string, content: string): Promise<void> => {
     if (!user) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
     const response = await makeMCPRequest(user, apiKey, 'store_document', {
       title,
@@ -160,7 +161,6 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     if (response.error) {
       throw new Error(response.error.message);
     }
-    return response;
   };
 
   const connect = (service: 'notion' | 'slack' | 'gdrive') => {
@@ -203,6 +203,10 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     localStorage.removeItem('jean_user');
   };
 
+  const setError = (error: string | null) => {
+    setRawError(error);
+  };
+
   const tools = {
     add_memory: async (content: string) => {
       if (!user) throw new Error('User not authenticated');
@@ -223,13 +227,13 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }
   };
 
-  const value: JeanContextValue = {
+  const contextValue: JeanContextValue = {
     // State
     isAuthenticated: !!user,
     user,
     messages,
     isLoading,
-    error,
+    error: rawError,
     
     // Methods
     sendMessage,
@@ -238,6 +242,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     clearConversation,
     setUser: handleSetUser,
     signOut,
+    setError: setRawError,
     
     // Tools
     tools,
@@ -247,7 +252,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   };
 
   return (
-    <JeanContext.Provider value={value}>
+    <JeanContext.Provider value={contextValue}>
       {children}
     </JeanContext.Provider>
   );

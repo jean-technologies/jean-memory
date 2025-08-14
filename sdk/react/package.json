@@ -24,6 +24,7 @@
   "author": "Jean Memory",
   "license": "MIT",
   "dependencies": {
+    "lucide-react": "^0.395.0"
   },
   "peerDependencies": {
     "react": "^18.0.0",
