@@ -10,33 +10,46 @@ Computers have no memory of their interactions with users. Every conversation st
 Our goal is to provide developers with the rich, personal context they need to make their AI applications truly intelligent. We are a specialized tool that integrates into your existing stack.
 
 ```mermaid
-graph TD;
-    subgraph "User's Applications"
-        mobile["Mobile App<br/><i>React SDK</i>"];
-        web["Web Dashboard<br/><i>React SDK</i>"];
-        agent["Chat Agent<br/><i>Python SDK</i>"];
-        api["API Service<br/><i>Node.js SDK</i>"];
+graph TD
+    subgraph "Data Sources & Integrations"
+        direction TB
+        I1[Notion]
+        I2[Substack]
+        I3[Website Scraping]
+        I4[File Uploads]
     end
 
-    subgraph "Jean Memory"
-        memory["User's Shared Memory<br/><i>Conversations, Documents, Connections</i>"];
+    subgraph "Jean Memory Platform"
+        M[("User's Shared Memory<br/>(Conversations, Documents, Connections)")]
     end
 
-    mobile --> memory;
-    web --> memory;
-    agent --> memory;
-    api --> memory;
+    subgraph "Your Applications (SDKs)"
+        direction TB
+        A1["Mobile App<br/>(React SDK)"]
+        A2["Web Dashboard<br/>(React SDK)"]
+        A3["Chat Agent<br/>(Python SDK)"]
+        A4["API Service<br/>(Node.js SDK)"]
+    end
 
-    memory --> mobile;
-    memory --> web;
-    memory --> agent;
-    memory --> api;
+    I1 --> M
+    I2 --> M
+    I3 --> M
+    I4 --> M
 
-    classDef api fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
-    classDef read fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+    M --> A1
+    M --> A2
+    M --> A3
+    M --> A4
 
-    class memory api;
-    class mobile,web,agent,api read;
+    style M fill:#f0f4ff,stroke:#b8c7ff,stroke-width:2px
+    style A1 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style A2 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style A3 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style A4 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style I1 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+    style I2 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+    style I3 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+    style I4 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
 ```
 
 ### How It Works

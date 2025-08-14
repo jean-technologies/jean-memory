@@ -33,6 +33,79 @@ The Jean Memory SDK ecosystem has undergone comprehensive refactoring and optimi
 
 ---
 
+## 🏛️ System Architecture & State
+
+Here is a simplified diagram of the Jean Memory ecosystem, showing how various data sources and applications interact with the central shared memory.
+
+```mermaid
+graph TD
+    subgraph "Data Sources & Integrations"
+        direction TB
+        I1[Notion]
+        I2[Substack]
+        I3[Website Scraping]
+        I4[File Uploads]
+    end
+
+    subgraph "Jean Memory Platform"
+        M[("User's Shared Memory<br/>(Conversations, Documents, Connections)")]
+    end
+
+    subgraph "Your Applications (SDKs)"
+        direction TB
+        A1["Mobile App<br/>(React SDK)"]
+        A2["Web Dashboard<br/>(React SDK)"]
+        A3["Chat Agent<br/>(Python SDK)"]
+        A4["API Service<br/>(Node.js SDK)"]
+    end
+
+    I1 --> M
+    I2 --> M
+    I3 --> M
+    I4 --> M
+
+    M --> A1
+    M --> A2
+    M --> A3
+    M --> A4
+
+    style M fill:#f0f4ff,stroke:#b8c7ff,stroke-width:2px
+    style A1 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style A2 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style A3 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style A4 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px
+    style I1 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+    style I2 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+    style I3 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+    style I4 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px
+```
+
+### React SDK State: Professional & Polished
+
+The React SDK, which includes the `JeanChat` and `SignInWithJean` components, is now in a highly polished state.
+
+*   **UI/UX**: The components have been redesigned with a clean, professional aesthetic, replacing emojis with high-quality SVG icons and implementing a consistent dark mode. The UI is now suitable for enterprise-level applications.
+*   **Functionality**: All features, including chat, authentication, and error handling, are fully functional and robust.
+*   **Code Quality**: The codebase has been refactored to resolve all linting and type errors, ensuring it is maintainable and scalable.
+
+### Authentication Flow: OAuth 2.1 PKCE
+
+The React SDK uses the industry-standard **OAuth 2.1 with PKCE (Proof Key for Code Exchange)** for secure authentication. This is the recommended approach for single-page applications (SPAs) as it mitigates authorization code interception attacks.
+
+Here is a step-by-step breakdown of the authentication flow initiated by the `SignInWithJean` component:
+
+1.  **Code Verifier & Challenge Generation**: When a user clicks the "Sign In with Jean" button, the SDK generates a cryptographically random `code_verifier` and a `code_challenge` derived from it.
+2.  **Redirection to Authorization Server**: The user is redirected to the Jean Memory authorization server with the `code_challenge` and a unique `state` parameter for CSRF protection.
+3.  **User Authentication & Consent**: The user authenticates with Jean Memory and authorizes the application to access their data.
+4.  **Authorization Code Grant**: The authorization server redirects the user back to the application with a temporary `authorization_code`.
+5.  **Token Exchange**: The SDK sends the `authorization_code` along with the original `code_verifier` to the token endpoint.
+6.  **Token Issuance**: The server verifies the `code_verifier` against the `code_challenge`. If they match, it issues an `access_token` and `refresh_token`.
+7.  **Authenticated State**: The SDK stores the tokens securely and updates the application state to reflect that the user is authenticated. The `JeanChat` component then becomes active, allowing the user to interact with the AI assistant.
+
+This entire flow is handled automatically by the `SignInWithJean` component, providing a seamless and secure authentication experience for the end-user.
+
+---
+
 ## 🔧 Architecture Overview
 
 ### Unified MCP Integration Pattern
