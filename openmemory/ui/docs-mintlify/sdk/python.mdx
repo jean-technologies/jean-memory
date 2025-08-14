@@ -64,6 +64,13 @@ print(completion.choices[0].message.content)
 
 ```
 
+This code block demonstrates the complete "golden path" for using the headless Python SDK. Here's a step-by-step breakdown:
+1.  **Initialization**: It creates instances of the `JeanClient` and a large language model client (in this case, `OpenAI`).
+2.  **Authentication**: It retrieves a `user_token` that your frontend would have acquired through the OAuth sign-in flow. This token is crucial as it identifies the user whose memory you want to access.
+3.  **Context Retrieval**: It calls `jean.get_context()`, sending the user's token and their latest message. This is the core of the integration, where Jean Memory performs its context engineering.
+4.  **Prompt Engineering**: It constructs a final prompt for the LLM, strategically placing the retrieved context before the user's actual question. This gives the LLM the necessary background information to provide a relevant, personalized response.
+5.  **LLM Call**: It sends the final, context-rich prompt to the LLM to get the answer.
+
 ### A Note on Authentication
 
 The `user_token` is the critical piece that connects a request to a specific user's memory. In a production application, your frontend should use our React SDK's `<SignInWithJean />` component (or a manual OAuth 2.1 PKCE flow) to authenticate the user and receive this token. Your frontend then passes this token to your backend, which uses it to make authenticated requests with the Python SDK.
@@ -91,3 +98,5 @@ search_results = jean.tools.search_memory(
     query="what are my preferences?"
 )
 ```
+
+This code illustrates the two ways to interact with the Jean Memory API. The first line shows the primary, orchestrated approach using `get_context`, which handles the complex logic of context engineering for you. The subsequent lines show how to use the `tools` namespace for direct, deterministic control, allowing you to explicitly add or search for memories, bypassing the higher-level orchestration.

@@ -2,17 +2,18 @@
 title: Quickstart
 description: "Add a context-aware AI to your app in minutes."
 ---
+
 import { CodeGroup } from 'mintlify/components';
 
 Choose your path. Add a complete UI component to your frontend or add a powerful context layer to your backend.
 
 <CodeGroup>
-```jsx {{ title: 'UI Appliance (React)' }}
+```jsx {{ title: 'Drop-in UI Component' }}
 // 1. Install the React SDK
-// npm install jeanmemory-react
+// npm install @jeanmemory/react
 
 // 2. Add the provider and chat component
-import { JeanProvider, JeanChat } from 'jeanmemory-react';
+import { JeanProvider, JeanChat } from '@jeanmemory/react';
 
 function MyPage() {
   return (
@@ -22,26 +23,29 @@ function MyPage() {
   );
 }
 ```
-```python {{ title: 'Headless Backend (Python)' }}
+```python {{ title: 'Headless Backend' }}
 # 1. Install the Python SDK
 # pip install jeanmemory openai
 
 # 2. Get context before calling your LLM
+import os
 from jeanmemory import JeanClient
 from openai import OpenAI
 
-jean = JeanClient(api_key="YOUR_JEAN_API_KEY")
-openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
+jean = JeanClient(api_key=os.environ["JEAN_API_KEY"])
+openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 context = jean.get_context(
     user_token="USER_TOKEN_FROM_FRONTEND",
     message="What was our last conversation about?"
 ).text
 
-# 3. Use context in your LLM call
+prompt = f"Context: {context}\\n\\nUser question: What was our last conversation about?"
+
+# 3. Use the context in your LLM call
 completion = openai.chat.completions.create(
     model="gpt-4-turbo",
-    messages=[{"role": "user", "content": f"Context: {context}\\n\\nUser question: What was our last conversation about?"}]
+    messages=[{"role": "user", "content": prompt}]
 )
 ```
 </CodeGroup>
@@ -51,7 +55,20 @@ completion = openai.chat.completions.create(
 Want to just start building? We've consolidated all of our documentation into a single file.
 <button
   id="copyDocsBtn"
-  className="bg-primary text-white font-bold py-1 px-2 rounded text-xs ml-2 hover:bg-primary-dark"
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.5rem 1rem',
+    background: '#7c3aed',
+    color: 'white',
+    border: 'none',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    marginTop: '1rem'
+  }}
 >
   Copy All Docs
 </button>

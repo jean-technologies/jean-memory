@@ -73,6 +73,12 @@ export default async function POST(req: Request) {
 }
 ```
 
+This code sets up a Next.js API route that acts as a secure bridge between your frontend and your language model.
+1.  **Extract Data**: It pulls the latest user message and, most importantly, the `userToken` from the incoming request. This token, acquired by your frontend via OAuth, authorizes access to the user's memory.
+2.  **Fetch Context**: It calls `jean.getContext()`, passing the `userToken` and the user's message to the Jean Memory engine. The engine returns a block of relevant, engineered context.
+3.  **Construct Prompt**: It assembles a final prompt, injecting the context from Jean Memory before the user's actual question. This enriches the LLM's understanding.
+4.  **Stream Response**: It calls the LLM (in this case, OpenAI) with the context-rich prompt and streams the response back to the frontend using the Vercel AI SDK's `StreamingTextResponse`. This provides a responsive, real-time chat experience.
+
 ### Authentication Flow
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
@@ -98,3 +104,5 @@ const search_results = await jean.tools.search_memory({
     query: "project deadlines"
 });
 ```
+
+This code illustrates the two ways to interact with the Jean Memory API. The first line shows the primary, orchestrated approach using `getContext`, which handles the complex logic of context engineering for you. The subsequent lines show how to use the `tools` namespace for direct, deterministic control, allowing you to explicitly add or search for memories, bypassing the higher-level orchestration.

@@ -1,12 +1,25 @@
 ---
 title: "Core Tools"
-description: "The lower-level, deterministic tools that power the Jean Memory engine."
+description: "The building blocks that power the Jean Memory Context Engine."
 ---
 
-While the main `getContext()` API is the recommended way to interact with Jean Memory, the platform is powered by a set of lower-level, deterministic tools. These are the building blocks that our `Context Engineering` layer uses to perform its intelligent orchestration.
+Jean Memory’s core philosophy is **Context Engineering, not just Information Retrieval**. This means the system doesn't just store and retrieve memories—it intelligently engineers context for your AI assistant. Before every reply, it ensures it has all the relevant context needed, and it constantly saves new information to build a richer understanding over time.
 
-For advanced use cases where you need precise control, you can access these tools directly through our SDKs.
+This is made possible by a set of powerful, deterministic tools that act as the building blocks for our intelligent orchestration layer. While `jean_memory` is the primary tool for most interactions, you can use these lower-level tools for more granular control.
 
--   **`add_memories(text, [tags], [priority])`**: Directly adds a new memory to the user's knowledge graph. This bypasses the AI-powered "Smart Triage" and ensures the memory is saved. Useful for explicit "remember this" functionality.
+### Primary Tools
 
--   **`search_memory(query, [limit], [tags_filter])`**: Performs a fast, targeted vector search (RAG) for the most relevant memories. This is the same tool used in the "fast path" of our `getContext` orchestrator and is ideal for quick, semantic lookups.
+These are the essential tools for interacting with Jean Memory. For most use cases, these are all you will need.
+
+-   **`jean_memory(user_message, is_new_conversation, needs_context)`**: The intelligent memory layer that automatically learns from every conversation and provides relevant context when you need it. Simply use this tool and Jean Memory handles everything else.
+-   **`store_document(title, content)`**: Store large documents, files, or lengthy content. Perfect for saving meeting notes, documentation, or articles for future reference.
+
+### Advanced Tools
+
+For advanced use cases where you need precise, deterministic control over the memory layer.
+
+-   **`search_memory(query)`**: Performs a quick keyword search through your memories.
+-   **`ask_memory(question)`**: Asks a simple question about your stored memories.
+-   **`add_memories(text)`**: Manually stores specific information, bypassing the AI-powered "Smart Triage."
+-   **`list_memories()`**: Browses through your stored memories.
+-   **`deep_memory_query(query)`**: Performs a complex analysis across all of your memories to synthesize deeper insights. 

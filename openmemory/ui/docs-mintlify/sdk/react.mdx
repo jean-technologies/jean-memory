@@ -33,6 +33,8 @@ function MyApp({ Component, pageProps }) {
 export default MyApp;
 ```
 
+This code wraps your entire application with the `JeanProvider`. This provider is essential as it manages the connection to Jean Memory, handles authentication, and makes the `useJean` hook available to all its child components. You provide it with your unique API key, which authenticates your application with the Jean Memory service.
+
 ### 2. Add the `JeanChat` Component
 
 This component renders the entire chat interface.
@@ -48,6 +50,8 @@ export default function Home() {
   );
 }
 ```
+
+This code adds the `<JeanChat />` component to your page. It’s a pre-built, fully functional chat interface that handles user input, displays the conversation, and manages the sign-in process. It's the quickest way to integrate a context-aware AI into your application.
 
 That's it! You now have a fully functional, context-aware chatbot in your application. The `<JeanChat />` component will automatically handle authentication using the secure `<SignInWithJean />` flow.
 
@@ -77,6 +81,8 @@ const {
   signOut: () => void,
 } = useJean();
 ```
+
+The `useJean` hook is the core of the React SDK. It provides the state, such as the user's authentication status and conversation messages, and methods to interact with the Jean Memory service, like sending messages or signing out. This hook gives you the building blocks to create a completely custom user experience.
 
 ### Example: Custom Chat UI
 
@@ -132,6 +138,11 @@ function CustomChat() {
 }
 ```
 
+This code demonstrates how to use the `useJean` hook to build a custom chat interface from scratch. It shows how to:
+1.  **Manage Authentication**: It conditionally renders the `<SignInWithJean />` button if the user is not authenticated. The `onSuccess` callback updates the agent's state with the user's information upon a successful login.
+2.  **Display Messages**: It iterates over the `agent.messages` array to display the conversation history.
+3.  **Handle User Input**: It uses a form to capture the user's message and calls `agent.sendMessage` to send it to the backend.
+
 ---
 
 ## Advanced: Direct Tool Access
@@ -147,3 +158,5 @@ await tools.add_memory("My dog's name is Max.");
 // Perform a direct vector search
 const results = await tools.search_memory("information about my pets");
 ```
+
+This code shows how to bypass the main `getContext` orchestration and use the lower-level memory tools directly. You can explicitly add new memories with `tools.add_memory` or perform a targeted vector search for specific information with `tools.search_memory`. This is useful when you need precise, deterministic control over the user's memory.
