@@ -80,72 +80,78 @@ While our primary `jean_memory` tool provides a balanced approach, the underlyin
   <Accordion title="Flow 1: The Proactive Briefing">
     This flow is designed for an AI assistant that needs to provide a user with a summary of relevant information *before* they even ask. It's perfect for a morning briefing or preparing for a meeting.               
 
-    ```mermaid
-    graph TD;
-        A["Event Trigger<br/>(e.g., Calendar Event)"] --> B["List Recent Memories<br/>(list_memories)"];
-        B --> C["Vector Search for Related Topics<br/>(search_memory)"];
-        C --> D["Deep Dive on Key Entities<br/>(deep_memory_query)"];
-        D --> E["Synthesize Briefing<br/>(Send to LLM)"];
-        E --> F["Deliver Proactive Summary"];
+    <div style={{display: 'flex', justifyContent: 'center'}}>
+      ```mermaid
+      graph TD;
+          A["Event Trigger<br/>(e.g., Calendar Event)"] --> B["List Recent Memories<br/>(list_memories)"];
+          B --> C["Vector Search for Related Topics<br/>(search_memory)"];
+          C --> D["Deep Dive on Key Entities<br/>(deep_memory_query)"];
+          D --> E["Synthesize Briefing<br/>(Send to LLM)"];
+          E --> F["Deliver Proactive Summary"];
 
-        classDef trigger fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef process fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef output fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef trigger fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef process fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef output fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
 
-        class A trigger;
-        class B,C,D process;
-        class E,F output;
-    ```
+          class A trigger;
+          class B,C,D process;
+          class E,F output;
+      ```
+    </div>
   </Accordion>
   <Accordion title="Flow 2: The Deep Dive Researcher">
     This flow is for tasks that require a comprehensive understanding of a large corpus of information, like a collection of research papers or project documents.                                                      
 
-    ```mermaid
-    graph TD;
-        A["User Request<br/>'Research topic X'"] --> B["Store All Relevant Documents<br/>(store_document)"];
-        B --> C["Iterative Search & Analysis"];
-        subgraph C
-            direction LR
-            C1["Initial Vector Search<br/>(search_memory)"] --> C2["Identify Key Concepts"];
-            C2 --> C3["Graph Traversal for Connections<br/>(deep_memory_query)"];
-            C3 --> C1;
-        end
-        C --> D["Synthesize Full Report<br/>(Send to LLM)"];
-        D --> E["Present Research Findings"];
+    <div style={{display: 'flex', justifyContent: 'center'}}>
+      ```mermaid
+      graph TD;
+          A["User Request<br/>'Research topic X'"] --> B["Store All Relevant Documents<br/>(store_document)"];
+          B --> C["Iterative Search & Analysis"];
+          subgraph C
+              direction LR
+              C1["Initial Vector Search<br/>(search_memory)"] --> C2["Identify Key Concepts"];
+              C2 --> C3["Graph Traversal for Connections<br/>(deep_memory_query)"];
+              C3 --> C1;
+          end
+          C --> D["Synthesize Full Report<br/>(Send to LLM)"];
+          D --> E["Present Research Findings"];
 
-        classDef trigger fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef process fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef loop fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef output fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
-        
-        class A trigger;
-        class B,D process;
-        class C loop;
-        class E output;
-    ```
+          classDef trigger fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef process fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef loop fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef output fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
+          
+          class A trigger;
+          class B,D process;
+          class C loop;
+          class E output;
+      ```
+    </div>
   </Accordion>
   <Accordion title="Flow 3: The Just-in-Time Learner">
     This flow is for an AI that learns a new skill or topic in real-time based on user interaction, getting progressively smarter with each turn of the conversation.                                                   
 
-    ```mermaid
-    graph TD;
-        A["User Message"] --> B{"Is this a new topic?"};
-        B -- "Yes" --> C["Scrape & Store<br/>Initial Knowledge<br/>(store_document)"];
-        B -- "No" --> D["Standard Context Retrieval<br/>(search_memory)"];
-        C --> E["Provide Initial Answer"];
-        D --> E;
-        E --> F["User Feedback"];
-        F --> G["Refine & Add to Memory<br/>(add_memories)"];
-        G --> A;
+    <div style={{display: 'flex', justifyContent: 'center'}}>
+      ```mermaid
+      graph TD;
+          A["User Message"] --> B{"Is this a new topic?"};
+          B -- "Yes" --> C["Scrape & Store<br/>Initial Knowledge<br/>(store_document)"];
+          B -- "No" --> D["Standard Context Retrieval<br/>(search_memory)"];
+          C --> E["Provide Initial Answer"];
+          D --> E;
+          E --> F["User Feedback"];
+          F --> G["Refine & Add to Memory<br/>(add_memories)"];
+          G --> A;
 
-        classDef io fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef decision fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
-        classDef process fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
-        
-        class A,E,F io;
-        class B decision;
-        class C,D,G process;
-    ```
+          classDef io fill:#3CB371,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef decision fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+          classDef process fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+          
+          class A,E,F io;
+          class B decision;
+          class C,D,G process;
+      ```
+    </div>
   </Accordion>
 </AccordionGroup>
 
