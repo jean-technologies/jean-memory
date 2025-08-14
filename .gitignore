@@ -257,3 +257,8 @@ settings.local.json
 # Development testing artifacts
 test-react-app/node_modules/
 test-*/
+.wrangler/
+.dev.vars
+
+# Local vite-files
+.vite/
