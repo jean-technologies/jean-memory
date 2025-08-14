@@ -9,7 +9,35 @@ Computers have no memory of their interactions with users. Every conversation st
 
 Our goal is to provide developers with the rich, personal context they need to make their AI applications truly intelligent. We are a specialized tool that integrates into your existing stack.
 
-![](/Users/jonathanpolitzki/Desktop/Jean Memory Code/jean-memory/openmemory/ui/docs-mintlify/diagram-1.svg)
+```mermaid
+graph TD;
+    subgraph "User's Applications"
+        mobile["Mobile App<br/><i>React SDK</i>"];
+        web["Web Dashboard<br/><i>React SDK</i>"];
+        agent["Chat Agent<br/><i>Python SDK</i>"];
+        api["API Service<br/><i>Node.js SDK</i>"];
+    end
+
+    subgraph "Jean Memory"
+        memory["User's Shared Memory<br/><i>Conversations, Documents, Connections</i>"];
+    end
+
+    mobile --> memory;
+    web --> memory;
+    agent --> memory;
+    api --> memory;
+
+    memory --> mobile;
+    memory --> web;
+    memory --> agent;
+    memory --> api;
+
+    classDef api fill:#8A2BE2,stroke:#FFF,stroke-width:2px,color:#FFF;
+    classDef read fill:#4682B4,stroke:#FFF,stroke-width:2px,color:#FFF;
+
+    class memory api;
+    class mobile,web,agent,api read;
+```
 
 ### How It Works
 
