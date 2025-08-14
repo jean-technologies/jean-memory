@@ -3,12 +3,13 @@ title: Quickstart
 description: "Add a context-aware AI to your app in minutes."
 ---
 
-import { CodeGroup } from 'mintlify/components';
-
 Choose your path. Add a complete UI component to your frontend or add a powerful context layer to your backend.
 
-<CodeGroup>
-```jsx {{ title: 'Drop-in UI Component' }}
+### Drop-in UI Component
+
+The fastest way to get a full-featured chatbot running in your app.
+
+```jsx
 // 1. Install the React SDK
 // npm install @jeanmemory/react
 
@@ -23,7 +24,12 @@ function MyPage() {
   );
 }
 ```
-```python {{ title: 'Headless Backend' }}
+
+### Headless Backend
+
+For developers who want to power their existing AI agents with our headless SDK.
+
+```python
 # 1. Install the Python SDK
 # pip install jeanmemory openai
 
@@ -48,7 +54,6 @@ completion = openai.chat.completions.create(
     messages=[{"role": "user", "content": prompt}]
 )
 ```
-</CodeGroup>
 
 <br/>
 <Tip>
