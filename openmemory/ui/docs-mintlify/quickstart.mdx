@@ -56,28 +56,28 @@ completion = openai.chat.completions.create(
 ```
 
 <br/>
-<Tip>
-Want to just start building? We've consolidated all of our documentation into a single file.
-<button
-  id="copyDocsBtn"
-  style={{
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.5rem 1rem',
-    background: '#7c3aed',
-    color: 'white',
-    border: 'none',
-    borderRadius: '0.375rem',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    cursor: 'pointer',
-    marginTop: '1rem'
-  }}
->
-  Copy All Docs
-</button>
-</Tip>
+<Card title="Don't like reading docs?">
+  Just copy and paste our full documentation into your AI agent (Cursor, Claude, etc.) and tell it what you want to build.
+  <button
+    id="copyDocsBtn"
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.5rem 1rem',
+      background: '#4B5563',
+      color: 'white',
+      border: '1px solid #6B7280',
+      borderRadius: '0.375rem',
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      cursor: 'pointer',
+      marginTop: '1rem'
+    }}
+  >
+    Copy All Docs for AI
+  </button>
+</Card>
 
 <script
   dangerouslySetInnerHTML={{
@@ -96,13 +96,22 @@ Want to just start building? We've consolidated all of our documentation into a 
       if (btn) {
         btn.onclick = () => {
           fetch('/assets/consolidated-docs.md')
-            .then(response => response.text())
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.text();
+            })
             .then(data => {
               copyToClipboard(data);
               btn.innerHTML = 'Copied!';
               setTimeout(() => {
-                btn.innerHTML = 'Copy All Docs';
+                btn.innerHTML = 'Copy All Docs for AI';
               }, 2000);
+            })
+            .catch(error => {
+              console.error('Failed to fetch docs:', error);
+              btn.innerHTML = 'Error';
             });
         };
       }
