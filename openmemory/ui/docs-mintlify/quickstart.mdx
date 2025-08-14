@@ -1,58 +1,27 @@
 ---
 title: Quickstart
-description: "Go from zero to a fully context-aware AI application in 5 minutes."
+description: "Add a context-aware AI to your app in 5 lines of code."
 ---
 import { CodeGroup } from 'mintlify/components';
 
-Choose your path to get started. Whether you want a complete UI out of the box or a powerful backend library, we have you covered.
+This is the fastest way to add a complete, context-aware AI chatbot to your React application.
 
-<CodeGroup>
-```jsx {{ title: 'UI Appliance' }}
-// 1. Install the React SDK
-// npm install @jeanmemory/react
+```jsx {{ title: 'pages/index.tsx' }}
+import { JeanProvider, JeanChat, SignInWithJean } from 'jeanmemory-react';
 
-// 2. Wrap your app in the provider
-import { JeanProvider } from '@jeanmemory/react';
-function App({ children }) {
+export default function MyPage() {
   return (
-    <JeanProvider>
-      {children}
+    <JeanProvider apiKey="YOUR_API_KEY">
+      <JeanChat />
     </JeanProvider>
   );
 }
-
-// 3. Add the chat component
-import { JeanChat } from '@jeanmemory/react';
-function MyPage() {
-  return <JeanChat />;
-}
 ```
-```python {{ title: 'Headless Backend' }}
-# 1. Install the Python SDK
-# pip install jeanmemory openai
 
-# 2. Get context before calling your LLM
-import os
-from jeanmemory import JeanClient
-from openai import OpenAI
-
-jean = JeanClient(api_key=os.environ["JEAN_API_KEY"])
-openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-context = jean.get_context(
-    user_token="USER_TOKEN_FROM_FRONTEND",
-    message="What was our last conversation about?"
-).text
-
-prompt = f"Context: {context}\\n\\nUser question: What was our last conversation about?"
-
-# 3. Use the context in your LLM call
-completion = openai.chat.completions.create(
-    model="gpt-4-turbo",
-    messages=[{"role": "user", "content": prompt}]
-)
-```
-</CodeGroup>
+<br/>
+<Tip>
+The `<JeanChat />` component includes the `<SignInWithJean />` button and handles the entire authentication and chat experience out of the box. For more advanced use cases, including headless backend integration, check out our full [SDK documentation](/sdk/overview).
+</Tip>
 
 <br/>
 <Tip>

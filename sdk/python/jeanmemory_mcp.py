@@ -134,6 +134,46 @@ class JeanAgentMCP:
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Failed to call jean_memory tool: {e}")
     
+    def _call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Generic MCP tool caller"""
+        if not self.user:
+            raise ValueError("User not authenticated. Call authenticate() first.")
+        
+        mcp_request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": tool_name,
+                "arguments": arguments
+            }
+        }
+        
+        try:
+            response = requests.post(
+                f"{JEAN_API_BASE}/mcp/{self.client_name}/messages/{self.user['user_id']}",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-user-id": self.user["user_id"],
+                    "x-client-name": self.client_name
+                },
+                json=mcp_request
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get("error"):
+                raise RuntimeError(f"MCP Error for tool '{tool_name}': {data['error']['message']}")
+            
+            result = data.get("result", {})
+            content = result.get("content", [])
+            if content and len(content) > 0:
+                return content[0]
+            return {}
+                
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Failed to call tool '{tool_name}': {e}")
+            
     def _synthesize_natural_response(self, user_message: str, context: str, has_rich_context: bool = False) -> str:
         """Synthesize natural conversational response using backend OpenAI"""
         if not self.user:
@@ -173,6 +213,35 @@ class JeanAgentMCP:
                 return f"As your {self.system_prompt.lower()}, I can see from our interactions that I can help you with many things. What would you like to work on?"
             else:
                 return f"As your {self.system_prompt.lower()}, I'm ready to help! What can I assist you with?"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tools = self._Tools(self)
+
+    class _Tools:
+        def __init__(self, agent):
+            self._agent = agent
+
+        def add_memory(self, content: str, priority: bool = False):
+            """Directly add a memory, bypassing Smart Triage."""
+            return self._agent._call_tool(
+                "add_memory", 
+                {"text": content, "priority": priority}
+            )
+
+        def search_memory(self, query: str, limit: int = 5):
+            """Perform a direct vector search for relevant memories."""
+            return self._agent._call_tool(
+                "search_memory", 
+                {"query": query, "limit": limit}
+            )
+
+        def deep_memory_query(self, query: str):
+            """Perform a deep, comprehensive graph query."""
+            return self._agent._call_tool(
+                "deep_memory_query",
+                {"query": query}
+            )
 
     def _call_store_document_tool(self, title: str, content: str, document_type: str = "markdown") -> str:
         """Call the store_document MCP tool directly"""

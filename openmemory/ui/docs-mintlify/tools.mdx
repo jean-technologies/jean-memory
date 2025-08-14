@@ -1,0 +1,28 @@
+---
+title: "Core Tools"
+description: "A look at the lower-level, deterministic tools that power the Jean Memory engine."
+---
+import { Card } from 'mintlify/components';
+
+While the main `getContext()` API is the recommended way to interact with Jean Memory, the platform is powered by a set of lower-level, deterministic tools. For advanced use cases where you need precise control, you can access these tools directly through our SDKs.
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <Card
+    title="add_memory"
+    icon="plus"
+  >
+   Directly adds a new memory to the user's knowledge graph. This bypasses the AI-powered "Smart Triage" and ensures the memory is saved. Useful for explicit "remember this" functionality.
+  </Card>
+  <Card
+    title="search_memory"
+    icon="search"
+  >
+    Performs a fast, targeted vector search (RAG) for the most relevant memories. This is the same tool used in the "fast path" of our `getContext` orchestrator and is ideal for quick, semantic lookups.
+  </Card>
+  <Card
+    title="deep_memory_query"
+    icon="brain"
+  >
+    Initiates a deeper, more comprehensive query that traverses the knowledge graph to find connections and synthesize insights. This is a more powerful, and slower, query for when you need a comprehensive understanding of a topic.
+  </Card>
+</div>

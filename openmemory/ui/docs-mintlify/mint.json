@@ -53,7 +53,8 @@
       "group": "Core Concepts",
       "pages": [
         "authentication",
-        "context-engineering"
+        "context-engineering",
+        "tools"
       ]
     },
     {

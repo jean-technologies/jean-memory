@@ -76,3 +76,25 @@ export default async function POST(req: Request) {
 ### Authentication Flow
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
+
+---
+
+## Advanced: Direct Tool Access
+
+For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+
+```typescript
+// The intelligent, orchestrated way:
+const context = await jean.getContext({ user_token: ..., message: "..." });
+
+// The deterministic, tool-based way:
+await jean.tools.add_memory({
+    user_token: ..., 
+    content: "My project's deadline is next Friday."
+});
+
+const search_results = await jean.tools.search_memory({
+    user_token: ...,
+    query: "project deadlines"
+});
+```

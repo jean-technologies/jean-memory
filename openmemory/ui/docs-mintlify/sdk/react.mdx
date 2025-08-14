@@ -131,3 +131,19 @@ function CustomChat() {
   );
 }
 ```
+
+---
+
+## Advanced: Direct Tool Access
+
+For advanced use cases, the `useJean` hook also provides direct access to the core memory tools. This allows for more deterministic control over the memory layer.
+
+```typescript
+const { tools } = useJean();
+
+// Directly add a memory
+await tools.add_memory("My dog's name is Max.");
+
+// Perform a direct vector search
+const results = await tools.search_memory("information about my pets");
+```

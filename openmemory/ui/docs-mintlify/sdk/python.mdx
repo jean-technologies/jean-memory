@@ -69,3 +69,25 @@ print(completion.choices[0].message.content)
 The `user_token` is the critical piece that connects a request to a specific user's memory. In a production application, your frontend should use our React SDK's `<SignInWithJean />` component (or a manual OAuth 2.1 PKCE flow) to authenticate the user and receive this token. Your frontend then passes this token to your backend, which uses it to make authenticated requests with the Python SDK.
 
 For information on implementing a secure server-to-server OAuth flow for backend services, see the [Authentication](/authentication) guide.
+
+---
+
+## Advanced: Direct Tool Access
+
+For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+
+```python
+# The intelligent, orchestrated way:
+context = jean.get_context(user_token=..., message="...")
+
+# The deterministic, tool-based way:
+jean.tools.add_memory(
+    user_token=..., 
+    content="My favorite color is blue."
+)
+
+search_results = jean.tools.search_memory(
+    user_token=...,
+    query="what are my preferences?"
+)
+```
