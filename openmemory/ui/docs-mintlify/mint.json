@@ -49,29 +49,16 @@
       ]
     },
     {
-      "group": "MCP",
+      "group": "Guides",
       "pages": [
-        "mcp/introduction",
-        "mcp/authentication",
-        "oauth-troubleshooting"
-      ]
-    },
-    {
-      "group": "Context Engineering",
-      "pages": [
-        "mcp/context-engineering"
+        "oauth-troubleshooting",
+        "context-engineering"
       ]
     },
     {
       "group": "Example Use Cases",
       "pages": [
         "example-use-cases"
-      ]
-    },
-    {
-      "group": "Tools",
-      "pages": [
-        "tools"
       ]
     }
   ],
