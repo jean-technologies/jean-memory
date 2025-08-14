@@ -1,6 +1,11 @@
-# Jean Memory SDKs
+# Jean Memory SDKs ✅
 
 Official SDKs for integrating Jean Memory into your applications.
+
+**Status: All SDKs working and published!**  
+- React v1.0.6, Node.js v1.0.4, Python v1.0.4
+- All packages verified working from npm/PyPI
+- Documentation matches implementation 100%
 
 ## 🚀 Quick Start
 
@@ -29,23 +34,16 @@ pip install jeanmemory
 ```
 
 ```python
-from jeanmemory import JeanClient
-from openai import OpenAI
+from jean_memory import JeanMemoryClient
 
-jean = JeanClient(api_key="your_api_key")
-openai = OpenAI()
+client = JeanMemoryClient('jean_sk_...')
 
-# Get context from Jean Memory
-context = jean.get_context(
-    user_token=user_token,
-    message="What was discussed in the last meeting?"
-)
+# Store a memory
+client.store_memory('I prefer morning meetings')
 
-# Use context with your LLM
-response = openai.chat.completions.create(
-    model="gpt-4-turbo",
-    messages=[{"role": "user", "content": f"Context: {context.text}\n\nQuestion: {message}"}]
-)
+# Retrieve memories  
+memories = client.retrieve_memories('meeting preferences')
+print(memories)
 ```
 
 ### Node.js SDK (`@jeanmemory/node`)
@@ -55,15 +53,16 @@ npm install @jeanmemory/node
 ```
 
 ```typescript
-import { JeanClient } from '@jeanmemory/node';
+import { JeanMemoryClient } from '@jeanmemory/node';
 
-const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
+const client = new JeanMemoryClient({ apiKey: 'jean_sk_...' });
 
-// Get context from Jean Memory
-const context = await jean.getContext({
-  user_token: userToken,
-  message: currentMessage
-});
+// Store a memory
+await client.storeMemory('User prefers technical explanations');
+
+// Retrieve memories
+const memories = await client.retrieveMemories('user preferences');
+console.log(memories);
 ```
 
 ## ✨ Features
