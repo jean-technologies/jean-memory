@@ -36,6 +36,7 @@ user_message = "What were the key takeaways from our last meeting about Project 
 context_response = jean.get_context(
     user_token=user_token,
     message=user_message
+    # All defaults: tool="jean_memory", speed="balanced", format="enhanced"
 )
 
 # 4. Engineer your final prompt
@@ -79,24 +80,42 @@ For information on implementing a secure server-to-server OAuth flow for backend
 
 ---
 
+## Configuration Options (Optional)
+
+For 99% of use cases, the defaults work perfectly. But when you need control:
+
+```python
+# Speed-optimized (faster, less comprehensive)
+context = jean.get_context(
+    user_token=user_token,
+    message=user_message,
+    speed="fast"  # vs "balanced" (default) or "comprehensive"
+)
+
+# Different tools for specific needs
+context = jean.get_context(
+    user_token=user_token,
+    message=user_message,
+    tool="search_memory"  # vs "jean_memory" (default)
+)
+
+# Simple text response instead of full metadata
+context = jean.get_context(
+    user_token=user_token,
+    message=user_message,
+    format="simple"  # vs "enhanced" (default)
+)
+```
+
 ## Advanced: Direct Tool Access
 
 For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```python
-# The intelligent, orchestrated way:
+# The intelligent, orchestrated way (recommended):
 context = jean.get_context(user_token=..., message="...")
 
 # The deterministic, tool-based way:
-jean.tools.add_memory(
-    user_token=..., 
-    content="My favorite color is blue."
-)
-
-search_results = jean.tools.search_memory(
-    user_token=...,
-    query="what are my preferences?"
-)
+jean.tools.add_memory(user_token=..., content="My favorite color is blue.")
+search_results = jean.tools.search_memory(user_token=..., query="preferences")
 ```
-
-This code illustrates the two ways to interact with the Jean Memory API. The first line shows the primary, orchestrated approach using `get_context`, which handles the complex logic of context engineering for you. The subsequent lines show how to use the `tools` namespace for direct, deterministic control, allowing you to explicitly add or search for memories, bypassing the higher-level orchestration.

@@ -145,6 +145,23 @@ This code demonstrates how to use the `useJean` hook to build a custom chat inte
 
 ---
 
+## Configuration Options (Optional)
+
+For 99% of use cases, the defaults work perfectly. But when you need control:
+
+```typescript
+const { sendMessage } = useJean();
+
+// Speed-optimized (faster, less comprehensive)
+await sendMessage("What's my schedule?", { speed: "fast" });
+
+// Different tools for specific needs  
+await sendMessage("What's my schedule?", { tool: "search_memory" });
+
+// Simple text response instead of full metadata
+await sendMessage("What's my schedule?", { format: "simple" });
+```
+
 ## Advanced: Direct Tool Access
 
 For advanced use cases, the `useJean` hook also provides direct access to the core memory tools. This allows for more deterministic control over the memory layer.
@@ -158,5 +175,3 @@ await tools.add_memory("My dog's name is Max.");
 // Perform a direct vector search
 const results = await tools.search_memory("information about my pets");
 ```
-
-This code shows how to bypass the main `getContext` orchestration and use the lower-level memory tools directly. You can explicitly add new memories with `tools.add_memory` or perform a targeted vector search for specific information with `tools.search_memory`. This is useful when you need precise, deterministic control over the user's memory.

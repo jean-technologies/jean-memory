@@ -74,47 +74,34 @@ completion = openai.chat.completions.create(
       cursor: 'pointer',
       marginTop: '1rem'
     }}
+    onClick={() => {
+      const btn = document.getElementById('copyDocsBtn');
+      fetch('/assets/consolidated-docs.md')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(data => {
+          navigator.clipboard.writeText(data).then(() => {
+            btn.innerHTML = 'Copied!';
+            setTimeout(() => {
+              btn.innerHTML = 'Copy All Docs for AI';
+            }, 2000);
+          });
+        })
+        .catch(error => {
+          console.error('Failed to fetch docs:', error);
+          btn.innerHTML = 'Error - Try Again';
+          setTimeout(() => {
+            btn.innerHTML = 'Copy All Docs for AI';
+          }, 2000);
+        });
+    }}
   >
     Copy All Docs for AI
   </button>
 </Card>
 
-<script
-  dangerouslySetInnerHTML={{
-    __html: `
-      const copyToClipboard = (text) => {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(text).then(() => {
-            console.log('Docs copied to clipboard');
-          }, (err) => {
-            console.error('Failed to copy: ', err);
-          });
-        }
-      };
 
-      const btn = document.getElementById('copyDocsBtn');
-      if (btn) {
-        btn.onclick = () => {
-          fetch('/assets/consolidated-docs.md')
-            .then(response => {
-              if (!response.ok) {
-                throw new Error('Network response was not ok');
-              }
-              return response.text();
-            })
-            .then(data => {
-              copyToClipboard(data);
-              btn.innerHTML = 'Copied!';
-              setTimeout(() => {
-                btn.innerHTML = 'Copy All Docs for AI';
-              }, 2000);
-            })
-            .catch(error => {
-              console.error('Failed to fetch docs:', error);
-              btn.innerHTML = 'Error';
-            });
-        };
-      }
-    `,
-  }}
-/>

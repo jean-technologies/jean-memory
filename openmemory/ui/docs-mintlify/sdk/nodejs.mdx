@@ -42,7 +42,8 @@ export default async function POST(req: Request) {
   // 2. Get context from Jean Memory
   const contextResponse = await jean.getContext({
     user_token: userToken,
-    message: currentMessage,
+    message: currentMessage
+    // All defaults: tool="jean_memory", speed="balanced", format="enhanced"
   });
 
   // 3. Engineer your final prompt
@@ -85,24 +86,42 @@ As with the Python SDK, the `userToken` is obtained by your frontend application
 
 ---
 
+## Configuration Options (Optional)
+
+For 99% of use cases, the defaults work perfectly. But when you need control:
+
+```typescript
+// Speed-optimized (faster, less comprehensive)
+const context = await jean.getContext({
+  user_token: userToken,
+  message: currentMessage,
+  speed: "fast"  // vs "balanced" (default) or "comprehensive"
+});
+
+// Different tools for specific needs
+const context = await jean.getContext({
+  user_token: userToken,
+  message: currentMessage,
+  tool: "search_memory"  // vs "jean_memory" (default)
+});
+
+// Simple text response instead of full metadata
+const context = await jean.getContext({
+  user_token: userToken,
+  message: currentMessage,
+  format: "simple"  // vs "enhanced" (default)
+});
+```
+
 ## Advanced: Direct Tool Access
 
 For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```typescript
-// The intelligent, orchestrated way:
+// The intelligent, orchestrated way (recommended):
 const context = await jean.getContext({ user_token: ..., message: "..." });
 
 // The deterministic, tool-based way:
-await jean.tools.add_memory({
-    user_token: ..., 
-    content: "My project's deadline is next Friday."
-});
-
-const search_results = await jean.tools.search_memory({
-    user_token: ...,
-    query: "project deadlines"
-});
+await jean.tools.add_memory({ user_token: ..., content: "My project's deadline is next Friday." });
+const search_results = await jean.tools.search_memory({ user_token: ..., query: "project deadlines" });
 ```
-
-This code illustrates the two ways to interact with the Jean Memory API. The first line shows the primary, orchestrated approach using `getContext`, which handles the complex logic of context engineering for you. The subsequent lines show how to use the `tools` namespace for direct, deterministic control, allowing you to explicitly add or search for memories, bypassing the higher-level orchestration.
