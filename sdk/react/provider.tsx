@@ -34,6 +34,16 @@ interface JeanContextValue {
   signIn: () => void;
   signOut: () => void;
   sendMessage: (message: string, options?: MessageOptions) => Promise<void>;
+  storeDocument: (title: string, content: string) => Promise<void>;
+  connect: (service: 'notion' | 'slack' | 'gdrive') => void;
+  clearConversation: () => void;
+  setUser: (user: JeanUser) => void;
+  
+  // Tools for direct memory access
+  tools: {
+    add_memory: (content: string) => Promise<any>;
+    search_memory: (query: string) => Promise<any>;
+  };
 }
 
 export interface MessageOptions {
@@ -194,6 +204,50 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }, 1000);
   };
 
+  const clearConversation = () => {
+    setMessages([]);
+  };
+
+  // Direct memory tools
+  const tools = {
+    add_memory: async (content: string) => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const response = await makeMCPRequest(
+        user,
+        apiKey,
+        'add_memory',
+        { content }
+      );
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      return response.result;
+    },
+    
+    search_memory: async (query: string) => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const response = await makeMCPRequest(
+        user,
+        apiKey,
+        'search_memory',
+        { query }
+      );
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      return response.result;
+    }
+  };
 
   const signIn = async () => {
     setIsLoading(true);
@@ -249,7 +303,14 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     // Essential methods
     signIn,
     signOut,
-    sendMessage
+    sendMessage,
+    storeDocument,
+    connect,
+    clearConversation,
+    setUser: handleSetUser,
+    
+    // Tools
+    tools
   };
 
   return (
