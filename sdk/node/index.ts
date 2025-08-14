@@ -13,6 +13,7 @@ interface JeanClientConfig {
 interface GetContextOptions {
   user_token: string;
   message: string;
+  is_new_conversation?: boolean;
   speed?: 'fast' | 'balanced' | 'comprehensive';
   tool?: 'jean_memory' | 'search_memory';
   format?: 'simple' | 'enhanced';
@@ -78,6 +79,10 @@ export class JeanClient {
   }
   
   protected _makeMcpRequest = async (user_id: string, tool_name: string, args: any): Promise<any> => {
+    return this._makeMcpRequestWithRetries(user_id, tool_name, args, 3);
+  }
+
+  private _makeMcpRequestWithRetries = async (user_id: string, tool_name: string, args: any, maxRetries: number): Promise<any> => {
     this.requestId++;
     const mcpRequest = {
       jsonrpc: '2.0',
@@ -89,51 +94,93 @@ export class JeanClient {
       }
     };
     
-    try {
-      const response = await fetch(`${this.apiBase}/mcp/node-sdk/messages/${user_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
-          'X-User-Id': user_id,
-        },
-        body: JSON.stringify(mcpRequest)
-      });
-      
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`MCP request failed: ${response.statusText} - ${errorBody}`);
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        console.log(`🚀 Making MCP request (attempt ${attempt + 1}/${maxRetries}) for ${tool_name}`);
+        
+        // Use AbortController for proper timeout handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+        
+        const response = await fetch(`${this.apiBase}/mcp/node-sdk/messages/${user_id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.apiKey,
+            'X-User-Id': user_id,
+            'Connection': 'keep-alive', // Reuse connections
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify(mcpRequest),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = (await response.json()) as MCPResponse;
+          if (!data.error) {
+            console.log(`✅ MCP request successful on attempt ${attempt + 1}`);
+            return data;
+          } else {
+            console.log(`⚠️ MCP error in response: ${data.error.message}`);
+            if (attempt < maxRetries - 1) {
+              const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000; // Exponential backoff with jitter
+              console.log(`⏰ Retrying in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+            throw new Error(`MCP Error: ${data.error.message}`);
+          }
+        } else {
+          const errorBody = await response.text();
+          console.log(`❌ HTTP ${response.status}: ${errorBody.substring(0, 200)}`);
+          if (attempt < maxRetries - 1) {
+            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+            console.log(`⏰ Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw new Error(`MCP request failed: ${response.statusText} - ${errorBody}`);
+        }
+        
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log(`⏰ Request timeout on attempt ${attempt + 1}`);
+        } else {
+          console.log(`🌐 Network error on attempt ${attempt + 1}: ${error.message}`);
+        }
+        
+        if (attempt < maxRetries - 1) {
+          const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+          console.log(`⏰ Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        throw new Error(`MCP request failed after ${maxRetries} attempts: ${error.message}`);
       }
-      
-      const data = (await response.json()) as MCPResponse;
-      if (data.error) {
-        throw new Error(`MCP Error: ${data.error.message}`);
-      }
-      
-      return data;
-    } catch (error) {
-      throw new Error(`MCP request failed: ${error}`);
     }
+    
+    throw new Error(`MCP request failed after all retry attempts`);
   }
 
   public getContext = async (options: GetContextOptions): Promise<ContextResponse> => {
-    const { user_token, message, speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
+    const { user_token, message, is_new_conversation = false, speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = options;
     const user_id = this._getUserIdFromToken(user_token);
 
     let args: any;
     if (tool === 'jean_memory') {
       args = {
         user_message: message,
-        is_new_conversation: false,
-        needs_context: true,
-        speed,
-        format
+        is_new_conversation: is_new_conversation,
+        needs_context: true
+        // Removed speed/format - backend doesn't support them yet
       };
     } else {
       args = {
-        query: message,
-        speed,
-        format
+        query: message
+        // Removed speed/format - backend doesn't support them yet
       };
     }
 

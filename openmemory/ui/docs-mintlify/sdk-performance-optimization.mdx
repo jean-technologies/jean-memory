@@ -1,0 +1,586 @@
+---
+title: "SDK Performance Optimization Guide"
+description: "Complete guide to optimizing SDK performance and handling backend reliability issues"
+---
+
+# ⚡ SDK Performance Optimization Guide
+
+## Overview
+
+This guide provides practical patterns and code examples for building resilient, high-performance SDKs that can handle unreliable backends gracefully.
+
+## Core Optimization Patterns
+
+### 1. Connection Pooling & Session Management
+
+**Problem**: Creating new HTTP connections for every request is slow and unreliable.
+
+**Solution**: Use persistent sessions with connection pooling.
+
+```python
+# Python Implementation
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+class OptimizedClient:
+    def __init__(self, api_key, base_url):
+        self.session = self._create_optimized_session()
+    
+    def _create_optimized_session(self):
+        session = requests.Session()
+        
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "POST"],
+            backoff_factor=1
+        )
+        
+        # Configure connection pooling
+        adapter = HTTPAdapter(
+            max_retries=retry_strategy,
+            pool_connections=20,  # Number of connection pools
+            pool_maxsize=20,      # Max connections per pool
+            pool_block=False      # Don't block when pool is full
+        )
+        
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        return session
+```
+
+```typescript
+// Node.js Implementation
+export class OptimizedClient {
+    private makeRequest = async (url: string, data: any, retries = 3) => {
+        for (let attempt = 0; attempt < retries; attempt++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000);
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Connection': 'keep-alive', // Reuse connections
+                    },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    return await response.json();
+                }
+                
+                // Handle retryable errors
+                if (this.isRetryable(response.status) && attempt < retries - 1) {
+                    await this.delay(Math.pow(2, attempt) * 1000 + Math.random() * 1000);
+                    continue;
+                }
+                
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                
+            } catch (error: any) {
+                if (attempt < retries - 1 && this.isRetryableError(error)) {
+                    await this.delay(Math.pow(2, attempt) * 1000 + Math.random() * 1000);
+                    continue;
+                }
+                throw error;
+            }
+        }
+    }
+    
+    private isRetryable(status: number): boolean {
+        return [429, 500, 502, 503, 504].includes(status);
+    }
+    
+    private isRetryableError(error: any): boolean {
+        return error.name === 'AbortError' || error.code === 'ECONNRESET';
+    }
+    
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+```
+
+### 2. Intelligent Retry Logic
+
+**Problem**: Naive retries can overwhelm failing backends and create thundering herd problems.
+
+**Solution**: Exponential backoff with jitter and smart error classification.
+
+```python
+def make_resilient_request(self, endpoint, data, max_retries=3):
+    """
+    Make a request with intelligent retry logic
+    """
+    for attempt in range(max_retries):
+        try:
+            print(f"🚀 Making request (attempt {attempt + 1}/{max_retries})")
+            
+            response = self.session.post(
+                endpoint,
+                json=data,
+                timeout=(5, 60),  # (connect, read) timeouts
+                headers={
+                    'Connection': 'keep-alive',
+                    'Cache-Control': 'no-cache'
+                }
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if 'error' not in result:
+                    print(f"✅ Request successful on attempt {attempt + 1}")
+                    return result
+                
+                # Handle API-level errors
+                error_msg = result['error']['message']
+                if self.is_retryable_api_error(error_msg) and attempt < max_retries - 1:
+                    print(f"⚠️ Retryable API error: {error_msg}")
+                    self.smart_delay(attempt)
+                    continue
+                    
+                raise APIError(error_msg)
+            
+            # Handle HTTP errors
+            if self.is_retryable_status(response.status_code) and attempt < max_retries - 1:
+                print(f"⚠️ HTTP {response.status_code}, retrying...")
+                self.smart_delay(attempt)
+                continue
+                
+            response.raise_for_status()
+            
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            print(f"🌐 Network error on attempt {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                self.smart_delay(attempt)
+                continue
+            raise NetworkError(f"Request failed after {max_retries} attempts: {e}")
+    
+    raise MaxRetriesExceeded(f"Request failed after {max_retries} attempts")
+
+def smart_delay(self, attempt):
+    """Exponential backoff with jitter"""
+    base_delay = 2 ** attempt
+    jitter = random.uniform(0, 1)
+    delay = base_delay + jitter
+    print(f"⏰ Waiting {delay:.2f}s before retry...")
+    time.sleep(delay)
+
+def is_retryable_status(self, status_code):
+    """Classify HTTP status codes for retry logic"""
+    return status_code in [429, 500, 502, 503, 504, 520, 521, 522, 523, 524]
+
+def is_retryable_api_error(self, error_message):
+    """Classify API errors for retry logic"""
+    retryable_patterns = [
+        'temporary', 'timeout', 'overloaded', 'unavailable',
+        'rate limit', 'try again', 'service busy'
+    ]
+    return any(pattern in error_message.lower() for pattern in retryable_patterns)
+```
+
+### 3. Timeout Strategy
+
+**Problem**: Poor timeout configuration leads to hanging requests or premature failures.
+
+**Solution**: Layered timeout strategy with different timeouts for different operations.
+
+```python
+class TimeoutStrategy:
+    def __init__(self):
+        self.connect_timeout = 5    # Quick connection establishment
+        self.read_timeout = 60      # Longer read for processing
+        self.total_timeout = 120    # Overall operation limit
+    
+    def make_request(self, url, data):
+        try:
+            # Use session with configured timeouts
+            response = self.session.post(
+                url,
+                json=data,
+                timeout=(self.connect_timeout, self.read_timeout)
+            )
+            return response
+        except requests.exceptions.ConnectTimeout:
+            raise ConnectionError("Could not connect to server (connection timeout)")
+        except requests.exceptions.ReadTimeout:
+            raise TimeoutError("Server did not respond in time (read timeout)")
+```
+
+```typescript
+// Node.js timeout strategy
+class TimeoutManager {
+    async makeRequestWithTimeout<T>(
+        requestFn: () => Promise<T>,
+        timeoutMs: number = 60000
+    ): Promise<T> {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`Operation timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+            
+            requestFn()
+                .then(result => {
+                    clearTimeout(timeoutId);
+                    resolve(result);
+                })
+                .catch(error => {
+                    clearTimeout(timeoutId);
+                    reject(error);
+                });
+        });
+    }
+}
+```
+
+### 4. Error Classification & Handling
+
+**Problem**: Different errors need different handling strategies.
+
+**Solution**: Comprehensive error classification system.
+
+```python
+class ErrorHandler:
+    # Permanent errors - don't retry
+    PERMANENT_ERRORS = {
+        400: "Bad Request - check your parameters",
+        401: "Unauthorized - check your API key", 
+        403: "Forbidden - insufficient permissions",
+        404: "Not Found - endpoint doesn't exist",
+        422: "Validation Error - fix your request data"
+    }
+    
+    # Temporary errors - retry with backoff
+    TEMPORARY_ERRORS = {
+        429: "Rate Limited - too many requests",
+        500: "Internal Server Error - temporary backend issue",
+        502: "Bad Gateway - upstream server issue", 
+        503: "Service Unavailable - backend overloaded",
+        504: "Gateway Timeout - upstream server timeout"
+    }
+    
+    def handle_error(self, response):
+        status = response.status_code
+        
+        if status in self.PERMANENT_ERRORS:
+            raise PermanentError(f"{status}: {self.PERMANENT_ERRORS[status]}")
+        elif status in self.TEMPORARY_ERRORS:
+            raise TemporaryError(f"{status}: {self.TEMPORARY_ERRORS[status]}")
+        else:
+            # Unknown error - treat as temporary for safety
+            raise TemporaryError(f"Unknown error {status}: {response.text}")
+
+class APIError(Exception):
+    """Base class for API errors"""
+    pass
+
+class PermanentError(APIError):
+    """Errors that should not be retried"""
+    pass
+
+class TemporaryError(APIError):
+    """Errors that can be retried"""
+    pass
+
+class NetworkError(APIError):
+    """Network-related errors"""
+    pass
+
+class MaxRetriesExceeded(APIError):
+    """All retry attempts exhausted"""
+    pass
+```
+
+### 5. Graceful Degradation
+
+**Problem**: Failures should provide meaningful feedback to users.
+
+**Solution**: Structured error responses with actionable information.
+
+```python
+class GracefulClient:
+    def get_context(self, message, **options):
+        try:
+            return self._make_resilient_request('get_context', {
+                'message': message,
+                **options
+            })
+        except PermanentError as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'suggestion': 'Please check your request parameters and try again',
+                'retry_recommended': False
+            }
+        except TemporaryError as e:
+            return {
+                'success': False, 
+                'error': str(e),
+                'suggestion': 'The service is temporarily unavailable. Please try again in a few moments.',
+                'retry_recommended': True,
+                'retry_after': 30  # seconds
+            }
+        except NetworkError as e:
+            return {
+                'success': False,
+                'error': str(e), 
+                'suggestion': 'Network connectivity issue. Please check your connection and try again.',
+                'retry_recommended': True,
+                'retry_after': 10
+            }
+```
+
+## Performance Monitoring
+
+### Key Metrics to Track
+
+```python
+import time
+from collections import defaultdict
+
+class PerformanceMonitor:
+    def __init__(self):
+        self.metrics = defaultdict(list)
+        self.counters = defaultdict(int)
+    
+    def track_request(self, endpoint, duration, success, attempt_count):
+        """Track individual request metrics"""
+        self.metrics[f'{endpoint}_duration'].append(duration)
+        self.counters[f'{endpoint}_total'] += 1
+        
+        if success:
+            self.counters[f'{endpoint}_success'] += 1
+        else:
+            self.counters[f'{endpoint}_failure'] += 1
+            
+        if attempt_count > 1:
+            self.counters[f'{endpoint}_retries'] += (attempt_count - 1)
+    
+    def get_stats(self, endpoint):
+        """Get performance statistics for an endpoint"""
+        durations = self.metrics[f'{endpoint}_duration']
+        total = self.counters[f'{endpoint}_total']
+        success = self.counters[f'{endpoint}_success'] 
+        failures = self.counters[f'{endpoint}_failure']
+        retries = self.counters[f'{endpoint}_retries']
+        
+        if not durations:
+            return None
+            
+        return {
+            'success_rate': (success / total) * 100 if total > 0 else 0,
+            'avg_duration': sum(durations) / len(durations),
+            'p95_duration': sorted(durations)[int(len(durations) * 0.95)],
+            'total_requests': total,
+            'retry_rate': (retries / total) * 100 if total > 0 else 0
+        }
+
+# Usage in SDK
+monitor = PerformanceMonitor()
+
+def make_monitored_request(self, endpoint, data):
+    start_time = time.time()
+    attempt_count = 0
+    
+    try:
+        result = self.make_resilient_request(endpoint, data)
+        duration = time.time() - start_time
+        monitor.track_request(endpoint, duration, True, attempt_count)
+        return result
+    except Exception as e:
+        duration = time.time() - start_time  
+        monitor.track_request(endpoint, duration, False, attempt_count)
+        raise
+```
+
+### Logging Best Practices
+
+```python
+import logging
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger('jean_memory_sdk')
+
+class RequestLogger:
+    def log_request_start(self, endpoint, attempt, max_attempts):
+        logger.info(f"🚀 {endpoint} request attempt {attempt}/{max_attempts}")
+    
+    def log_request_success(self, endpoint, attempt, duration):
+        logger.info(f"✅ {endpoint} successful on attempt {attempt} ({duration:.3f}s)")
+    
+    def log_request_retry(self, endpoint, attempt, error, delay):
+        logger.warning(f"⚠️ {endpoint} retry attempt {attempt}: {error} (waiting {delay:.2f}s)")
+    
+    def log_request_failure(self, endpoint, attempts, error):
+        logger.error(f"❌ {endpoint} failed after {attempts} attempts: {error}")
+    
+    def log_performance_stats(self, stats):
+        logger.info(f"📊 Performance: {stats['success_rate']:.1f}% success, "
+                   f"{stats['avg_duration']:.3f}s avg, {stats['retry_rate']:.1f}% retries")
+```
+
+## Testing Your Optimizations
+
+### Load Testing Framework
+
+```python
+import concurrent.futures
+import time
+import statistics
+
+def load_test_sdk(client, num_requests=100, max_workers=10):
+    """
+    Load test your optimized SDK
+    """
+    def make_test_request(request_id):
+        start_time = time.time()
+        try:
+            result = client.get_context(f"Test message {request_id}")
+            duration = time.time() - start_time
+            return {
+                'request_id': request_id,
+                'success': True,
+                'duration': duration,
+                'response_size': len(str(result))
+            }
+        except Exception as e:
+            duration = time.time() - start_time
+            return {
+                'request_id': request_id,
+                'success': False, 
+                'duration': duration,
+                'error': str(e)
+            }
+    
+    print(f"🔥 Starting load test: {num_requests} requests, {max_workers} workers")
+    
+    results = []
+    start_time = time.time()
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(make_test_request, i) for i in range(num_requests)]
+        
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            results.append(result)
+            
+            status = "✅" if result['success'] else "❌"
+            print(f"{status} Request {result['request_id']}: {result['duration']:.3f}s")
+    
+    total_time = time.time() - start_time
+    
+    # Calculate statistics
+    successes = [r for r in results if r['success']]
+    failures = [r for r in results if not r['success']]
+    
+    success_durations = [r['duration'] for r in successes]
+    
+    print("\n" + "="*60)
+    print("📊 LOAD TEST RESULTS")
+    print("="*60)
+    print(f"Total Requests: {num_requests}")
+    print(f"Successful: {len(successes)} ({len(successes)/num_requests*100:.1f}%)")
+    print(f"Failed: {len(failures)} ({len(failures)/num_requests*100:.1f}%)")
+    print(f"Total Time: {total_time:.2f}s")
+    print(f"Requests/Second: {num_requests/total_time:.2f}")
+    
+    if success_durations:
+        print(f"Avg Response Time: {statistics.mean(success_durations):.3f}s")
+        print(f"P95 Response Time: {statistics.quantiles(success_durations, n=20)[18]:.3f}s")
+    
+    return results
+
+# Run the test
+# results = load_test_sdk(optimized_client, num_requests=50, max_workers=5)
+```
+
+## Implementation Checklist
+
+Use this checklist when implementing performance optimizations:
+
+### Connection & Session Management
+- [ ] Use persistent HTTP sessions
+- [ ] Configure connection pooling (recommended: 10-20 connections)
+- [ ] Set appropriate pool size limits
+- [ ] Enable connection keep-alive headers
+
+### Retry Logic
+- [ ] Implement exponential backoff with jitter
+- [ ] Classify errors (permanent vs temporary)
+- [ ] Set reasonable retry limits (3-5 attempts)
+- [ ] Add retry logging for debugging
+
+### Timeout Configuration
+- [ ] Set connect timeout (5-10 seconds)
+- [ ] Set read timeout (30-120 seconds) 
+- [ ] Implement overall operation timeout
+- [ ] Use proper timeout exception handling
+
+### Error Handling
+- [ ] Create structured error classes
+- [ ] Provide meaningful error messages
+- [ ] Include suggested actions in error responses
+- [ ] Log errors with appropriate levels
+
+### Monitoring & Observability  
+- [ ] Track success/failure rates
+- [ ] Monitor response times (avg, p95, p99)
+- [ ] Count retry attempts
+- [ ] Log request lifecycle events
+- [ ] Implement performance alerts
+
+### Testing
+- [ ] Unit tests for retry logic
+- [ ] Integration tests with backend
+- [ ] Load tests with concurrent requests
+- [ ] Chaos tests with simulated failures
+- [ ] Performance regression tests
+
+## Common Pitfalls to Avoid
+
+### ❌ The Infinite Retry Loop
+```python
+# DON'T DO THIS
+while True:
+    try:
+        return make_request()
+    except:
+        pass  # This will retry forever!
+```
+
+### ❌ The Thundering Herd
+```python  
+# DON'T DO THIS
+time.sleep(1)  # All clients retry at the same time
+```
+
+### ❌ The Resource Leak
+```python
+# DON'T DO THIS
+def make_request():
+    session = requests.Session()  # New session every time!
+    return session.post(url, data=data)
+```
+
+### ❌ The Silent Failure
+```python
+# DON'T DO THIS
+try:
+    return make_request()
+except:
+    return None  # User has no idea what went wrong
+```
+
+These optimization patterns will make your SDKs resilient, performant, and production-ready even when dealing with unreliable backends.

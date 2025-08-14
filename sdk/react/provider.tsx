@@ -124,8 +124,8 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         {
           user_message: message,
           is_new_conversation: messages.length <= 1,
-          needs_context: true,
-          ...options
+          needs_context: true
+          // Removed ...options spread - backend doesn't support speed/format yet
         }
       );
 
