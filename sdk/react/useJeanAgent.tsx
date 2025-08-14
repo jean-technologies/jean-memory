@@ -339,6 +339,24 @@ IMPORTANT: Respond naturally as the persona described in the system prompt. Do N
     console.log('🗑️ Conversation cleared');
   }, []);
 
+  const tools = useMemo(() => ({
+    add_memory: async (content: string): Promise<any> => {
+      // TODO: Implement direct API call to /tools/add_memory
+      console.log(`[JeanSDK] Adding memory...`, { content });
+      return Promise.resolve({ success: true, message: "Memory will be added." });
+    },
+    search_memory: async (query: string): Promise<any> => {
+      // TODO: Implement direct API call to /tools/search_memory
+      console.log(`[JeanSDK] Searching memory...`, { query });
+      return Promise.resolve({ results: [] });
+    },
+    deep_memory_query: async (query: string): Promise<any> => {
+      // TODO: Implement direct API call to /tools/deep_memory_query
+      console.log(`[JeanSDK] Performing deep memory query...`, { query });
+      return Promise.resolve({ results: [] });
+    }
+  }), [user]);
+
   // Create a simple runtime interface for compatibility
   const runtime = useMemo(() => {
     if (!user) return null;
@@ -360,6 +378,7 @@ IMPORTANT: Respond naturally as the persona described in the system prompt. Do N
     sendMessage,
     storeDocument,
     clearConversation,
+    tools,
     // Assistant-UI runtime
     runtime,
     // Computed properties

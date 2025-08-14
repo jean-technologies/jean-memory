@@ -1,15 +1,20 @@
 ---
 title: Quickstart
-description: "Add a context-aware AI to your app in 5 lines of code."
+description: "Add a context-aware AI to your app in minutes."
 ---
 import { CodeGroup } from 'mintlify/components';
 
-This is the fastest way to add a complete, context-aware AI chatbot to your React application.
+Choose your path. Add a complete UI component to your frontend or add a powerful context layer to your backend.
 
-```jsx {{ title: 'pages/index.tsx' }}
-import { JeanProvider, JeanChat, SignInWithJean } from 'jeanmemory-react';
+<CodeGroup>
+```jsx {{ title: 'UI Appliance (React)' }}
+// 1. Install the React SDK
+// npm install jeanmemory-react
 
-export default function MyPage() {
+// 2. Add the provider and chat component
+import { JeanProvider, JeanChat } from 'jeanmemory-react';
+
+function MyPage() {
   return (
     <JeanProvider apiKey="YOUR_API_KEY">
       <JeanChat />
@@ -17,18 +22,36 @@ export default function MyPage() {
   );
 }
 ```
+```python {{ title: 'Headless Backend (Python)' }}
+# 1. Install the Python SDK
+# pip install jeanmemory openai
 
-<br/>
-<Tip>
-The `<JeanChat />` component includes the `<SignInWithJean />` button and handles the entire authentication and chat experience out of the box. For more advanced use cases, including headless backend integration, check out our full [SDK documentation](/sdk/overview).
-</Tip>
+# 2. Get context before calling your LLM
+from jeanmemory import JeanClient
+from openai import OpenAI
+
+jean = JeanClient(api_key="YOUR_JEAN_API_KEY")
+openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
+
+context = jean.get_context(
+    user_token="USER_TOKEN_FROM_FRONTEND",
+    message="What was our last conversation about?"
+).text
+
+# 3. Use context in your LLM call
+completion = openai.chat.completions.create(
+    model="gpt-4-turbo",
+    messages=[{"role": "user", "content": f"Context: {context}\\n\\nUser question: What was our last conversation about?"}]
+)
+```
+</CodeGroup>
 
 <br/>
 <Tip>
 Want to just start building? We've consolidated all of our documentation into a single file.
 <button
   id="copyDocsBtn"
-  className="bg-primary-light text-white font-bold py-1 px-2 rounded text-xs ml-2"
+  className="bg-primary text-white font-bold py-1 px-2 rounded text-xs ml-2 hover:bg-primary-dark"
 >
   Copy All Docs
 </button>

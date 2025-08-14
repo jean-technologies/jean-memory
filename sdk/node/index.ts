@@ -24,6 +24,24 @@ export class JeanAgent {
     };
   }
 
+  tools = {
+    add_memory: async (userToken: string, content: string): Promise<any> => {
+      // TODO: Implement direct API call to /tools/add_memory
+      console.log(`[JeanSDK] Adding memory for user...`, { content });
+      return Promise.resolve({ success: true, message: "Memory will be added." });
+    },
+    search_memory: async (userToken: string, query: string): Promise<any> => {
+      // TODO: Implement direct API call to /tools/search_memory
+      console.log(`[JeanSDK] Searching memory for user...`, { query });
+      return Promise.resolve({ results: [] });
+    },
+    deep_memory_query: async (userToken: string, query: string): Promise<any> => {
+      // TODO: Implement direct API call to /tools/deep_memory_query
+      console.log(`[JeanSDK] Performing deep memory query for user...`, { query });
+      return Promise.resolve({ results: [] });
+    }
+  };
+
   /**
    * Process a message with Jean Memory context enhancement
    */
