@@ -39,7 +39,7 @@ Here is a simplified diagram of the Jean Memory ecosystem, showing how various d
 
 ```mermaid
 graph TD
-    subgraph "Data Sources & Integrations"
+    subgraph "Data Sources &<br/>Integrations"
         direction TB
         I1[Notion]
         I2[Substack]
@@ -51,7 +51,7 @@ graph TD
         M[("User's Shared Memory<br/>(Conversations, Documents, Connections)")]
     end
 
-    subgraph "Your Applications (SDKs)"
+    subgraph "Your Custom Applications (via SDKs)"
         direction TB
         A1["Mobile App<br/>(React SDK)"]
         A2["Web Dashboard<br/>(React SDK)"]
