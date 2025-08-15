@@ -54,9 +54,10 @@ export async function makeMCPRequest(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
       'X-User-Id': user.user_id,
       'X-Client-Name': clientName,
-      'X-API-Key': apiKey
+      'X-Api-Key': apiKey
     },
     body: JSON.stringify(mcpRequest)
   });

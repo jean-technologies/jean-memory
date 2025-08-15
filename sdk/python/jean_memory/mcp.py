@@ -37,8 +37,8 @@ def make_mcp_request(
     global _request_id
     _request_id += 1
 
-    # Extract user_id from token (simplified - in production would decode JWT)
-    user_id = user_token.replace('user_', '')
+    # Extract user_id from token (handles both test_user_ and user_ prefixes)
+    user_id = user_token.replace('test_user_', '').replace('user_', '')
 
     mcp_request = {
         "jsonrpc": "2.0",
@@ -53,10 +53,10 @@ def make_mcp_request(
     url = f"{api_base}/mcp/{client_name}/messages/{user_id}"
     headers = {
         'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}',
         'X-User-Id': user_id,
         'X-Client-Name': client_name,
-        'X-API-Key': api_key,
-        'Authorization': f'Bearer {user_token}'
+        'X-Api-Key': api_key
     }
 
     response = requests.post(url, json=mcp_request, headers=headers)

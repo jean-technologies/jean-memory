@@ -55,17 +55,17 @@ export async function makeMCPRequest(
     }
   };
 
-  // Extract user_id from token (simplified - in production would decode JWT)
-  const userId = userToken.replace('user_', '');
+  // Extract user_id from token (handles both test_user_ and user_ prefixes)
+  const userId = userToken.replace('test_user_', '').replace('user_', '');
 
   const response = await fetch(`${apiBase}/mcp/${clientName}/messages/${userId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
       'X-User-Id': userId,
       'X-Client-Name': clientName,
-      'X-API-Key': apiKey,
-      'Authorization': `Bearer ${userToken}`
+      'X-Api-Key': apiKey
     },
     body: JSON.stringify(mcpRequest)
   });
