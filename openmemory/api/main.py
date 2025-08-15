@@ -383,8 +383,12 @@ logger.info("🧠 Loading Jean Memory SDK MCP Router...")
 app.include_router(sdk_mcp.router, dependencies=[Depends(get_current_supa_user)])
 logger.info("✅ Jean Memory SDK MCP Router loaded successfully at /api/jean-chat")
 # Test User Auto-Creation Router (for simple SDK onboarding)
+# CHANGED: Fixed auth dependency to enable API key access for test user creation
+# This allows SDKs to create test users without full OAuth flow, enabling immediate testing
+# Original: dependencies=[Depends(get_current_supa_user)] - required Supabase auth
+# Fixed: dependencies=[Depends(get_current_user)] - accepts API key auth for testing
 logger.info("🔧 Loading Auto Test User Router...")
-app.include_router(test_user.router, dependencies=[Depends(get_current_supa_user)])
+app.include_router(test_user.router, dependencies=[Depends(get_current_user)])
 logger.info("✅ Auto Test User Router loaded successfully at /api/v1/test-user")
 # Local Auth Router (only active in local development)
 app.include_router(local_auth_router, prefix="/api/v1")
