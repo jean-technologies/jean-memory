@@ -1,6 +1,6 @@
 {
   "name": "@jeanmemory/node",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Node.js SDK for Jean Memory - Power your Next.js and other Node.js backends with a perfect memory",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jean-technologies/jean-memory.git",
+    "url": "git+https://github.com/jean-technologies/jean-memory.git",
     "directory": "sdk/node"
   },
   "homepage": "https://jeanmemory.com",

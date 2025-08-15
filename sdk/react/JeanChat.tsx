@@ -66,28 +66,28 @@ export function JeanChat({
 
   if (!agent.isAuthenticated) {
     return (
-      <div className={`flex items-center justify-center h-full ${className} bg-gray-50 dark:bg-gray-900`}>
-        <div className="text-center p-8 max-w-md w-full">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+      <div className={`flex items-center justify-center h-full ${className} bg-white dark:bg-gray-950`}>
+        <div className="text-center p-8 max-w-sm w-full">
+          <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-800">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z" 
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    className="text-gray-600 dark:text-gray-400"/>
+                    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                    className="text-gray-400 dark:text-gray-500"/>
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Connect with Jean Memory</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Access your personalized AI assistant with persistent memory across all your applications.
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Connect to Jean Memory</h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed">
+            Sign in to access your personalized AI assistant with persistent memory.
           </p>
           <button 
             onClick={agent.signIn}
-            className="inline-flex items-center justify-center gap-2.5 px-5 py-2.5 bg-black text-white font-medium text-sm border border-transparent rounded-lg hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:focus:ring-gray-300 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium text-sm rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-300 focus:ring-offset-2"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z" 
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>Sign In with Jean</span>
+            <span>Sign In</span>
           </button>
         </div>
       </div>
@@ -95,36 +95,36 @@ export function JeanChat({
   }
 
   return (
-    <div className={`flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${className}`}>
+    <div className={`flex flex-col h-full bg-white dark:bg-gray-950 ${className}`}>
       {showHeader && (
-        <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-              <Bot size={20} className="text-white" />
+            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+              <Bot size={16} className="text-gray-600 dark:text-gray-400" />
             </div>
             <div>
-              <h3 className="font-semibold">Jean Memory Assistant</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Connected as {agent.user?.email}</p>
+              <h3 className="font-medium text-gray-900 dark:text-white text-sm">Jean Memory</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-500">{agent.user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <button
               onClick={() => setIsDark(!isDark)}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg transition-colors"
             >
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <button
               onClick={() => window.location.reload()}
               disabled={agent.messages.length === 0}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               title="Clear Conversation"
             >
               <Trash2 size={16} />
             </button>
             <button
               onClick={agent.signOut}
-              className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors"
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg transition-colors"
               title="Sign Out"
             >
               <LogOut size={16} />
@@ -134,46 +134,46 @@ export function JeanChat({
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6">
         {agent.messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
-            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center mb-4">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-gray-500">
                 <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z"></path>
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-1">Start a conversation</h3>
-            <p className="text-sm max-w-sm">
-              Ask me anything! I have access to your personal context and can help with a wide range of topics.
+            <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">How can I help you today?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+              I have access to your personal context and can assist with a wide range of topics.
             </p>
           </div>
         ) : (
-          <>
+          <div className="space-y-6 max-w-3xl mx-auto">
             {agent.messages.map((message: any) => (
               <div
                 key={message.id}
-                className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                {message.role !== 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                    <Bot size={18} className="text-white" />
-                  </div>
-                )}
-                <div className={`max-w-[80%]`}>
+                <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center flex-shrink-0">
+                  {message.role === 'user' ? (
+                    <User size={14} className="text-gray-600 dark:text-gray-400" />
+                  ) : (
+                    <Bot size={14} className="text-gray-600 dark:text-gray-400" />
+                  )}
+                </div>
+                <div className={`flex-1 max-w-[85%] ${message.role === 'user' ? 'text-right' : ''}`}>
                   <div
-                    className={`px-4 py-2.5 rounded-2xl ${
+                    className={`inline-block px-4 py-3 rounded-xl ${
                       message.role === 'user'
-                        ? 'bg-blue-600 text-white rounded-br-lg'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-lg'
+                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                        : 'bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-800'
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">
                       {message.content}
                     </p>
                   </div>
-                   <div className={`mt-1.5 px-1 ${
-                    message.role === 'user' ? 'text-right' : 'text-left'
-                  }`}>
+                  <div className={`mt-1.5 px-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                     <span className="text-xs text-gray-400 dark:text-gray-500">
                       {message.timestamp.toLocaleTimeString([], { 
                         hour: 'numeric', 
@@ -182,58 +182,50 @@ export function JeanChat({
                     </span>
                   </div>
                 </div>
-                 {message.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                    <User size={18} className="text-gray-600 dark:text-gray-300" />
-                  </div>
-                )}
               </div>
             ))}
             
             {agent.isLoading && (
-              <div className="flex items-start gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                  <Bot size={18} className="text-white" />
+              <div className="flex items-start gap-3 max-w-3xl mx-auto">
+                <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center flex-shrink-0">
+                  <Bot size={14} className="text-gray-600 dark:text-gray-400" />
                 </div>
-                <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-2.5 rounded-2xl rounded-bl-lg">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
+                <div className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
-          </>
+          </div>
         )}
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
+      <div className="border-t border-gray-100 dark:border-gray-800 p-4">
         {agent.error && (
-          <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-lg flex items-start space-x-3">
-            <div className="text-red-600 dark:text-red-400 mt-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg flex items-start space-x-3">
+            <div className="text-red-500 dark:text-red-400 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-red-700 dark:text-red-300 text-sm font-medium">Error</p>
               <p className="text-red-600 dark:text-red-400 text-sm">{agent.error}</p>
             </div>
             <button 
               onClick={() => window.location.reload()} 
-              className="p-1 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full"
+              className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded"
             >
-              <X size={16}/>
+              <X size={14}/>
             </button>
           </div>
         )}
-        <form onSubmit={handleSubmit} className="relative">
+        <form onSubmit={handleSubmit} className="relative max-w-3xl mx-auto">
           <textarea
             value={input}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
@@ -245,18 +237,18 @@ export function JeanChat({
             }}
             placeholder={placeholder}
             disabled={agent.isLoading}
-            className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 resize-none text-sm"
+            className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 focus:border-transparent disabled:opacity-50 resize-none text-sm text-gray-900 dark:text-gray-100"
             rows={1}
           />
           <button
             type="submit"
             disabled={agent.isLoading || !input.trim()}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
           >
             {agent.isLoading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <Send size={16} />
+              <Send size={14} />
             )}
           </button>
         </form>

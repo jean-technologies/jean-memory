@@ -1,6 +1,6 @@
 {
   "name": "@jeanmemory/react",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "React SDK for Jean Memory - Build personalized AI chatbots in 5 lines of code",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,7 +37,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jean-technologies/jean-memory.git",
+    "url": "git+https://github.com/jean-technologies/jean-memory.git",
     "directory": "sdk/react"
   },
   "homepage": "https://jeanmemory.com"

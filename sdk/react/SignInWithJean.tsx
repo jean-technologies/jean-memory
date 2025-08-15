@@ -162,18 +162,18 @@ export function SignInWithJean({
     <button
       onClick={handleSignIn}
       disabled={isLoading}
-      className={`inline-flex items-center justify-center gap-2.5 px-5 py-2.5 bg-black text-white font-medium text-sm border border-transparent rounded-lg hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:focus:ring-gray-300 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium text-sm rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-300 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       {isLoading ? (
         <>
-          <div className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
           <span>Signing in...</span>
         </>
       ) : children || (
         <>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L13.09 8.26L20 9L13.09 15.74L12 22L10.91 15.74L4 9L10.91 8.26L12 2Z" 
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <span>Sign In with Jean</span>
         </>

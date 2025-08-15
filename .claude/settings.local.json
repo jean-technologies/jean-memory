@@ -11,7 +11,14 @@
       "Bash(npm install:*)",
       "Bash(cd:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(cd:*)",
+      "Bash(python:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(pip3 install:*)",
+      "Bash(npm publish:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
