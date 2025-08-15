@@ -1,6 +1,6 @@
 # Jean Memory React SDK
 
-The official React library for Jean Memory - 5-line integration for personalized AI chatbots using MCP (Model Context Protocol).
+The official React library for Jean Memory - Complete chat interface with personalized AI using MCP (Model Context Protocol).
 
 ## Installation
 
@@ -11,21 +11,22 @@ npm install @jeanmemory/react
 ## Quick Start (5 lines of code)
 
 ```jsx
-import { JeanAgent } from '@jeanmemory/react';
+import { JeanProvider, JeanChat } from '@jeanmemory/react';
 
 function App() {
-  return <JeanAgent 
-    apiKey="your-jean-memory-api-key"
-    systemPrompt="You are a helpful assistant"
-  />;
+  return (
+    <JeanProvider apiKey="your-jean-memory-api-key">
+      <JeanChat />
+    </JeanProvider>
+  );
 }
 ```
 
 That's it! This creates a complete personalized AI chatbot that:
 - 🧠 **Remembers the user** via Jean Memory
 - 💬 **Provides intelligent responses** using MCP jean_memory tool  
-- 🎯 **Acts according to your system prompt** (math tutor, writing coach, etc.)
-- 🔐 **Handles authentication** automatically
+- 🎯 **Beautiful chat interface** with authentication
+- 🔐 **Handles OAuth authentication** automatically
 
 ## Get Your API Key
 
@@ -34,63 +35,156 @@ Visit [jeanmemory.com](https://jeanmemory.com) to:
 2. Get your API key (starts with `jean_sk_`)
 3. Start building personalized AI experiences
 
-## Examples
+## Authentication
 
-### Math Tutor
+The SDK supports both test and production authentication:
+
+### Test Mode (Development)
 ```jsx
-<JeanAgent 
-  apiKey="your-api-key-here"
-  systemPrompt="You are an expert math tutor who helps students with algebra, calculus, and statistics"
-/>
+// Use a test API key for development:
+<JeanProvider apiKey="jean_sk_test_demo_key_for_ui_testing">
+  <JeanChat />
+</JeanProvider>
+// Automatically creates a test user - no OAuth required
 ```
 
-### Writing Coach  
+### Production Mode (OAuth)
 ```jsx
-<JeanAgent 
-  apiKey="your-api-key-here"
-  systemPrompt="You are an expert writing coach who helps improve clarity and engagement"
-/>
+// Use your production API key:
+<JeanProvider apiKey="jean_sk_live_your_production_key">
+  <JeanChat />
+</JeanProvider>
+// Shows "Sign In with Jean" button, handles complete OAuth flow
 ```
 
 ## Advanced Usage
 
+### Custom Authentication UI
 ```jsx
-import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { JeanProvider, useJean, JeanChat } from '@jeanmemory/react';
 
 function CustomApp() {
-  const agent = useJeanAgent({
-    apiKey: "your-api-key-here",
-    systemPrompt: "You are a helpful assistant"
-  });
+  const { isAuthenticated, signIn, signOut, user } = useJean();
 
-  if (!agent.isAuthenticated) {
-    return <SignInWithJean onSuccess={agent.signIn} />;
+  if (!isAuthenticated) {
+    return (
+      <div>
+        <h1>Welcome to My App</h1>
+        <button onClick={signIn}>Sign In with Jean</button>
+      </div>
+    );
   }
 
-  return <JeanChat agent={agent} />;
+  return (
+    <div>
+      <header>
+        <span>Welcome, {user?.name}</span>
+        <button onClick={signOut}>Sign Out</button>
+      </header>
+      <JeanChat />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <JeanProvider apiKey="your-jean-memory-api-key">
+      <CustomApp />
+    </JeanProvider>
+  );
 }
 ```
 
-## Development Setup
+### Standalone Sign In Component
+```jsx
+import { SignInWithJean } from '@jeanmemory/react';
 
-For local development, add a proxy to your `package.json` to avoid CORS issues:
-
-```json
-{
-  "name": "my-app",
-  "scripts": { "..." },
-  "proxy": "https://jean-memory-api-virginia.onrender.com"
+function LoginPage() {
+  return (
+    <SignInWithJean 
+      apiKey="your-jean-memory-api-key"
+      onSuccess={(user) => {
+        console.log('User authenticated:', user);
+        // Handle successful authentication
+      }}
+      onError={(error) => {
+        console.error('Authentication failed:', error);
+        // Handle authentication error
+      }}
+    >
+      Custom Sign In Button Text
+    </SignInWithJean>
+  );
 }
 ```
+
+### Direct Memory Tools
+```jsx
+import { JeanProvider, useJean } from '@jeanmemory/react';
+
+function MemoryExample() {
+  const { tools, isAuthenticated } = useJean();
+
+  const handleAddMemory = async () => {
+    if (isAuthenticated) {
+      await tools.add_memory("User likes pizza");
+    }
+  };
+
+  const handleSearchMemory = async () => {
+    if (isAuthenticated) {
+      const results = await tools.search_memory("food preferences");
+      console.log('Memory results:', results);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleAddMemory}>Add Memory</button>
+      <button onClick={handleSearchMemory}>Search Memory</button>
+    </div>
+  );
+}
+```
+
+## Components & Hooks
+
+### Core Components
+- **`JeanProvider`** - Authentication and state management provider
+- **`JeanChat`** - Complete chat interface with authentication
+- **`SignInWithJean`** - Standalone OAuth authentication button
+
+### Hooks
+- **`useJean()`** - Access authentication state and methods
+- **`useJeanMCP()`** - Direct access to MCP tools and memory functions
+
+### Types
+- **`JeanUser`** - User object with authentication details
+- **`JeanMessage`** - Chat message structure
+- **`MessageOptions`** - Options for sending messages
+
+## OAuth Configuration
+
+The SDK automatically handles OAuth authentication with Jean Memory's secure backend. For development on localhost, the following ports are supported:
+- `localhost:3000` (Create React App default)
+- `localhost:3005` (Custom development)
+- `localhost:5173` (Vite default)
+- `localhost:8080` (Alternative development)
 
 ## Features
 
-- ✅ Professional assistant-UI styling
-- ✅ MCP (Model Context Protocol) integration  
+- ✅ Complete OAuth 2.1 PKCE authentication flow
+- ✅ Beautiful professional chat interface
 - ✅ Real-time personalized responses
-- ✅ TypeScript support
-- ✅ 5-line integration promise
 - ✅ Cross-platform memory persistence
+- ✅ TypeScript support
+- ✅ Test mode for development
+- ✅ Production-ready authentication
+- ✅ MCP (Model Context Protocol) integration
+
+## Development Setup
+
+For local development, no additional configuration is needed. The SDK automatically detects test API keys and localhost environments.
 
 ## Documentation
 

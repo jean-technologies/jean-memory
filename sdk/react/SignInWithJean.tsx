@@ -71,7 +71,7 @@ export function SignInWithJean({
       }
 
       // Exchange code for token
-      const response = await fetch(`${JEAN_API_BASE}/oauth/token`, {
+      const response = await fetch(`${JEAN_API_BASE}/sdk/oauth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -147,8 +147,8 @@ export function SignInWithJean({
         scope: 'read write'
       });
       
-      // Redirect to OAuth provider
-      window.location.href = `${JEAN_OAUTH_BASE}/oauth/authorize?${params.toString()}`;
+      // Redirect to OAuth provider (SDK endpoint)
+      window.location.href = `${JEAN_API_BASE}/sdk/oauth/authorize?${params.toString()}`;
     } catch (error) {
       setIsLoading(false);
       console.error('Sign in error:', error);
