@@ -4,7 +4,7 @@
 export const consolidatedDocs: string = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-14 22:30:47
+**Generated on:** 2025-08-14 22:40:12
 
 ## What is Jean Memory?
 
