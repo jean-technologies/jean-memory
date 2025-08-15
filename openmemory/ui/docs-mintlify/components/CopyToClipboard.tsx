@@ -7,7 +7,7 @@ const CopyToClipboard = () => {
   const copyContent = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/assets/consolidated-docs.md');
+      const response = await fetch('/static/consolidated-docs.md');
       const text = await response.text();
       await navigator.clipboard.writeText(text);
       setButtonText('Copied!');

@@ -79,12 +79,10 @@ def get_page_order():
 def main():
     script_dir = Path(__file__).parent
     docs_dir = script_dir.parent / "openmemory" / "ui" / "docs-mintlify"
-    # IMPORTANT: Files placed in /assets/ directory are accessible via HTTP despite ignorePaths setting
-    # ignorePaths only prevents MDX parsing, not static file serving (learned from commit afaa0d7)
-    # The copy button was working with /assets/consolidated-docs.md in the original implementation
-    output_file = docs_dir / "assets" / "consolidated-docs.md"
+    # The copy button component will fetch the file from the /static/ directory
+    output_file = docs_dir / "static" / "consolidated-docs.md"
     
-    # Ensure assets directory exists
+    # Ensure static directory exists
     output_file.parent.mkdir(exist_ok=True)
     
     # Get page order from mint.json
