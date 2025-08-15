@@ -76,7 +76,7 @@ completion = openai.chat.completions.create(
     }}
     onClick={() => {
       const btn = document.getElementById('copyDocsBtn');
-      fetch('/assets/consolidated-docs.md')
+      fetch('/static/consolidated-docs.md')
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok');

@@ -239,7 +239,15 @@ export const consolidatedDocs: string = `
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(ts_content)
     
+    # Also generate a markdown file in the static directory for direct fetching
+    static_output_path = docs_dir / "static" / "consolidated-docs.md"
+    static_output_path.parent.mkdir(exist_ok=True)
+    
+    with open(static_output_path, 'w', encoding='utf-8') as f:
+        f.write(final_content)
+    
     print(f"✅ Consolidated documentation generated as a TS module: {output_file}")
+    print(f"✅ Consolidated documentation generated as markdown: {static_output_path}")
     print(f"📊 Processed {len(mdx_files)} documentation files")
     print(f"📝 Generated {len(final_content.split())} words of documentation")
 
