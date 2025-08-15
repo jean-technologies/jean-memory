@@ -392,7 +392,10 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       const data = encoder.encode(apiKey);
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 8);
+      const hashHex = hashArray.map(b => {
+        const hex = b.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      }).join('').substring(0, 8);
       const testUserId = `test_user_${hashHex}`;
       
       // Create test user object
