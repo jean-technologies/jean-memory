@@ -16,7 +16,7 @@ from app.routers.migration import router as migration_router
 from fastapi_pagination import add_pagination
 from fastapi.middleware.cors import CORSMiddleware
 from app.models import User, App
-from app.auth import get_current_supa_user
+from app.auth import get_current_supa_user, get_current_user
 from app.middleware.memory_monitor import MemoryMonitorMiddleware
 from app.background_tasks import cleanup_old_tasks
 from app.services.background_processor import background_processor
@@ -383,10 +383,9 @@ logger.info("🧠 Loading Jean Memory SDK MCP Router...")
 app.include_router(sdk_mcp.router, dependencies=[Depends(get_current_supa_user)])
 logger.info("✅ Jean Memory SDK MCP Router loaded successfully at /api/jean-chat")
 # Test User Auto-Creation Router (for simple SDK onboarding)
-# CHANGED: Fixed auth dependency to enable API key access for test user creation
-# This allows SDKs to create test users without full OAuth flow, enabling immediate testing
-# Original: dependencies=[Depends(get_current_supa_user)] - required Supabase auth
-# Fixed: dependencies=[Depends(get_current_user)] - accepts API key auth for testing
+# FIXED: Changed from get_current_supa_user to get_current_user to enable API key access
+# This allows SDKs to create test users with just API keys (no OAuth required for testing)
+# get_current_user supports both JWT tokens AND API keys, enabling immediate SDK testing
 logger.info("🔧 Loading Auto Test User Router...")
 app.include_router(test_user.router, dependencies=[Depends(get_current_user)])
 logger.info("✅ Auto Test User Router loaded successfully at /api/v1/test-user")
