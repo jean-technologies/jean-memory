@@ -204,7 +204,9 @@ class JeanMemoryClient:
             api_key=self.api_key,
             tool_name='jean_memory',
             arguments={
-                'user_message': query
+                'user_message': query,
+                'is_new_conversation': False,  # Reasonable default for SDK users
+                'needs_context': True         # SDK users always want context
             },
             api_base=self.api_base
         )

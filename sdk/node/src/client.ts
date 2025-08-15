@@ -207,7 +207,9 @@ export class JeanMemoryClient {
       this.apiKey,
       'jean_memory',
       {
-        user_message: query
+        user_message: query,
+        is_new_conversation: false,  // Reasonable default for SDK users
+        needs_context: true         // SDK users always want context
       },
       this.apiBase
     );
@@ -329,7 +331,11 @@ export class JeanMemoryClient {
         userToken,
         this.apiKey,
         'add_memories',
-        { text: content },
+        { 
+          text: content,
+          tags: [],           // Empty array default - flexible for future
+          priority: false     // Default priority - flexible for future
+        },
         this.apiBase
       );
 
@@ -346,7 +352,12 @@ export class JeanMemoryClient {
         userToken,
         this.apiKey,
         'search_memory',
-        { query: query },
+        { 
+          query: query,
+          limit: 10,           // Reasonable default - flexible for future
+          tags_filter: null,   // No filter default - flexible for future  
+          deep_search: false   // Standard search default - flexible for future
+        },
         this.apiBase
       );
 
