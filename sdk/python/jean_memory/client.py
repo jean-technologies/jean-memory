@@ -38,12 +38,12 @@ class JeanMemoryClient:
             
         self.api_key = api_key
         self.api_base = api_base or "https://jean-memory-api-virginia.onrender.com"
-        self.version = "1.2.0"
+        self.version = "1.2.3"
         self.session = requests.Session()
         self.session.headers.update({
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
-            'User-Agent': 'JeanMemory-Python-SDK/1.0.1'
+            'User-Agent': f'JeanMemory-Python-SDK/{self.version}'
         })
         
         # Initialize tools namespace

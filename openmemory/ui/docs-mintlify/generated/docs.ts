@@ -4,7 +4,7 @@
 export const consolidatedDocs: string = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-14 22:40:12
+**Generated on:** 2025-08-14 22:46:02
 
 ## What is Jean Memory?
 
@@ -106,7 +106,6 @@ graph TD
     style I3 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px,color:#333333
     style I4 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px,color:#333333
 \`\`\`
-
 ### How It Works
 
 1.  **A User Signs Up:** The moment a user authenticates with your application via the secure \`<SignInWithJean />\` button, their memory graph is born.
