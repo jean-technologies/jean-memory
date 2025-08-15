@@ -173,23 +173,41 @@ export class JeanMemoryClient {
   }
 
   /**
-   * Get context from Jean Memory (main API matching documentation)
+   * Get or create auto test user for this API key
    */
-  async getContext(options: {
-    user_token: string;
-    message: string;
-    speed?: 'fast' | 'balanced' | 'comprehensive';
-    tool?: 'jean_memory' | 'search_memory';
-    format?: 'simple' | 'enhanced';
-  }): Promise<ContextResponse> {
+  private async getTestUserToken(): Promise<string> {
+    try {
+      const response = await fetch(`${this.apiBase}/api/v1/test-user`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'User-Agent': this.userAgent
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get test user: ${response.statusText}`);
+      }
+
+      const data = await response.json() as { user_token: string };
+      return data.user_token;
+    } catch (error: any) {
+      throw new JeanMemoryError(`Failed to create test user: ${error?.message || 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get context from Jean Memory (simple API matching documentation)
+   */
+  async getContext(query: string): Promise<string> {
+    const userToken = await this.getTestUserToken(); // Auto-created test user
     const mcpResponse = await makeMCPRequest(
-      options.user_token,
+      userToken,
       this.apiKey,
-      options.tool || 'jean_memory',
+      'jean_memory',
       {
-        user_message: options.message,
-        speed: options.speed || 'balanced',
-        format: options.format || 'enhanced'
+        user_message: query
       },
       this.apiBase
     );
@@ -198,10 +216,7 @@ export class JeanMemoryClient {
       throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
     }
 
-    return {
-      text: mcpResponse.result?.content?.[0]?.text || '',
-      metadata: mcpResponse.result
-    };
+    return mcpResponse.result?.content?.[0]?.text || '';
   }
 
   /**
@@ -308,12 +323,13 @@ export class JeanMemoryClient {
    * Direct tool access namespace (matching documentation)
    */
   tools = {
-    add_memory: async (options: { user_token: string; content: string }) => {
+    add_memory: async (content: string) => {
+      const userToken = await this.getTestUserToken(); // Auto-created test user
       const mcpResponse = await makeMCPRequest(
-        options.user_token,
+        userToken,
         this.apiKey,
         'add_memories',
-        { text: options.content },
+        { text: content },
         this.apiBase
       );
 
@@ -324,12 +340,13 @@ export class JeanMemoryClient {
       return mcpResponse.result;
     },
 
-    search_memory: async (options: { user_token: string; query: string }) => {
+    search_memory: async (query: string) => {
+      const userToken = await this.getTestUserToken(); // Auto-created test user
       const mcpResponse = await makeMCPRequest(
-        options.user_token,
+        userToken,
         this.apiKey,
         'search_memory',
-        { query: options.query },
+        { query: query },
         this.apiBase
       );
 

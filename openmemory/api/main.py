@@ -26,6 +26,7 @@ from app.routers.agent_mcp import agent_mcp_router
 from app.routers.local_auth import router as local_auth_router
 from app.routers import sdk_demo
 from app.routers import sdk_mcp
+from app.routers import test_user
 from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import oauth_mcp_router
 from app.routing.mcp import mcp_router as mcp_v2_router
@@ -381,6 +382,10 @@ logger.info("✅ Jean Memory SDK Demo Router loaded successfully at /sdk/*")
 logger.info("🧠 Loading Jean Memory SDK MCP Router...")
 app.include_router(sdk_mcp.router, dependencies=[Depends(get_current_supa_user)])
 logger.info("✅ Jean Memory SDK MCP Router loaded successfully at /api/jean-chat")
+# Test User Auto-Creation Router (for simple SDK onboarding)
+logger.info("🔧 Loading Auto Test User Router...")
+app.include_router(test_user.router, dependencies=[Depends(get_current_supa_user)])
+logger.info("✅ Auto Test User Router loaded successfully at /api/v1/test-user")
 # Local Auth Router (only active in local development)
 app.include_router(local_auth_router, prefix="/api/v1")
 app.include_router(memories_router, prefix="/api/v1", dependencies=[Depends(get_current_supa_user)])

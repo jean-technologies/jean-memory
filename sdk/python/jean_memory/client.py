@@ -38,6 +38,7 @@ class JeanMemoryClient:
             
         self.api_key = api_key
         self.api_base = api_base or "https://jean-memory-api-virginia.onrender.com"
+        self.version = "1.2.0"
         self.session = requests.Session()
         self.session.headers.update({
             'Authorization': f'Bearer {api_key}',
@@ -159,41 +160,51 @@ class JeanMemoryClient:
             
         return "Relevant context:\n" + "\n".join(context_parts)
 
-    def get_context(
-        self,
-        user_token: str,
-        message: str,
-        speed: str = "balanced",
-        tool: str = "jean_memory",
-        format: str = "enhanced"
-    ) -> ContextResponse:
+    def _get_test_user_token(self) -> str:
+        """Get or create auto test user for this API key"""
+        import requests
+        
+        try:
+            response = requests.get(
+                f"{self.api_base}/api/v1/test-user",
+                headers={
+                    'Authorization': f'Bearer {self.api_key}',
+                    'Content-Type': 'application/json',
+                    'User-Agent': f'JeanMemory-Python-SDK/{self.version}'
+                }
+            )
+            
+            if not response.ok:
+                raise JeanMemoryError(f"Failed to get test user: {response.status_code} {response.text}")
+            
+            data = response.json()
+            return data['user_token']
+            
+        except requests.RequestException as e:
+            raise JeanMemoryError(f"Failed to create test user: {str(e)}")
+        except KeyError:
+            raise JeanMemoryError("Invalid response from test user endpoint")
+
+    def get_context(self, query: str) -> str:
         """
-        Get context from Jean Memory (main API matching documentation)
+        Get context from Jean Memory (simple API matching documentation)
         
         Args:
-            user_token: User authentication token
-            message: User message to get context for
-            speed: Processing speed ('fast', 'balanced', 'comprehensive')
-            tool: Tool to use ('jean_memory', 'search_memory')
-            format: Response format ('simple', 'enhanced')
+            query: Question or query to get context for
             
         Returns:
-            ContextResponse with text and metadata
+            String response with context
             
         Example:
-            context = client.get_context(
-                user_token=user_token,
-                message="What did we discuss about the project?"
-            )
+            context = client.get_context("What did we discuss about the project?")
         """
+        user_token = self._get_test_user_token()
         mcp_response = make_mcp_request(
             user_token=user_token,
             api_key=self.api_key,
-            tool_name=tool,
+            tool_name='jean_memory',
             arguments={
-                'user_message': message,
-                'speed': speed,
-                'format': format
+                'user_message': query
             },
             api_base=self.api_base
         )
@@ -260,8 +271,9 @@ class JeanMemoryClient:
         def __init__(self, client):
             self.client = client
             
-        def add_memory(self, user_token: str, content: str) -> Dict:
+        def add_memory(self, content: str) -> Dict:
             """Add memory using direct tool access"""
+            user_token = self.client._get_test_user_token()
             mcp_response = make_mcp_request(
                 user_token=user_token,
                 api_key=self.client.api_key,
@@ -275,8 +287,9 @@ class JeanMemoryClient:
 
             return mcp_response.result
 
-        def search_memory(self, user_token: str, query: str) -> Dict:
+        def search_memory(self, query: str) -> Dict:
             """Search memory using direct tool access"""
+            user_token = self.client._get_test_user_token()
             mcp_response = make_mcp_request(
                 user_token=user_token,
                 api_key=self.client.api_key,
