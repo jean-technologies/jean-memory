@@ -418,6 +418,52 @@ export class JeanMemoryClient {
       }
 
       return mcpResponse.result;
+    },
+
+    deep_memory_query: async (params: { user_token?: string; query: string } | string) => {
+      // Handle both signatures for flexibility
+      const isObject = typeof params === 'object';
+      const query = isObject ? params.query : params;
+      const userToken = isObject && params.user_token ? params.user_token : await this.getTestUserToken();
+      
+      const mcpResponse = await makeMCPRequest(
+        userToken,
+        this.apiKey,
+        'deep_memory_query',
+        { 
+          query: query
+        },
+        this.apiBase
+      );
+
+      if (mcpResponse.error) {
+        throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
+      }
+
+      return mcpResponse.result;
+    },
+
+    store_document: async (params: { user_token?: string; title: string; content: string; document_type?: string }) => {
+      const { user_token, title, content, document_type = 'markdown' } = params;
+      const userToken = user_token || await this.getTestUserToken();
+      
+      const mcpResponse = await makeMCPRequest(
+        userToken,
+        this.apiKey,
+        'store_document',
+        { 
+          title,
+          content,
+          document_type
+        },
+        this.apiBase
+      );
+
+      if (mcpResponse.error) {
+        throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
+      }
+
+      return mcpResponse.result;
     }
   };
 

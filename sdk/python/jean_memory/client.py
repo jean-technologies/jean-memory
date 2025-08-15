@@ -346,3 +346,59 @@ class JeanMemoryClient:
                 raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
 
             return mcp_response.result
+
+        def deep_memory_query(self, query: str, user_token=None) -> Dict:
+            """
+            Perform complex graph traversal queries for deep memory analysis
+            
+            Args:
+                query: Deep query for graph traversal
+                user_token: OAuth token from frontend or None for test user
+                
+            Returns:
+                Deep query results with relationship mapping
+            """
+            final_user_token = user_token or self.client._get_test_user_token()
+            mcp_response = make_mcp_request(
+                user_token=final_user_token,
+                api_key=self.client.api_key,
+                tool_name='deep_memory_query',
+                arguments={'query': query},
+                api_base=self.client.api_base
+            )
+
+            if mcp_response.error:
+                raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
+
+            return mcp_response.result
+
+        def store_document(self, title: str, content: str, user_token=None, document_type: str = "markdown") -> Dict:
+            """
+            Store document for processing and memory extraction
+            
+            Args:
+                title: Document title
+                content: Document content
+                user_token: OAuth token from frontend or None for test user
+                document_type: Type of document (markdown, pdf, txt, etc.)
+                
+            Returns:
+                Document storage confirmation
+            """
+            final_user_token = user_token or self.client._get_test_user_token()
+            mcp_response = make_mcp_request(
+                user_token=final_user_token,
+                api_key=self.client.api_key,
+                tool_name='store_document',
+                arguments={
+                    'title': title,
+                    'content': content,
+                    'document_type': document_type
+                },
+                api_base=self.client.api_base
+            )
+
+            if mcp_response.error:
+                raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
+
+            return mcp_response.result

@@ -151,6 +151,10 @@ print(completion.choices[0].message.content)
 # Low-level memory tools (✅ TESTED & WORKING)
 jean.tools.add_memory(user_token=token, content="User likes dark mode")
 results = jean.tools.search_memory(user_token=token, query="preferences")
+
+# Advanced memory tools (✅ AVAILABLE)
+deep_results = jean.tools.deep_memory_query(user_token=token, query="complex relationship query")
+doc_result = jean.tools.store_document(user_token=token, title="Meeting Notes", content="...", document_type="markdown")
 ```
 
 **Configuration Options:**
@@ -239,6 +243,16 @@ function CustomChat() {
 - **`useJean`**: Core React hook for custom components
 - **`useJeanMCP`**: Advanced MCP tool access
 
+### **✅ Advanced Tools (Available)**
+
+```jsx
+const { tools } = useJean();
+
+// Advanced memory operations
+const deepResults = await tools.deep_memory_query("complex relationship query");
+const docResult = await tools.store_document("Meeting Notes", "...", "markdown");
+```
+
 ---
 
 ## 🟢 **Node.js SDK - TESTED & WORKING**
@@ -266,6 +280,23 @@ const contextResponse = await jean.getContext({
 
 // Response object (✅ CONFIRMED STRUCTURE)
 console.log(contextResponse.text);  // ✅ .text property exists and works
+```
+
+### **✅ Advanced Tools (Available)**
+
+```typescript
+// Advanced memory operations
+const deepResults = await jean.tools.deep_memory_query({
+  user_token: userToken,
+  query: "complex relationship query"
+});
+
+const docResult = await jean.tools.store_document({
+  user_token: userToken,
+  title: "Meeting Notes",
+  content: "...",
+  document_type: "markdown"
+});
 ```
 
 ### **🟡 Next.js API Route Example (Documented)**

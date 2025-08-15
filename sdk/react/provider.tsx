@@ -43,6 +43,8 @@ interface JeanContextValue {
   tools: {
     add_memory: (content: string) => Promise<any>;
     search_memory: (query: string) => Promise<any>;
+    deep_memory_query: (query: string) => Promise<any>;
+    store_document: (title: string, content: string, document_type?: string) => Promise<any>;
   };
 }
 
@@ -312,6 +314,44 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         apiKey,
         'search_memory',
         { query }
+      );
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      return response.result;
+    },
+
+    deep_memory_query: async (query: string) => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const response = await makeMCPRequest(
+        user,
+        apiKey,
+        'deep_memory_query',
+        { query }
+      );
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      return response.result;
+    },
+
+    store_document: async (title: string, content: string, document_type: string = 'markdown') => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const response = await makeMCPRequest(
+        user,
+        apiKey,
+        'store_document',
+        { title, content, document_type }
       );
       
       if (response.error) {
