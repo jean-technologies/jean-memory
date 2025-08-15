@@ -118,4 +118,8 @@ context = jean.get_context(user_token=..., message="...")
 # The deterministic, tool-based way:
 jean.tools.add_memory(user_token=..., content="My favorite color is blue.")
 search_results = jean.tools.search_memory(user_token=..., query="preferences")
+
+# Advanced tools for complex operations:
+deep_results = jean.tools.deep_memory_query(user_token=..., query="complex relationship query")
+doc_result = jean.tools.store_document(user_token=..., title="Meeting Notes", content="...", document_type="markdown")
 ```

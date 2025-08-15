@@ -84,6 +84,8 @@ const {
   tools: {
     add_memory: (content: string) => Promise<any>;
     search_memory: (query: string) => Promise<any>;
+    deep_memory_query: (query: string) => Promise<any>;
+    store_document: (title: string, content: string, document_type?: string) => Promise<any>;
   };
 } = useJean();
 ```
