@@ -102,6 +102,79 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
 
     // API key will be validated on first request
     console.log('✅ Jean Memory SDK initialized');
+
+    // Handle OAuth redirect
+    const handleOAuthRedirect = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const storedState = sessionStorage.getItem('jean_oauth_state');
+      const verifier = sessionStorage.getItem('jean_oauth_verifier');
+
+      if (code && state && storedState && verifier) {
+        setIsLoading(true);
+        if (state !== storedState) {
+          setRawError('Invalid OAuth state');
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          // Exchange code for token
+          const tokenResponse = await fetch(`${JEAN_API_BASE}/sdk/oauth/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              grant_type: 'authorization_code',
+              code,
+              client_id: apiKey,
+              redirect_uri: window.location.origin + window.location.pathname,
+              code_verifier: verifier
+            }),
+          });
+
+          if (!tokenResponse.ok) {
+            const errorData = await tokenResponse.json();
+            throw new Error(errorData.detail || 'Token exchange failed');
+          }
+
+          const { access_token } = await tokenResponse.json();
+
+          // Get user info
+          const userInfoResponse = await fetch(`${JEAN_API_BASE}/sdk/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${access_token}` },
+          });
+
+          if (!userInfoResponse.ok) {
+            throw new Error('Failed to fetch user info');
+          }
+
+          const userInfo = await userInfoResponse.json();
+          
+          const user: JeanUser = {
+            user_id: userInfo.sub,
+            email: userInfo.email,
+            name: userInfo.name,
+            access_token,
+          };
+
+          handleSetUser(user);
+
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          sessionStorage.removeItem('jean_oauth_state');
+          sessionStorage.removeItem('jean_oauth_verifier');
+
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'OAuth flow failed';
+          setRawError(errorMessage);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    handleOAuthRedirect();
   }, [apiKey]);
 
   // Load user from localStorage on mount
