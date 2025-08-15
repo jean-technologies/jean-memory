@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-14 21:07:05
+**Generated on:** 2025-08-14 21:56:26
 
 ## What is Jean Memory?
 
@@ -53,8 +53,6 @@ await agent.run();
 # Complete Documentation
 
 ## Introduction
-
-import { SignInWithJean } from 'jeanmemory-react';
 
 Computers have no memory of their interactions with users. Every conversation starts from scratch. **Jean Memory solves this by creating a persistent, intelligent memory layer that makes AI truly personal.**
 
@@ -128,7 +126,6 @@ The fastest way to get a full-featured chatbot running in your app.
 // npm install @jeanmemory/react
 
 // 2. Add the provider and chat component
-import { JeanProvider, JeanChat } from '@jeanmemory/react';
 
 function MyPage() {
   return (
@@ -148,7 +145,7 @@ For developers who want to power their existing AI agents with our headless SDK.
 # pip install jeanmemory openai
 
 # 2. Get context before calling your LLM
-import os
+
 from jeanmemory import JeanClient
 from openai import OpenAI
 
@@ -176,8 +173,6 @@ completion = openai.chat.completions.create(
 ---
 
 ## Architecture
-
-import { Card } from 'mintlify/components';
 
 ## More Than a Database: An Intelligent Memory System
 
@@ -207,8 +202,6 @@ This combination of a powerful, multi-database backend and a sophisticated intel
 ---
 
 ## Sdk: Overview
-
-import { Card } from 'mintlify/components';
 
 We provide a suite of specialized SDKs, each designed for a specific part of the modern application stack. This lets you use the right tool for the job, whether you're building a user interface or a backend agent.
 
@@ -241,7 +234,6 @@ This is the fastest way to get a full-featured chatbot running in your app.
 The provider manages all the state and network requests for you.
 
 ```jsx {{ title: 'pages/_app.tsx' }}
-import { JeanProvider } from '@jeanmemory/react';
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -251,7 +243,6 @@ function MyApp({ Component, pageProps }) {
   );
 }
 
-export default MyApp;
 ```
 
 This code wraps your entire application with the `JeanProvider`. This provider is essential as it manages the connection to Jean Memory, handles authentication, and makes the `useJean` hook available to all its child components. You provide it with your unique API key, which authenticates your application with the Jean Memory service.
@@ -261,9 +252,7 @@ This code wraps your entire application with the `JeanProvider`. This provider i
 This component renders the entire chat interface.
 
 ```jsx {{ title: 'pages/index.tsx' }}
-import { JeanChat } from '@jeanmemory/react';
 
-export default function Home() {
   return (
     
       <JeanChat />
@@ -298,7 +287,6 @@ await sendMessage("What's my schedule?", { format: "simple" });
 For advanced use cases where you need fine-grained control over Jean Memory tools, use the `useJeanMCP` hook. This provides direct access to the same MCP tools used by Claude Desktop and Cursor.
 
 ```typescript
-import { useJeanMCP, useJean } from '@jeanmemory/react';
 
 function AdvancedComponent() {
   const agent = useJean();
@@ -367,7 +355,7 @@ The primary use case for the Python SDK is to retrieve context that you can then
 The example below shows a typical workflow where we get context from Jean Memory before calling the OpenAI API.
 
 ```python
-import os
+
 from openai import OpenAI
 from jeanmemory import JeanClient
 
@@ -485,18 +473,13 @@ A common use case is to create an API endpoint that your frontend can call. This
 The example below shows how to create a Next.js API route that is compatible with edge runtimes and the Vercel AI SDK.
 
 ```typescript {{ title: 'pages/api/chat.ts' }}
-import { JeanClient } from '@jeanmemory/node';
-import { OpenAIStream, StreamingTextResponse } from 'ai';
-import OpenAI from 'openai';
 
 // Create the clients
 const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Set the runtime to edge for best performance
-export const runtime = 'edge';
 
-export default async function POST(req: Request) {
   // 1. Get the user's message and token from the request body
   const { messages, userToken } = await req.json();
   const currentMessage = messages[messages.length - 1].content;
@@ -790,8 +773,6 @@ These are the primitive, low-level tools that our context engineering flows are 
 ---
 
 ## Use Cases
-
-import { Card, Cards } from 'mintlify/components';
 
 Jean Memory is more than just a chatbot enhancement; it's a foundational layer for building next-generation AI applications. Below are a few examples to inspire you.
 
@@ -1184,8 +1165,6 @@ By using these strategies, Jean Memory ensures that the AI has the perfect amoun
 
 ## Guides: Full Stack Workflow
 
-import { Steps } from '@mintlify/components';
-
 ## The Goal
 
 This guide will walk you through the primary, recommended pattern for integrating Jean Memory: using our frontend tools to authenticate a user, and then using our backend SDK to get context for that user.
@@ -1201,8 +1180,6 @@ This pattern gives you full control over your application's UI and your final LL
 The first step is to get a secure `access_token` for your user. The `<SignInWithJean />` component from our React SDK is the easiest way to do this.
 
 ```tsx {{ title: 'src/MyWebApp.tsx' }}
-import { SignInWithJean } from 'jeanmemory-react';
-import { useState } from 'react';
 
 function MyWebApp() {
   const [userToken, setUserToken] = useState(null);
@@ -1253,11 +1230,9 @@ async function askMyAgent(message, userToken) {
 On your backend, you'll receive the request. Now you can use our headless Node.js or Python SDK to get the context for the user.
 
 ```typescript {{ title: '/pages/api/chat.ts' }}
-import { JeanMemory } from '@jeanmemory/node';
 
 const jean = new JeanMemory({ apiKey: process.env.JEAN_API_KEY });
 
-export default async function handler(req, res) {
   const userToken = req.headers.authorization?.split(' ')[1];
   const { message } = req.body;
 

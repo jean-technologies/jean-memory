@@ -16,6 +16,10 @@ def clean_mdx_content(content):
     # Remove frontmatter
     content = re.sub(r'^---[\s\S]*?---\n?', '', content, flags=re.MULTILINE)
     
+    # Remove import/export statements that cause parsing issues
+    content = re.sub(r'^import\s+.*?;?\s*$', '', content, flags=re.MULTILINE)
+    content = re.sub(r'^export\s+.*?;?\s*$', '', content, flags=re.MULTILINE)
+    
     # Remove JSX components and convert to plain text/markdown
     content = re.sub(r'<Card[^>]*>', '', content)
     content = re.sub(r'</Card>', '', content)
@@ -75,6 +79,9 @@ def get_page_order():
 def main():
     script_dir = Path(__file__).parent
     docs_dir = script_dir.parent / "openmemory" / "ui" / "docs-mintlify"
+    # IMPORTANT: Files placed in /assets/ directory are accessible via HTTP despite ignorePaths setting
+    # ignorePaths only prevents MDX parsing, not static file serving (learned from commit afaa0d7)
+    # The copy button was working with /assets/consolidated-docs.md in the original implementation
     output_file = docs_dir / "assets" / "consolidated-docs.md"
     
     # Ensure assets directory exists
