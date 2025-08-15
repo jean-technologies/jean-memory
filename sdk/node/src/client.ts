@@ -4,14 +4,16 @@
  */
 
 import { JeanMemoryAuth } from './auth';
-import { makeMCPRequest, ContextResponse } from './mcp';
+import { makeMCPRequest, ContextResponse as MCPContextResponse } from './mcp';
 import { 
   Memory, 
   MemoryCreateRequest, 
   MemorySearchOptions, 
   MemoryListOptions,
   APIResponse,
-  ClientConfig
+  ClientConfig,
+  ContextResponse,
+  OAuthContextParams
 } from './types';
 
 export class JeanMemoryError extends Error {
@@ -36,7 +38,7 @@ export class JeanMemoryClient {
 
     this.apiKey = config.apiKey;
     this.apiBase = config.apiBase || 'https://jean-memory-api-virginia.onrender.com';
-    this.userAgent = config.userAgent || 'JeanMemory-Node-SDK/1.0.1';
+    this.userAgent = config.userAgent || 'JeanMemory-Node-SDK/1.2.4';
   }
 
   /**
@@ -198,18 +200,56 @@ export class JeanMemoryClient {
   }
 
   /**
-   * Get context from Jean Memory (simple API matching documentation)
+   * Get context from Jean Memory with OAuth support and backward compatibility
+   * @overload
+   * @param params Object with user_token and message for OAuth flow
+   * @returns ContextResponse with enhanced metadata
    */
-  async getContext(query: string): Promise<string> {
-    const userToken = await this.getTestUserToken(); // Auto-created test user
+  async getContext(params: OAuthContextParams): Promise<ContextResponse>;
+  /**
+   * @overload
+   * @param query Simple string query for backward compatibility
+   * @returns Plain string response
+   */
+  async getContext(query: string): Promise<string>;
+  async getContext(
+    paramsOrQuery: string | OAuthContextParams
+  ): Promise<string | ContextResponse> {
+    // Handle backward compatibility - simple string query
+    if (typeof paramsOrQuery === 'string') {
+      const userToken = await this.getTestUserToken();
+      const mcpResponse = await makeMCPRequest(
+        userToken,
+        this.apiKey,
+        'jean_memory',
+        {
+          user_message: paramsOrQuery,
+          is_new_conversation: false,
+          needs_context: true
+        },
+        this.apiBase
+      );
+
+      if (mcpResponse.error) {
+        throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
+      }
+
+      return mcpResponse.result?.content?.[0]?.text || '';
+    }
+
+    // Handle OAuth API - object with user_token and message
+    const { user_token, message, speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = paramsOrQuery;
+    
     const mcpResponse = await makeMCPRequest(
-      userToken,
+      user_token,
       this.apiKey,
-      'jean_memory',
+      tool,
       {
-        user_message: query,
-        is_new_conversation: false,  // Reasonable default for SDK users
-        needs_context: true         // SDK users always want context
+        user_message: message,
+        is_new_conversation: false,
+        needs_context: true,
+        speed,
+        format
       },
       this.apiBase
     );
@@ -218,7 +258,11 @@ export class JeanMemoryClient {
       throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
     }
 
-    return mcpResponse.result?.content?.[0]?.text || '';
+    // Return ContextResponse object
+    return {
+      text: mcpResponse.result?.content?.[0]?.text || '',
+      metadata: mcpResponse.result
+    } as ContextResponse;
   }
 
   /**
@@ -322,19 +366,23 @@ export class JeanMemoryClient {
   }
 
   /**
-   * Direct tool access namespace (matching documentation)
+   * Direct tool access namespace with OAuth support
    */
   tools = {
-    add_memory: async (content: string) => {
-      const userToken = await this.getTestUserToken(); // Auto-created test user
+    add_memory: async (params: { user_token?: string; content: string } | string) => {
+      // Handle both signatures for flexibility
+      const isObject = typeof params === 'object';
+      const content = isObject ? params.content : params;
+      const userToken = isObject && params.user_token ? params.user_token : await this.getTestUserToken();
+      
       const mcpResponse = await makeMCPRequest(
         userToken,
         this.apiKey,
         'add_memories',
         { 
           text: content,
-          tags: [],           // Empty array default - flexible for future
-          priority: false     // Default priority - flexible for future
+          tags: [],
+          priority: false
         },
         this.apiBase
       );
@@ -346,17 +394,21 @@ export class JeanMemoryClient {
       return mcpResponse.result;
     },
 
-    search_memory: async (query: string) => {
-      const userToken = await this.getTestUserToken(); // Auto-created test user
+    search_memory: async (params: { user_token?: string; query: string } | string) => {
+      // Handle both signatures for flexibility
+      const isObject = typeof params === 'object';
+      const query = isObject ? params.query : params;
+      const userToken = isObject && params.user_token ? params.user_token : await this.getTestUserToken();
+      
       const mcpResponse = await makeMCPRequest(
         userToken,
         this.apiKey,
         'search_memory',
         { 
           query: query,
-          limit: 10,           // Reasonable default - flexible for future
-          tags_filter: null,   // No filter default - flexible for future  
-          deep_search: false   // Standard search default - flexible for future
+          limit: 10,
+          tags_filter: null,
+          deep_search: false
         },
         this.apiBase
       );

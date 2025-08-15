@@ -11,12 +11,14 @@ interface JeanChatProps {
   className?: string;
   showHeader?: boolean;
   placeholder?: string;
+  style?: React.CSSProperties;
 }
 
 export function JeanChat({ 
   className = '', 
   showHeader = true,
-  placeholder = 'Type your message...'
+  placeholder = 'Type your message...',
+  style
 }: JeanChatProps) {
   const agent = useJean();
   const [input, setInput] = useState('');
@@ -66,7 +68,7 @@ export function JeanChat({
 
   if (!agent.isAuthenticated) {
     return (
-      <div className={`flex items-center justify-center h-full ${className} bg-white dark:bg-gray-950`}>
+      <div className={`flex items-center justify-center h-full ${className} bg-white dark:bg-gray-950`} style={style}>
         <div className="text-center p-8 max-w-sm w-full">
           <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-800">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -95,7 +97,7 @@ export function JeanChat({
   }
 
   return (
-    <div className={`flex flex-col h-full bg-white dark:bg-gray-950 ${className}`}>
+    <div className={`flex flex-col h-full bg-white dark:bg-gray-950 ${className}`} style={style}>
       {showHeader && (
         <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center space-x-3">

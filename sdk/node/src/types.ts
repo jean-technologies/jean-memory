@@ -257,6 +257,32 @@ export interface ContextOptions {
 }
 
 /**
+ * Enhanced context response with metadata
+ */
+export interface ContextResponse {
+  /** Generated context text */
+  text: string;
+  /** Response metadata */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * OAuth context parameters
+ */
+export interface OAuthContextParams {
+  /** User token for OAuth flow */
+  user_token: string;
+  /** User message/query */
+  message: string;
+  /** Processing speed mode */
+  speed?: 'fast' | 'balanced' | 'comprehensive';
+  /** Tool to use for processing */
+  tool?: 'jean_memory' | 'search_memory';
+  /** Response format */
+  format?: 'simple' | 'enhanced';
+}
+
+/**
  * Memory update request
  */
 export interface MemoryUpdateRequest {
