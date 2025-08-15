@@ -4,6 +4,7 @@
  */
 
 import { JeanMemoryAuth } from './auth';
+import { makeMCPRequest, ContextResponse } from './mcp';
 import { 
   Memory, 
   MemoryCreateRequest, 
@@ -149,9 +150,9 @@ export class JeanMemoryClient {
   }
 
   /**
-   * Get formatted context for a query
+   * Get formatted context for a query (legacy method)
    */
-  async getContext(query: string): Promise<string> {
+  async getContextLegacy(query: string): Promise<string> {
     if (!query || !query.trim()) {
       throw new Error('Query cannot be empty');
     }
@@ -169,6 +170,38 @@ export class JeanMemoryClient {
     });
 
     return 'Relevant context:\\n' + contextParts.join('\\n');
+  }
+
+  /**
+   * Get context from Jean Memory (main API matching documentation)
+   */
+  async getContext(options: {
+    user_token: string;
+    message: string;
+    speed?: 'fast' | 'balanced' | 'comprehensive';
+    tool?: 'jean_memory' | 'search_memory';
+    format?: 'simple' | 'enhanced';
+  }): Promise<ContextResponse> {
+    const mcpResponse = await makeMCPRequest(
+      options.user_token,
+      this.apiKey,
+      options.tool || 'jean_memory',
+      {
+        user_message: options.message,
+        speed: options.speed || 'balanced',
+        format: options.format || 'enhanced'
+      },
+      this.apiBase
+    );
+
+    if (mcpResponse.error) {
+      throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
+    }
+
+    return {
+      text: mcpResponse.result?.content?.[0]?.text || '',
+      metadata: mcpResponse.result
+    };
   }
 
   /**
@@ -270,6 +303,43 @@ export class JeanMemoryClient {
       created_at: string;
     }>('GET', '/api/v1/user/me');
   }
+
+  /**
+   * Direct tool access namespace (matching documentation)
+   */
+  tools = {
+    add_memory: async (options: { user_token: string; content: string }) => {
+      const mcpResponse = await makeMCPRequest(
+        options.user_token,
+        this.apiKey,
+        'add_memory',
+        { content: options.content },
+        this.apiBase
+      );
+
+      if (mcpResponse.error) {
+        throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
+      }
+
+      return mcpResponse.result;
+    },
+
+    search_memory: async (options: { user_token: string; query: string }) => {
+      const mcpResponse = await makeMCPRequest(
+        options.user_token,
+        this.apiKey,
+        'search_memory',
+        { query: options.query },
+        this.apiBase
+      );
+
+      if (mcpResponse.error) {
+        throw new JeanMemoryError(mcpResponse.error.message, mcpResponse.error.code);
+      }
+
+      return mcpResponse.result;
+    }
+  };
 
   /**
    * Get authentication helper for OAuth flows

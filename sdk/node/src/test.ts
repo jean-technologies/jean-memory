@@ -96,7 +96,7 @@ async function testSDK() {
     // Override retrieveMemories to return empty array
     (mockClient as any).retrieveMemories = async () => [];
     
-    const context = await mockClient.getContext('test query');
+    const context = await mockClient.getContextLegacy('test query');
     
     if (context === 'No relevant context found.') {
       console.log('✅ Context generation for empty results works');

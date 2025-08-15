@@ -12,6 +12,9 @@ Example usage:
 
 from .client import JeanMemoryClient, JeanMemoryError
 from .auth import JeanMemoryAuth
+
+# Alias for documentation compatibility  
+from .client import JeanMemoryClient as JeanClient
 from .models import (
     Memory,
     MemorySearchResult,
@@ -32,6 +35,9 @@ __all__ = [
     # Core client
     "JeanMemoryClient",
     "JeanMemoryError",
+    
+    # Documentation compatibility alias
+    "JeanClient", 
     
     # Authentication
     "JeanMemoryAuth",

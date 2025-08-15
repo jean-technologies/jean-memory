@@ -15,6 +15,9 @@
 // Core client and error classes
 export { JeanMemoryClient, JeanMemoryError } from './client';
 
+// Alias for documentation compatibility
+export { JeanMemoryClient as JeanClient } from './client';
+
 // Authentication
 export { JeanMemoryAuth } from './auth';
 

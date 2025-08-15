@@ -7,6 +7,7 @@ import requests
 import json
 from typing import Optional, List, Dict, Any
 from urllib.parse import urljoin
+from .mcp import make_mcp_request, ContextResponse
 
 class JeanMemoryError(Exception):
     """Base exception for Jean Memory API errors"""
@@ -43,6 +44,9 @@ class JeanMemoryClient:
             'Content-Type': 'application/json',
             'User-Agent': 'JeanMemory-Python-SDK/1.0.1'
         })
+        
+        # Initialize tools namespace
+        self.tools = self.Tools(self)
 
     def _make_request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict:
         """
@@ -129,18 +133,15 @@ class JeanMemoryClient:
         result = self._make_request('GET', '/api/v1/memories/search', params)
         return result.get('memories', [])
 
-    def get_context(self, query: str) -> str:
+    def get_context_legacy(self, query: str) -> str:
         """
-        Get contextual information based on query
+        Get contextual information based on query (legacy method)
         
         Args:
             query: Query to get context for
             
         Returns:
             Formatted context string
-            
-        Example:
-            context = client.get_context("What should I know about the project?")
         """
         if not query or not query.strip():
             raise ValueError("Query cannot be empty")
@@ -157,6 +158,54 @@ class JeanMemoryClient:
             context_parts.append(f"{i}. {content} ({timestamp})")
             
         return "Relevant context:\n" + "\n".join(context_parts)
+
+    def get_context(
+        self,
+        user_token: str,
+        message: str,
+        speed: str = "balanced",
+        tool: str = "jean_memory",
+        format: str = "enhanced"
+    ) -> ContextResponse:
+        """
+        Get context from Jean Memory (main API matching documentation)
+        
+        Args:
+            user_token: User authentication token
+            message: User message to get context for
+            speed: Processing speed ('fast', 'balanced', 'comprehensive')
+            tool: Tool to use ('jean_memory', 'search_memory')
+            format: Response format ('simple', 'enhanced')
+            
+        Returns:
+            ContextResponse with text and metadata
+            
+        Example:
+            context = client.get_context(
+                user_token=user_token,
+                message="What did we discuss about the project?"
+            )
+        """
+        mcp_response = make_mcp_request(
+            user_token=user_token,
+            api_key=self.api_key,
+            tool_name=tool,
+            arguments={
+                'user_message': message,
+                'speed': speed,
+                'format': format
+            },
+            api_base=self.api_base
+        )
+
+        if mcp_response.error:
+            raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
+
+        text = ""
+        if mcp_response.result and mcp_response.result.get('content'):
+            text = mcp_response.result['content'][0].get('text', '')
+
+        return ContextResponse(text=text, metadata=mcp_response.result)
 
     def delete_memory(self, memory_id: str) -> Dict:
         """
@@ -204,3 +253,39 @@ class JeanMemoryClient:
             Health status dictionary
         """
         return self._make_request('GET', '/api/v1/health')
+
+    class Tools:
+        """Direct tool access namespace (matching documentation)"""
+        
+        def __init__(self, client):
+            self.client = client
+            
+        def add_memory(self, user_token: str, content: str) -> Dict:
+            """Add memory using direct tool access"""
+            mcp_response = make_mcp_request(
+                user_token=user_token,
+                api_key=self.client.api_key,
+                tool_name='add_memory',
+                arguments={'content': content},
+                api_base=self.client.api_base
+            )
+
+            if mcp_response.error:
+                raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
+
+            return mcp_response.result
+
+        def search_memory(self, user_token: str, query: str) -> Dict:
+            """Search memory using direct tool access"""
+            mcp_response = make_mcp_request(
+                user_token=user_token,
+                api_key=self.client.api_key,
+                tool_name='search_memory',
+                arguments={'query': query},
+                api_base=self.client.api_base
+            )
+
+            if mcp_response.error:
+                raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
+
+            return mcp_response.result
