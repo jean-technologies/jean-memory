@@ -79,8 +79,8 @@ def get_page_order():
 def main():
     script_dir = Path(__file__).parent
     docs_dir = script_dir.parent / "openmemory" / "ui" / "docs-mintlify"
-    # NEW: Define the output path for the TypeScript module
-    output_file = script_dir.parent / "openmemory" / "ui" / "lib" / "generated" / "docs.ts"
+    # NEW: Output the TS module inside the docs directory so the dev server can see it.
+    output_file = docs_dir / "generated" / "docs.ts"
     
     # Ensure the generated directory exists
     output_file.parent.mkdir(parents=True, exist_ok=True)
