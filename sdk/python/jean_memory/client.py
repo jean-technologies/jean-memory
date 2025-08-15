@@ -7,7 +7,8 @@ import requests
 import json
 from typing import Optional, List, Dict, Any
 from urllib.parse import urljoin
-from .mcp import make_mcp_request, ContextResponse
+from .mcp import make_mcp_request, ContextResponse as MCPContextResponse
+from .models import ContextResponse
 
 class JeanMemoryError(Exception):
     """Base exception for Jean Memory API errors"""
@@ -185,28 +186,50 @@ class JeanMemoryClient:
         except KeyError:
             raise JeanMemoryError("Invalid response from test user endpoint")
 
-    def get_context(self, query: str) -> str:
+    def get_context(self, user_token=None, message=None, query=None, 
+                   speed="balanced", tool="jean_memory", format="enhanced") -> ContextResponse:
         """
-        Get context from Jean Memory (simple API matching documentation)
+        Get context from Jean Memory with full OAuth support and backward compatibility
         
         Args:
-            query: Question or query to get context for
+            user_token: OAuth token from frontend (production) or None for test user
+            message: User message (preferred parameter name for new API)
+            query: User query (backward compatibility with old API)
+            speed: "fast" | "balanced" | "comprehensive" 
+            tool: "jean_memory" | "search_memory"
+            format: "simple" | "enhanced"
             
         Returns:
-            String response with context
+            ContextResponse object with .text property
             
-        Example:
-            context = client.get_context("What did we discuss about the project?")
+        Examples:
+            # New API (matches documentation):
+            response = client.get_context(user_token=token, message="What's my schedule?")
+            print(response.text)
+            
+            # Backward compatibility:
+            response = client.get_context(query="What's my schedule?")
+            print(response.text)
         """
-        user_token = self._get_test_user_token()
+        # Handle parameter flexibility
+        user_message = message or query
+        if not user_message:
+            raise ValueError("Either 'message' or 'query' parameter is required")
+        
+        # Get user token (from parameter or create test user)
+        final_user_token = user_token or self._get_test_user_token()
+        
+        # Make MCP request with enhanced options
         mcp_response = make_mcp_request(
-            user_token=user_token,
+            user_token=final_user_token,
             api_key=self.api_key,
-            tool_name='jean_memory',
+            tool_name=tool,
             arguments={
-                'user_message': query,
+                'user_message': user_message,
                 'is_new_conversation': False,  # Reasonable default for SDK users
-                'needs_context': True         # SDK users always want context
+                'needs_context': True,         # SDK users always want context
+                'speed': speed,
+                'format': format
             },
             api_base=self.api_base
         )
@@ -214,6 +237,7 @@ class JeanMemoryClient:
         if mcp_response.error:
             raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
 
+        # Extract text from MCP response
         text = ""
         if mcp_response.result and mcp_response.result.get('content'):
             text = mcp_response.result['content'][0].get('text', '')
@@ -273,11 +297,20 @@ class JeanMemoryClient:
         def __init__(self, client):
             self.client = client
             
-        def add_memory(self, content: str) -> Dict:
-            """Add memory using direct tool access"""
-            user_token = self.client._get_test_user_token()
+        def add_memory(self, content: str, user_token=None) -> Dict:
+            """
+            Add memory using direct tool access
+            
+            Args:
+                content: Memory content to add
+                user_token: OAuth token from frontend or None for test user
+                
+            Returns:
+                Memory creation result
+            """
+            final_user_token = user_token or self.client._get_test_user_token()
             mcp_response = make_mcp_request(
-                user_token=user_token,
+                user_token=final_user_token,
                 api_key=self.client.api_key,
                 tool_name='add_memories',
                 arguments={'text': content},
@@ -289,11 +322,20 @@ class JeanMemoryClient:
 
             return mcp_response.result
 
-        def search_memory(self, query: str) -> Dict:
-            """Search memory using direct tool access"""
-            user_token = self.client._get_test_user_token()
+        def search_memory(self, query: str, user_token=None) -> Dict:
+            """
+            Search memory using direct tool access
+            
+            Args:
+                query: Search query
+                user_token: OAuth token from frontend or None for test user
+                
+            Returns:
+                Search results
+            """
+            final_user_token = user_token or self.client._get_test_user_token()
             mcp_response = make_mcp_request(
-                user_token=user_token,
+                user_token=final_user_token,
                 api_key=self.client.api_key,
                 tool_name='search_memory',
                 arguments={'query': query},

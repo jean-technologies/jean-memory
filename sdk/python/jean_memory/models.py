@@ -134,6 +134,21 @@ class MemoryListResponse(BaseModel):
     memories: List[Memory] = Field(default_factory=list, description="List of memories")
     pagination: PaginationMeta = Field(..., description="Pagination information")
 
+class ContextResponse:
+    """Response object for get_context method to match documentation"""
+    def __init__(self, text: str, metadata: Optional[Dict] = None):
+        self.text = text
+        self.metadata = metadata or {}
+        self.speed = self.metadata.get('speed', 'balanced')
+        self.tool_used = self.metadata.get('tool', 'jean_memory')
+        self.format = self.metadata.get('format', 'enhanced')
+    
+    def __str__(self):
+        return self.text
+    
+    def __repr__(self):
+        return f"ContextResponse(text='{self.text[:50]}...', speed='{self.speed}', tool='{self.tool_used}')"
+
 # Type aliases for convenience
 MemoryDict = Dict[str, Any]
 ContextDict = Dict[str, Any]

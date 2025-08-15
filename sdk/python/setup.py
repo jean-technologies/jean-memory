@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="jeanmemory",
-    version="1.2.3",
+    version="1.2.4",
     author="Jean Memory",
     author_email="support@jeanmemory.com",
     description="Python SDK for Jean Memory - Add long-term memory to your Python agents and backend services",
@@ -35,7 +35,8 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    packages=find_packages(),
+    packages=["jean_memory"],
+    py_modules=["jeanmemory"],
     python_requires=">=3.8",
     install_requires=[
         "requests>=2.25.0",

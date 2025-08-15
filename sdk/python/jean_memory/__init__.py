@@ -24,10 +24,11 @@ from .models import (
     APIResponse,
     HealthStatus,
     MemoryListResponse,
-    MemoryStatus
+    MemoryStatus,
+    ContextResponse
 )
 
-__version__ = "1.0.1"
+__version__ = "1.2.4"
 __author__ = "Jean Memory"
 __email__ = "support@jeanmemory.com"
 
@@ -52,6 +53,7 @@ __all__ = [
     "HealthStatus",
     "MemoryListResponse",
     "MemoryStatus",
+    "ContextResponse",
     
     # Package metadata
     "__version__",
