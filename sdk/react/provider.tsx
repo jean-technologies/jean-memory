@@ -129,7 +129,9 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         }
 
         try {
-          // Exchange code for token
+          // Exchange code for token (use bridge URL as redirect_uri for consistency)
+          const bridgeUrl = 'https://jeanmemory.com/oauth-bridge.html';
+          
           const tokenResponse = await fetch(`${JEAN_API_BASE}/sdk/oauth/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -137,7 +139,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
               grant_type: 'authorization_code',
               code,
               client_id: apiKey,
-              redirect_uri: window.location.origin + window.location.pathname,
+              redirect_uri: bridgeUrl, // Must match the one used in authorization
               code_verifier: verifier
             }),
           });
@@ -429,18 +431,23 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       sessionStorage.setItem('jean_oauth_state', state);
       sessionStorage.setItem('jean_oauth_verifier', verifier);
       
-      // Build OAuth URL
+      // Use OAuth bridge pattern to avoid Supabase auth hijacking
+      const bridgeUrl = 'https://jeanmemory.com/oauth-bridge.html';
+      const finalRedirectUri = window.location.origin + window.location.pathname;
+      
+      // Build OAuth URL with bridge pattern
       const params = new URLSearchParams({
         response_type: 'code',
         client_id: apiKey || 'default_client',
-        redirect_uri: window.location.origin + window.location.pathname,
+        redirect_uri: bridgeUrl,
+        final_redirect: finalRedirectUri, // Bridge will redirect here with code
         state,
         code_challenge: challenge,
         code_challenge_method: 'S256',
         scope: 'read write'
       });
       
-      // Redirect to SDK OAuth provider (not the main OAuth endpoint)
+      // Redirect to SDK OAuth provider using bridge pattern
       window.location.href = `${JEAN_API_BASE}/sdk/oauth/authorize?${params.toString()}`;
     } catch (error) {
       setIsLoading(false);

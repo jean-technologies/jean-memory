@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jean Memory - Completing Authentication...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .error {
+            color: #dc3545;
+            padding: 1rem;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <div class="message">Completing authentication...</div>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        (function() {
+            console.log('🔐 OAuth Bridge - SDK Authentication Handler');
+            console.log('URL:', window.location.href);
+            
+            const statusEl = document.getElementById('status');
+            
+            try {
+                // Extract OAuth parameters from URL
+                const params = new URLSearchParams(window.location.search);
+                const code = params.get('code');
+                const state = params.get('state');
+                const error = params.get('error');
+                const error_description = params.get('error_description');
+                const final_redirect = params.get('final_redirect');
+                
+                console.log('OAuth Parameters:', {
+                    code: code ? 'present' : 'missing',
+                    state: state ? 'present' : 'missing',
+                    error: error,
+                    error_description: error_description,
+                    final_redirect: final_redirect
+                });
+                
+                // Handle OAuth errors
+                if (error) {
+                    console.error('OAuth Error:', error, error_description);
+                    statusEl.innerHTML = `<div class="error">Authentication failed: ${error_description || error}</div>`;
+                    return;
+                }
+                
+                // Validate required parameters
+                if (!code || !state) {
+                    console.error('Missing required OAuth parameters');
+                    statusEl.innerHTML = '<div class="error">Invalid authentication response - missing parameters</div>';
+                    return;
+                }
+                
+                // Determine redirect destination
+                let redirectUrl;
+                
+                if (final_redirect) {
+                    // SDK OAuth flow - redirect back to original app with code and state
+                    console.log('SDK OAuth flow detected, redirecting to:', final_redirect);
+                    const redirectUrlObj = new URL(final_redirect);
+                    redirectUrlObj.searchParams.set('code', code);
+                    redirectUrlObj.searchParams.set('state', state);
+                    redirectUrl = redirectUrlObj.toString();
+                } else {
+                    // Fallback for other flows
+                    console.log('Generic OAuth flow, redirecting to dashboard');
+                    redirectUrl = 'https://jeanmemory.com/dashboard';
+                }
+                
+                console.log('Redirecting to:', redirectUrl);
+                statusEl.innerHTML = '<div class="message">Redirecting back to your application...</div>';
+                
+                // Redirect after a short delay for user feedback
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1000);
+                
+            } catch (err) {
+                console.error('OAuth Bridge Error:', err);
+                statusEl.innerHTML = `<div class="error">Authentication processing failed: ${err.message}</div>`;
+            }
+        })();
+    </script>
+</body>
+</html>
