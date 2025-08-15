@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { consolidatedDocs } from '../generated/docs';
 
 const CopyToClipboard = () => {
   const [buttonText, setButtonText] = useState('Copy All Docs for AI');
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // This log is crucial for debugging. It shows what the component is actually receiving.
-    // Check your browser's developer console for this message.
-    console.log('--- DEBUG: CopyToClipboard Component ---');
-    console.log('Type of imported content:', typeof consolidatedDocs);
-    console.log('Preview of imported content:', consolidatedDocs.substring(0, 200));
-    console.log('------------------------------------');
-  }, []);
 
   const copyContent = async () => {
     setIsLoading(true);
@@ -46,7 +37,7 @@ const CopyToClipboard = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              FORCE REFRESH TEST: If you see this, the component updated.
+              Skip the reading, start building
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Don't like reading docs? Copy all our documentation below and paste it into your AI coding tool (Cursor, Claude Code, etc.) with instructions for what you'd like to build.
@@ -62,7 +53,7 @@ const CopyToClipboard = () => {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               )}
-              FORCE REFRESH: {buttonText}
+              {buttonText}
             </button>
           </div>
         </div>
