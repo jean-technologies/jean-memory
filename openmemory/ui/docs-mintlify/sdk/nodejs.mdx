@@ -84,7 +84,23 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
 
-**Note for Testing:** The Node.js SDK v1.2.10+ includes auto test user functionality that creates isolated test users for each API key, allowing you to test core functionality without implementing full authentication during development.
+**Test User Support:** The Node.js SDK v1.2.10+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
+
+```typescript
+// With user token (production)
+const context = await jean.getContext({
+  user_token: userToken,  // From OAuth flow
+  message: "What's my schedule?"
+});
+
+// Without user token (automatic test user)
+const context = await jean.getContext({
+  // user_token automatically set to test user for this API key
+  message: "What's my schedule?"
+});
+```
+
+This allows you to test core functionality immediately without implementing full authentication during development.
 
 ---
 

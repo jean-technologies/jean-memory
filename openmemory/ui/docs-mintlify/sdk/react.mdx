@@ -55,6 +55,32 @@ This code adds the `<JeanChat />` component to your page. It’s a pre-built, fu
 
 That's it! You now have a fully functional, context-aware chatbot in your application. The `<JeanChat />` component will automatically handle authentication using the secure `<SignInWithJean />` flow.
 
+### Authentication Modes
+
+The React SDK supports two authentication modes depending on your API key:
+
+#### Production Mode (OAuth 2.1 PKCE)
+With production API keys, users must authenticate via OAuth:
+```jsx
+<JeanProvider apiKey="jean_sk_live_your_production_key">
+  <JeanChat /> {/* Shows SignInWithJean button first */}
+</JeanProvider>
+```
+
+#### Development Mode (Auto Test User)
+With test API keys (containing `test`), authentication is automatic:
+```jsx
+<JeanProvider apiKey="jean_sk_test_demo_key_for_ui_testing">
+  <JeanChat /> {/* Works immediately, no sign-in required */}
+</JeanProvider>
+```
+
+**Test User Features:**
+- ✅ **Automatic initialization** - no user interaction needed
+- ✅ **Consistent test user** - same user ID for each API key
+- ✅ **Isolated memories** - each test key gets its own test user
+- ✅ **Perfect for development** - start coding immediately
+
 ---
 
 ## Path 2: Building a Custom UI (Advanced)
@@ -170,57 +196,62 @@ await sendMessage("What's my schedule?", { tool: "search_memory" });
 await sendMessage("What's my schedule?", { format: "simple" });
 ```
 
-## Advanced: Direct MCP Tool Access
+## Advanced: Direct Tool Access
 
-For advanced use cases where you need fine-grained control over Jean Memory tools, use the `useJeanMCP` hook. This provides direct access to the same MCP tools used by Claude Desktop and Cursor.
+For advanced use cases where you need fine-grained control over Jean Memory, use the `tools` namespace from the `useJean` hook. These tools provide direct access to memory operations.
 
 ```typescript
-import { useJeanMCP, useJean } from '@jeanmemory/react';
+import { useJean } from '@jeanmemory/react';
 
 function AdvancedComponent() {
-  const agent = useJean();
-  const mcpTools = useJeanMCP({ apiKey: 'your-api-key' });
+  const { tools, isAuthenticated } = useJean();
   
   const handleDirectMemoryAdd = async () => {
-    if (!agent.user) return;
+    if (!isAuthenticated) return;
     
-    // Direct MCP tool call
-    const result = await mcpTools.addMemory(
-      agent.user, 
-      "My dog's name is Max."
-    );
+    // Direct tool call
+    const result = await tools.add_memory("My dog's name is Max.");
     
     console.log('Memory added:', result);
   };
   
   const handleSearch = async () => {
-    if (!agent.user) return;
+    if (!isAuthenticated) return;
     
-    const results = await mcpTools.searchMemory(
-      agent.user,
-      "information about my pets"
-    );
+    const results = await tools.search_memory("information about my pets");
     
     console.log('Search results:', results);
   };
   
   // Store documents directly
   const handleStoreDocument = async () => {
-    if (!agent.user) return;
+    if (!isAuthenticated) return;
     
-    await mcpTools.storeDocument(
-      agent.user,
+    await tools.store_document(
       "Meeting Notes",
       "# Team Meeting\n\n- Discussed project timeline\n- Next steps defined",
       "markdown"
     );
   };
+  
+  // Deep memory queries for complex relationship discovery
+  const handleDeepQuery = async () => {
+    if (!isAuthenticated) return;
+    
+    const insights = await tools.deep_memory_query(
+      "connections between my preferences and goals"
+    );
+    
+    console.log('Deep insights:', insights);
+  };
 }
 ```
 
-### MCP Tools Available
+### Available Tools
 
-- `callJeanMemory(user, message, isNewConversation?)` - Full jean_memory tool
-- `addMemory(user, content)` - Add a specific memory
-- `searchMemory(user, query)` - Search existing memories
-- `storeDocument(user, title, content, type?)` - Store structured documents
+- `tools.add_memory(content)` - Add a specific memory
+- `tools.search_memory(query)` - Search existing memories  
+- `tools.deep_memory_query(query)` - Complex relationship queries
+- `tools.store_document(title, content, type?)` - Store structured documents
+
+**Note**: These tools automatically handle authentication and use your user context. No manual token management required.

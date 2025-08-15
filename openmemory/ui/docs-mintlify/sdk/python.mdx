@@ -26,10 +26,10 @@ from jean_memory import JeanClient
 jean = JeanClient(api_key=os.environ.get("JEAN_API_KEY"))
 openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# 2. Get the user token from your frontend
-# This token is securely obtained via the OAuth flow handled by
-# our frontend components, like @jeanmemory/react.
-user_token = get_user_token_from_request() 
+# 2. Get the user token from your frontend (or use auto test user)
+# Production: Token from OAuth flow via @jeanmemory/react
+# Development: Leave empty for automatic test user
+user_token = get_user_token_from_request()  # Or None for test user 
 
 # 3. Get context from Jean Memory
 user_message = "What were the key takeaways from our last meeting about Project Phoenix?"
@@ -75,6 +75,35 @@ This code block demonstrates the complete "golden path" for using the headless P
 ### A Note on Authentication
 
 The `user_token` is the critical piece that connects a request to a specific user's memory. In a production application, your frontend should use our React SDK's `<SignInWithJean />` component (or a manual OAuth 2.1 PKCE flow) to authenticate the user and receive this token. Your frontend then passes this token to your backend, which uses it to make authenticated requests with the Python SDK.
+
+**Headless Authentication (Backend-Only)**
+
+For headless applications without a frontend, you have several options:
+
+```python
+# Option 1: Test mode (development)
+jean = JeanClient(api_key="jean_sk_test_your_key")
+context = jean.get_context(
+    # user_token=None automatically uses test user
+    message="Hello"
+)
+
+# Option 2: Manual OAuth flow (production)
+jean = JeanClient(api_key="jean_sk_live_your_key")
+
+# Generate OAuth URL for manual authentication
+auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
+print(f"Visit: {auth_url}")
+
+# After user visits URL and you get the code:
+user_token = jean.exchange_code_for_token(auth_code)
+
+# Option 3: Service account (enterprise)
+jean = JeanClient(
+    api_key="jean_sk_live_your_key",
+    service_account_key="your_service_account_key"
+)
+```
 
 For information on implementing a secure server-to-server OAuth flow for backend services, see the [Authentication](/authentication) guide.
 

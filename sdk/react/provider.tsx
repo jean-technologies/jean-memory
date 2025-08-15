@@ -105,6 +105,13 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     // API key will be validated on first request
     console.log('✅ Jean Memory SDK initialized');
 
+    // Check if this is a test API key and auto-initialize test user
+    if (apiKey.includes('test')) {
+      console.log('🧪 Test API key detected - initializing test user mode');
+      initializeTestUser();
+      return;
+    }
+
     // Handle OAuth redirect
     const handleOAuthRedirect = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -169,7 +176,15 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
 
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'OAuth flow failed';
-          setRawError(errorMessage);
+          console.error('OAuth callback error:', errorMessage);
+          
+          // Fallback to test user if OAuth fails and we have a test API key
+          if (apiKey.includes('test')) {
+            console.log('🧪 OAuth failed with test API key - falling back to test user mode');
+            await initializeTestUser();
+          } else {
+            setRawError(errorMessage);
+          }
         } finally {
           setIsLoading(false);
         }
@@ -362,6 +377,43 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }
   };
 
+  // Initialize test user for development/testing
+  const initializeTestUser = async () => {
+    if (!apiKey.includes('test')) {
+      setRawError('Test user initialization only available with test API keys');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Generate consistent test user ID from API key
+      const encoder = new TextEncoder();
+      const data = encoder.encode(apiKey);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 8);
+      const testUserId = `test_user_${hashHex}`;
+      
+      // Create test user object
+      const testUser: JeanUser = {
+        user_id: testUserId,
+        email: 'test@example.com',
+        name: 'Test User',
+        access_token: `test_token_${hashHex}`
+      };
+      
+      console.log('🧪 Test user initialized:', testUser);
+      handleSetUser(testUser);
+      
+    } catch (error) {
+      setRawError('Failed to initialize test user');
+      console.error('Test user initialization error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signIn = async () => {
     setIsLoading(true);
     
@@ -385,8 +437,8 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         scope: 'read write'
       });
       
-      // Redirect to OAuth provider
-      window.location.href = `${JEAN_API_BASE}/oauth/authorize?${params.toString()}`;
+      // Redirect to SDK OAuth provider (not the main OAuth endpoint)
+      window.location.href = `${JEAN_API_BASE}/sdk/oauth/authorize?${params.toString()}`;
     } catch (error) {
       setIsLoading(false);
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
@@ -397,12 +449,17 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   const handleSetUser = (newUser: JeanUser) => {
     setUser(newUser);
     localStorage.setItem('jean_user', JSON.stringify(newUser));
+    setRawError(null); // Clear any auth errors
   };
 
   const signOut = () => {
     setUser(null);
     setMessages([]);
+    setRawError(null);
     localStorage.removeItem('jean_user');
+    sessionStorage.removeItem('jean_oauth_state');
+    sessionStorage.removeItem('jean_oauth_verifier');
+    console.log('👋 User signed out');
   };
 
   const contextValue: JeanContextValue = {
