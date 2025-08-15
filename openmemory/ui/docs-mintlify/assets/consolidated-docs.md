@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-13 22:41:32
+**Generated on:** 2025-08-14 21:07:05
 
 ## What is Jean Memory?
 
@@ -60,7 +60,48 @@ Computers have no memory of their interactions with users. Every conversation st
 
 Our goal is to provide developers with the rich, personal context they need to make their AI applications truly intelligent. We are a specialized tool that integrates into your existing stack.
 
-![](/Users/jonathanpolitzki/Desktop/Jean Memory Code/jean-memory/openmemory/ui/docs-mintlify/diagram-1.svg)
+```mermaid
+graph TD
+    subgraph "Data Sources"
+        direction TB
+        I1[Notion]
+        I2[Substack]
+        I3[Website Scraping]
+        I4[File Uploads]
+    end
+
+    subgraph "Jean Memory Platform"
+        M[("User's Shared Memory<br/>(Conversations, Documents, Connections)")]
+    end
+
+    subgraph "Your Apps"
+        direction TB
+        A1["Mobile App<br/>(React SDK)"]
+        A2["Web Dashboard<br/>(React SDK)"]
+        A3["Chat Agent<br/>(Python SDK)"]
+        A4["API Service<br/>(Node.js SDK)"]
+    end
+
+    I1 --> M
+    I2 --> M
+    I3 --> M
+    I4 --> M
+
+    M --> A1
+    M --> A2
+    M --> A3
+    M --> A4
+
+    style M fill:#f0f4ff,stroke:#b8c7ff,stroke-width:2px,color:#333333
+    style A1 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px,color:#333333
+    style A2 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px,color:#333333
+    style A3 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px,color:#333333
+    style A4 fill:#e6f4ea,stroke:#b8d8be,stroke-width:1px,color:#333333
+    style I1 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px,color:#333333
+    style I2 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px,color:#333333
+    style I3 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px,color:#333333
+    style I4 fill:#fff8e6,stroke:#ffd8b8,stroke-width:1px,color:#333333
+```
 
 ### How It Works
 
@@ -252,19 +293,60 @@ await sendMessage("What's my schedule?", { tool: "search_memory" });
 await sendMessage("What's my schedule?", { format: "simple" });
 ```
 
-## Advanced: Direct Tool Access
+## Advanced: Direct MCP Tool Access
 
-For advanced use cases, the `useJean` hook also provides direct access to the core memory tools. This allows for more deterministic control over the memory layer.
+For advanced use cases where you need fine-grained control over Jean Memory tools, use the `useJeanMCP` hook. This provides direct access to the same MCP tools used by Claude Desktop and Cursor.
 
 ```typescript
-const { tools } = useJean();
+import { useJeanMCP, useJean } from '@jeanmemory/react';
 
-// Directly add a memory
-await tools.add_memory("My dog's name is Max.");
-
-// Perform a direct vector search
-const results = await tools.search_memory("information about my pets");
+function AdvancedComponent() {
+  const agent = useJean();
+  const mcpTools = useJeanMCP({ apiKey: 'your-api-key' });
+  
+  const handleDirectMemoryAdd = async () => {
+    if (!agent.user) return;
+    
+    // Direct MCP tool call
+    const result = await mcpTools.addMemory(
+      agent.user, 
+      "My dog's name is Max."
+    );
+    
+    console.log('Memory added:', result);
+  };
+  
+  const handleSearch = async () => {
+    if (!agent.user) return;
+    
+    const results = await mcpTools.searchMemory(
+      agent.user,
+      "information about my pets"
+    );
+    
+    console.log('Search results:', results);
+  };
+  
+  // Store documents directly
+  const handleStoreDocument = async () => {
+    if (!agent.user) return;
+    
+    await mcpTools.storeDocument(
+      agent.user,
+      "Meeting Notes",
+      "# Team Meeting\n\n- Discussed project timeline\n- Next steps defined",
+      "markdown"
+    );
+  };
+}
 ```
+
+### MCP Tools Available
+
+- `callJeanMemory(user, message, isNewConversation?)` - Full jean_memory tool
+- `addMemory(user, content)` - Add a specific memory
+- `searchMemory(user, query)` - Search existing memories
+- `storeDocument(user, title, content, type?)` - Store structured documents
 
 ---
 
@@ -469,6 +551,8 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
 
+**Note for Testing:** The Node.js SDK v1.2.3+ includes auto test user functionality that creates isolated test users for each API key, allowing you to test core functionality without implementing full authentication during development.
+
 ---
 
 ## Configuration Options (Optional)
@@ -566,19 +650,20 @@ graph TD;
         jean_memory["jean_memory (API)"]
     end
 
-    subgraph "Read (Retrieval)"
+    subgraph "Read (Retrieval & Orchestration)"
         direction TB
         jean_memory --> retrieval_strategies["Retrieval Strategies"];
         
-        subgraph "Layers of Depth"
-            retrieval_strategies --> shallow["Shallow Search<br/><i>Fast, Targeted</i>"];
-            retrieval_strategies --> deep["Deep Search<br/><i>Comprehensive</i>"];
+        subgraph "Three Paths of Context"
+            retrieval_strategies --> primer["Path 1: Narrative Primer<br/><i>(New Conversation)</i>"];
+            retrieval_strategies --> targeted["Path 2: Targeted Search<br/><i>(Continuing Conversation)</i>"];
+            retrieval_strategies --> acknowledge["Path 3: Acknowledge Only<br/><i>(No Context Needed)</i>"];
         end
 
         subgraph "Underlying Tools"
-            shallow --> search_memory_shallow["search_memory"];
-            deep --> search_memory_deep["search_memory"];
-            deep --> deep_memory_query["deep_memory_query"];
+            primer --> search_memory_primer["search_memory (for narrative)"];
+            targeted --> search_memory_targeted["search_memory"];
+            targeted --> deep_memory_query["deep_memory_query (optional)"];
         end
     end
 
@@ -595,18 +680,18 @@ graph TD;
     classDef tools fill:#6A5ACD,stroke:#FFF,stroke-width:2px,color:#FFF;
 
     class jean_memory api;
-    class retrieval_strategies,shallow,deep read;
+    class retrieval_strategies,primer,targeted,acknowledge read;
     class write_processor,add_memory,store_document write;
-    class search_memory_shallow,search_memory_deep,deep_memory_query tools;
+    class search_memory_primer,search_memory_targeted,deep_memory_query tools;
 ```
 
 ### Context Strategies
 
-The orchestrator uses different strategies to create the best possible context for the AI.
+The orchestrator uses three primary strategies to provide the right context at the right time:
 
-1.  **`deep_understanding`**: Used for new conversations to provide comprehensive context about the user.
-2.  **`relevant_context`**: Used for ongoing conversations to provide targeted, relevant information.
-3.  **`comprehensive_analysis`**: Used for deep queries like "tell me everything you know about X" to do a full scan of all available information.
+1.  **Narrative Primer**: For new conversations, the system retrieves a high-level user narrative to provide immediate, foundational context.
+2.  **Targeted Search**: For continuing conversations that require context, the system performs a targeted search for the most relevant memories, optionally using a deep query for more complex questions.
+3.  **Acknowledge Only**: When a client specifies that no context is needed, the system simply acknowledges the message and processes it in the background, optimizing for speed.
 
 ### Opinionated Context Flows
 
