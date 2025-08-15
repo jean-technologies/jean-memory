@@ -9,7 +9,9 @@
       "Bash(mkdir:*)",
       "Bash(npx create-next-app:*)",
       "Bash(npm install:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

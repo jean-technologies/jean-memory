@@ -5,5 +5,8 @@
     "dev": "next dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": []
+  "keywords": [],
+  "dependencies": {
+    "@jeanmemory/node": "^1.2.2"
+  }
 }
