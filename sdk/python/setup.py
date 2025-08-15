@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="jeanmemory",
-    version="1.2.6",
+    version="1.2.7",
     author="Jean Memory",
     author_email="support@jeanmemory.com",
     description="Python SDK for Jean Memory - Add long-term memory to your Python agents and backend services",

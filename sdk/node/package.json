@@ -1,6 +1,6 @@
 {
   "name": "@jeanmemory/node",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Node.js SDK for Jean Memory - Power your Next.js and other Node.js backends with a perfect memory",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
