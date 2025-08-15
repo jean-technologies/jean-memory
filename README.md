@@ -40,6 +40,12 @@ Jean Memory operates on a two-layer architecture: an intelligent orchestration l
   <img src="/openmemory/ui/public/og-image.png" width="600px" alt="Jean Memory Knowledge Graph">
 </p>
 
+## 🧪 SDK Testing (For Developers)
+
+**Testing the Jean Memory SDKs?** Use these guides:
+- **[Quick 5-Minute Test](./QUICK_SDK_TEST.md)** - Rapid verification of all SDKs
+- **[Complete Testing Guide](./DEVELOPER_TESTING_GUIDE.md)** - Comprehensive testing instructions
+
 ## Quick Start: Hosted Service
 
 Get started in seconds with our managed service:
