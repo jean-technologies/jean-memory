@@ -265,8 +265,8 @@ class JeanMemoryClient:
             mcp_response = make_mcp_request(
                 user_token=user_token,
                 api_key=self.client.api_key,
-                tool_name='add_memory',
-                arguments={'content': content},
+                tool_name='add_memories',
+                arguments={'text': content},
                 api_base=self.client.api_base
             )
 

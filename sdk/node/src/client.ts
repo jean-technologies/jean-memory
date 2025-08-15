@@ -312,8 +312,8 @@ export class JeanMemoryClient {
       const mcpResponse = await makeMCPRequest(
         options.user_token,
         this.apiKey,
-        'add_memory',
-        { content: options.content },
+        'add_memories',
+        { text: options.content },
         this.apiBase
       );
 
