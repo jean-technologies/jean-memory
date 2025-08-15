@@ -156,19 +156,29 @@ async def authorize(
     
     if client_id not in registered_clients:
         # If the client is not registered, check if it's a local development client
-        is_local_dev = (redirect_uri.startswith("http://localhost:") or 
-                       redirect_uri.startswith("http://127.0.0.1:") or
-                       redirect_uri == "https://jeanmemory.com/oauth-bridge.html")
+        is_local_dev = redirect_uri.startswith("http://localhost:") or redirect_uri.startswith("http://127.0.0.1:")
         
         if is_local_dev:
             # Auto-register a "Default Local" client for local development
-            # Use dynamic validation instead of hardcoded list
             local_client_id = "local-dev-client"
             if local_client_id not in registered_clients:
                 client_info = {
                     "client_id": local_client_id,
                     "client_name": "Default Local Client",
-                    "redirect_uris": ["*localhost*", "https://jeanmemory.com/oauth-bridge.html"], # Wildcard for dynamic validation
+                    "redirect_uris": [
+                        "http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback",
+                        "http://localhost:3000", "http://127.0.0.1:3000",
+                        "http://localhost:3001/auth/callback", "http://127.0.0.1:3001/auth/callback",
+                        "http://localhost:3001", "http://127.0.0.1:3001",
+                        "http://localhost:3002/oauth-test", "http://127.0.0.1:3002/oauth-test",
+                        "http://localhost:3002", "http://127.0.0.1:3002",
+                        "http://localhost:3005", "http://127.0.0.1:3005",
+                        "http://localhost:3005/auth/callback", "http://127.0.0.1:3005/auth/callback",
+                        "http://localhost:5173", "http://127.0.0.1:5173",
+                        "http://localhost:5173/auth/callback", "http://127.0.0.1:5173/auth/callback",
+                        "http://localhost:8080", "http://127.0.0.1:8080",
+                        "http://localhost:8080/auth/callback", "http://127.0.0.1:8080/auth/callback"
+                    ],
                     "grant_types": ["authorization_code"],
                     "response_types": ["code"],
                     "scope": "read write mcp:tools mcp:resources mcp:prompts openid profile email",
@@ -192,24 +202,7 @@ async def authorize(
             raise HTTPException(status_code=400, detail="Invalid client")
     
     client_info = registered_clients[client_id]
-    
-    # Dynamic redirect URI validation for local development
-    def is_redirect_uri_allowed(uri: str, allowed_uris: list) -> bool:
-        # Direct match
-        if uri in allowed_uris:
-            return True
-        
-        # Wildcard match for localhost
-        for allowed in allowed_uris:
-            if allowed == "*localhost*":
-                if (uri.startswith("http://localhost:") or 
-                    uri.startswith("http://127.0.0.1:")):
-                    return True
-        
-        return False
-    
-    if not is_redirect_uri_allowed(redirect_uri, client_info["redirect_uris"]):
-        logger.error(f"Invalid redirect URI: {redirect_uri} not in {client_info['redirect_uris']}")
+    if redirect_uri not in client_info["redirect_uris"]:
         raise HTTPException(status_code=400, detail="Invalid redirect URI")
     
     if not oauth_session:
