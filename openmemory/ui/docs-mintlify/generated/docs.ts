@@ -4,7 +4,7 @@
 export const consolidatedDocs: string = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-14 22:18:22
+**Generated on:** 2025-08-14 22:30:47
 
 ## What is Jean Memory?
 
@@ -57,6 +57,8 @@ await agent.run();
 # Complete Documentation
 
 ## Introduction
+
+<CopyToClipboard />
 
 Computers have no memory of their interactions with users. Every conversation starts from scratch. **Jean Memory solves this by creating a persistent, intelligent memory layer that makes AI truly personal.**
 
