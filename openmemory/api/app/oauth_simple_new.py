@@ -159,12 +159,12 @@ async def authorize(
         is_local_dev = redirect_uri.startswith("http://localhost:") or redirect_uri.startswith("http://127.0.0.1:")
         
         if is_local_dev:
-            # Auto-register a "Default Local" client for local development
-            local_client_id = "local-dev-client"
-            if local_client_id not in registered_clients:
+            # Auto-register client for local development (using the provided client_id)
+            # This allows React SDK to use API keys or "default_client" as client_id
+            if client_id not in registered_clients:
                 client_info = {
-                    "client_id": local_client_id,
-                    "client_name": "Default Local Client",
+                    "client_id": client_id,  # Use the actual client_id from request
+                    "client_name": f"Local Development Client ({client_id[:12]}...)" if len(client_id) > 12 else f"Local Development Client ({client_id})",
                     "redirect_uris": [
                         "http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback",
                         "http://localhost:3000", "http://127.0.0.1:3000",
@@ -184,9 +184,9 @@ async def authorize(
                     "scope": "read write mcp:tools mcp:resources mcp:prompts openid profile email",
                     "token_endpoint_auth_method": "none"
                 }
-                registered_clients[local_client_id] = client_info
-                logger.info(f"Auto-registered local development client: {local_client_id}")
-            client_id = local_client_id # Use this client_id for the rest of the flow
+                registered_clients[client_id] = client_info
+                logger.info(f"Auto-registered local development client: {client_id}")
+            # Don't change client_id - use the one from the request
 
         elif client_id.startswith("claude-") and redirect_uri == "https://claude.ai/api/mcp/auth_callback":
             # Auto-register Claude client
