@@ -157,8 +157,9 @@ async def authorize(
     if client_id not in registered_clients:
         # If the client is not registered, check if it's a local development client
         is_local_dev = redirect_uri.startswith("http://localhost:") or redirect_uri.startswith("http://127.0.0.1:")
+        is_bridge_url = redirect_uri == "https://jeanmemory.com/oauth-bridge.html"
         
-        if is_local_dev:
+        if is_local_dev or is_bridge_url:
             # Auto-register client for local development (using the provided client_id)
             # This allows React SDK to use API keys or "default_client" as client_id
             if client_id not in registered_clients:
