@@ -1,7 +1,7 @@
 <h1 align="center">Jean Memory</h1>
 
 <p align="center">
-  <strong>A secure, private, and intelligent memory layer for AI.</strong>
+  <strong>AI Memory across your applications in 5 lines of code.</strong>
 </p>
 
 <p align="center">
@@ -9,51 +9,107 @@
   ·
   <a href="https://jeanmemory.com/dashboard-new">Dashboard</a>
   ·
-  <a href="https://docs.jeanmemory.com">API Docs</a>
+  <a href="https://docs.jeanmemory.com">SDK & API Docs</a>
   ·
   <a href="https://github.com/jean-technologies/jean-memory/issues">Report an Issue</a>
 </p>
+
+<p align="center">
+  <img src="openmemory/ui/public/og-image.png" width="600px" alt="Jean Memory Knowledge Graph">
+</p>
+
+## Quick Start: Add Memory to Your App in 5 Minutes
+
+Integrate a powerful memory layer into your application with our easy-to-use SDKs.
+
+### React: Add a Full Chat UI
+
+Drop a complete, context-aware chat component into your React app.
+
+```tsx
+// 1. Install the SDK
+// npm install @jeanmemory/react
+
+// 2. Add the provider and chat component
+import { JeanProvider, JeanChat } from '@jeanmemory/react';
+
+function MyApp() {
+  return (
+    <JeanProvider apiKey="YOUR_API_KEY">
+      <JeanChat />
+    </JeanProvider>
+  );
+}
+```
+
+### Python: Power Your Backend Agent
+
+Add a context layer to your Python backend or AI agent.
+
+```python
+# 1. Install the SDK
+# pip install jeanmemory
+
+# 2. Get context before calling your LLM
+from jeanmemory import JeanClient
+
+jean = JeanClient(api_key="YOUR_API_KEY")
+
+# Get user_token from your frontend OAuth flow
+context = jean.get_context(
+    user_token="USER_TOKEN_FROM_FRONTEND",
+    message="What was our last conversation about?"
+).text
+```
+
+### Node.js: Enhance Your JavaScript Backend
+
+Integrate memory into your Next.js, Express, or other Node.js services.
+
+```javascript
+// 1. Install the SDK
+// npm install @jeanmemory/node
+
+// 2. Get context in your API route
+import { JeanClient } from '@jeanmemory/node';
+
+const jean = new JeanClient({ apiKey: "YOUR_API_KEY" });
+
+// Get userToken from your frontend OAuth flow
+const context = await jean.getContext({
+    user_token: userToken,
+    message: "What was our last conversation about?"
+});
+```
+
+➡️ **[Explore the full SDK Documentation](https://docs.jeanmemory.com)** for advanced usage, authentication, and more examples.
 
 ## What is Jean Memory?
 
 Jean Memory provides a persistent and intelligent memory layer that enables AI applications to understand users with deep, personal context. It moves beyond simple information retrieval to sophisticated context engineering, ensuring that an AI has precisely the right information at the time of inference to provide personalized, accurate, and helpful responses.
 
-- **Intelligent Orchestration**: Jean uses an AI-powered orchestration layer to dynamically analyze user intent, save new information, and retrieve the most relevant context. It's more than a vector database; it's a reasoning engine for memory.
-- **Secure and Private**: Your context is stored securely, under your control.
-- **Universal Compatibility**: Works across MCP-compatible AI tools like Claude and Cursor.
-- **Flexible Hosting**: Use our managed cloud service for a zero-setup experience or self-host the entire stack for complete control.
+-   **5-Minute Integration**: Add a complete, production-ready chat UI to your React app in minutes.
+-   **Headless SDKs**: Powerful, headless libraries for Python and Node.js to integrate with any backend or agent.
+-   **Intelligent Orchestration**: Goes beyond a vector database. An AI-powered orchestration layer dynamically analyzes intent, saves new information, and retrieves the most relevant context for your LLM.
+-   **Granular Tools**: A full suite of API tools (`add_memories`, `search_memory`, `deep_memory_query`) for developers who need direct, fine-grained control.
+-   **Secure and Private**: User context is stored securely, under your control.
+-   **Flexible Hosting**: Use our managed cloud service for a zero-setup experience or self-host the entire stack for complete control.
 
-## Architecture: Intelligent Orchestration & Tooling
+## How It Works: The Orchestration Engine
 
 Jean Memory operates on a two-layer architecture: an intelligent orchestration layer and a core API of granular tools.
 
-1.  **Orchestration Layer (`jean_memory` tool)**: This is the primary entry point for all interactions. When called, this tool analyzes the user's message and conversation history to determine the optimal context strategy. It then calls the necessary core tools to gather information, synthesizes the results, and provides a perfectly engineered context package to the AI. It also handles background memory saving.
+1.  **Orchestration Layer (`jean_memory` tool)**: This is the primary, intelligent entry point. When called, this tool analyzes the user's message and conversation history to determine the optimal context strategy. It then calls the necessary core tools to gather information, synthesizes the results, and provides a perfectly engineered context package to the AI. It also handles background memory saving.
 
-2.  **Core API (Granular Tools)**: These are the underlying building blocks that the orchestrator uses. They are also exposed via a REST API for developers who need direct, granular control for building custom agents or applications. The core tools include:
-    - `add_memories`: Saves new information.
-    - `search_memory`: Performs semantic search.
-    - `list_memories`: Retrieves recent memories.
-    - `ask_memory`: Answers questions based on stored context.
-    - `deep_memory_query`: Conducts comprehensive, analytical searches across all data.
+2.  **Core API (Granular Tools)**: These are the underlying building blocks that the orchestrator uses. They are also exposed via a REST API for developers who need direct, granular control for building custom agents or applications.
 
-<p align="center">
-  <img src="/openmemory/ui/public/og-image.png" width="600px" alt="Jean Memory Knowledge Graph">
-</p>
+For detailed information, please refer to our full **[API Documentation](https://docs.jeanmemory.com)**.
 
 ## 🧪 SDK Testing (For Developers)
 
 **Testing the Jean Memory SDKs?** Use these guides:
 - **[Quick 5-Minute Test](./QUICK_SDK_TEST.md)** - Rapid verification of all SDKs
 - **[Complete Testing Guide](./DEVELOPER_TESTING_GUIDE.md)** - Comprehensive testing instructions
-
-## Quick Start: Hosted Service
-
-Get started in seconds with our managed service:
-
-1.  **Sign Up**: Create an account at [jeanmemory.com](https://jeanmemory.com) and navigate to your dashboard.
-2.  **Get Install Command**: Choose a client application (e.g., Claude, Cursor) to generate your unique installation command.
-3.  **Connect Client**: Run the provided command in your terminal.
-4.  **Restart and Use**: Restart your AI application. Jean Memory will now be available as a tool.
 
 ## Local Development Setup
 
@@ -112,18 +168,6 @@ make dev-ui
 - **UI Dashboard**: `http://localhost:3000`
 - **API Documentation**: `http://localhost:8765/docs`
 - **Supabase Studio**: `http://localhost:54323`
-
-## API Usage
-
-Jean Memory exposes a granular API for memory operations, which is orchestrated by the primary `jean_memory` tool. These underlying tools can also be called directly for specific use cases or when building custom agents. The API includes endpoints for:
-
-- Adding new memories (`add_memories`)
-- Searching memories (`search_memory`)
-- Listing recent memories (`list_memories`)
-- Performing conversational Q&A (`ask_memory`)
-- Executing deep, analytical queries (`deep_memory_query`)
-
-For detailed information, please refer to our full **[API Documentation](https://docs.jeanmemory.com)**.
 
 ## Contributing
 
