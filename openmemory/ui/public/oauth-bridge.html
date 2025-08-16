@@ -1,13 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>OAuth Bridge - Jean Memory</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jean Memory - Completing Authentication</title>
     <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; text-align: center; padding: 50px; background-color: #f8f9fa; color: #343a40; }
-        .spinner { border: 4px solid #dee2e6; border-top: 4px solid #0d6efd; 
-                   border-radius: 50%; width: 50px; height: 50px; 
-                   animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
+            text-align: center; 
+            padding: 50px; 
+            background-color: #f8f9fa; 
+            color: #343a40; 
+        }
+        
+        .spinner { 
+            border: 4px solid #dee2e6; 
+            border-top: 4px solid #0d6efd; 
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            animation: spin 1s linear infinite; 
+            margin: 20px auto; 
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
         h1 { font-weight: 300; }
         p { color: #6c757d; }
     </style>
@@ -17,28 +37,26 @@
     <h1>Completing Authentication</h1>
     <div class="spinner"></div>
     <p>Please wait while we securely finalize your connection...</p>
-    
+
     <script>
         console.log('🔍 BRIDGE - OAuth Bridge page loaded');
         console.log('🔍 BRIDGE - URL:', window.location.href);
-        
-        // This function is robust to handle parameters in either the search string or the hash.
-        // Supabase can return parameters in the hash fragment (#) after a redirect.
+
         const getUrlParameter = (name) => {
-            const url = new URL(window.location.href.replace('#', '?')); // Treat hash as search string
+            const url = new URL(window.location.href.replace('#', '?'));
             return url.searchParams.get(name);
         };
 
         const oauth_session = getUrlParameter('oauth_session');
         const flow = getUrlParameter('flow');
         const api_key = getUrlParameter('api_key');
-        
+
         console.log('🔍 BRIDGE - OAuth session found:', oauth_session);
         console.log('🔍 BRIDGE - Flow type found:', flow);
         console.log('🔍 BRIDGE - API key found:', api_key ? api_key.substring(0, 12) + '...' : 'none');
 
-        // Initialize Supabase client for SDK OAuth flows
-        const supabase = window.supabase ? window.supabase.createClient(
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(
             'https://masapxpxcwvsjpuymbmd.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w',
             {
@@ -47,27 +65,17 @@
                     flowType: 'pkce'
                 }
             }
-        ) : null;
-        
-        // Route based on flow type
+        );
+
+        // Handle different OAuth flows
         if (flow === 'mcp_oauth' && oauth_session) {
             console.log('🔍 BRIDGE - MCP OAuth flow detected, redirecting to API callback.');
-            
             // Existing Claude OAuth flow - redirect to API callback
-            const apiUrl = 'https://jean-memory-api-virginia.onrender.com/oauth/callback';
-            const finalUrl = new URL(apiUrl);
+            const redirectUrl = `https://jean-memory-api-virginia.onrender.com/oauth/callback?oauth_session=${oauth_session}&flow=mcp_oauth`;
+            console.log('🎯 BRIDGE - Redirecting to:', redirectUrl);
+            window.location.href = redirectUrl;
             
-            // Forward all original URL parameters to the callback
-            const originalParams = new URLSearchParams(window.location.search);
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-
-            originalParams.forEach((value, key) => finalUrl.searchParams.set(key, value));
-            hashParams.forEach((value, key) => finalUrl.searchParams.set(key, value));
-            
-            console.log('🎯 BRIDGE - Redirecting to:', finalUrl.toString());
-            window.location.replace(finalUrl.toString());
-            
-        } else if (flow === 'sdk_oauth' && oauth_session && api_key && supabase) {
+        } else if (flow === 'sdk_oauth' && oauth_session && api_key) {
             console.log('🔍 BRIDGE - SDK OAuth flow detected, exchanging Supabase session for Jean Memory token.');
             
             // New SDK OAuth flow - exchange Supabase session for Jean Memory token
@@ -116,10 +124,8 @@
             })();
             
         } else {
-            // If this page is reached without the correct parameters, it's likely a regular
-            // app login. Redirecting to the main dashboard is a safe fallback.
-            console.log('🔍 BRIDGE - Regular app flow or missing parameters, redirecting to dashboard.');
-            window.location.replace('/dashboard');
+            console.log('🔍 BRIDGE - Unknown or incomplete flow, redirecting to default.');
+            redirectToApp('Invalid authentication flow');
         }
 
         function redirectToApp(error = null, token = null) {

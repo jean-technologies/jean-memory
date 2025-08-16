@@ -9,10 +9,11 @@ export { JeanProvider, useJean } from './provider';
 
 // Components
 export { JeanChat } from './JeanChat';
-export { SignInWithJean } from './SignInWithJean';
+export { SignInWithJean, signOutFromJean } from './SignInWithJean';
 
 // Advanced MCP Hook (for direct tool access)
 export { useJeanMCP } from './useJeanMCP';
 
 // Types
-export type { JeanUser, JeanMessage, MessageOptions } from './provider';
+export type { JeanUser as JeanProviderUser, JeanMessage, MessageOptions } from './provider';
+export type { JeanUser } from './SignInWithJean';

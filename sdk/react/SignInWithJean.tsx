@@ -13,20 +13,41 @@ interface SignInWithJeanProps {
   children?: React.ReactNode;
 }
 
-// Generate code verifier and challenge for PKCE
-function generatePKCE() {
-  const verifier = generateRandomString(128);
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  
-  return crypto.subtle.digest('SHA-256', data).then(digest => {
-    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/=/g, '')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_');
-    return { verifier, challenge };
-  });
+export interface JeanUser {
+  sub?: string;
+  id?: string;
+  email?: string;
+  name?: string;
+  full_name?: string;
+  access_token?: string;
+  [key: string]: any;
 }
+
+// Utility function to sign out and clear session
+export const signOutFromJean = () => {
+  // Clear all Jean Memory session data
+  localStorage.removeItem('auth_completed');
+  localStorage.removeItem('userInfo');
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userName');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userAvatar');
+  localStorage.removeItem('authProvider');
+  localStorage.removeItem('tempUserInfo');
+  localStorage.removeItem('using_demo_mode');
+  
+  // Clear any Supabase session data
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('sb-masapxpxcwvsjpuymbmd-auth-token')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  console.log('✅ SDK OAuth: Signed out successfully');
+};
+
+// Generate random string for OAuth session IDs
 
 function generateRandomString(length: number): string {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
@@ -51,58 +72,51 @@ export function SignInWithJean({
   children 
 }: SignInWithJeanProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [supabase, setSupabase] = useState<any>(null);
 
   useEffect(() => {
-    // Handle OAuth callback
+    // Handle OAuth callback or SDK auth success
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
+    const authSuccess = params.get('auth_success');
+    const authToken = params.get('auth_token');
+    const authError = params.get('auth_error');
     
-    if (code && state) {
-      handleOAuthCallback(code, state);
+    if (authSuccess === 'true' && authToken) {
+      handleSDKAuthSuccess(authToken);
+    } else if (authSuccess === 'false' && authError) {
+      handleSDKAuthError(authError);
+    } else {
+      // Check for existing session in localStorage (bridge format)
+      const authCompleted = localStorage.getItem('auth_completed');
+      const userInfo = localStorage.getItem('userInfo');
+      
+      if (authCompleted === 'true' && userInfo) {
+        try {
+          const user = JSON.parse(userInfo);
+          console.log('✅ SDK OAuth: Recovered existing session for user:', user.email);
+          onSuccess(user);
+          return;
+        } catch (error) {
+          console.warn('Failed to parse stored user info:', error);
+          localStorage.removeItem('auth_completed');
+          localStorage.removeItem('userInfo');
+        }
+      }
+      
+      // Legacy OAuth callback support
+      const code = params.get('code');
+      const state = params.get('state');
+      if (code && state) {
+        handleOAuthCallback(code, state);
+      }
     }
   }, []);
 
-  const handleOAuthCallback = async (code: string, state: string) => {
+  const handleSDKAuthSuccess = async (token: string) => {
     try {
-      // Retrieve PKCE verifier from sessionStorage
-      const storedState = sessionStorage.getItem('jean_oauth_state');
-      const verifier = sessionStorage.getItem('jean_oauth_verifier');
-      
-      if (state !== storedState) {
-        throw new Error('State mismatch - possible CSRF attack');
-      }
-      
-      if (!verifier) {
-        throw new Error('Missing PKCE verifier');
-      }
-
-      // Exchange code for token
-      const response = await fetch(`${JEAN_API_BASE}/oauth/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          grant_type: 'authorization_code',
-          code,
-          redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Must match the redirect_uri used in authorization
-          code_verifier: verifier,
-          client_id: apiKey || 'default_client'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to exchange code for token');
-      }
-
-      const data = await response.json();
-      
-      // Get user info
+      // Get user info using the Jean Memory token
       const userResponse = await fetch(`${JEAN_API_BASE}/api/v1/user/me`, {
         headers: {
-          'Authorization': `Bearer ${data.access_token}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -111,19 +125,62 @@ export function SignInWithJean({
       }
 
       const user = await userResponse.json();
-      user.access_token = data.access_token;
+      user.access_token = token;
 
-      // Clean up
-      sessionStorage.removeItem('jean_oauth_state');
-      sessionStorage.removeItem('jean_oauth_verifier');
+      // Store session data in localStorage for persistence (matching bridge format)
+      localStorage.setItem('auth_completed', 'true');
+      localStorage.setItem('userInfo', JSON.stringify(user));
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userEmail', user.email || '');
+      localStorage.setItem('userName', user.name || user.full_name || '');
+      localStorage.setItem('userId', user.sub || user.id || '');
       
-      // Remove OAuth params from URL
+      // Clean up URL params
+      const url = new URL(window.location.href);
+      url.searchParams.delete('auth_success');
+      url.searchParams.delete('auth_token');
+      url.searchParams.delete('auth_error');
+      window.history.replaceState({}, '', url.toString());
+
+      console.log('✅ SDK OAuth: Authentication successful for user:', user.email);
+      onSuccess(user);
+    } catch (error) {
+      console.error('SDK auth success handling error:', error);
+      if (onError) {
+        onError(error instanceof Error ? error : new Error('SDK auth handling failed'));
+      }
+    }
+  };
+
+  const handleSDKAuthError = (error: string) => {
+    // Clean up URL params
+    const url = new URL(window.location.href);
+    url.searchParams.delete('auth_success');
+    url.searchParams.delete('auth_token');
+    url.searchParams.delete('auth_error');
+    window.history.replaceState({}, '', url.toString());
+
+    console.error('SDK auth error:', error);
+    if (onError) {
+      onError(new Error(error));
+    }
+  };
+
+  const handleOAuthCallback = async (code: string, state: string) => {
+    // Legacy OAuth callback - keeping for backward compatibility
+    // This should rarely be used with the new SDK OAuth flow
+    console.warn('Using legacy OAuth callback - consider updating to SDK OAuth flow');
+    
+    try {
+      // Basic fallback handling
       const url = new URL(window.location.href);
       url.searchParams.delete('code');
       url.searchParams.delete('state');
       window.history.replaceState({}, '', url.toString());
-
-      onSuccess(user);
+      
+      if (onError) {
+        onError(new Error('Legacy OAuth callback not fully supported - please use SDK OAuth flow'));
+      }
     } catch (error) {
       console.error('OAuth callback error:', error);
       if (onError) {
@@ -136,28 +193,51 @@ export function SignInWithJean({
     setIsLoading(true);
     
     try {
-      // Generate PKCE parameters
-      const { verifier, challenge } = await generatePKCE();
-      const state = generateRandomString(32);
-      
-      // Store for callback
-      sessionStorage.setItem('jean_oauth_state', state);
-      sessionStorage.setItem('jean_oauth_verifier', verifier);
+      // Load Supabase SDK if not already loaded
+      if (!window.supabase) {
+        await loadSupabaseSDK();
+      }
+
+      // Initialize Supabase client
+      const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {
+          auth: {
+            detectSessionInUrl: false,
+            flowType: 'pkce'
+          }
+        }
+      );
+
+      // Store redirect info for the bridge
       sessionStorage.setItem('jean_final_redirect', window.location.origin + window.location.pathname);
       
-      // Build OAuth URL using bridge pattern to prevent Supabase hijacking
-      const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: apiKey || 'default_client',
-        redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Use bridge to prevent Supabase hijacking
-        state,
-        code_challenge: challenge,
-        code_challenge_method: 'S256',
-        scope: 'read write'
-      });
+      // Generate OAuth session ID
+      const oauthSession = generateRandomString(32);
       
-      // Redirect to OAuth provider
-      window.location.href = `${JEAN_API_BASE}/oauth/authorize?${params.toString()}`;
+      // Build redirect URL with SDK OAuth flow parameters
+      const bridgeUrl = new URL('https://jeanmemory.com/oauth-bridge.html');
+      bridgeUrl.searchParams.set('oauth_session', oauthSession);
+      bridgeUrl.searchParams.set('flow', 'sdk_oauth');
+      bridgeUrl.searchParams.set('api_key', apiKey || 'default_client');
+      
+      console.log('🔄 SDK OAuth: Redirecting to bridge URL:', bridgeUrl.toString());
+      
+      // Sign in with Supabase - this will redirect to the bridge with auth tokens
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: bridgeUrl.toString()
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+      
+      // If we get here, the redirect is happening
+      // The bridge will handle the token exchange and redirect back
     } catch (error) {
       setIsLoading(false);
       console.error('Sign in error:', error);
@@ -165,6 +245,21 @@ export function SignInWithJean({
         onError(error instanceof Error ? error : new Error('Sign in failed'));
       }
     }
+  };
+
+  const loadSupabaseSDK = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (window.supabase) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Supabase SDK'));
+      document.head.appendChild(script);
+    });
   };
 
   return (

@@ -584,7 +584,7 @@ async def oauth_callback(
     logger.info(f"OAuth callback received for session: {oauth_session}, flow: {flow}")
     
     # Handle different auth flows
-    if flow != "mcp_oauth":
+    if flow not in ["mcp_oauth", "sdk_oauth"]:
         # This is a regular app login, redirect to main app
         logger.info("Regular app login detected - redirecting to main app")
         return RedirectResponse(url="https://jeanmemory.com")

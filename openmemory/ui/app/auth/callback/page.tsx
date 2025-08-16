@@ -9,6 +9,35 @@ export default function AuthCallbackPage() {
   const { user, isLoading, accessToken } = useAuth();
 
   useEffect(() => {
+    // Check if this is an SDK OAuth flow that should be redirected to the bridge
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    
+    // Check for SDK OAuth flow indicators
+    const oauthSession = urlParams.get('oauth_session') || hashParams.get('oauth_session');
+    const flow = urlParams.get('flow') || hashParams.get('flow');
+    const apiKey = urlParams.get('api_key') || hashParams.get('api_key');
+    
+    if (flow === 'sdk_oauth' || (oauthSession && apiKey)) {
+      console.log('🔄 AUTH CALLBACK: SDK OAuth flow detected, redirecting to bridge');
+      
+      // Build bridge URL with all parameters
+      const bridgeUrl = new URL('https://jeanmemory.com/oauth-bridge.html');
+      
+      // Copy all URL and hash parameters to bridge
+      urlParams.forEach((value, key) => bridgeUrl.searchParams.set(key, value));
+      hashParams.forEach((value, key) => bridgeUrl.searchParams.set(key, value));
+      
+      // Ensure flow is set
+      if (!bridgeUrl.searchParams.has('flow')) {
+        bridgeUrl.searchParams.set('flow', 'sdk_oauth');
+      }
+      
+      console.log('🎯 AUTH CALLBACK: Redirecting to bridge:', bridgeUrl.toString());
+      window.location.href = bridgeUrl.toString();
+      return;
+    }
+    
     // Give Supabase a moment to process the auth callback
     const timer = setTimeout(async () => {
       if (!isLoading) {

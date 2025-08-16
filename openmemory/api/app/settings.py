@@ -231,15 +231,23 @@ class Config:
     def _get_frontend_urls(self) -> list:
         """Get appropriate frontend URLs for CORS configuration"""
         base_urls = [
-            "http://localhost:3000", 
-            "http://localhost:3001", 
-            "http://localhost:3002",  # Added for React SDK testing
             "https://app.jeanmemory.com",
             "https://jeanmemory.com",
             "https://www.jeanmemory.com",
             "https://api.jeanmemory.com",
             "https://platform.openai.com",  # OpenAI API Playground
         ]
+        
+        # Allow all localhost URLs for development
+        if not self.IS_PRODUCTION:
+            # Allow any localhost port for development flexibility
+            import re
+            base_urls.extend([
+                f"http://localhost:{port}" for port in range(3000, 9000)
+            ])
+            base_urls.extend([
+                f"http://127.0.0.1:{port}" for port in range(3000, 9000)
+            ])
         
         # Add environment-specific URLs
         if self.IS_PRODUCTION:
