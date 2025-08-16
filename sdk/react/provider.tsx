@@ -3,10 +3,15 @@
  * Manages authentication state and API client
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { JEAN_API_BASE } from './config';
+import { JEAN_API_BASE, SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
 import { makeMCPRequest } from './mcp';
 
-const JEAN_API_BASE_OLD = 'https://jean-memory-api-virginia.onrender.com';
+// Declare Supabase types (will be loaded from CDN)
+declare global {
+  interface Window {
+    supabase: any;
+  }
+}
 
 export interface JeanUser {
   user_id: string;
@@ -89,6 +94,38 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   const [messages, setMessages] = useState<JeanMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [rawError, setRawError] = useState<string | null>(null);
+  const [supabase, setSupabase] = useState<any>(null);
+
+  // Initialize Supabase client
+  useEffect(() => {
+    const initSupabase = async () => {
+      // Load Supabase from CDN if not already loaded
+      if (!window.supabase) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = () => {
+          const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+              detectSessionInUrl: true,
+              flowType: 'pkce'
+            }
+          });
+          setSupabase(client);
+        };
+        document.head.appendChild(script);
+      } else {
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            detectSessionInUrl: true,
+            flowType: 'pkce'
+          }
+        });
+        setSupabase(client);
+      }
+    };
+
+    initSupabase();
+  }, []);
 
   // Validate API key on mount
   useEffect(() => {
@@ -112,7 +149,53 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       return;
     }
 
-    // Handle OAuth redirect
+    // Handle OAuth completion from bridge
+    const handleOAuthCompletion = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const authSuccess = params.get('auth_success');
+      const authToken = params.get('auth_token');
+      const authError = params.get('auth_error');
+      
+      if (authSuccess === 'true' && authToken) {
+        setIsLoading(true);
+        try {
+          // Get user info from Jean Memory API using the token
+          const userResponse = await fetch(`${JEAN_API_BASE}/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${authToken}` }
+          });
+          
+          if (userResponse.ok) {
+            const userInfo = await userResponse.json();
+            const user: JeanUser = {
+              user_id: userInfo.sub,
+              email: userInfo.email,
+              name: userInfo.name,
+              access_token: authToken
+            };
+            
+            handleSetUser(user);
+            console.log('✅ OAuth authentication completed');
+            
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            throw new Error('Failed to get user info');
+          }
+        } catch (error) {
+          console.error('OAuth completion error:', error);
+          setRawError('Authentication completed but failed to get user info');
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (authError) {
+        setRawError(`Authentication failed: ${authError}`);
+        setIsLoading(false);
+      }
+    };
+
+    handleOAuthCompletion();
+
+    // Handle OAuth redirect (legacy PKCE flow - kept for backward compatibility)
     const handleOAuthRedirect = async () => {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
@@ -418,33 +501,41 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   };
 
   const signIn = async () => {
+    if (!supabase) {
+      setRawError('Authentication system not ready. Please try again.');
+      return;
+    }
+
     setIsLoading(true);
+    setRawError(null);
     
     try {
-      // Generate PKCE parameters
-      const { verifier, challenge } = await generatePKCE();
-      const state = generateRandomString(32);
+      // Generate session ID for bridge coordination
+      const sessionId = generateRandomString(32);
+      sessionStorage.setItem('jean_oauth_session', sessionId);
+      sessionStorage.setItem('jean_api_key', apiKey);
       
-      // Store for callback
-      sessionStorage.setItem('jean_oauth_state', state);
-      sessionStorage.setItem('jean_oauth_verifier', verifier);
+      // Use Supabase OAuth with bridge coordination (like Claude)
+      const bridgeUrl = `https://jeanmemory.com/oauth-bridge.html?oauth_session=${sessionId}&flow=sdk_oauth`;
       
-      // Store original callback URL for bridge to use
-      sessionStorage.setItem('jean_final_redirect', window.location.origin + window.location.pathname);
-      
-      // Build OAuth URL using bridge pattern to prevent Supabase hijacking
-      const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: apiKey || 'default_client',
-        redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Use bridge to prevent Supabase hijacking
-        state,
-        code_challenge: challenge,
-        code_challenge_method: 'S256',
-        scope: 'read write'
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: bridgeUrl,
+          queryParams: {
+            oauth_session: sessionId,
+            flow: 'sdk_oauth',
+            api_key: apiKey
+          }
+        }
       });
-      
-      // Redirect to OAuth provider
-      window.location.href = `${JEAN_API_BASE}/oauth/authorize?${params.toString()}`;
+
+      if (signInError) {
+        console.error('Supabase OAuth error:', signInError);
+        setRawError('Sign in failed. Please try again.');
+        setIsLoading(false);
+      }
+      // Loading will be cleared when auth completes
     } catch (error) {
       setIsLoading(false);
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed';

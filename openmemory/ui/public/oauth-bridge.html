@@ -11,6 +11,7 @@
         h1 { font-weight: 300; }
         p { color: #6c757d; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <h1>Completing Authentication</h1>
@@ -30,16 +31,29 @@
 
         const oauth_session = getUrlParameter('oauth_session');
         const flow = getUrlParameter('flow');
+        const api_key = getUrlParameter('api_key');
         
         console.log('🔍 BRIDGE - OAuth session found:', oauth_session);
         console.log('🔍 BRIDGE - Flow type found:', flow);
+        console.log('🔍 BRIDGE - API key found:', api_key ? api_key.substring(0, 12) + '...' : 'none');
+
+        // Initialize Supabase client for SDK OAuth flows
+        const supabase = window.supabase ? window.supabase.createClient(
+            'https://masapxpxcwvsjpuymbmd.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w',
+            {
+                auth: {
+                    detectSessionInUrl: true,
+                    flowType: 'pkce'
+                }
+            }
+        ) : null;
         
-        // Route based on flow type. This ensures that only intended MCP OAuth flows are redirected.
+        // Route based on flow type
         if (flow === 'mcp_oauth' && oauth_session) {
             console.log('🔍 BRIDGE - MCP OAuth flow detected, redirecting to API callback.');
             
-            // Construct the API callback URL.
-            // All other parameters from the original redirect are preserved in the URL.
+            // Existing Claude OAuth flow - redirect to API callback
             const apiUrl = 'https://jean-memory-api-virginia.onrender.com/oauth/callback';
             const finalUrl = new URL(apiUrl);
             
@@ -52,11 +66,83 @@
             
             console.log('🎯 BRIDGE - Redirecting to:', finalUrl.toString());
             window.location.replace(finalUrl.toString());
+            
+        } else if (flow === 'sdk_oauth' && oauth_session && api_key && supabase) {
+            console.log('🔍 BRIDGE - SDK OAuth flow detected, exchanging Supabase session for Jean Memory token.');
+            
+            // New SDK OAuth flow - exchange Supabase session for Jean Memory token
+            (async () => {
+                try {
+                    // Get current Supabase session
+                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    
+                    if (sessionError || !session) {
+                        console.error('❌ BRIDGE - Failed to get Supabase session:', sessionError);
+                        redirectToApp('Failed to get authentication session');
+                        return;
+                    }
+                    
+                    console.log('✅ BRIDGE - Got Supabase session for user:', session.user.email);
+                    
+                    // Exchange Supabase session for Jean Memory token
+                    const response = await fetch('https://jean-memory-api-virginia.onrender.com/oauth/complete-sdk-auth', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            supabase_access_token: session.access_token,
+                            api_key: api_key
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('❌ BRIDGE - Token exchange failed:', errorData);
+                        redirectToApp(`Token exchange failed: ${errorData.error || 'Unknown error'}`);
+                        return;
+                    }
+                    
+                    const { access_token, user } = await response.json();
+                    console.log('✅ BRIDGE - Successfully exchanged for Jean Memory token for user:', user.email);
+                    
+                    // Redirect back to React app with Jean Memory token
+                    redirectToApp(null, access_token);
+                    
+                } catch (error) {
+                    console.error('❌ BRIDGE - SDK OAuth completion error:', error);
+                    redirectToApp(`Authentication failed: ${error.message}`);
+                }
+            })();
+            
         } else {
             // If this page is reached without the correct parameters, it's likely a regular
             // app login. Redirecting to the main dashboard is a safe fallback.
             console.log('🔍 BRIDGE - Regular app flow or missing parameters, redirecting to dashboard.');
             window.location.replace('/dashboard');
+        }
+
+        function redirectToApp(error = null, token = null) {
+            // Get the original redirect URL from sessionStorage or use default
+            const originalUrl = sessionStorage?.getItem('jean_final_redirect') || 'http://localhost:3005';
+            
+            const redirectUrl = new URL(originalUrl);
+            
+            if (error) {
+                redirectUrl.searchParams.set('auth_success', 'false');
+                redirectUrl.searchParams.set('auth_error', error);
+                console.log('❌ BRIDGE - Redirecting with error:', redirectUrl.toString());
+            } else if (token) {
+                redirectUrl.searchParams.set('auth_success', 'true');
+                redirectUrl.searchParams.set('auth_token', token);
+                console.log('✅ BRIDGE - Redirecting with success:', redirectUrl.toString());
+            } else {
+                redirectUrl.searchParams.set('auth_success', 'false');
+                redirectUrl.searchParams.set('auth_error', 'Unknown error');
+                console.log('❌ BRIDGE - Redirecting with unknown error:', redirectUrl.toString());
+            }
+            
+            window.location.href = redirectUrl.toString();
         }
     </script>
 </body>

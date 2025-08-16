@@ -3,7 +3,7 @@
  * OAuth 2.1 PKCE authentication flow
  */
 import React, { useEffect, useState } from 'react';
-import { JEAN_API_BASE, JEAN_OAUTH_BASE } from './config';
+import { JEAN_API_BASE, SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
 
 interface SignInWithJeanProps {
   onSuccess: (user: any) => void;
@@ -36,6 +36,13 @@ function generateRandomString(length: number): string {
     .join('');
 }
 
+// Declare Supabase types (will be loaded from CDN)
+declare global {
+  interface Window {
+    supabase: any;
+  }
+}
+
 export function SignInWithJean({ 
   onSuccess, 
   onError, 
@@ -44,6 +51,7 @@ export function SignInWithJean({
   children 
 }: SignInWithJeanProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [supabase, setSupabase] = useState<any>(null);
 
   useEffect(() => {
     // Handle OAuth callback
@@ -149,7 +157,7 @@ export function SignInWithJean({
       });
       
       // Redirect to OAuth provider
-      window.location.href = `${JEAN_OAUTH_BASE}/oauth/authorize?${params.toString()}`;
+      window.location.href = `${JEAN_API_BASE}/oauth/authorize?${params.toString()}`;
     } catch (error) {
       setIsLoading(false);
       console.error('Sign in error:', error);
