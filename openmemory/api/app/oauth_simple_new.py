@@ -401,6 +401,82 @@ async def force_oauth_completion(request: Request, oauth_session: str):
         raise HTTPException(status_code=500, detail=f"OAuth completion failed: {str(e)}")
 
 
+@oauth_router.post("/complete-sdk-auth")
+async def complete_sdk_oauth_with_supabase_session(request: Request):
+    """Complete SDK OAuth flow using Supabase session from bridge"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = await request.json()
+        supabase_access_token = data.get('supabase_access_token')
+        api_key = data.get('api_key')
+        
+        logger.info(f"🔄 SDK OAuth completion with Supabase session for API key: {api_key[:12]}...")
+        
+        if not supabase_access_token or not api_key:
+            logger.error("❌ Missing supabase_access_token or api_key")
+            return {"error": "Missing required parameters"}
+        
+        # Get user info from Supabase using the access token
+        from app.auth import get_service_client
+        supabase = await get_service_client()
+        
+        try:
+            user_response = supabase.auth.get_user(supabase_access_token)
+            if not user_response.user:
+                logger.error("❌ Invalid Supabase token")
+                return {"error": "Invalid authentication token"}
+            
+            current_user = user_response.user
+            logger.info(f"✅ Retrieved user from Supabase: {current_user.email}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get user from Supabase token: {e}")
+            return {"error": "Failed to validate authentication token"}
+        
+        # Get the internal User.id from database
+        from app.database import SessionLocal
+        from app.models import User
+        
+        db = SessionLocal()
+        try:
+            internal_user = db.query(User).filter(User.user_id == str(current_user.id)).first()
+            if not internal_user:
+                logger.error(f"❌ No internal User found for Supabase user_id: {current_user.id}")
+                return {"error": "User not found in database"}
+            
+            internal_user_id = str(internal_user.id)
+            logger.info(f"✅ Mapped Supabase user {current_user.id} to internal user {internal_user_id}")
+            
+        finally:
+            db.close()
+        
+        # Create Jean Memory access token for SDK
+        jean_access_token = create_access_token(
+            user_id=internal_user_id,
+            email=current_user.email,
+            client_name="react-sdk",
+            scopes=["read", "write", "mcp:tools", "mcp:resources", "mcp:prompts"]
+        )
+        
+        logger.info(f"🎯 SDK OAuth completion successful for user: {current_user.email}")
+        
+        return {
+            "access_token": jean_access_token,
+            "user": {
+                "sub": internal_user_id,
+                "email": current_user.email,
+                "name": current_user.user_metadata.get("full_name", current_user.email),
+                "picture": current_user.user_metadata.get("avatar_url", "")
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ SDK OAuth completion failed: {e}")
+        return {"error": f"SDK OAuth completion failed: {str(e)}"}
+
+
 @oauth_router.post("/complete-auth")
 async def complete_oauth_with_token(request: Request):
     """Complete OAuth flow using Supabase access token from client"""
