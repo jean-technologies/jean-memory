@@ -166,6 +166,7 @@ async def authorize(
                     "client_id": client_id,  # Use the actual client_id from request
                     "client_name": f"Local Development Client ({client_id[:12]}...)" if len(client_id) > 12 else f"Local Development Client ({client_id})",
                     "redirect_uris": [
+                        "https://jeanmemory.com/oauth-bridge.html",  # OAuth bridge for Supabase hijacking prevention
                         "http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback",
                         "http://localhost:3000", "http://127.0.0.1:3000",
                         "http://localhost:3001/auth/callback", "http://127.0.0.1:3001/auth/callback",
