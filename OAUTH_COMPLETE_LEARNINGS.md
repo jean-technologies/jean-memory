@@ -1,7 +1,7 @@
 # Jean Memory OAuth System - Complete Learnings & Implementation Guide
 
 **Last Updated:** August 16, 2025  
-**Version:** 1.4.2  
+**Version:** 1.5.0  
 **Status:** Production Ready ✅
 
 ---
@@ -191,7 +191,7 @@ IS_PRODUCTION=false  # Enables localhost CORS
 
 ### **Issue: Session Not Persisting**
 **Cause:** localStorage not being read correctly  
-**Fix:** Check SDK version >= 1.4.2
+**Fix:** Check SDK version >= 1.5.0
 
 ### **Issue: Token Invalid**
 **Cause:** JWT expired or wrong secret  
@@ -203,7 +203,7 @@ IS_PRODUCTION=false  # Enables localhost CORS
 
 ### **1. Update All SDKs**
 ```bash
-python3 scripts/deploy_all_sdks.py --version 1.4.2
+python3 scripts/deploy_all_sdks.py --version 1.5.0
 ```
 
 ### **2. Deploy Backend**
@@ -258,7 +258,7 @@ signOutFromJean();
 
 ## 🎯 Success Metrics
 
-### **Current State (v1.4.2)**
+### **Current State (v1.5.0)**
 - ✅ 100% OAuth flow success rate
 - ✅ 0% Supabase URL hijacking
 - ✅ Full backward compatibility
@@ -289,7 +289,7 @@ signOutFromJean();
 - Jean Memory Engineering Team
 - OAuth Implementation: August 2025
 - Bridge Pattern Design: v1.4.0
-- SDK Integration: v1.4.2
+- SDK Integration: v1.5.0
 
 ---
 

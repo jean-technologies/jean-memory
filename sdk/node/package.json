@@ -1,6 +1,6 @@
 {
   "name": "@jeanmemory/node",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Node.js SDK for Jean Memory - Power your Next.js and other Node.js backends with a perfect memory",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -29,8 +29,8 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "jest": "^29.7.0",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.5"
+    "ts-jest": "^29.2.0",
+    "typescript": "^5.6.0"
   },
   "repository": {
     "type": "git",
