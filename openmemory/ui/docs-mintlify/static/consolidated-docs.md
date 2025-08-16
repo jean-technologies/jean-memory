@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-14 22:46:02
+**Generated on:** 2025-08-15 19:40:52
 
 ## What is Jean Memory?
 
@@ -18,7 +18,7 @@ Jean Memory is the universal memory layer for AI applications. It provides persi
 #### React (5 lines):
 ```tsx
 import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
+import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
 
 function MyApp() {
   const [user, setUser] = useState(null);
@@ -44,7 +44,7 @@ await agent.run();
 ```
 
 ### NPM Packages:
-- React: `npm install jeanmemory-react` 
+- React: `npm install @jeanmemory/react`
 - Node.js: `npm install @jeanmemory/node`
 - Python: `pip install jeanmemory`
 
@@ -266,6 +266,32 @@ This code adds the `<JeanChat />` component to your page. It’s a pre-built, fu
 
 That's it! You now have a fully functional, context-aware chatbot in your application. The `<JeanChat />` component will automatically handle authentication using the secure `<SignInWithJean />` flow.
 
+### Authentication Modes
+
+The React SDK supports two authentication modes depending on your API key:
+
+#### Production Mode (OAuth 2.1 PKCE)
+With production API keys, users must authenticate via OAuth:
+```jsx
+<JeanProvider apiKey="jean_sk_live_your_production_key">
+  <JeanChat /> {/* Shows SignInWithJean button first */}
+</JeanProvider>
+```
+
+#### Development Mode (Auto Test User)
+With test API keys (containing `test`), authentication is automatic:
+```jsx
+<JeanProvider apiKey="jean_sk_test_demo_key_for_ui_testing">
+  <JeanChat /> {/* Works immediately, no sign-in required */}
+</JeanProvider>
+```
+
+**Test User Features:**
+- ✅ **Automatic initialization** - no user interaction needed
+- ✅ **Consistent test user** - same user ID for each API key
+- ✅ **Isolated memories** - each test key gets its own test user
+- ✅ **Perfect for development** - start coding immediately
+
 ## Configuration Options (Optional)
 
 For 99% of use cases, the defaults work perfectly. But when you need control:
@@ -283,59 +309,95 @@ await sendMessage("What's my schedule?", { tool: "search_memory" });
 await sendMessage("What's my schedule?", { format: "simple" });
 ```
 
-## Advanced: Direct MCP Tool Access
+## Advanced: Direct Tool Access
 
-For advanced use cases where you need fine-grained control over Jean Memory tools, use the `useJeanMCP` hook. This provides direct access to the same MCP tools used by Claude Desktop and Cursor.
+For advanced use cases where you need fine-grained control over Jean Memory, use the `tools` namespace from the `useJean` hook. These tools provide direct access to memory operations.
 
 ```typescript
 
 function AdvancedComponent() {
-  const agent = useJean();
-  const mcpTools = useJeanMCP({ apiKey: 'your-api-key' });
+  const { tools, isAuthenticated } = useJean();
   
   const handleDirectMemoryAdd = async () => {
-    if (!agent.user) return;
+    if (!isAuthenticated) return;
     
-    // Direct MCP tool call
-    const result = await mcpTools.addMemory(
-      agent.user, 
-      "My dog's name is Max."
-    );
+    // Direct tool call
+    const result = await tools.add_memory("My dog's name is Max.");
     
     console.log('Memory added:', result);
   };
   
   const handleSearch = async () => {
-    if (!agent.user) return;
+    if (!isAuthenticated) return;
     
-    const results = await mcpTools.searchMemory(
-      agent.user,
-      "information about my pets"
-    );
+    const results = await tools.search_memory("information about my pets");
     
     console.log('Search results:', results);
   };
   
   // Store documents directly
   const handleStoreDocument = async () => {
-    if (!agent.user) return;
+    if (!isAuthenticated) return;
     
-    await mcpTools.storeDocument(
-      agent.user,
+    await tools.store_document(
       "Meeting Notes",
       "# Team Meeting\n\n- Discussed project timeline\n- Next steps defined",
       "markdown"
     );
   };
+  
+  // Deep memory queries for complex relationship discovery
+  const handleDeepQuery = async () => {
+    if (!isAuthenticated) return;
+    
+    const insights = await tools.deep_memory_query(
+      "connections between my preferences and goals"
+    );
+    
+    console.log('Deep insights:', insights);
+  };
 }
 ```
 
-### MCP Tools Available
+### Available Tools
 
-- `callJeanMemory(user, message, isNewConversation?)` - Full jean_memory tool
-- `addMemory(user, content)` - Add a specific memory
-- `searchMemory(user, query)` - Search existing memories
-- `storeDocument(user, title, content, type?)` - Store structured documents
+- `tools.add_memory(content)` - Add a specific memory
+- `tools.search_memory(query)` - Search existing memories  
+- `tools.deep_memory_query(query)` - Complex relationship queries
+- `tools.store_document(title, content, type?)` - Store structured documents
+
+**Note**: These tools automatically handle authentication and use your user context. No manual token management required.
+
+---
+
+## Session Management
+
+### Sign Out
+
+To properly sign out users and clear their session data:
+
+```typescript
+
+function SignOutButton() {
+  const handleSignOut = () => {
+    // Clears all session data including localStorage and Supabase sessions
+    signOutFromJean();
+    
+    // Optionally redirect or update your app state
+    window.location.reload(); // Or use your router
+  };
+
+  return (
+    
+  );
+}
+```
+
+The `signOutFromJean()` function:
+- Clears all Jean Memory session data
+- Removes Supabase authentication tokens
+- Stays within your React app (no external redirects)
+- Prepares for a fresh sign-in experience
 
 ---
 
@@ -358,16 +420,16 @@ The example below shows a typical workflow where we get context from Jean Memory
 ```python
 
 from openai import OpenAI
-from jeanmemory import JeanClient
+from jean_memory import JeanClient
 
 # 1. Initialize the clients
 jean = JeanClient(api_key=os.environ.get("JEAN_API_KEY"))
 openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# 2. Get the user token from your frontend
-# This token is securely obtained via the OAuth flow handled by
-# our frontend components, like @jeanmemory/react.
-user_token = get_user_token_from_request() 
+# 2. Get the user token from your frontend (or use auto test user)
+# Production: Token from OAuth flow via @jeanmemory/react
+# Development: Leave empty for automatic test user
+user_token = get_user_token_from_request()  # Or None for test user 
 
 # 3. Get context from Jean Memory
 user_message = "What were the key takeaways from our last meeting about Project Phoenix?"
@@ -411,6 +473,35 @@ This code block demonstrates the complete "golden path" for using the headless P
 
 The `user_token` is the critical piece that connects a request to a specific user's memory. In a production application, your frontend should use our React SDK's `<SignInWithJean />` component (or a manual OAuth 2.1 PKCE flow) to authenticate the user and receive this token. Your frontend then passes this token to your backend, which uses it to make authenticated requests with the Python SDK.
 
+**Headless Authentication (Backend-Only)**
+
+For headless applications without a frontend, you have several options:
+
+```python
+# Option 1: Test mode (development)
+jean = JeanClient(api_key="jean_sk_test_your_key")
+context = jean.get_context(
+    # user_token=None automatically uses test user
+    message="Hello"
+)
+
+# Option 2: Manual OAuth flow (production)
+jean = JeanClient(api_key="jean_sk_live_your_key")
+
+# Generate OAuth URL for manual authentication
+auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
+print(f"Visit: {auth_url}")
+
+# After user visits URL and you get the code:
+user_token = jean.exchange_code_for_token(auth_code)
+
+# Option 3: Service account (enterprise)
+jean = JeanClient(
+    api_key="jean_sk_live_your_key",
+    service_account_key="your_service_account_key"
+)
+```
+
 For information on implementing a secure server-to-server OAuth flow for backend services, see the [Authentication](/authentication) guide.
 
 ---
@@ -453,6 +544,10 @@ context = jean.get_context(user_token=..., message="...")
 # The deterministic, tool-based way:
 jean.tools.add_memory(user_token=..., content="My favorite color is blue.")
 search_results = jean.tools.search_memory(user_token=..., query="preferences")
+
+# Advanced tools for complex operations:
+deep_results = jean.tools.deep_memory_query(user_token=..., query="complex relationship query")
+doc_result = jean.tools.store_document(user_token=..., title="Meeting Notes", content="...", document_type="markdown")
 ```
 
 ---
@@ -535,7 +630,23 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
 
-**Note for Testing:** The Node.js SDK v1.2.3+ includes auto test user functionality that creates isolated test users for each API key, allowing you to test core functionality without implementing full authentication during development.
+**Test User Support:** The Node.js SDK v1.2.10+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
+
+```typescript
+// With user token (production)
+const context = await jean.getContext({
+  user_token: userToken,  // From OAuth flow
+  message: "What's my schedule?"
+});
+
+// Without user token (automatic test user)
+const context = await jean.getContext({
+  // user_token automatically set to test user for this API key
+  message: "What's my schedule?"
+});
+```
+
+This allows you to test core functionality immediately without implementing full authentication during development.
 
 ---
 
@@ -577,6 +688,10 @@ const context = await jean.getContext({ user_token: ..., message: "..." });
 // The deterministic, tool-based way:
 await jean.tools.add_memory({ user_token: ..., content: "My project's deadline is next Friday." });
 const search_results = await jean.tools.search_memory({ user_token: ..., query: "project deadlines" });
+
+// Advanced tools for complex operations:
+const deep_results = await jean.tools.deep_memory_query({ user_token: ..., query: "complex relationship query" });
+const doc_result = await jean.tools.store_document({ user_token: ..., title: "Meeting Notes", content: "...", document_type: "markdown" });
 ```
 
 ---

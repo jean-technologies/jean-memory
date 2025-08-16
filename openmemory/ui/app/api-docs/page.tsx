@@ -430,8 +430,8 @@ graph TD
                 <h3 className="text-lg font-semibold text-foreground mb-3">
                   React SDK
                 </h3>
-                <CodeBlock lang="bash" code="npm install jeanmemory-react" />
-                <CodeBlock lang="tsx" code={`import { SignInWithJean, JeanChat, useJeanAgent } from 'jeanmemory-react';
+                <CodeBlock lang="bash" code="npm install @jeanmemory/react" />
+                <CodeBlock lang="tsx" code={`import { SignInWithJean, JeanChat, useJeanAgent } from '@jeanmemory/react';
 
 function MathTutorApp() {
   const { agent, signIn } = useJeanAgent({
@@ -1003,10 +1003,10 @@ else:
           <div className="p-6 border border-border rounded-lg bg-card mb-8">
               <h3 className="text-lg font-semibold text-foreground mb-2">Installation & Setup</h3>
               <CodeBlock lang="bash" code={`# Install the Jean Memory React SDK
-npm install jeanmemory-react
+npm install @jeanmemory/react
 
 # Or using a local package (for development)
-npm install file:../sdk/react/jeanmemory-react-0.1.0.tgz`} />
+npm install file:../sdk/react/jeanmemory-react-1.4.2.tgz`} />
           </div>
 
           <div className="p-6 border border-border rounded-lg bg-card mb-8">
@@ -1019,7 +1019,7 @@ npm install file:../sdk/react/jeanmemory-react-0.1.0.tgz`} />
  * Demonstrates 5-line integration with multiple AI personalities
  */
 import React, { useState } from 'react';
-import { useJeanAgent, SignInWithJean, JeanChat } from 'jeanmemory-react';
+import { useJeanAgent, SignInWithJean, JeanChat } from '@jeanmemory/react';
 
 export default function JeanMemoryDemo() {
   const [activeDemo, setActiveDemo] = useState<'math' | 'therapist' | 'custom'>('math');

@@ -255,3 +255,37 @@ function AdvancedComponent() {
 - `tools.store_document(title, content, type?)` - Store structured documents
 
 **Note**: These tools automatically handle authentication and use your user context. No manual token management required.
+
+---
+
+## Session Management
+
+### Sign Out
+
+To properly sign out users and clear their session data:
+
+```typescript
+import { signOutFromJean } from '@jeanmemory/react';
+
+function SignOutButton() {
+  const handleSignOut = () => {
+    // Clears all session data including localStorage and Supabase sessions
+    signOutFromJean();
+    
+    // Optionally redirect or update your app state
+    window.location.reload(); // Or use your router
+  };
+
+  return (
+    <button onClick={handleSignOut}>
+      Sign Out
+    </button>
+  );
+}
+```
+
+The `signOutFromJean()` function:
+- Clears all Jean Memory session data
+- Removes Supabase authentication tokens
+- Stays within your React app (no external redirects)
+- Prepares for a fresh sign-in experience
