@@ -71,7 +71,7 @@ export function SignInWithJean({
       }
 
       // Exchange code for token
-      const response = await fetch(`${JEAN_API_BASE}/sdk/oauth/token`, {
+      const response = await fetch(`${JEAN_API_BASE}/oauth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ export function SignInWithJean({
         body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
-          redirect_uri: window.location.origin + window.location.pathname,
+          redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Must match the redirect_uri used in authorization
           code_verifier: verifier,
           client_id: apiKey || 'default_client'
         })
@@ -135,20 +135,21 @@ export function SignInWithJean({
       // Store for callback
       sessionStorage.setItem('jean_oauth_state', state);
       sessionStorage.setItem('jean_oauth_verifier', verifier);
+      sessionStorage.setItem('jean_final_redirect', window.location.origin + window.location.pathname);
       
-      // Build OAuth URL
+      // Build OAuth URL using bridge pattern to prevent Supabase hijacking
       const params = new URLSearchParams({
         response_type: 'code',
         client_id: apiKey || 'default_client',
-        redirect_uri: window.location.origin + window.location.pathname,
+        redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Use bridge to prevent Supabase hijacking
         state,
         code_challenge: challenge,
         code_challenge_method: 'S256',
         scope: 'read write'
       });
       
-      // Redirect to OAuth provider (SDK endpoint)
-      window.location.href = `${JEAN_API_BASE}/sdk/oauth/authorize?${params.toString()}`;
+      // Redirect to OAuth provider
+      window.location.href = `${JEAN_OAUTH_BASE}/oauth/authorize?${params.toString()}`;
     } catch (error) {
       setIsLoading(false);
       console.error('Sign in error:', error);

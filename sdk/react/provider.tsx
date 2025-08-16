@@ -130,14 +130,14 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
 
         try {
           // Exchange code for token
-          const tokenResponse = await fetch(`${JEAN_API_BASE}/sdk/oauth/token`, {
+          const tokenResponse = await fetch(`${JEAN_API_BASE}/oauth/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               grant_type: 'authorization_code',
               code,
               client_id: apiKey,
-              redirect_uri: window.location.origin + window.location.pathname,
+              redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Must match the redirect_uri used in authorization
               code_verifier: verifier
             }),
           });
@@ -150,7 +150,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
           const { access_token } = await tokenResponse.json();
 
           // Get user info
-          const userInfoResponse = await fetch(`${JEAN_API_BASE}/sdk/oauth/userinfo`, {
+          const userInfoResponse = await fetch(`${JEAN_API_BASE}/oauth/userinfo`, {
             headers: { Authorization: `Bearer ${access_token}` },
           });
 
@@ -429,19 +429,22 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       sessionStorage.setItem('jean_oauth_state', state);
       sessionStorage.setItem('jean_oauth_verifier', verifier);
       
-      // Build OAuth URL for SDK flows
+      // Store original callback URL for bridge to use
+      sessionStorage.setItem('jean_final_redirect', window.location.origin + window.location.pathname);
+      
+      // Build OAuth URL using bridge pattern to prevent Supabase hijacking
       const params = new URLSearchParams({
         response_type: 'code',
         client_id: apiKey || 'default_client',
-        redirect_uri: window.location.origin + window.location.pathname,
+        redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Use bridge to prevent Supabase hijacking
         state,
         code_challenge: challenge,
         code_challenge_method: 'S256',
         scope: 'read write'
       });
       
-      // Use SDK OAuth endpoint (NOT the main OAuth endpoint used by Claude)
-      window.location.href = `${JEAN_API_BASE}/sdk/oauth/authorize?${params.toString()}`;
+      // Redirect to OAuth provider
+      window.location.href = `${JEAN_API_BASE}/oauth/authorize?${params.toString()}`;
     } catch (error) {
       setIsLoading(false);
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
