@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { consolidatedDocs } from '../generated/docs';
 
 const CopyToClipboard = () => {
   const [buttonText, setButtonText] = useState('Copy All Docs for AI');
@@ -7,13 +8,6 @@ const CopyToClipboard = () => {
   const copyContent = async () => {
     setIsLoading(true);
     try {
-      // Fetch the consolidated documentation from the static file
-      const response = await fetch('/static/consolidated-docs.md');
-      if (!response.ok) {
-        throw new Error('Failed to fetch documentation');
-      }
-      const consolidatedDocs = await response.text();
-      
       await navigator.clipboard.writeText(consolidatedDocs);
       setButtonText('Copied!');
       setTimeout(() => {
