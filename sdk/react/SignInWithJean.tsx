@@ -149,6 +149,11 @@ export function SignInWithJean({
       url.searchParams.delete('auth_error');
       window.history.replaceState({}, '', url.toString());
 
+      // Clean up OAuth session storage
+      sessionStorage.removeItem('jean_oauth_session');
+      sessionStorage.removeItem('jean_flow');
+      sessionStorage.removeItem('jean_api_key');
+
       console.log('✅ SDK OAuth: Authentication successful for user:', user.email);
       onSuccess(user);
     } catch (error) {
@@ -166,6 +171,17 @@ export function SignInWithJean({
     url.searchParams.delete('auth_token');
     url.searchParams.delete('auth_error');
     window.history.replaceState({}, '', url.toString());
+
+    // Clean up OAuth session storage on error
+    sessionStorage.removeItem('jean_oauth_session');
+    sessionStorage.removeItem('jean_flow');
+    sessionStorage.removeItem('jean_api_key');
+
+    // Don't throw errors for normal initialization failures
+    if (error === 'Failed to get authentication session' || error === 'No authentication session available') {
+      console.log('ℹ️ No existing authentication session - this is normal');
+      return;
+    }
 
     console.error('SDK auth error:', error);
     if (onError) {
@@ -222,6 +238,11 @@ export function SignInWithJean({
       
       // Generate OAuth session ID
       const oauthSession = generateRandomString(32);
+      
+      // Store OAuth parameters in sessionStorage for bridge persistence
+      sessionStorage.setItem('jean_oauth_session', oauthSession);
+      sessionStorage.setItem('jean_flow', 'sdk_oauth');
+      sessionStorage.setItem('jean_api_key', apiKey || 'default_client');
       
       // Build redirect URL with SDK OAuth flow parameters
       const bridgeUrl = new URL('https://jeanmemory.com/oauth-bridge.html');
