@@ -3,7 +3,7 @@
 ## Current Status: Stable but Backend Issue Blocking SDK
 
 **Last Updated:** January 17, 2025  
-**SDK Versions Published:** React v1.5.3, Python v1.4.2, Node v1.4.2  
+**SDK Versions Published:** All aligned at v1.5.3  
 **Status:** Frontend working, backend OAuth bridge broken
 
 ---
@@ -88,13 +88,13 @@ curl "https://jeanmemory.com/oauth-bridge.html?oauth_session=test123&flow=sdk_oa
 - **Published:** npm `@jeanmemory/react@1.5.3`
 - **Key Features:** Bridge-based OAuth, session persistence, no client registration
 
-### Python SDK v1.4.2  
+### Python SDK v1.5.3  
 - **Status:** Stable
-- **Published:** PyPI
+- **Published:** PyPI `jeanmemory@1.5.3`
 
-### Node.js SDK v1.4.2
+### Node.js SDK v1.5.3
 - **Status:** Stable  
-- **Published:** npm
+- **Published:** npm `@jeanmemory/node@1.5.3`
 
 ---
 

@@ -28,7 +28,7 @@ from .models import (
     ContextResponse
 )
 
-__version__ = "1.5.1"
+__version__ = "1.5.3"
 __author__ = "Jean Memory"
 __email__ = "support@jeanmemory.com"
 
