@@ -80,12 +80,19 @@ export function SignInWithJean({
     const authToken = params.get('auth_token');
     const authError = params.get('auth_error');
     
+    // Only process bridge results if we have explicit auth parameters
     if (authSuccess === 'true' && authToken) {
       handleSDKAuthSuccess(authToken);
     } else if (authSuccess === 'false' && authError) {
       handleSDKAuthError(authError);
+    } else if (authSuccess || authToken || authError) {
+      // We have some auth params but they're malformed - this is an error
+      console.error('Malformed auth parameters from bridge');
+      if (onError) {
+        onError(new Error('Invalid authentication response'));
+      }
     } else {
-      // Check for existing session in localStorage (bridge format)
+      // No auth parameters - check for existing session only
       const authCompleted = localStorage.getItem('auth_completed');
       const userInfo = localStorage.getItem('userInfo');
       
@@ -102,7 +109,10 @@ export function SignInWithJean({
         }
       }
       
-      // Legacy OAuth callback support
+      // No existing session - this is normal during initialization
+      console.log('ℹ️ SDK ready for authentication');
+      
+      // Legacy OAuth callback support (only if we have both code and state)
       const code = params.get('code');
       const state = params.get('state');
       if (code && state) {
@@ -113,19 +123,16 @@ export function SignInWithJean({
 
   const handleSDKAuthSuccess = async (token: string) => {
     try {
-      // Get user info using the Jean Memory token
-      const userResponse = await fetch(`${JEAN_API_BASE}/api/v1/user/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to get user info');
-      }
-
-      const user = await userResponse.json();
-      user.access_token = token;
+      // Parse JWT token directly instead of API call
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const user = {
+        sub: payload.sub || payload.user_id,
+        id: payload.sub || payload.user_id,
+        email: payload.email,
+        name: payload.name || payload.email?.split('@')[0] || 'User',
+        full_name: payload.name,
+        access_token: token
+      };
 
       // Store session data in localStorage for persistence (matching bridge format)
       localStorage.setItem('auth_completed', 'true');

@@ -95,8 +95,9 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [rawError, setRawError] = useState<string | null>(null);
   const [supabase, setSupabase] = useState<any>(null);
+  const [supabaseSession, setSupabaseSession] = useState<any>(null);
 
-  // Initialize Supabase client
+  // Initialize Supabase client (EXACT same as web app)
   useEffect(() => {
     const initSupabase = async () => {
       // Load Supabase from CDN if not already loaded
@@ -111,6 +112,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
             }
           });
           setSupabase(client);
+          initAuth(client);
         };
         document.head.appendChild(script);
       } else {
@@ -121,13 +123,77 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
           }
         });
         setSupabase(client);
+        initAuth(client);
       }
     };
 
     initSupabase();
   }, []);
 
-  // Validate API key on mount
+  // Initialize auth (COPY of web app AuthContext pattern)
+  const initAuth = async (client: any) => {
+    setIsLoading(true);
+    
+    try {
+      // Get current session (same as web app)
+      const { data: { session: currentSession }, error: sessionError } = await client.auth.getSession();
+      
+      if (sessionError) {
+        console.log('ℹ️ Session error (normal if no existing session):', sessionError.message);
+      }
+      
+      setSupabaseSession(currentSession);
+      
+      if (currentSession?.user) {
+        // Use Supabase session directly - no custom tokens needed
+        const jeanUser: JeanUser = {
+          user_id: currentSession.user.id,
+          email: currentSession.user.email || '',
+          name: currentSession.user.user_metadata?.full_name || currentSession.user.user_metadata?.name || currentSession.user.email?.split('@')[0] || 'User',
+          access_token: currentSession.access_token // Use Supabase token directly
+        };
+        setUser(jeanUser);
+        localStorage.setItem('jean_user', JSON.stringify(jeanUser));
+        console.log('✅ Restored user from Supabase session');
+      } else {
+        console.log('ℹ️ No existing session - ready for sign in');
+      }
+      
+      // Set up auth listener (EXACT same as web app)
+      client.auth.onAuthStateChange((event: string, session: any) => {
+        console.log('🔄 Supabase auth state change:', event);
+        setSupabaseSession(session);
+        
+        if (session?.user) {
+          const jeanUser: JeanUser = {
+            user_id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            access_token: session.access_token // Use Supabase token directly
+          };
+          setUser(jeanUser);
+          localStorage.setItem('jean_user', JSON.stringify(jeanUser));
+          console.log('✅ User authenticated via Supabase');
+        } else {
+          setUser(null);
+          localStorage.removeItem('jean_user');
+          console.log('👋 User signed out');
+        }
+        
+        setIsLoading(false);
+        setRawError(null);
+      });
+      
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      // Don't set error for initialization failures - no session is normal
+      console.log('ℹ️ No existing session found - ready for authentication');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle OAuth completion and API key validation
   useEffect(() => {
     if (!apiKey) {
       setRawError('API key is required');
@@ -139,7 +205,6 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       return;
     }
 
-    // API key will be validated on first request
     console.log('✅ Jean Memory SDK initialized');
 
     // Check if this is a test API key and auto-initialize test user
@@ -149,7 +214,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       return;
     }
 
-    // Handle OAuth completion from bridge
+    // Handle OAuth completion from bridge (simplified)
     const handleOAuthCompletion = async () => {
       const params = new URLSearchParams(window.location.search);
       const authSuccess = params.get('auth_success');
@@ -159,31 +224,23 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       if (authSuccess === 'true' && authToken) {
         setIsLoading(true);
         try {
-          // Get user info from Jean Memory API using the token
-          const userResponse = await fetch(`${JEAN_API_BASE}/oauth/userinfo`, {
-            headers: { Authorization: `Bearer ${authToken}` }
-          });
+          // Parse JWT token directly (no API call needed)
+          const payload = JSON.parse(atob(authToken.split('.')[1]));
+          const user: JeanUser = {
+            user_id: payload.sub || payload.user_id,
+            email: payload.email || '',
+            name: payload.name || payload.email?.split('@')[0] || 'User',
+            access_token: authToken
+          };
           
-          if (userResponse.ok) {
-            const userInfo = await userResponse.json();
-            const user: JeanUser = {
-              user_id: userInfo.sub,
-              email: userInfo.email,
-              name: userInfo.name,
-              access_token: authToken
-            };
-            
-            handleSetUser(user);
-            console.log('✅ OAuth authentication completed');
-            
-            // Clean up URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-          } else {
-            throw new Error('Failed to get user info');
-          }
+          handleSetUser(user);
+          console.log('✅ OAuth authentication completed via bridge');
+          
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
         } catch (error) {
           console.error('OAuth completion error:', error);
-          setRawError('Authentication completed but failed to get user info');
+          setRawError('Authentication completed but failed to parse user info');
         } finally {
           setIsLoading(false);
         }
@@ -194,100 +251,21 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     };
 
     handleOAuthCompletion();
-
-    // Handle OAuth redirect (legacy PKCE flow - kept for backward compatibility)
-    const handleOAuthRedirect = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const state = params.get('state');
-      const storedState = sessionStorage.getItem('jean_oauth_state');
-      const verifier = sessionStorage.getItem('jean_oauth_verifier');
-
-      if (code && state && storedState && verifier) {
-        setIsLoading(true);
-        if (state !== storedState) {
-          setRawError('Invalid OAuth state');
-          setIsLoading(false);
-          return;
-        }
-
-        try {
-          // Exchange code for token
-          const tokenResponse = await fetch(`${JEAN_API_BASE}/oauth/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              grant_type: 'authorization_code',
-              code,
-              client_id: apiKey,
-              redirect_uri: 'https://jeanmemory.com/oauth-bridge.html',  // Must match the redirect_uri used in authorization
-              code_verifier: verifier
-            }),
-          });
-
-          if (!tokenResponse.ok) {
-            const errorData = await tokenResponse.json();
-            throw new Error(errorData.detail || 'Token exchange failed');
-          }
-
-          const { access_token } = await tokenResponse.json();
-
-          // Get user info
-          const userInfoResponse = await fetch(`${JEAN_API_BASE}/oauth/userinfo`, {
-            headers: { Authorization: `Bearer ${access_token}` },
-          });
-
-          if (!userInfoResponse.ok) {
-            throw new Error('Failed to fetch user info');
-          }
-
-          const userInfo = await userInfoResponse.json();
-          
-          const user: JeanUser = {
-            user_id: userInfo.sub,
-            email: userInfo.email,
-            name: userInfo.name,
-            access_token,
-          };
-
-          handleSetUser(user);
-
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          sessionStorage.removeItem('jean_oauth_state');
-          sessionStorage.removeItem('jean_oauth_verifier');
-
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : 'OAuth flow failed';
-          console.error('OAuth callback error:', errorMessage);
-          
-          // Fallback to test user if OAuth fails and we have a test API key
-          if (apiKey.includes('test')) {
-            console.log('🧪 OAuth failed with test API key - falling back to test user mode');
-            await initializeTestUser();
-          } else {
-            setRawError(errorMessage);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    handleOAuthRedirect();
   }, [apiKey]);
 
-  // Load user from localStorage on mount
+  // Load user from localStorage on mount (only if no Supabase session)
   useEffect(() => {
-    const storedUser = localStorage.getItem('jean_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('jean_user');
+    if (!supabaseSession) {
+      const storedUser = localStorage.getItem('jean_user');
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          localStorage.removeItem('jean_user');
+        }
       }
     }
-  }, []);
+  }, [supabaseSession]);
 
   const sendMessage = async (message: string, options: MessageOptions = {}) => {
     if (!user) {
@@ -510,22 +488,24 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     setRawError(null);
     
     try {
-      // Generate session ID for bridge coordination
+      // Store SDK flow markers for coordination
       const sessionId = generateRandomString(32);
       sessionStorage.setItem('jean_oauth_session', sessionId);
       sessionStorage.setItem('jean_api_key', apiKey);
+      sessionStorage.setItem('jean_final_redirect', window.location.origin);
       
-      // Use Supabase OAuth with bridge coordination (like Claude)
-      const bridgeUrl = `https://jeanmemory.com/oauth-bridge.html?oauth_session=${sessionId}&flow=sdk_oauth`;
+      // Use bridge directly - no domain setup required for clients
+      const bridgeUrl = `https://jeanmemory.com/oauth-bridge.html?oauth_session=${sessionId}&flow=sdk_oauth&api_key=${apiKey}`;
       
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: bridgeUrl,
+          redirectTo: bridgeUrl, // Direct to bridge - works for any client domain
           queryParams: {
             oauth_session: sessionId,
             flow: 'sdk_oauth',
-            api_key: apiKey
+            api_key: apiKey,
+            prompt: 'select_account'
           }
         }
       });
@@ -535,7 +515,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         setRawError('Sign in failed. Please try again.');
         setIsLoading(false);
       }
-      // Loading will be cleared when auth completes
+      // Loading will be cleared when auth completes via onAuthStateChange
     } catch (error) {
       setIsLoading(false);
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
@@ -549,13 +529,21 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     setRawError(null); // Clear any auth errors
   };
 
-  const signOut = () => {
+  const signOut = async () => {
+    if (supabase) {
+      // Use Supabase sign out (same as web app)
+      await supabase.auth.signOut();
+    }
+    
+    // Clean up local state
     setUser(null);
     setMessages([]);
     setRawError(null);
+    setSupabaseSession(null);
     localStorage.removeItem('jean_user');
-    sessionStorage.removeItem('jean_oauth_state');
-    sessionStorage.removeItem('jean_oauth_verifier');
+    sessionStorage.removeItem('jean_oauth_session');
+    sessionStorage.removeItem('jean_api_key');
+    sessionStorage.removeItem('jean_final_redirect');
     console.log('👋 User signed out');
   };
 
