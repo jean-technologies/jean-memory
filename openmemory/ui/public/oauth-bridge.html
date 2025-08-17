@@ -91,10 +91,14 @@
         addDebugLog('🔍 BRIDGE - SessionStorage jean_api_key: ' + sessionStorage.getItem('jean_api_key'));
         addDebugLog('🔍 BRIDGE - SessionStorage jean_final_redirect: ' + sessionStorage.getItem('jean_final_redirect'));
 
-        // Initialize Supabase client
+        // Initialize Supabase client - use environment variables
+        // These should be set as environment variables and injected at build time
+        const SUPABASE_URL = '{{NEXT_PUBLIC_SUPABASE_URL}}' || 'https://masapxpxcwvsjpuymbmd.supabase.co';
+        const SUPABASE_ANON_KEY = '{{NEXT_PUBLIC_SUPABASE_ANON_KEY}}' || 'placeholder_key';
+        
         const supabase = window.supabase.createClient(
-            'https://masapxpxcwvsjpuymbmd.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc2FweHB4Y3d2c2pwdXltYm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYxODI3MjYsImV4cCI6MjA0MTc1ODcyNn0.1nSe1h0I9bN_yROdVPJX4L3X0QlqtyFfKMtCJ6XnK9w',
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY,
             {
                 auth: {
                     detectSessionInUrl: true,
