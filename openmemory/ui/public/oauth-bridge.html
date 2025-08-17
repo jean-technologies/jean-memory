@@ -129,7 +129,19 @@
                 try {
                     addDebugLog('🔍 BRIDGE - Starting Supabase session retrieval...');
                     
-                    // Get current Supabase session
+                    // Check if Supabase has already processed the OAuth in the URL
+                    addDebugLog('🔍 BRIDGE - URL fragment: ' + window.location.hash);
+                    addDebugLog('🔍 BRIDGE - Contains access_token: ' + window.location.hash.includes('access_token'));
+                    addDebugLog('🔍 BRIDGE - Contains code param: ' + window.location.search.includes('code='));
+                    
+                    // If there are tokens in the URL hash, let Supabase auto-detect them
+                    if (window.location.hash.includes('access_token')) {
+                        addDebugLog('🔍 BRIDGE - Tokens found in URL hash, waiting for Supabase to process...');
+                        // Wait a moment for Supabase to process the URL
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                    
+                    // Get current Supabase session (should be auto-populated from URL)
                     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                     
                     addDebugLog('🔍 BRIDGE - Supabase getSession result:');
