@@ -634,18 +634,18 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                         <p className="text-xs text-muted-foreground mb-2">Add Jean Memory as an HTTP MCP server:</p>
                         <div className="relative bg-background border rounded-md">
                             <div className="overflow-x-auto p-3 pr-12 font-mono text-xs text-foreground">
-                                <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp</code>
+                                <code className="whitespace-pre-wrap break-words">claude mcp add --transport http jean-memory {MCP_URL}/mcp/v2/claude/{user?.id || '{your-user-id}'}</code>
                             </div>
                             <Button 
                                 variant="ghost" 
                                 size="sm"
                                 className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp`)}
+                                onClick={() => handleCopy(`claude mcp add --transport http jean-memory ${MCP_URL}/mcp/v2/claude/${user?.id || '{your-user-id}'}`)}
                             >
                                 {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">OAuth authentication will be handled automatically by Claude</p>
+                        <p className="text-xs text-muted-foreground mt-2">User ID authentication is built into the URL - no OAuth needed</p>
                     </div>
 
                     <div>
