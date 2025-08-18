@@ -50,7 +50,17 @@
         debugDiv.innerHTML = '<h3>🔍 BRIDGE DEBUG</h3><div id="debug-content">Loading...</div>';
         document.body.appendChild(debugDiv);
         
+        const CONFIG = {
+            SUPABASE_URL: '{{NEXT_PUBLIC_SUPABASE_URL}}' || 'https://masapxpxcwvsjpuymbmd.supabase.co',
+            SUPABASE_ANON_KEY: '{{NEXT_PUBLIC_SUPABASE_ANON_KEY}}' || 'placeholder_key',
+            API_BASE_URL: 'https://jean-memory-api-virginia.onrender.com',
+            DEBUG: true, // Set to false in production
+            SESSION_POLL_TIMEOUT: 10000, // 10 seconds
+            SESSION_POLL_INTERVAL: 250 // 250 ms
+        };
+
         function addDebugLog(message) {
+            if (!CONFIG.DEBUG) return;
             console.log(message);
             const debugContent = document.getElementById('debug-content');
             if (debugContent) {
@@ -91,14 +101,10 @@
         addDebugLog('🔍 BRIDGE - SessionStorage jean_api_key: ' + sessionStorage.getItem('jean_api_key'));
         addDebugLog('🔍 BRIDGE - SessionStorage jean_final_redirect: ' + sessionStorage.getItem('jean_final_redirect'));
 
-        // Initialize Supabase client - use environment variables
-        // These should be set as environment variables and injected at build time
-        const SUPABASE_URL = '{{NEXT_PUBLIC_SUPABASE_URL}}' || 'https://masapxpxcwvsjpuymbmd.supabase.co';
-        const SUPABASE_ANON_KEY = '{{NEXT_PUBLIC_SUPABASE_ANON_KEY}}' || 'placeholder_key';
-        
+        // Initialize Supabase client
         const supabase = window.supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_ANON_KEY,
+            CONFIG.SUPABASE_URL,
+            CONFIG.SUPABASE_ANON_KEY,
             {
                 auth: {
                     detectSessionInUrl: true,
@@ -117,7 +123,7 @@
         if (flow === 'mcp_oauth' && oauth_session) {
             addDebugLog('🔍 BRIDGE - MCP OAuth flow detected, redirecting to API callback.');
             // Existing Claude OAuth flow - redirect to API callback
-            const redirectUrl = `https://jean-memory-api-virginia.onrender.com/oauth/callback?oauth_session=${oauth_session}&flow=mcp_oauth`;
+            const redirectUrl = `${CONFIG.API_BASE_URL}/oauth/callback?oauth_session=${oauth_session}&flow=mcp_oauth`;
             addDebugLog('🎯 BRIDGE - Redirecting to: ' + redirectUrl);
             window.location.href = redirectUrl;
             
@@ -134,25 +140,27 @@
                     addDebugLog('🔍 BRIDGE - Contains access_token: ' + window.location.hash.includes('access_token'));
                     addDebugLog('🔍 BRIDGE - Contains code param: ' + window.location.search.includes('code='));
                     
-                    // If there are tokens in the URL hash, let Supabase auto-detect them
-                    if (window.location.hash.includes('access_token')) {
-                        addDebugLog('🔍 BRIDGE - Tokens found in URL hash, waiting for Supabase to process...');
-                        // Wait a moment for Supabase to process the URL
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
+                    // Poll for the session instead of using a fixed timeout
+                    const session = await pollForSession();
                     
+                    if (!session) {
+                        addDebugLog('❌ BRIDGE - Failed to get Supabase session after polling.');
+                        redirectToApp('Failed to get authentication session');
+                        return;
+                    }
+
                     // Get current Supabase session (should be auto-populated from URL)
-                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
                     
                     addDebugLog('🔍 BRIDGE - Supabase getSession result:');
-                    addDebugLog('🔍 BRIDGE - Session exists: ' + !!session);
+                    addDebugLog('🔍 BRIDGE - Session exists: ' + !!currentSession);
                     addDebugLog('🔍 BRIDGE - Session error: ' + (sessionError ? sessionError.message : 'none'));
-                    if (session) {
-                        addDebugLog('🔍 BRIDGE - Session user: ' + (session.user ? session.user.email : 'no user'));
-                        addDebugLog('🔍 BRIDGE - Session access_token exists: ' + !!session.access_token);
+                    if (currentSession) {
+                        addDebugLog('🔍 BRIDGE - Session user: ' + (currentSession.user ? currentSession.user.email : 'no user'));
+                        addDebugLog('🔍 BRIDGE - Session access_token exists: ' + !!currentSession.access_token);
                     }
                     
-                    if (sessionError || !session) {
+                    if (sessionError || !currentSession) {
                         addDebugLog('❌ BRIDGE - Failed to get Supabase session: ' + (sessionError ? sessionError.message : 'no session'));
                         // Only redirect with error if we were expecting a session (i.e., this is a real OAuth callback)
                         const hasAuthFragment = window.location.hash.includes('access_token') || window.location.search.includes('code=');
@@ -167,17 +175,17 @@
                         return;
                     }
                     
-                    addDebugLog('✅ BRIDGE - Got Supabase session for user: ' + session.user.email);
+                    addDebugLog('✅ BRIDGE - Got Supabase session for user: ' + currentSession.user.email);
                     
                     // Exchange Supabase session for Jean Memory token
                     addDebugLog('🔍 BRIDGE - Starting token exchange with API...');
                     const requestBody = {
-                        supabase_access_token: session.access_token,
+                        supabase_access_token: currentSession.access_token,
                         api_key: api_key
                     };
                     addDebugLog('🔍 BRIDGE - Request body: ' + JSON.stringify(requestBody));
                     
-                    const response = await fetch('https://jean-memory-api-virginia.onrender.com/oauth/complete-sdk-auth', {
+                    const response = await fetch(`${CONFIG.API_BASE_URL}/oauth/complete-sdk-auth`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -228,6 +236,23 @@
             }
         }
 
+        async function pollForSession() {
+            addDebugLog('🔍 BRIDGE - Starting to poll for session...');
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < CONFIG.SESSION_POLL_TIMEOUT) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    addDebugLog(`✅ BRIDGE - Session found after ${Date.now() - startTime}ms`);
+                    return session;
+                }
+                await new Promise(resolve => setTimeout(resolve, CONFIG.SESSION_POLL_INTERVAL));
+            }
+
+            addDebugLog('❌ BRIDGE - Polling timed out after ' + CONFIG.SESSION_POLL_TIMEOUT + 'ms');
+            return null;
+        }
+
         function redirectToApp(error = null, token = null) {
             addDebugLog('🔍 BRIDGE - redirectToApp called with error: ' + error + ', token: ' + (token ? 'YES (' + token.length + ' chars)' : 'NO'));
             
@@ -255,9 +280,13 @@
             addDebugLog('🔍 BRIDGE - About to redirect in 2 seconds...');
             
             // Add a small delay so we can see the debug info
-            setTimeout(() => {
-                window.location.href = redirectUrl.toString();
-            }, 2000);
+            if (CONFIG.DEBUG) {
+                setTimeout(() => {
+                    window.location.href = redirectUrl.toString();
+                }, 2000);
+            } else {
+                 window.location.href = redirectUrl.toString();
+            }
         }
     </script>
 </body>

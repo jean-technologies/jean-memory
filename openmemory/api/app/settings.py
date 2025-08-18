@@ -43,6 +43,7 @@ class Config:
         self.SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
         self.SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") 
         self.SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+        self.SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         
         # Detect if we're using local Supabase CLI
         self.IS_LOCAL_SUPABASE = bool(
@@ -304,8 +305,16 @@ class Config:
             if not isinstance(self.PGVECTOR_PORT, int) or self.PGVECTOR_PORT <= 0:
                 errors.append("PGVECTOR_PORT must be a positive integer")
         
+        if not self.IS_PRODUCTION and self.DATABASE_URL and "test-db-do-user-16553856-0.c.db.ondigitalocean.com" in self.DATABASE_URL:
+             errors.append("You are in dev mode but using the production database. Please double check your env settings.")
+        
+        if not self.SUPABASE_SERVICE_ROLE_KEY and self.IS_PRODUCTION:
+            errors.append("SUPABASE_SERVICE_ROLE_KEY is required in production.")
+
         if errors:
-            raise ValueError(f"Configuration errors: {', '.join(errors)}")
+            # Join the error messages with a newline character for better readability
+            error_message = "\n".join(errors)
+            raise ValueError(f"Configuration errors: {error_message}")
         
         return True
     
