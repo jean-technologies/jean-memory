@@ -252,6 +252,10 @@ class Config:
         # Add environment-specific URLs
         if self.IS_PRODUCTION:
             base_urls.append("https://jean-memory-ui-virginia.onrender.com")
+            # Allow localhost for OAuth testing in production
+            base_urls.extend([
+                f"http://localhost:{port}" for port in range(8000, 9000)
+            ])
         else:
             base_urls.append("https://jean-memory-ui-dev.onrender.com")
         
