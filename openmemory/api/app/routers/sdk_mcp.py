@@ -107,8 +107,15 @@ async def jean_chat_endpoint(
         
         logger.info(f"🧠 SDK MCP: Calling jean_memory tool for message: '{latest_message[:50]}...'")
         
+        # Convert User object to dictionary for MCP handler compatibility
+        user_dict = {
+            "user_id": current_user.user_id,
+            "email": current_user.email or "user@example.com",
+            "client": "Jean Memory SDK"
+        }
+        
         # Call existing MCP handler
-        mcp_response = await handle_mcp_request(mcp_request, current_user, background_tasks)
+        mcp_response = await handle_mcp_request(mcp_request, user_dict, background_tasks)
         
         # Extract context from MCP response
         context = ""
