@@ -1,0 +1,361 @@
+{
+  "id": "71e4b830-efef-449a-be1e-8ce9a9213e45",
+  "name": "mixed_5turns_20250816_005113",
+  "description": "Generated via FRD-compliant CLI: mixed distribution, 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "mixed",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "What can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:51:24.322985",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:51:24.322997",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "f8d83991-d82d-4622-b39a-6d513a06b57b"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "What about hey, what was your new puppy's name again?",
+      "expected_response": "Her name is Luna. (From: I just adopted a new puppy! She's a golden retriever and her name is Luna. I picked her up last Saturday.)",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "I just adopted a new puppy! She's a golden retriever and her name is Luna. I picked her up last Saturday.",
+          "timestamp": "2025-08-13T00:51:28.541440",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "Luna loves playing with her new squeaky ball. She's so energetic!",
+          "timestamp": "2025-08-14T00:51:28.541456",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I need to buy some more puppy food for Luna soon. She eats a lot!",
+          "timestamp": "2025-08-15T00:51:28.541459",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:51:24.322997",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:51:24.322985",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "b4f38104-353b-4db3-bc56-c3732d26a949"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "Also, how are your pottery classes going? what's the most challenging part you've found so far?",
+      "expected_response": "From what you mentioned, you've found centering the clay on the wheel to be really tricky in your pottery classes. You said your instructor told you it just takes practice. (Memory: 'I started pottery classes last week, it's fun but centering the clay on the wheel is proving to be really tricky for me. My instructor says it just takes practice.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "I started pottery classes last week, it's fun but centering the clay on the wheel is proving to be really tricky for me. My instructor says it just takes practice.",
+          "timestamp": "2025-08-11T00:51:34.717676",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "Just tried that new coffee shop downtown, 'The Daily Grind'. Their cold brew is amazing, but I usually stick to my regular latte at 'Bean There, Done That'.",
+          "timestamp": "2025-08-13T00:51:34.717694",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "Finished reading 'The Midnight Library' last night. It was such a thought-provoking book, really enjoyed the concept.",
+          "timestamp": "2025-08-15T00:51:34.717697",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:51:24.322997",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "Luna loves playing with her new squeaky ball. She's so energetic!",
+          "timestamp": "2025-08-14T00:51:28.541456",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "63eb365d-c8e5-4d8a-a484-342037766a50"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Tell me more about hey, i'm trying to think of a good gift for sarah. any ideas?",
+      "expected_response": "Given that Sarah's birthday is next Friday, and she's really into single-origin, fruity coffees, those Ethiopian Yirgacheffe beans you found recently would be a fantastic and thoughtful gift! You mentioned they were aromatic and worth the price, which sounds perfect for her pour-over setup.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:51:44.960456",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:51:44.960468",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:51:24.322985",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:51:24.322997",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "c545f76d-e853-434b-9429-1779fcd1550d"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "Also, hey, what was that specific iso setting you found best for your new mirrorless camera when you're doing low-light street shots with your fast prime lens, to keep the noise down?",
+      "expected_response": "You mentioned that for low-light street photography with your f/1.8 prime lens, you found ISO 6400 to be optimal for your new mirrorless camera to minimize noise. (From memory: 'Remember when we were talking about my new mirrorless camera? I finally figured out the optimal ISO setting for low-light street photography without too much noise – it's surprisingly high, around ISO 6400, but only when I use the f/1.8 prime lens.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "Remember when we were talking about my new mirrorless camera? I finally figured out the optimal ISO setting for low-light street photography without too much noise – it's surprisingly high, around ISO 6400, but only when I use the f/1.8 prime lens.",
+          "timestamp": "2025-08-13T00:51:52.104363",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "I also mentioned I'm thinking of getting a new tripod. I saw a really lightweight carbon fiber one online that folds down super small, perfect for travel.",
+          "timestamp": "2025-08-11T00:51:52.104375",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Oh, and I was trying to explain the difference between aperture and shutter speed to my cousin last week. It's tricky to get them to grasp how f-stops work.",
+          "timestamp": "2025-08-09T00:51:52.104377",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "Luna loves playing with her new squeaky ball. She's so energetic!",
+          "timestamp": "2025-08-14T00:51:28.541456",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I need to buy some more puppy food for Luna soon. She eats a lot!",
+          "timestamp": "2025-08-15T00:51:28.541459",
+          "metadata": {},
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "f7bec899-82c9-4d86-b9ac-2dc7dea8e30b"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:51:24.322985",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:51:24.322997",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "I just adopted a new puppy! She's a golden retriever and her name is Luna. I picked her up last Saturday.",
+      "timestamp": "2025-08-13T00:51:28.541440",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "Luna loves playing with her new squeaky ball. She's so energetic!",
+      "timestamp": "2025-08-14T00:51:28.541456",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I need to buy some more puppy food for Luna soon. She eats a lot!",
+      "timestamp": "2025-08-15T00:51:28.541459",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:51:24.322997",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:51:24.322985",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "I started pottery classes last week, it's fun but centering the clay on the wheel is proving to be really tricky for me. My instructor says it just takes practice.",
+      "timestamp": "2025-08-11T00:51:34.717676",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Just tried that new coffee shop downtown, 'The Daily Grind'. Their cold brew is amazing, but I usually stick to my regular latte at 'Bean There, Done That'.",
+      "timestamp": "2025-08-13T00:51:34.717694",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "Finished reading 'The Midnight Library' last night. It was such a thought-provoking book, really enjoyed the concept.",
+      "timestamp": "2025-08-15T00:51:34.717697",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:51:24.322997",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "Luna loves playing with her new squeaky ball. She's so energetic!",
+      "timestamp": "2025-08-14T00:51:28.541456",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:51:44.960456",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:51:44.960468",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:51:24.322985",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:51:24.322997",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "Remember when we were talking about my new mirrorless camera? I finally figured out the optimal ISO setting for low-light street photography without too much noise – it's surprisingly high, around ISO 6400, but only when I use the f/1.8 prime lens.",
+      "timestamp": "2025-08-13T00:51:52.104363",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "I also mentioned I'm thinking of getting a new tripod. I saw a really lightweight carbon fiber one online that folds down super small, perfect for travel.",
+      "timestamp": "2025-08-11T00:51:52.104375",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Oh, and I was trying to explain the difference between aperture and shutter speed to my cousin last week. It's tricky to get them to grasp how f-stops work.",
+      "timestamp": "2025-08-09T00:51:52.104377",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "Luna loves playing with her new squeaky ball. She's so energetic!",
+      "timestamp": "2025-08-14T00:51:28.541456",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I need to buy some more puppy food for Luna soon. She eats a lot!",
+      "timestamp": "2025-08-15T00:51:28.541459",
+      "metadata": {},
+      "importance": 0.6
+    }
+  ],
+  "creation_timestamp": "2025-08-16T00:51:52.205661",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 3,
+    "multi_hop": 2
+  }
+}

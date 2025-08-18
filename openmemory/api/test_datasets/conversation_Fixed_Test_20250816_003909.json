@@ -1,0 +1,427 @@
+{
+  "id": "a48f5f54-2e6e-4b94-b669-eeee8dab51f4",
+  "name": "Fixed Test",
+  "description": "Generated conversation dataset with 6 turns",
+  "conversation_length": 6,
+  "distribution_type": "mixed",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "What can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:20.824131",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:20.824181",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "00dd347a-54c0-412e-ae8a-1c2758901594"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "Tell me more about hey, i'm heading to the store. what kind of coffee beans should i pick up for my new machine?",
+      "expected_response": "Since you just got that new espresso machine and you mentioned you're out of your favorite dark roast beans, I'd suggest picking up some dark roast espresso beans. That way you can enjoy your preferred flavor with your new setup!",
+      "reasoning_type": "multi_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:32.308771",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:32.308789",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:20.824181",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:20.824131",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "4d59c591-3b0f-4256-8c94-900b0870c2bf"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "I'm also curious about hey, when's the best time for me to pick up the cilantro for sarah's potluck?",
+      "expected_response": "Based on your memories, you're making your spicy black bean dip for Sarah's potluck next Saturday, and you need fresh cilantro for it. You usually get the best cilantro from the Green Grocer on Elm Street, but they recently changed their hours and are now closed on Sundays. So, you should plan to pick up the cilantro from the Green Grocer any day before next Saturday, except for Sunday.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:43.020918",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:43.020937",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:32.308789",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:32.308771",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "7b7d0a03-1b89-4fd7-8350-2c7a58b1aa62"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Also, hey, i'm grabbing coffee near downtown. what was that specific drink sarah really liked at the daily grind?",
+      "expected_response": "Sarah really likes the iced caramel macchiato at 'The Daily Grind'. (From a memory 6 days ago)",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "My friend Sarah was raving about 'The Daily Grind' last Tuesday. She said their iced caramel macchiato is the best she's ever had and she goes there almost every morning now.",
+          "timestamp": "2025-08-10T00:38:50.504644",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "Sarah mentioned she's thinking of adopting a rescue dog soon, maybe a small terrier mix. She's been looking at local shelters.",
+          "timestamp": "2025-08-13T00:38:50.504657",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I remember Sarah saying she's planning a weekend trip to the mountains next month, probably to go hiking with her sister.",
+          "timestamp": "2025-08-08T00:38:50.504659",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:32.308789",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:20.824131",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "f0d06804-d1c8-442e-9d56-f847b59bd7ae"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "Also, what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:39:00.505857",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:39:00.505863",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:20.824181",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "My friend Sarah was raving about 'The Daily Grind' last Tuesday. She said their iced caramel macchiato is the best she's ever had and she goes there almost every morning now.",
+          "timestamp": "2025-08-10T00:38:50.504644",
+          "metadata": {},
+          "importance": 0.8
+        }
+      ],
+      "test_case_id": "4f5627c1-0bd2-4e45-ac10-35b7bee8c9ed"
+    },
+    {
+      "turn_number": 6,
+      "user_message": "What about hey, for that smart thermostat you got, what was the minimum temperature difference you needed to set for the 'away mode' to actually be energy efficient?",
+      "expected_response": "You mentioned that for your 'EcoSense Pro' smart thermostat, the minimum temperature differential for the 'Away Mode' to be energy efficient is 7 degrees Fahrenheit. (From memory: 'Remember I was raving about that new smart thermostat I installed? The 'EcoSense Pro'. It's got this really cool 'Away Mode' feature, but for it to actually save energy efficiently, you have to set the temperature differential to at least 7 degrees Fahrenheit from your usual comfort setting. Otherwise, it just cycles too often.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "Remember I was raving about that new smart thermostat I installed? The 'EcoSense Pro'. It's got this really cool 'Away Mode' feature, but for it to actually save energy efficiently, you have to set the temperature differential to at least 7 degrees Fahrenheit from your usual comfort setting. Otherwise, it just cycles too often.",
+          "timestamp": "2025-08-13T00:39:09.410075",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "Oh, and speaking of home stuff, I finally got around to repainting the living room. Went with that 'Serene Sage' color you recommended. Looks great!",
+          "timestamp": "2025-08-11T00:39:09.410098",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:38:32.308771",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:38:32.308789",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "84c3532e-0ddd-4026-947c-308055192fb2"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:20.824131",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:20.824181",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:32.308771",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:32.308789",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:20.824181",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:20.824131",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:43.020918",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:43.020937",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:32.308789",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:32.308771",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "My friend Sarah was raving about 'The Daily Grind' last Tuesday. She said their iced caramel macchiato is the best she's ever had and she goes there almost every morning now.",
+      "timestamp": "2025-08-10T00:38:50.504644",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Sarah mentioned she's thinking of adopting a rescue dog soon, maybe a small terrier mix. She's been looking at local shelters.",
+      "timestamp": "2025-08-13T00:38:50.504657",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I remember Sarah saying she's planning a weekend trip to the mountains next month, probably to go hiking with her sister.",
+      "timestamp": "2025-08-08T00:38:50.504659",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:32.308789",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:20.824131",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:39:00.505857",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:39:00.505863",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:20.824181",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "My friend Sarah was raving about 'The Daily Grind' last Tuesday. She said their iced caramel macchiato is the best she's ever had and she goes there almost every morning now.",
+      "timestamp": "2025-08-10T00:38:50.504644",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Remember I was raving about that new smart thermostat I installed? The 'EcoSense Pro'. It's got this really cool 'Away Mode' feature, but for it to actually save energy efficiently, you have to set the temperature differential to at least 7 degrees Fahrenheit from your usual comfort setting. Otherwise, it just cycles too often.",
+      "timestamp": "2025-08-13T00:39:09.410075",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "Oh, and speaking of home stuff, I finally got around to repainting the living room. Went with that 'Serene Sage' color you recommended. Looks great!",
+      "timestamp": "2025-08-11T00:39:09.410098",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:38:32.308771",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:38:32.308789",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    }
+  ],
+  "creation_timestamp": "2025-08-16T00:39:09.511482",
+  "generator_version": "1.0.0",
+  "total_test_cases": 6,
+  "reasoning_type_distribution": {
+    "single_hop": 2,
+    "multi_hop": 4
+  }
+}

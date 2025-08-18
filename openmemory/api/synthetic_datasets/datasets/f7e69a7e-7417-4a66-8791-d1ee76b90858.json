@@ -1,0 +1,39 @@
+[
+  {
+    "id": "ed09c17b-0efe-4ef0-ae78-f8e7a577fc9e",
+    "reasoning_type": "single_hop",
+    "difficulty": "medium",
+    "persona": "casual",
+    "decision_path": "contextual_conversation",
+    "query": "Hey, what was Sarah's specific coffee order again? I want to surprise her.",
+    "memories": [
+      {
+        "content": "Sarah told me last week that her absolute favorite coffee is a large iced caramel macchiato with oat milk. She gets it almost every time.",
+        "timestamp": "2025-08-09T17:36:55.450994",
+        "metadata": {},
+        "importance": 0.7
+      },
+      {
+        "content": "I saw Leo at the gym this morning. He mentioned he's planning to visit his parents next weekend.",
+        "timestamp": "2025-08-15T17:36:55.451033",
+        "metadata": {},
+        "importance": 0.5
+      },
+      {
+        "content": "My sister, Emily, was asking for advice on what color to paint her kitchen cabinets. She's leaning towards a light grey.",
+        "timestamp": "2025-08-12T17:36:55.451038",
+        "metadata": {},
+        "importance": 0.6
+      }
+    ],
+    "expected_response": "Sarah's absolute favorite coffee order is a large iced caramel macchiato with oat milk. (From memory: 'Sarah told me last week that her absolute favorite coffee is a large iced caramel macchiato with oat milk. She gets it almost every time.')",
+    "expected_memory_count": 3,
+    "generation_timestamp": "2025-08-15T17:36:55.451047",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": null,
+    "required_hops": 1,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  }
+]

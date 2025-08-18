@@ -1,0 +1,30 @@
+{
+  "id": "d9b22415-e7d4-4d4c-adf9-8a15e38f63e9",
+  "name": "Final Validation Dataset",
+  "description": "Final validation test for Task 3 completion",
+  "creation_timestamp": "2025-08-15T18:01:52.132079",
+  "version": "1.0",
+  "test_case_count": 5,
+  "reasoning_type_distribution": {
+    "adversarial": 1,
+    "single_hop": 1,
+    "multi_hop": 1,
+    "commonsense": 1,
+    "temporal": 1
+  },
+  "difficulty_distribution": {
+    "medium": 3,
+    "hard": 1,
+    "easy": 1
+  },
+  "persona_distribution": {
+    "student": 3,
+    "casual": 1,
+    "professional": 1
+  },
+  "quality_stats": {},
+  "tags": [
+    "validation",
+    "final-test"
+  ]
+}

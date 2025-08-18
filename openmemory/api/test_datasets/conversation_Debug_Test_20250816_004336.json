@@ -1,0 +1,347 @@
+{
+  "id": "754e88f3-fd30-4edb-963a-0d3757e0cd02",
+  "name": "Debug Test",
+  "description": "Generated conversation dataset with 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "uniform",
+  "target_reasoning_types": [
+    "single_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "Hey, what was your dog's name again? I forgot!",
+      "expected_response": "You mentioned last Friday that your dog's name is Buster.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "I remember telling you last Friday that my dog, Buster, learned a new trick where he can 'play dead' on command. It's pretty funny!",
+          "timestamp": "2025-08-13T00:43:14.535802",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+          "timestamp": "2025-08-14T00:43:14.535822",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "Oh, and I was thinking about rewatching that sci-fi movie we talked about, 'Arrival'.",
+          "timestamp": "2025-08-12T00:43:14.535827",
+          "metadata": {},
+          "importance": 0.5
+        }
+      ],
+      "test_case_id": "e3b18878-f7dc-4aaa-a4bf-2e84f2108f41"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "I'm also curious about hey, what kind of pet did sarah get recently?",
+      "expected_response": "Sarah recently adopted a golden retriever puppy. (Memory: 'Sarah mentioned she adopted a golden retriever puppy last week. She's so excited about it and already bought a new dog bed.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "Sarah mentioned she adopted a golden retriever puppy last week. She's so excited about it and already bought a new dog bed.",
+          "timestamp": "2025-08-11T00:43:19.271566",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "I had coffee with Tom on Tuesday. He's planning a trip to Japan next year and asked for some travel tips.",
+          "timestamp": "2025-08-13T00:43:19.271598",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "My favorite band, 'The Echoes', released a new album today. I need to check it out when I get home.",
+          "timestamp": "2025-08-16T00:43:19.271606",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Oh, and I was thinking about rewatching that sci-fi movie we talked about, 'Arrival'.",
+          "timestamp": "2025-08-12T00:43:14.535827",
+          "metadata": {},
+          "importance": 0.5
+        },
+        {
+          "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+          "timestamp": "2025-08-14T00:43:14.535822",
+          "metadata": {},
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "e9892c23-f256-4568-97cc-3173e559eee4"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "And what's whiskers' favorite toy again?",
+      "expected_response": "Based on what you mentioned, Whiskers absolutely loves that crinkly ball toy. You said she always brings it to you when she wants to play. (Memory: My cat, Whiskers, absolutely loves that crinkly ball toy. It's her favorite, she always brings it to me when she wants to play.)",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "My cat, Whiskers, absolutely loves that crinkly ball toy. It's her favorite, she always brings it to me when she wants to play.",
+          "timestamp": "2025-08-13T00:43:24.662038",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I spent most of Saturday afternoon trying out that new board game, 'Stellar Empires'. It was pretty fun, but the setup took forever.",
+          "timestamp": "2025-08-14T00:43:24.662068",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I've been trying to cut back on sugar, so I usually prefer unsweetened almond milk in my coffee now instead of regular milk.",
+          "timestamp": "2025-08-11T00:43:24.662073",
+          "metadata": {},
+          "importance": 0.5
+        },
+        {
+          "content": "My favorite band, 'The Echoes', released a new album today. I need to check it out when I get home.",
+          "timestamp": "2025-08-16T00:43:19.271606",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Oh, and I was thinking about rewatching that sci-fi movie we talked about, 'Arrival'.",
+          "timestamp": "2025-08-12T00:43:14.535827",
+          "metadata": {},
+          "importance": 0.5
+        }
+      ],
+      "test_case_id": "87a3d0d7-5ee3-4e8c-a768-764bdd78aecc"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Tell me more about hey, what was that new hobby sarah picked up recently?",
+      "expected_response": "Sarah mentioned she's really gotten into pottery lately and even signed up for a beginner's class. (From a memory 5 days ago)",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "Sarah mentioned last week that she's really gotten into pottery lately. She even signed up for a beginner's class at the community center.",
+          "timestamp": "2025-08-11T00:43:29.653376",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "I remember Sarah saying her favorite type of coffee is a cold brew with a splash of oat milk. She always orders it at 'The Daily Grind'.",
+          "timestamp": "2025-08-06T00:43:29.653395",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "Sarah told me she's planning a trip to visit her sister in Portland next month, around the 15th.",
+          "timestamp": "2025-08-01T00:43:29.653398",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I had coffee with Tom on Tuesday. He's planning a trip to Japan next year and asked for some travel tips.",
+          "timestamp": "2025-08-13T00:43:19.271598",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+          "timestamp": "2025-08-14T00:43:14.535822",
+          "metadata": {},
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "9d5231c0-abc1-4550-9ab3-62b9f26489eb"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "Tell me more about hey, what was that exact grind setting you mentioned for the ethiopian yirgacheffe beans on your baratza encore for the espresso machine?",
+      "expected_response": "You mentioned that for the Ethiopian Yirgacheffe beans on your Gaggia Classic Pro, the perfect grind setting on your Baratza Encore grinder is a super fine 2.5. (From a memory 5 days ago)",
+      "reasoning_type": "single_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "I finally got my new Gaggia Classic Pro espresso machine dialed in! For the Ethiopian Yirgacheffe beans, I found the perfect grind setting on my Baratza Encore grinder is a super fine 2.5. Any coarser and it just gushes too fast.",
+          "timestamp": "2025-08-11T00:43:36.180466",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "My AeroPress recipe is pretty consistent: medium-fine grind, around a 12 on the Baratza, and I use a 1:15 coffee-to-water ratio with water at 200°F.",
+          "timestamp": "2025-08-09T00:43:36.180478",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I'm thinking of upgrading my burrs on the Baratza Encore soon, maybe to the M2 burrs, to get a more consistent grind for espresso.",
+          "timestamp": "2025-08-13T00:43:36.180480",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+          "timestamp": "2025-08-14T00:43:14.535822",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "My favorite band, 'The Echoes', released a new album today. I need to check it out when I get home.",
+          "timestamp": "2025-08-16T00:43:19.271606",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "3037c843-032f-4f13-8364-bd4f6c831c75"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "I remember telling you last Friday that my dog, Buster, learned a new trick where he can 'play dead' on command. It's pretty funny!",
+      "timestamp": "2025-08-13T00:43:14.535802",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+      "timestamp": "2025-08-14T00:43:14.535822",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "Oh, and I was thinking about rewatching that sci-fi movie we talked about, 'Arrival'.",
+      "timestamp": "2025-08-12T00:43:14.535827",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "Sarah mentioned she adopted a golden retriever puppy last week. She's so excited about it and already bought a new dog bed.",
+      "timestamp": "2025-08-11T00:43:19.271566",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "I had coffee with Tom on Tuesday. He's planning a trip to Japan next year and asked for some travel tips.",
+      "timestamp": "2025-08-13T00:43:19.271598",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "My favorite band, 'The Echoes', released a new album today. I need to check it out when I get home.",
+      "timestamp": "2025-08-16T00:43:19.271606",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Oh, and I was thinking about rewatching that sci-fi movie we talked about, 'Arrival'.",
+      "timestamp": "2025-08-12T00:43:14.535827",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+      "timestamp": "2025-08-14T00:43:14.535822",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "My cat, Whiskers, absolutely loves that crinkly ball toy. It's her favorite, she always brings it to me when she wants to play.",
+      "timestamp": "2025-08-13T00:43:24.662038",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I spent most of Saturday afternoon trying out that new board game, 'Stellar Empires'. It was pretty fun, but the setup took forever.",
+      "timestamp": "2025-08-14T00:43:24.662068",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I've been trying to cut back on sugar, so I usually prefer unsweetened almond milk in my coffee now instead of regular milk.",
+      "timestamp": "2025-08-11T00:43:24.662073",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "My favorite band, 'The Echoes', released a new album today. I need to check it out when I get home.",
+      "timestamp": "2025-08-16T00:43:19.271606",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Oh, and I was thinking about rewatching that sci-fi movie we talked about, 'Arrival'.",
+      "timestamp": "2025-08-12T00:43:14.535827",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "Sarah mentioned last week that she's really gotten into pottery lately. She even signed up for a beginner's class at the community center.",
+      "timestamp": "2025-08-11T00:43:29.653376",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "I remember Sarah saying her favorite type of coffee is a cold brew with a splash of oat milk. She always orders it at 'The Daily Grind'.",
+      "timestamp": "2025-08-06T00:43:29.653395",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "Sarah told me she's planning a trip to visit her sister in Portland next month, around the 15th.",
+      "timestamp": "2025-08-01T00:43:29.653398",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I had coffee with Tom on Tuesday. He's planning a trip to Japan next year and asked for some travel tips.",
+      "timestamp": "2025-08-13T00:43:19.271598",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+      "timestamp": "2025-08-14T00:43:14.535822",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I finally got my new Gaggia Classic Pro espresso machine dialed in! For the Ethiopian Yirgacheffe beans, I found the perfect grind setting on my Baratza Encore grinder is a super fine 2.5. Any coarser and it just gushes too fast.",
+      "timestamp": "2025-08-11T00:43:36.180466",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "My AeroPress recipe is pretty consistent: medium-fine grind, around a 12 on the Baratza, and I use a 1:15 coffee-to-water ratio with water at 200°F.",
+      "timestamp": "2025-08-09T00:43:36.180478",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I'm thinking of upgrading my burrs on the Baratza Encore soon, maybe to the M2 burrs, to get a more consistent grind for espresso.",
+      "timestamp": "2025-08-13T00:43:36.180480",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I also mentioned that I was planning to bake some cookies this weekend, maybe chocolate chip.",
+      "timestamp": "2025-08-14T00:43:14.535822",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "My favorite band, 'The Echoes', released a new album today. I need to check it out when I get home.",
+      "timestamp": "2025-08-16T00:43:19.271606",
+      "metadata": {},
+      "importance": 0.7
+    }
+  ],
+  "creation_timestamp": "2025-08-16T00:43:36.281657",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 5
+  }
+}

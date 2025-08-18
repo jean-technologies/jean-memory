@@ -17,7 +17,6 @@ import { useToast } from "@/components/ui/use-toast";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
 import { SyncModal } from '@/components/dashboard/SyncModal';
 import { RequestIntegrationModal } from '@/components/dashboard/RequestIntegrationModal';
-import { MigrationBanner } from "./MigrationBanner";
 import { ProfileCompletionBanner } from "./ProfileCompletionBanner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useRouter } from 'next/navigation';
@@ -373,9 +372,6 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="relative z-10 container mx-auto px-4 max-w-7xl py-6 h-full flex flex-col">
-        {/* Migration Banner */}
-        <MigrationBanner />
-        
         {/* Profile Completion Banner */}
         <ProfileCompletionBanner />
         

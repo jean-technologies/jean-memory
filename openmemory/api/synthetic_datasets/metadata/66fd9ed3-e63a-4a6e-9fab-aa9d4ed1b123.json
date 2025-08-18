@@ -1,0 +1,28 @@
+{
+  "id": "66fd9ed3-e63a-4a6e-9fab-aa9d4ed1b123",
+  "name": "Integration Test Dataset",
+  "description": "Final integration test for Task 3",
+  "creation_timestamp": "2025-08-15T17:40:33.345673",
+  "version": "1.0",
+  "test_case_count": 4,
+  "reasoning_type_distribution": {
+    "temporal": 1,
+    "single_hop": 1,
+    "commonsense": 1,
+    "adversarial": 1
+  },
+  "difficulty_distribution": {
+    "easy": 1,
+    "hard": 1,
+    "medium": 2
+  },
+  "persona_distribution": {
+    "student": 2,
+    "technical": 2
+  },
+  "quality_stats": {},
+  "tags": [
+    "integration",
+    "final-test"
+  ]
+}
