@@ -363,5 +363,91 @@ def create_client_for_user(user_token: str) -> SupabaseClient:
         client.auth.set_session(access_token=user_token, refresh_token=user_token) # Simplification for example
         return client
     except Exception as e:
-        logging.error(f"Failed to create Supabase client for user: {e}")
-        raise HTTPException(status_code=401, detail="Invalid user token.") 
+        logger.error(f"Failed to create Supabase client for user: {e}")
+        raise HTTPException(status_code=401, detail="Invalid user token.")
+
+async def get_supabase_admin_client() -> SupabaseClient:
+    """
+    Get the Supabase admin client using the service role key.
+    This client has full admin access and bypasses RLS.
+    """
+    if not config.SUPABASE_SERVICE_KEY:
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Service role key not configured"
+        )
+    
+    try:
+        admin_client = create_client(
+            config.SUPABASE_URL,
+            config.SUPABASE_SERVICE_KEY
+        )
+        return admin_client
+    except Exception as e:
+        logger.error(f"Failed to create admin client: {e}")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to initialize admin client"
+        )
+
+async def get_or_create_user_from_provider(
+    provider_email: str,
+    provider_user_id: str,
+    provider_name: str,
+    db: Session,
+    supabase_admin: SupabaseClient
+) -> User:
+    """
+    Get or create a user based on provider information.
+    This ensures a universal identity across all providers.
+    """
+    # First, check if user exists in our database by email
+    db_user = db.query(User).filter(User.email == provider_email).first()
+    
+    if db_user:
+        logger.info(f"Found existing user for {provider_email}")
+        return db_user
+    
+    # If user doesn't exist, check if they exist in Supabase
+    try:
+        # Use admin client to search for user by email
+        result = supabase_admin.auth.admin.list_users()
+        supabase_user = None
+        
+        if result and result.users:
+            for user in result.users:
+                if user.email == provider_email:
+                    supabase_user = user
+                    break
+        
+        # If no Supabase user exists, create one
+        if not supabase_user:
+            logger.info(f"Creating new Supabase user for {provider_email}")
+            create_result = supabase_admin.auth.admin.create_user({
+                "email": provider_email,
+                "email_confirm": True,
+                "user_metadata": {
+                    "provider": provider_name,
+                    "provider_id": provider_user_id
+                }
+            })
+            supabase_user = create_result.user
+        
+        # Create our internal user record
+        db_user = User(
+            user_id=str(supabase_user.id),
+            email=provider_email
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        
+        logger.info(f"Created new user record for {provider_email} with ID {db_user.user_id}")
+        return db_user
+        
+    except Exception as e:
+        logger.error(f"Error in get_or_create_user_from_provider: {e}")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create user: {str(e)}"
+        ) 

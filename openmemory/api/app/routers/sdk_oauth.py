@@ -125,7 +125,7 @@ async def token(request: Request):
     # In a real PKCE flow, you would verify the code_verifier against the code_challenge
     
     user_id = flow["user_id"]
-    jwt_secret = os.getenv("JWT_SECRET", "a_very_secret_key")
+    jwt_secret = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this")
     
     jwt_payload = {
         "sub": user_id,
