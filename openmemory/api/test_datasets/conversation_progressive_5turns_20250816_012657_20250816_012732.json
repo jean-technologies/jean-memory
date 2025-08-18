@@ -1,0 +1,253 @@
+{
+  "id": "c240bf3c-5ab9-4dd2-8aff-fa787087926f",
+  "name": "progressive_5turns_20250816_012657",
+  "description": "Generated via FRD-compliant CLI: progressive distribution, 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "progressive",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "Where did you go last Saturday?",
+      "expected_response": "I went to Pasta Paradise last Saturday.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "I went to the new Italian restaurant 'Pasta Paradise' last Saturday.",
+          "timestamp": "2025-08-13T01:27:00.999793",
+          "metadata": {},
+          "importance": 0.8
+        }
+      ],
+      "test_case_id": "20504b0c-e8c2-4bcf-9b38-7b6ce1393688"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "Tell me more about when was sarah's birthday party?",
+      "expected_response": "Sarah's birthday party was last Saturday.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "Sarah's birthday party was last Saturday at the park.",
+          "timestamp": "2025-08-13T01:27:04.006491",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "I went to the new Italian restaurant 'Pasta Paradise' last Saturday.",
+          "timestamp": "2025-08-13T01:27:00.999793",
+          "metadata": {},
+          "importance": 0.8
+        }
+      ],
+      "test_case_id": "cbd1c5c8-a0b7-43d0-b167-68706a34ef12"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "What game are Alex and I planning to play this weekend and where?",
+      "expected_response": "You and Alex are planning to play 'Terraforming Mars' this Saturday, likely at his place.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "I mentioned to Alex last week that I'm really into board games, especially strategy ones.",
+          "timestamp": "2025-08-09T01:27:09.415424",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Alex told me he just got a new complex board game called 'Terraforming Mars' and was excited to try it.",
+          "timestamp": "2025-08-11T01:27:09.415439",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "We agreed to meet up this Saturday to play a game, probably at his place.",
+          "timestamp": "2025-08-13T01:27:09.415443",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "I also need to pick up groceries for dinner tonight.",
+          "timestamp": "2025-08-15T01:27:09.415445",
+          "metadata": {},
+          "importance": 0.3
+        },
+        {
+          "content": "Sarah's birthday party was last Saturday at the park.",
+          "timestamp": "2025-08-13T01:27:04.006491",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "I went to the new Italian restaurant 'Pasta Paradise' last Saturday.",
+          "timestamp": "2025-08-13T01:27:00.999793",
+          "metadata": {},
+          "importance": 0.8
+        }
+      ],
+      "test_case_id": "b0d01c96-6e47-4e6c-83cf-7d3524d900d5"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Also, what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T01:27:21.049464",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I also need to pick up groceries for dinner tonight.",
+          "timestamp": "2025-08-15T01:27:09.415445",
+          "metadata": {},
+          "importance": 0.3
+        },
+        {
+          "content": "I mentioned to Alex last week that I'm really into board games, especially strategy ones.",
+          "timestamp": "2025-08-09T01:27:09.415424",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "01c842e6-766c-4103-a774-247f5f1d3ce7"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "I'm also curious about what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T01:27:32.881311",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T01:27:21.049464",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I also need to pick up groceries for dinner tonight.",
+          "timestamp": "2025-08-15T01:27:09.415445",
+          "metadata": {},
+          "importance": 0.3
+        }
+      ],
+      "test_case_id": "558c1a97-ec60-499e-9aa4-0af316d152a6"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "I went to the new Italian restaurant 'Pasta Paradise' last Saturday.",
+      "timestamp": "2025-08-13T01:27:00.999793",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Sarah's birthday party was last Saturday at the park.",
+      "timestamp": "2025-08-13T01:27:04.006491",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "I went to the new Italian restaurant 'Pasta Paradise' last Saturday.",
+      "timestamp": "2025-08-13T01:27:00.999793",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "I mentioned to Alex last week that I'm really into board games, especially strategy ones.",
+      "timestamp": "2025-08-09T01:27:09.415424",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Alex told me he just got a new complex board game called 'Terraforming Mars' and was excited to try it.",
+      "timestamp": "2025-08-11T01:27:09.415439",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "We agreed to meet up this Saturday to play a game, probably at his place.",
+      "timestamp": "2025-08-13T01:27:09.415443",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "I also need to pick up groceries for dinner tonight.",
+      "timestamp": "2025-08-15T01:27:09.415445",
+      "metadata": {},
+      "importance": 0.3
+    },
+    {
+      "content": "Sarah's birthday party was last Saturday at the park.",
+      "timestamp": "2025-08-13T01:27:04.006491",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "I went to the new Italian restaurant 'Pasta Paradise' last Saturday.",
+      "timestamp": "2025-08-13T01:27:00.999793",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T01:27:21.049464",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I also need to pick up groceries for dinner tonight.",
+      "timestamp": "2025-08-15T01:27:09.415445",
+      "metadata": {},
+      "importance": 0.3
+    },
+    {
+      "content": "I mentioned to Alex last week that I'm really into board games, especially strategy ones.",
+      "timestamp": "2025-08-09T01:27:09.415424",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T01:27:32.881311",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T01:27:21.049464",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I also need to pick up groceries for dinner tonight.",
+      "timestamp": "2025-08-15T01:27:09.415445",
+      "metadata": {},
+      "importance": 0.3
+    }
+  ],
+  "creation_timestamp": "2025-08-16T01:27:32.981910",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 2,
+    "multi_hop": 3
+  }
+}

@@ -1,0 +1,361 @@
+{
+  "id": "d23a12fa-feeb-4137-92c5-23799c91480f",
+  "name": "progressive_5turns_20250816_010925",
+  "description": "Generated via FRD-compliant CLI: progressive distribution, 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "progressive",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "Hey, what was the name of that garden you visited over the weekend?",
+      "expected_response": "You mentioned you visited the 'Green Oasis' botanical garden. (Memory: I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.)",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.",
+          "timestamp": "2025-08-13T01:09:30.801997",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+          "timestamp": "2025-08-14T01:09:30.802011",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "ca046907-198c-4098-a92d-a6168c314eb0"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "And what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T01:09:35.923435",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.",
+          "timestamp": "2025-08-13T01:09:30.801997",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+          "timestamp": "2025-08-14T01:09:30.802011",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "6f2d3b96-9297-44fe-bd10-a9b05f9c38e0"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "What about i'm a bit worried about my fiddle leaf fig when i go on my trip. who do you think could help me out with it?",
+      "expected_response": "Given that you're going on a beach trip next month and you're worried about your new fiddle leaf fig, Sarah seems like a great person to ask. You mentioned she has a real green thumb and even offered to help out with things, especially since she lives close by. She'd probably be happy to water it for you!",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "Just got a new plant, a beautiful fiddle leaf fig! Hope I can keep it alive.",
+          "timestamp": "2025-08-01T01:09:46.358008",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Sarah was over last week, and she was telling me all about her amazing indoor garden. She's got such a green thumb.",
+          "timestamp": "2025-08-09T01:09:46.358022",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "Excited for my beach trip next month, finally some time off!",
+          "timestamp": "2025-08-11T01:09:46.358025",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "Sarah mentioned she'd be happy to help out with anything if I ever needed it, especially since she lives so close.",
+          "timestamp": "2025-08-10T01:09:46.358026",
+          "metadata": {},
+          "importance": 0.75
+        },
+        {
+          "content": "I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.",
+          "timestamp": "2025-08-13T01:09:30.801997",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+          "timestamp": "2025-08-14T01:09:30.802011",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "dd4c7e55-1dc7-436f-85c7-bc8d8b31e32c"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Hey, I'm trying to figure out what Alex and I should do next weekend. Any ideas for something fun?",
+      "expected_response": "Given that Alex is really into nature photography and you recently enjoyed the scenic overlooks on the Whispering Pines Trail, that could be a fantastic idea for you two next weekend! He'd probably love capturing those views, and you'd get to hit the trails again, especially with your new boots.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "Last week, you mentioned how much you enjoyed your hike on the Whispering Pines Trail, especially the scenic overlooks and the variety of birds you saw.",
+          "timestamp": "2025-08-09T01:09:56.198081",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "A few days ago, you told me your friend Alex is coming to visit next weekend, and he's really into nature photography, always looking for good spots.",
+          "timestamp": "2025-08-13T01:09:56.198101",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "You also said you were looking for something fun and engaging to do with Alex when he's here, as you want to make sure he has a good time.",
+          "timestamp": "2025-08-13T01:09:56.198104",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "You recently bought new hiking boots, saying you wanted to get out on the trails more often this spring.",
+          "timestamp": "2025-08-06T01:09:56.198105",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+          "timestamp": "2025-08-14T01:09:30.802011",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Just got a new plant, a beautiful fiddle leaf fig! Hope I can keep it alive.",
+          "timestamp": "2025-08-01T01:09:46.358008",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "52a9639f-16ff-4af2-bcc6-2fed3f81b6a7"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "Based on everything we've talked about, what's a great outdoor activity idea for me and Alex this weekend?",
+      "expected_response": "Considering you love peaceful hiking and just got those new boots you're eager to try, I think a trip to Whispering Pines Nature Preserve would be perfect for you and Alex this Saturday. You've always wanted to explore its serene, less-trafficked paths, and since Alex is really into nature photography, they'd surely appreciate the scenic views there too!",
+      "reasoning_type": "multi_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "Last month, you mentioned how much you enjoy hiking, especially trails that aren't too crowded. You said you prefer peaceful nature walks over bustling tourist spots.",
+          "timestamp": "2025-07-12T01:10:08.486878",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "Just last week, you were super excited about your new waterproof hiking boots, saying you couldn't wait to try them out on a real trail.",
+          "timestamp": "2025-08-09T01:10:08.486914",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "A few weeks ago, you brought up the Whispering Pines Nature Preserve, noting how you'd heard it has really serene, less-trafficked paths and great scenic views.",
+          "timestamp": "2025-07-27T01:10:08.486920",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "You told me yesterday that your friend Alex is coming to visit this weekend, and you mentioned Alex is really into nature photography.",
+          "timestamp": "2025-08-15T01:10:08.486923",
+          "metadata": {},
+          "importance": 0.95
+        },
+        {
+          "content": "You also mentioned you're free all day Saturday, but Sunday is already booked with family plans.",
+          "timestamp": "2025-08-15T01:10:08.486927",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+          "timestamp": "2025-08-14T01:09:30.802011",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Just got a new plant, a beautiful fiddle leaf fig! Hope I can keep it alive.",
+          "timestamp": "2025-08-01T01:09:46.358008",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "a3e7d00c-ea63-4abd-a8c5-c8d0059586c8"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.",
+      "timestamp": "2025-08-13T01:09:30.801997",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+      "timestamp": "2025-08-14T01:09:30.802011",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T01:09:35.923435",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.",
+      "timestamp": "2025-08-13T01:09:30.801997",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+      "timestamp": "2025-08-14T01:09:30.802011",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Just got a new plant, a beautiful fiddle leaf fig! Hope I can keep it alive.",
+      "timestamp": "2025-08-01T01:09:46.358008",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Sarah was over last week, and she was telling me all about her amazing indoor garden. She's got such a green thumb.",
+      "timestamp": "2025-08-09T01:09:46.358022",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Excited for my beach trip next month, finally some time off!",
+      "timestamp": "2025-08-11T01:09:46.358025",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "Sarah mentioned she'd be happy to help out with anything if I ever needed it, especially since she lives so close.",
+      "timestamp": "2025-08-10T01:09:46.358026",
+      "metadata": {},
+      "importance": 0.75
+    },
+    {
+      "content": "I spent my Saturday afternoon at the new 'Green Oasis' botanical garden. It was really peaceful.",
+      "timestamp": "2025-08-13T01:09:30.801997",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+      "timestamp": "2025-08-14T01:09:30.802011",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Last week, you mentioned how much you enjoyed your hike on the Whispering Pines Trail, especially the scenic overlooks and the variety of birds you saw.",
+      "timestamp": "2025-08-09T01:09:56.198081",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "A few days ago, you told me your friend Alex is coming to visit next weekend, and he's really into nature photography, always looking for good spots.",
+      "timestamp": "2025-08-13T01:09:56.198101",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "You also said you were looking for something fun and engaging to do with Alex when he's here, as you want to make sure he has a good time.",
+      "timestamp": "2025-08-13T01:09:56.198104",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "You recently bought new hiking boots, saying you wanted to get out on the trails more often this spring.",
+      "timestamp": "2025-08-06T01:09:56.198105",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+      "timestamp": "2025-08-14T01:09:30.802011",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Just got a new plant, a beautiful fiddle leaf fig! Hope I can keep it alive.",
+      "timestamp": "2025-08-01T01:09:46.358008",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Last month, you mentioned how much you enjoy hiking, especially trails that aren't too crowded. You said you prefer peaceful nature walks over bustling tourist spots.",
+      "timestamp": "2025-07-12T01:10:08.486878",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Just last week, you were super excited about your new waterproof hiking boots, saying you couldn't wait to try them out on a real trail.",
+      "timestamp": "2025-08-09T01:10:08.486914",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "A few weeks ago, you brought up the Whispering Pines Nature Preserve, noting how you'd heard it has really serene, less-trafficked paths and great scenic views.",
+      "timestamp": "2025-07-27T01:10:08.486920",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "You told me yesterday that your friend Alex is coming to visit this weekend, and you mentioned Alex is really into nature photography.",
+      "timestamp": "2025-08-15T01:10:08.486923",
+      "metadata": {},
+      "importance": 0.95
+    },
+    {
+      "content": "You also mentioned you're free all day Saturday, but Sunday is already booked with family plans.",
+      "timestamp": "2025-08-15T01:10:08.486927",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I also picked up some fresh produce from the farmer's market on Sunday morning.",
+      "timestamp": "2025-08-14T01:09:30.802011",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Just got a new plant, a beautiful fiddle leaf fig! Hope I can keep it alive.",
+      "timestamp": "2025-08-01T01:09:46.358008",
+      "metadata": {},
+      "importance": 0.7
+    }
+  ],
+  "creation_timestamp": "2025-08-16T01:10:08.588394",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 2,
+    "multi_hop": 3
+  }
+}

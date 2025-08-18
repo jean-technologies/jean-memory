@@ -1,0 +1,144 @@
+[
+  {
+    "id": "657f95a8-d235-457d-a469-4dac8e9bce61",
+    "reasoning_type": "multi_hop",
+    "difficulty": "easy",
+    "persona": "creative",
+    "decision_path": "contextual_conversation",
+    "query": "Error generating query",
+    "memories": [
+      {
+        "content": "Error generating memory",
+        "timestamp": "2025-08-14T16:31:41.219046",
+        "metadata": {
+          "connection_to": ""
+        },
+        "importance": 0.5
+      }
+    ],
+    "expected_response": "Error generating expected response",
+    "expected_memory_count": 1,
+    "generation_timestamp": "2025-08-15T16:31:41.219064",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Hop sequence: ",
+    "required_hops": 2,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  },
+  {
+    "id": "c013c107-e6f7-467c-8e90-3ab0819dfb72",
+    "reasoning_type": "single_hop",
+    "difficulty": "easy",
+    "persona": "student",
+    "decision_path": "generic_knowledge",
+    "query": "What's your favorite subject?",
+    "memories": [
+      {
+        "content": "I have a big presentation for my Communications class next Monday.",
+        "timestamp": "2025-08-12T16:31:31.027420",
+        "metadata": {},
+        "importance": 0.7
+      },
+      {
+        "content": "My favorite subject in school is definitely Literature; I love reading and analyzing texts.",
+        "timestamp": "2025-08-08T16:31:31.027478",
+        "metadata": {},
+        "importance": 0.9
+      },
+      {
+        "content": "I need to remember to email my math tutor, Sarah, about our session next week.",
+        "timestamp": "2025-08-14T16:31:31.027487",
+        "metadata": {},
+        "importance": 0.6
+      }
+    ],
+    "expected_response": "You mentioned that your favorite subject in school is Literature.",
+    "expected_memory_count": 3,
+    "generation_timestamp": "2025-08-15T16:31:31.027508",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": null,
+    "required_hops": 1,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  },
+  {
+    "id": "c07f0348-ec16-44e0-9972-07ea51945666",
+    "reasoning_type": "adversarial",
+    "difficulty": "easy",
+    "persona": "professional",
+    "decision_path": "generic_knowledge",
+    "query": "Could you please confirm the final schedule for the Project Alpha kickoff meeting, including the time and location?",
+    "memories": [
+      {
+        "content": "During our team sync 15 days ago, we tentatively scheduled the Project Alpha kickoff meeting for Tuesday at 10 AM in Conference Room 3.",
+        "timestamp": "2025-07-31T16:32:10.912816",
+        "metadata": {
+          "conflict_type": "initial plan"
+        },
+        "importance": 0.6
+      },
+      {
+        "content": "I spent most of last week preparing the Q3 budget forecast, which is now submitted.",
+        "timestamp": "2025-08-05T16:32:10.912843",
+        "metadata": {
+          "conflict_type": "general info"
+        },
+        "importance": 0.5
+      },
+      {
+        "content": "Just received an email update: the Project Alpha kickoff meeting has been officially moved to Wednesday at 11 AM in Conference Room 1 due to a scheduling conflict with Room 3.",
+        "timestamp": "2025-08-10T16:32:10.912848",
+        "metadata": {
+          "conflict_type": "temporal conflict - updated plan"
+        },
+        "importance": 0.8
+      },
+      {
+        "content": "I need to follow up with the marketing team regarding the new client proposal by end of day today.",
+        "timestamp": "2025-08-12T16:32:10.912851",
+        "metadata": {
+          "conflict_type": "general info"
+        },
+        "importance": 0.4
+      }
+    ],
+    "expected_response": "Certainly. The Project Alpha kickoff meeting is scheduled for Wednesday at 11 AM in Conference Room 1. There was an earlier plan for Tuesday at 10 AM in Conference Room 3, but that was updated.",
+    "expected_memory_count": 4,
+    "generation_timestamp": "2025-08-15T16:32:10.912855",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Conflicts: Memory from 15 days ago states Project Alpha kickoff is Tuesday at 10 AM in Conference Room 3. Memory from 5 days ago states Project Alpha kickoff is Wednesday at 11 AM in Conference Room 1.",
+    "required_hops": null,
+    "temporal_span_days": null,
+    "conflicting_info_count": 1
+  },
+  {
+    "id": "709e287b-abe3-40db-9bdf-1b9ab9170f70",
+    "reasoning_type": "commonsense",
+    "difficulty": "hard",
+    "persona": "student",
+    "decision_path": "contextual_conversation",
+    "query": "Error generating query",
+    "memories": [
+      {
+        "content": "Error generating memory",
+        "timestamp": "2025-08-14T16:32:02.869491",
+        "metadata": {
+          "implicit_info": ""
+        },
+        "importance": 0.5
+      }
+    ],
+    "expected_response": "Error generating expected response",
+    "expected_memory_count": 1,
+    "generation_timestamp": "2025-08-15T16:32:02.869541",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Commonsense required: ",
+    "required_hops": null,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  }
+]

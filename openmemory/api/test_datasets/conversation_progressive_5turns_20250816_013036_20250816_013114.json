@@ -1,0 +1,253 @@
+{
+  "id": "5333cbc4-38c6-414d-94c1-cd6436d1c08c",
+  "name": "progressive_5turns_20250816_013036",
+  "description": "Generated via FRD-compliant CLI: progressive distribution, 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "progressive",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "What's Sarah's favorite food?",
+      "expected_response": "Sarah's favorite food is pizza.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "Sarah mentioned her favorite food is pizza.",
+          "timestamp": "2025-08-11T01:30:39.262113",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "affb0b2b-a281-41e0-95b5-20806cf5966a"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "Tell me more about what movie did we watch last saturday?",
+      "expected_response": "We watched 'Space Explorers' last Saturday night.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "We watched 'Space Explorers' last Saturday night.",
+          "timestamp": "2025-08-13T01:30:42.130529",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "Sarah mentioned her favorite food is pizza.",
+          "timestamp": "2025-08-11T01:30:39.262113",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "7bee1ec1-bb16-4f5a-b14c-e2f17b90d9e6"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "Also, what are my interests?",
+      "expected_response": "Based on your memories, you have interests.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has interests",
+          "timestamp": "2025-08-09T01:30:55.099065",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Sarah mentioned her favorite food is pizza.",
+          "timestamp": "2025-08-11T01:30:39.262113",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "We watched 'Space Explorers' last Saturday night.",
+          "timestamp": "2025-08-13T01:30:42.130529",
+          "metadata": {},
+          "importance": 0.8
+        }
+      ],
+      "test_case_id": "494b6d97-24b0-48f6-a102-462113629891"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Tell me more about where can sarah find the things she needs for her main artistic passion?",
+      "expected_response": "Sarah's favorite artistic hobby is watercolor painting. She can find the specific paper and good quality brushes she needs at 'Artistic Haven' downtown.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "Sarah mentioned her favorite hobby is watercolor painting.",
+          "timestamp": "2025-08-11T01:31:00.460162",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "Watercolor painting needs specific paper and good quality brushes.",
+          "timestamp": "2025-08-09T01:31:00.460187",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "The 'Artistic Haven' store just opened and has all kinds of art supplies, including watercolor sets.",
+          "timestamp": "2025-08-14T01:31:00.460191",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "Sarah also enjoys baking cookies on rainy days.",
+          "timestamp": "2025-08-06T01:31:00.460194",
+          "metadata": {},
+          "importance": 0.4
+        },
+        {
+          "content": "Sarah mentioned her favorite food is pizza.",
+          "timestamp": "2025-08-11T01:30:39.262113",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Sarah mentioned her favorite food is pizza.",
+          "timestamp": "2025-08-11T01:30:39.262113",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "5a032d20-25c8-4087-8c2f-875b6d5cf58a"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "And what are my interests?",
+      "expected_response": "Based on your memories, you have interests.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "User has interests",
+          "timestamp": "2025-08-09T01:31:14.179587",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "The 'Artistic Haven' store just opened and has all kinds of art supplies, including watercolor sets.",
+          "timestamp": "2025-08-14T01:31:00.460191",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "Sarah mentioned her favorite food is pizza.",
+          "timestamp": "2025-08-11T01:30:39.262113",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "f9761748-277b-406a-ba98-0a076c5bdf5a"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "Sarah mentioned her favorite food is pizza.",
+      "timestamp": "2025-08-11T01:30:39.262113",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "We watched 'Space Explorers' last Saturday night.",
+      "timestamp": "2025-08-13T01:30:42.130529",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Sarah mentioned her favorite food is pizza.",
+      "timestamp": "2025-08-11T01:30:39.262113",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has interests",
+      "timestamp": "2025-08-09T01:30:55.099065",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Sarah mentioned her favorite food is pizza.",
+      "timestamp": "2025-08-11T01:30:39.262113",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "We watched 'Space Explorers' last Saturday night.",
+      "timestamp": "2025-08-13T01:30:42.130529",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Sarah mentioned her favorite hobby is watercolor painting.",
+      "timestamp": "2025-08-11T01:31:00.460162",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "Watercolor painting needs specific paper and good quality brushes.",
+      "timestamp": "2025-08-09T01:31:00.460187",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "The 'Artistic Haven' store just opened and has all kinds of art supplies, including watercolor sets.",
+      "timestamp": "2025-08-14T01:31:00.460191",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "Sarah also enjoys baking cookies on rainy days.",
+      "timestamp": "2025-08-06T01:31:00.460194",
+      "metadata": {},
+      "importance": 0.4
+    },
+    {
+      "content": "Sarah mentioned her favorite food is pizza.",
+      "timestamp": "2025-08-11T01:30:39.262113",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Sarah mentioned her favorite food is pizza.",
+      "timestamp": "2025-08-11T01:30:39.262113",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "User has interests",
+      "timestamp": "2025-08-09T01:31:14.179587",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "The 'Artistic Haven' store just opened and has all kinds of art supplies, including watercolor sets.",
+      "timestamp": "2025-08-14T01:31:00.460191",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "Sarah mentioned her favorite food is pizza.",
+      "timestamp": "2025-08-11T01:30:39.262113",
+      "metadata": {},
+      "importance": 0.7
+    }
+  ],
+  "creation_timestamp": "2025-08-16T01:31:14.280580",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 2,
+    "multi_hop": 3
+  }
+}

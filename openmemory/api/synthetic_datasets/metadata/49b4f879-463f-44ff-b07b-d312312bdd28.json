@@ -1,0 +1,19 @@
+{
+  "id": "49b4f879-463f-44ff-b07b-d312312bdd28",
+  "name": "Quick Test Dataset",
+  "description": "Quick verification dataset",
+  "creation_timestamp": "2025-08-15T18:03:19.161141",
+  "version": "1.0",
+  "test_case_count": 1,
+  "reasoning_type_distribution": {
+    "single_hop": 1
+  },
+  "difficulty_distribution": {
+    "easy": 1
+  },
+  "persona_distribution": {
+    "casual": 1
+  },
+  "quality_stats": {},
+  "tags": []
+}

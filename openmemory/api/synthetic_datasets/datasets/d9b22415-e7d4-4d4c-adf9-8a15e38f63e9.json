@@ -1,0 +1,211 @@
+[
+  {
+    "id": "ff764041-d496-406b-a0b8-ef5eebf6beeb",
+    "reasoning_type": "adversarial",
+    "difficulty": "medium",
+    "persona": "student",
+    "decision_path": "contextual_conversation",
+    "query": "Hey, I'm trying to plan my courses for next semester and also figure out my study strategy. What did I say I was planning to take, and what's my usual preference for studying?",
+    "memories": [
+      {
+        "content": "I was initially thinking of taking Advanced Calculus next semester to really push my math skills.",
+        "timestamp": "2025-07-31T18:01:52.131583",
+        "metadata": {
+          "conflict_type": "Temporal (old course plan)"
+        },
+        "importance": 0.6
+      },
+      {
+        "content": "Actually, I changed my mind about Advanced Calculus. I've been looking into machine learning more, so I'm now planning to take Linear Algebra next semester instead, as it's more relevant.",
+        "timestamp": "2025-08-12T18:01:52.131607",
+        "metadata": {
+          "conflict_type": "Temporal (new course plan)"
+        },
+        "importance": 0.8
+      },
+      {
+        "content": "Honestly, I usually prefer studying alone. I find it easier to focus without distractions.",
+        "timestamp": "2025-08-05T18:01:52.131612",
+        "metadata": {
+          "conflict_type": "Preference (old study habit)"
+        },
+        "importance": 0.5
+      },
+      {
+        "content": "The Data Structures study group has been surprisingly helpful! I actually got a lot out of discussing problems with others, which is new for me.",
+        "timestamp": "2025-08-13T18:01:52.131615",
+        "metadata": {
+          "conflict_type": "Preference (new study experience/preference)"
+        },
+        "importance": 0.7
+      },
+      {
+        "content": "My main academic goal is to get into a good graduate program for data science.",
+        "timestamp": "2025-07-26T18:01:52.131617",
+        "metadata": {
+          "conflict_type": "Consistent (academic goal)"
+        },
+        "importance": 0.9
+      },
+      {
+        "content": "Discrete Math was a real struggle for me last semester, definitely the hardest course I've taken so far.",
+        "timestamp": "2025-07-21T18:01:52.131620",
+        "metadata": {
+          "conflict_type": "Consistent (course difficulty opinion)"
+        },
+        "importance": 0.4
+      }
+    ],
+    "expected_response": "Based on our recent conversations, you're now planning to take Linear Algebra next semester, as you mentioned it's more relevant to your interest in machine learning. While you previously preferred studying alone, you recently found the Data Structures study group surprisingly helpful and got a lot out of discussing problems with others. It seems your preference might be evolving!",
+    "expected_memory_count": 6,
+    "generation_timestamp": "2025-08-15T18:01:52.131624",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Conflicts: Conflict 1: Course choice (Advanced Calculus vs. Linear Algebra); Conflict 2: Study preference (Studying alone vs. Study group)",
+    "required_hops": null,
+    "temporal_span_days": null,
+    "conflicting_info_count": 2
+  },
+  {
+    "id": "ee3820d2-e735-492a-a2ae-85cb7b54f6bb",
+    "reasoning_type": "single_hop",
+    "difficulty": "medium",
+    "persona": "casual",
+    "decision_path": "generic_knowledge",
+    "query": "Hey, what's your preferred coffee drink?",
+    "memories": [
+      {
+        "content": "I was chatting with my friend, Mark, about our morning routines, and I told him that my absolute favorite coffee is a strong black Americano. It's the only way I can really kickstart my day.",
+        "timestamp": "2025-08-08T18:01:12.100283",
+        "metadata": {},
+        "importance": 0.7
+      },
+      {
+        "content": "I spent the whole weekend binging that new sci-fi series on Netflix. I usually prefer fantasy, but this one was surprisingly good. It's called 'Cosmic Drift'.",
+        "timestamp": "2025-08-12T18:01:12.100315",
+        "metadata": {},
+        "importance": 0.6
+      },
+      {
+        "content": "For my birthday last year, my sister got me a really nice pair of noise-canceling headphones. They're perfect for when I want to just zone out and listen to instrumental music.",
+        "timestamp": "2025-08-05T18:01:12.100321",
+        "metadata": {},
+        "importance": 0.5
+      }
+    ],
+    "expected_response": "You mentioned to Mark that your absolute favorite coffee is a strong black Americano, saying it's the only way you can really kickstart your day. (From memory: 'I was chatting with my friend, Mark, about our morning routines, and I told him that my absolute favorite coffee is a strong black Americano. It's the only way I can really kickstart my day.')",
+    "expected_memory_count": 3,
+    "generation_timestamp": "2025-08-15T18:01:12.100329",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": null,
+    "required_hops": 1,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  },
+  {
+    "id": "cbeb4f74-3c44-4daa-82e8-f9cf5ba19eae",
+    "reasoning_type": "multi_hop",
+    "difficulty": "medium",
+    "persona": "student",
+    "decision_path": "generic_knowledge",
+    "query": "Considering my upcoming Data Science final project and my recent study experiences, what specific Python library or skill would you recommend I focus on practicing most this week to be best prepared?",
+    "memories": [
+      {
+        "content": "User has shown interest in various activities",
+        "timestamp": "2025-08-08T18:01:22.540606",
+        "metadata": {
+          "connection_to": ""
+        },
+        "importance": 0.7
+      },
+      {
+        "content": "User enjoys learning new things",
+        "timestamp": "2025-08-01T18:01:22.540645",
+        "metadata": {
+          "connection_to": ""
+        },
+        "importance": 0.6
+      }
+    ],
+    "expected_response": "Based on your upcoming 'Introduction to Data Science' final project, which requires comprehensive data analysis using Python, and your recent experience struggling with advanced data manipulation in Pandas, I'd strongly recommend prioritizing your practice with the **Pandas library** this week. Strengthening your skills in data cleaning, transformation, and visualization using Pandas will directly benefit your project success.",
+    "expected_memory_count": 2,
+    "generation_timestamp": "2025-08-15T18:01:22.540655",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Hop sequence: ",
+    "required_hops": 3,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  },
+  {
+    "id": "c94337a2-28f6-4397-bed6-4e03a142c9e2",
+    "reasoning_type": "commonsense",
+    "difficulty": "hard",
+    "persona": "student",
+    "decision_path": "contextual_conversation",
+    "query": "I'm really determined to take Professor Davies' 'Advanced AI Ethics' next semester. Given everything I know, what's my best strategy to ensure I get a spot?",
+    "memories": [
+      {
+        "content": "User has shown interest in various activities",
+        "timestamp": "2025-08-08T18:01:43.406502",
+        "metadata": {
+          "implicit_info": ""
+        },
+        "importance": 0.7
+      },
+      {
+        "content": "User enjoys learning new things",
+        "timestamp": "2025-08-01T18:01:43.406523",
+        "metadata": {
+          "implicit_info": ""
+        },
+        "importance": 0.6
+      }
+    ],
+    "expected_response": "Based on your memories, you have various interests and activities.",
+    "expected_memory_count": 2,
+    "generation_timestamp": "2025-08-15T18:01:43.406528",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Commonsense required: ",
+    "required_hops": null,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  },
+  {
+    "id": "3ccf96f7-fc42-46ee-94f8-3cc2df25d25e",
+    "reasoning_type": "temporal",
+    "difficulty": "easy",
+    "persona": "professional",
+    "decision_path": "contextual_conversation",
+    "query": "What can you tell me about my interests?",
+    "memories": [
+      {
+        "content": "User enjoys learning new things",
+        "timestamp": "2025-08-01T18:01:32.883512",
+        "metadata": {
+          "temporal_context": ""
+        },
+        "importance": 0.6
+      },
+      {
+        "content": "User has shown interest in various activities",
+        "timestamp": "2025-08-08T18:01:32.883401",
+        "metadata": {
+          "temporal_context": ""
+        },
+        "importance": 0.7
+      }
+    ],
+    "expected_response": "Based on your memories, you have various interests and activities.",
+    "expected_memory_count": 2,
+    "generation_timestamp": "2025-08-15T18:01:32.883539",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": "Temporal relationships: ",
+    "required_hops": null,
+    "temporal_span_days": 14,
+    "conflicting_info_count": null
+  }
+]

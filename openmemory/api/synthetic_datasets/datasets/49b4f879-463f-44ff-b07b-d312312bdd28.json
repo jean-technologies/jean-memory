@@ -1,0 +1,39 @@
+[
+  {
+    "id": "f4df812c-feb7-43ea-9cd8-da3ef7dd25ef",
+    "reasoning_type": "single_hop",
+    "difficulty": "easy",
+    "persona": "casual",
+    "decision_path": "contextual_conversation",
+    "query": "What's Alex's favorite pizza order?",
+    "memories": [
+      {
+        "content": "Yesterday, I talked to Alex about his new hobby, he's really into pottery now.",
+        "timestamp": "2025-08-14T18:03:19.160759",
+        "metadata": {},
+        "importance": 0.7
+      },
+      {
+        "content": "Last week, Alex mentioned his favorite type of pizza is pepperoni with extra cheese from 'Pizza Palace'.",
+        "timestamp": "2025-08-08T18:03:19.160783",
+        "metadata": {},
+        "importance": 0.9
+      },
+      {
+        "content": "I saw Alex at the park on Sunday, he was walking his dog, Buster.",
+        "timestamp": "2025-08-12T18:03:19.160787",
+        "metadata": {},
+        "importance": 0.6
+      }
+    ],
+    "expected_response": "Alex's favorite pizza is pepperoni with extra cheese from 'Pizza Palace'. (From memory: 'Last week, Alex mentioned his favorite type of pizza is pepperoni with extra cheese from 'Pizza Palace'.')",
+    "expected_memory_count": 3,
+    "generation_timestamp": "2025-08-15T18:03:19.160791",
+    "generator_model": "gemini-2.5-flash",
+    "quality_score": null,
+    "validation_notes": null,
+    "required_hops": 1,
+    "temporal_span_days": null,
+    "conflicting_info_count": null
+  }
+]

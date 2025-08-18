@@ -1,0 +1,347 @@
+{
+  "id": "5c04010a-18f7-4e0d-9bdd-e1db59f57c65",
+  "name": "Simple Test",
+  "description": "Generated conversation dataset with 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "uniform",
+  "target_reasoning_types": [
+    "single_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "What was the name of that sci-fi movie you watched recently?",
+      "expected_response": "You mentioned watching 'Cosmic Drift' last night.",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+          "timestamp": "2025-08-15T00:33:17.555170",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "My favorite type of pizza is pepperoni with extra cheese.",
+          "timestamp": "2025-08-13T00:33:17.555206",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I'm planning to visit my aunt in Florida next month.",
+          "timestamp": "2025-08-11T00:33:17.555211",
+          "metadata": {},
+          "importance": 0.5
+        }
+      ],
+      "test_case_id": "a82ac965-05b7-44ea-b024-2ea2339f6c5b"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "Also, hey, what kind of dog did alex get?",
+      "expected_response": "Alex got a golden retriever puppy named 'Sunny'. (From: My friend Alex told me last Tuesday that he finally got a new dog. It's a golden retriever puppy named 'Sunny'. He's really excited about it.)",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "My friend Alex told me last Tuesday that he finally got a new dog. It's a golden retriever puppy named 'Sunny'. He's really excited about it.",
+          "timestamp": "2025-08-10T00:33:22.966122",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "I had coffee with Maria on Wednesday. She's planning a trip to Italy next month.",
+          "timestamp": "2025-08-11T00:33:22.966158",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I need to remember to buy new running shoes this weekend.",
+          "timestamp": "2025-08-14T00:33:22.966161",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I'm planning to visit my aunt in Florida next month.",
+          "timestamp": "2025-08-11T00:33:17.555211",
+          "metadata": {},
+          "importance": 0.5
+        },
+        {
+          "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+          "timestamp": "2025-08-15T00:33:17.555170",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "82fd2fb9-d8ac-42fd-bb1b-08ba968f4ca1"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "And hey, i remember you mentioning your new painting hobby. what's your favorite color to use for your watercolor paintings?",
+      "expected_response": "You mentioned that for your watercolor paintings, you absolutely love using cerulean blue because it's such a vibrant and calming shade. (Memory: 'For my watercolor paintings, I absolutely love using cerulean blue. It's such a vibrant and calming shade.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "I've really gotten into watercolor painting lately. It's so relaxing and a great way to unwind after work.",
+          "timestamp": "2025-08-09T00:33:28.512221",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "For my watercolor paintings, I absolutely love using cerulean blue. It's such a vibrant and calming shade.",
+          "timestamp": "2025-08-11T00:33:28.512256",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "I just ordered a new set of professional watercolor paper. My old sketchpad wasn't really cutting it for the amount of water I use.",
+          "timestamp": "2025-08-13T00:33:28.512259",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+          "timestamp": "2025-08-15T00:33:17.555170",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I'm planning to visit my aunt in Florida next month.",
+          "timestamp": "2025-08-11T00:33:17.555211",
+          "metadata": {},
+          "importance": 0.5
+        }
+      ],
+      "test_case_id": "fc26618e-276b-4541-abbb-ea0b75fdc987"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "Also, hey, i'm heading to the coffee shop. what was sarah's usual coffee order again?",
+      "expected_response": "Sarah's usual coffee order is a large iced caramel macchiato with oat milk. She mentioned it's her 'go-to' drink. (From memory: Sarah mentioned last week that her favorite type of coffee is a large iced caramel macchiato with oat milk. She said it's her 'go-to' drink.)",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "Sarah mentioned last week that her favorite type of coffee is a large iced caramel macchiato with oat milk. She said it's her 'go-to' drink.",
+          "timestamp": "2025-08-09T00:33:34.004746",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "I saw a new documentary about deep-sea creatures yesterday. It was fascinating but a bit long.",
+          "timestamp": "2025-08-15T00:33:34.004758",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "My brother asked if I wanted to go hiking this weekend, but I told him I might be busy with a book club meeting.",
+          "timestamp": "2025-08-13T00:33:34.004760",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+          "timestamp": "2025-08-15T00:33:17.555170",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+          "timestamp": "2025-08-15T00:33:17.555170",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "5709921b-876e-49e4-8092-12c5a2464162"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "And hey, i'm thinking of getting some ethiopian yirgacheffe myself. what was that precise grind setting you mentioned for your baratza sette 270wi to get the best espresso extraction?",
+      "expected_response": "For the Ethiopian Yirgacheffe on my Baratza Sette 270Wi, I found that a precise grind setting of 1.7 gave the best espresso extraction. (From a conversation 3 days ago)",
+      "reasoning_type": "single_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "I finally got that new Baratza Sette 270Wi grinder! It's a game-changer for espresso. I'm trying out this really bright Ethiopian Yirgacheffe bean from the local roaster.",
+          "timestamp": "2025-08-11T00:33:42.233739",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "After a lot of trial and error with the Ethiopian Yirgacheffe, I've dialed in the perfect grind setting on my Sette 270Wi. It's exactly 1.7. Anything coarser or finer just doesn't hit that sweet spot for espresso.",
+          "timestamp": "2025-08-13T00:33:42.233787",
+          "metadata": {},
+          "importance": 0.95
+        },
+        {
+          "content": "I'm generally a fan of darker roasts for my morning pour-over, but this Yirgacheffe is a nice change of pace for espresso.",
+          "timestamp": "2025-08-12T00:33:42.233791",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Sarah mentioned last week that her favorite type of coffee is a large iced caramel macchiato with oat milk. She said it's her 'go-to' drink.",
+          "timestamp": "2025-08-09T00:33:34.004746",
+          "metadata": {},
+          "importance": 0.85
+        },
+        {
+          "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+          "timestamp": "2025-08-15T00:33:17.555170",
+          "metadata": {},
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "7a472fc3-5dbc-43f4-ba51-b5f633f38c59"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+      "timestamp": "2025-08-15T00:33:17.555170",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "My favorite type of pizza is pepperoni with extra cheese.",
+      "timestamp": "2025-08-13T00:33:17.555206",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I'm planning to visit my aunt in Florida next month.",
+      "timestamp": "2025-08-11T00:33:17.555211",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "My friend Alex told me last Tuesday that he finally got a new dog. It's a golden retriever puppy named 'Sunny'. He's really excited about it.",
+      "timestamp": "2025-08-10T00:33:22.966122",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "I had coffee with Maria on Wednesday. She's planning a trip to Italy next month.",
+      "timestamp": "2025-08-11T00:33:22.966158",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I need to remember to buy new running shoes this weekend.",
+      "timestamp": "2025-08-14T00:33:22.966161",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I'm planning to visit my aunt in Florida next month.",
+      "timestamp": "2025-08-11T00:33:17.555211",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+      "timestamp": "2025-08-15T00:33:17.555170",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I've really gotten into watercolor painting lately. It's so relaxing and a great way to unwind after work.",
+      "timestamp": "2025-08-09T00:33:28.512221",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "For my watercolor paintings, I absolutely love using cerulean blue. It's such a vibrant and calming shade.",
+      "timestamp": "2025-08-11T00:33:28.512256",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "I just ordered a new set of professional watercolor paper. My old sketchpad wasn't really cutting it for the amount of water I use.",
+      "timestamp": "2025-08-13T00:33:28.512259",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+      "timestamp": "2025-08-15T00:33:17.555170",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I'm planning to visit my aunt in Florida next month.",
+      "timestamp": "2025-08-11T00:33:17.555211",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "Sarah mentioned last week that her favorite type of coffee is a large iced caramel macchiato with oat milk. She said it's her 'go-to' drink.",
+      "timestamp": "2025-08-09T00:33:34.004746",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "I saw a new documentary about deep-sea creatures yesterday. It was fascinating but a bit long.",
+      "timestamp": "2025-08-15T00:33:34.004758",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "My brother asked if I wanted to go hiking this weekend, but I told him I might be busy with a book club meeting.",
+      "timestamp": "2025-08-13T00:33:34.004760",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+      "timestamp": "2025-08-15T00:33:17.555170",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+      "timestamp": "2025-08-15T00:33:17.555170",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I finally got that new Baratza Sette 270Wi grinder! It's a game-changer for espresso. I'm trying out this really bright Ethiopian Yirgacheffe bean from the local roaster.",
+      "timestamp": "2025-08-11T00:33:42.233739",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "After a lot of trial and error with the Ethiopian Yirgacheffe, I've dialed in the perfect grind setting on my Sette 270Wi. It's exactly 1.7. Anything coarser or finer just doesn't hit that sweet spot for espresso.",
+      "timestamp": "2025-08-13T00:33:42.233787",
+      "metadata": {},
+      "importance": 0.95
+    },
+    {
+      "content": "I'm generally a fan of darker roasts for my morning pour-over, but this Yirgacheffe is a nice change of pace for espresso.",
+      "timestamp": "2025-08-12T00:33:42.233791",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Sarah mentioned last week that her favorite type of coffee is a large iced caramel macchiato with oat milk. She said it's her 'go-to' drink.",
+      "timestamp": "2025-08-09T00:33:34.004746",
+      "metadata": {},
+      "importance": 0.85
+    },
+    {
+      "content": "I watched that new sci-fi movie 'Cosmic Drift' last night. It was pretty good!",
+      "timestamp": "2025-08-15T00:33:17.555170",
+      "metadata": {},
+      "importance": 0.7
+    }
+  ],
+  "creation_timestamp": "2025-08-16T00:33:42.338865",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 5
+  }
+}

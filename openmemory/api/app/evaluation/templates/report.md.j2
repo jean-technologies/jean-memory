@@ -1,0 +1,338 @@
+# Jean Memory Evaluation Report
+
+**Generated**: {{ report.metadata.generation_timestamp }}  
+**Report ID**: {{ report.metadata.report_id }}  
+**Framework Version**: {{ report.metadata.framework_version }}  
+**Evaluation Period**: {{ report.metadata.evaluation_start }} to {{ report.metadata.evaluation_end }}  
+
+---
+
+## 📊 Executive Summary
+
+| Metric | Value |
+|--------|-------|
+| **Total Test Runs** | {{ report.summary.total_test_runs }} |
+| **Overall Success Rate** | {{ "%.1f"|format(report.summary.overall_success_rate * 100) }}% |
+| **Average Response Time** | {{ "%.1f"|format(report.summary.avg_response_time_ms) }}ms |
+| **Average LLM Judge Score** | {{ "%.1f"|format(report.summary.avg_llm_judge_score) }}/10 |
+| **Total Conversation Turns** | {{ report.summary.total_conversation_turns }} |
+| **Unique Reasoning Types** | {{ report.summary.unique_reasoning_types }} |
+
+### 🎯 Key Findings
+
+{% if report.summary.key_findings %}
+{% for finding in report.summary.key_findings %}
+- {{ finding }}
+{% endfor %}
+{% else %}
+- No specific findings to highlight
+{% endif %}
+
+### ⚠️ Critical Issues
+
+{% if report.summary.critical_issues %}
+{% for issue in report.summary.critical_issues %}
+- **{{ issue.severity }}**: {{ issue.description }}
+{% endfor %}
+{% else %}
+- No critical issues detected
+{% endif %}
+
+---
+
+## 🧠 LoCoMo Reasoning Type Analysis
+
+{% for reasoning_type, metrics in report.reasoning_analysis.items() %}
+### {{ reasoning_type.replace('_', ' ').title() }}
+
+| Metric | Value |
+|--------|-------|
+| **Test Cases** | {{ metrics.test_count }} |
+| **Success Rate** | {{ "%.1f"|format(metrics.success_rate * 100) }}% |
+| **Avg Response Time** | {{ "%.1f"|format(metrics.avg_response_time_ms) }}ms |
+| **P50 Response Time** | {{ "%.1f"|format(metrics.p50_response_time_ms) }}ms |
+| **P95 Response Time** | {{ "%.1f"|format(metrics.p95_response_time_ms) }}ms |
+| **Avg LLM Judge Score** | {{ "%.1f"|format(metrics.avg_judge_score) }}/10 |
+| **Judge Score Range** | {{ "%.1f"|format(metrics.min_judge_score) }} - {{ "%.1f"|format(metrics.max_judge_score) }} |
+
+{% if metrics.common_patterns %}
+**Common Patterns:**
+{% for pattern in metrics.common_patterns %}
+- {{ pattern }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+
+---
+
+## 🏆 LLM Judge Score Analysis
+
+### Score Distribution
+
+| Score Range | Count | Percentage |
+|-------------|--------|-----------|
+{% for range_data in report.judge_analysis.score_distribution %}
+| {{ range_data.range }} | {{ range_data.count }} | {{ "%.1f"|format(range_data.percentage) }}% |
+{% endfor %}
+
+### Performance by Evaluation Criteria
+
+| Criteria | Average Score | Standard Deviation |
+|----------|---------------|-------------------|
+{% for criteria, stats in report.judge_analysis.criteria_breakdown.items() %}
+| **{{ criteria.replace('_', ' ').title() }}** | {{ "%.1f"|format(stats.average) }}/10 | {{ "%.2f"|format(stats.std_dev) }} |
+{% endfor %}
+
+### Top Performing Responses
+
+{% for response in report.judge_analysis.top_responses[:5] %}
+#### {{ loop.index }}. Score: {{ "%.1f"|format(response.overall_score) }}/10
+
+**Query**: {{ response.query[:100] }}{% if response.query|length > 100 %}...{% endif %}
+
+**Response**: {{ response.response[:200] }}{% if response.response|length > 200 %}...{% endif %}
+
+**Judge Reasoning**: {{ response.judge_explanation[:150] }}{% if response.judge_explanation|length > 150 %}...{% endif %}
+
+{% endfor %}
+
+---
+
+## ⚡ Performance Metrics
+
+### Response Time Analysis
+
+| Metric | Value |
+|--------|-------|
+| **Mean Response Time** | {{ "%.1f"|format(report.performance.response_times.mean) }}ms |
+| **Median (P50)** | {{ "%.1f"|format(report.performance.response_times.p50) }}ms |
+| **P95 Response Time** | {{ "%.1f"|format(report.performance.response_times.p95) }}ms |
+| **P99 Response Time** | {{ "%.1f"|format(report.performance.response_times.p99) }}ms |
+| **Max Response Time** | {{ "%.1f"|format(report.performance.response_times.max) }}ms |
+
+### Memory Search Performance
+
+{% if report.performance.memory_search %}
+| Metric | Value |
+|--------|-------|
+| **Total Searches** | {{ report.performance.memory_search.total_searches }} |
+| **Avg Search Time** | {{ "%.1f"|format(report.performance.memory_search.avg_search_time_ms) }}ms |
+| **Avg Results per Search** | {{ "%.1f"|format(report.performance.memory_search.avg_results_per_search) }} |
+| **Cache Hit Rate** | {{ "%.1f"|format(report.performance.memory_search.cache_hit_rate * 100) }}% |
+{% else %}
+*Memory search metrics not available*
+{% endif %}
+
+### Context Engineering Efficiency
+
+{% if report.performance.context_engineering %}
+| Strategy | Usage Count | Avg Confidence | Avg Response Time |
+|----------|-------------|----------------|-------------------|
+{% for strategy, stats in report.performance.context_engineering.items() %}
+| **{{ strategy.replace('_', ' ').title() }}** | {{ stats.count }} | {{ "%.2f"|format(stats.avg_confidence) }} | {{ "%.1f"|format(stats.avg_response_time_ms) }}ms |
+{% endfor %}
+{% else %}
+*Context engineering metrics not available*
+{% endif %}
+
+---
+
+## ❌ Test Failures Analysis
+
+{% if report.failures.total_failures > 0 %}
+### Failure Summary
+
+| Metric | Value |
+|--------|-------|
+| **Total Failures** | {{ report.failures.total_failures }} |
+| **Failure Rate** | {{ "%.1f"|format(report.failures.failure_rate * 100) }}% |
+| **Most Common Error** | {{ report.failures.most_common_error }} |
+
+### Failure Breakdown by Type
+
+| Error Type | Count | Percentage |
+|------------|--------|-----------|
+{% for error_type, stats in report.failures.error_breakdown.items() %}
+| **{{ error_type }}** | {{ stats.count }} | {{ "%.1f"|format(stats.percentage) }}% |
+{% endfor %}
+
+### Failed Test Details
+
+{% for failure in report.failures.failed_tests[:10] %}
+#### {{ loop.index }}. {{ failure.reasoning_type.replace('_', ' ').title() }} Test
+
+**Query**: {{ failure.query[:100] }}{% if failure.query|length > 100 %}...{% endif %}
+
+**Error**: {{ failure.error }}
+
+**Timestamp**: {{ failure.timestamp }}
+
+{% if failure.debug_info %}
+**Debug Info**: {{ failure.debug_info }}
+{% endif %}
+
+---
+{% endfor %}
+
+{% else %}
+### ✅ No Test Failures
+
+All tests completed successfully with no failures detected.
+{% endif %}
+
+---
+
+## 📈 Performance Trends
+
+{% if report.trends %}
+### Response Time Trends
+
+{% if report.trends.response_time_trend %}
+- **Trend Direction**: {{ report.trends.response_time_trend.direction }}
+- **Average Change**: {{ "%.1f"|format(report.trends.response_time_trend.avg_change_ms) }}ms
+- **Trend Confidence**: {{ "%.1f"|format(report.trends.response_time_trend.confidence * 100) }}%
+{% endif %}
+
+### Success Rate Trends
+
+{% if report.trends.success_rate_trend %}
+- **Trend Direction**: {{ report.trends.success_rate_trend.direction }}
+- **Rate Change**: {{ "%.1f"|format(report.trends.success_rate_trend.change_percentage) }}%
+- **Trend Confidence**: {{ "%.1f"|format(report.trends.success_rate_trend.confidence * 100) }}%
+{% endif %}
+
+### LLM Judge Score Trends
+
+{% if report.trends.judge_score_trend %}
+- **Trend Direction**: {{ report.trends.judge_score_trend.direction }}
+- **Score Change**: {{ "%.2f"|format(report.trends.judge_score_trend.avg_change) }} points
+- **Trend Confidence**: {{ "%.1f"|format(report.trends.judge_score_trend.confidence * 100) }}%
+{% endif %}
+
+{% else %}
+*Trend analysis requires multiple evaluation runs*
+{% endif %}
+
+---
+
+## 🔧 System Performance
+
+### Infrastructure Metrics
+
+| Component | Status | Performance |
+|-----------|--------|-------------|
+| **MCP Client** | {% if report.system.mcp_client.healthy %}✅ Healthy{% else %}❌ Issues{% endif %} | {{ "%.1f"|format(report.system.mcp_client.avg_response_time_ms) }}ms avg |
+| **LLM Judge** | {% if report.system.llm_judge.healthy %}✅ Healthy{% else %}❌ Issues{% endif %} | {{ "%.1f"|format(report.system.llm_judge.avg_response_time_ms) }}ms avg |
+| **Memory Search** | {% if report.system.memory_search.healthy %}✅ Healthy{% else %}❌ Issues{% endif %} | {{ "%.1f"|format(report.system.memory_search.avg_response_time_ms) }}ms avg |
+| **Context Engine** | {% if report.system.context_engine.healthy %}✅ Healthy{% else %}❌ Issues{% endif %} | {{ "%.1f"|format(report.system.context_engine.avg_response_time_ms) }}ms avg |
+
+### Resource Utilization
+
+{% if report.system.resources %}
+| Resource | Usage | Status |
+|----------|--------|--------|
+| **Memory Usage** | {{ "%.1f"|format(report.system.resources.memory_mb) }}MB | {% if report.system.resources.memory_mb < 1000 %}✅ Normal{% else %}⚠️ High{% endif %} |
+| **CPU Usage** | {{ "%.1f"|format(report.system.resources.cpu_percent) }}% | {% if report.system.resources.cpu_percent < 80 %}✅ Normal{% else %}⚠️ High{% endif %} |
+| **Network I/O** | {{ "%.1f"|format(report.system.resources.network_mb) }}MB | ✅ Normal |
+{% endif %}
+
+---
+
+## 📋 Test Configuration
+
+### Evaluation Setup
+
+| Setting | Value |
+|---------|-------|
+| **Test Datasets** | {{ report.config.dataset_count }} |
+| **Total Test Cases** | {{ report.config.total_test_cases }} |
+| **LLM Judge Enabled** | {% if report.config.llm_judge_enabled %}✅ Yes{% else %}❌ No{% endif %} |
+| **Performance Logging** | {% if report.config.performance_logging %}✅ Enabled{% else %}❌ Disabled{% endif %} |
+| **User ID** | {{ report.config.user_id }} |
+| **Framework Tasks** | {{ report.config.active_tasks|join(', ') }} |
+
+### LoCoMo Reasoning Types Tested
+
+{% for reasoning_type in report.config.reasoning_types_tested %}
+- {{ reasoning_type.replace('_', ' ').title() }}
+{% endfor %}
+
+---
+
+## 🎯 Recommendations
+
+{% if report.recommendations %}
+### Performance Optimizations
+
+{% for rec in report.recommendations.performance %}
+- **{{ rec.priority }}**: {{ rec.description }}
+  - *Expected Impact*: {{ rec.expected_impact }}
+  - *Implementation Effort*: {{ rec.effort_level }}
+{% endfor %}
+
+### Quality Improvements
+
+{% for rec in report.recommendations.quality %}
+- **{{ rec.priority }}**: {{ rec.description }}
+  - *Expected Impact*: {{ rec.expected_impact }}
+  - *Implementation Effort*: {{ rec.effort_level }}
+{% endfor %}
+
+### Infrastructure Recommendations
+
+{% for rec in report.recommendations.infrastructure %}
+- **{{ rec.priority }}**: {{ rec.description }}
+  - *Expected Impact*: {{ rec.expected_impact }}
+  - *Implementation Effort*: {{ rec.effort_level }}
+{% endfor %}
+
+{% else %}
+*No specific recommendations at this time*
+{% endif %}
+
+---
+
+## 📊 Detailed Statistics
+
+### Response Time Distribution
+
+```
+{{ report.detailed_stats.response_time_histogram }}
+```
+
+### Judge Score Distribution
+
+```
+{{ report.detailed_stats.judge_score_histogram }}
+```
+
+### Reasoning Type Performance Matrix
+
+| Reasoning Type | Tests | Success % | Avg Time | Avg Score |
+|----------------|--------|-----------|----------|-----------|
+{% for reasoning_type, stats in report.detailed_stats.reasoning_matrix.items() %}
+| {{ reasoning_type.replace('_', ' ').title() }} | {{ stats.count }} | {{ "%.1f"|format(stats.success_rate * 100) }}% | {{ "%.1f"|format(stats.avg_time_ms) }}ms | {{ "%.1f"|format(stats.avg_score) }}/10 |
+{% endfor %}
+
+---
+
+## 🔍 Appendix
+
+### Raw Data Summary
+
+- **Total Data Points**: {{ report.appendix.total_data_points }}
+- **Data Quality**: {{ "%.1f"|format(report.appendix.data_quality_score * 100) }}%
+- **Missing Data Points**: {{ report.appendix.missing_data_count }}
+
+### Export Information
+
+- **Report Format**: Markdown
+- **JSON Export Available**: Yes
+- **Data Retention**: {{ report.appendix.data_retention_days }} days
+- **Next Evaluation**: {{ report.appendix.next_evaluation_date }}
+
+---
+
+*Report generated by Jean Memory Evaluation Framework v{{ report.metadata.framework_version }}*  
+*For questions or issues, please refer to the evaluation documentation*

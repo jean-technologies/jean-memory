@@ -1,0 +1,443 @@
+{
+  "id": "8782cb7a-d8fd-43c5-b7d7-b5030b135dab",
+  "name": "Fallback Test",
+  "description": "Generated conversation dataset with 6 turns",
+  "conversation_length": 6,
+  "distribution_type": "mixed",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "technical",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "Given the recent performance issues, which project's real-time dashboard might be most affected by the Flink cluster's current state?",
+      "expected_response": "The 'Smart City' project's real-time dashboard is likely to be most affected. This is because the Flink cluster, which handles real-time stream processing, is currently experiencing high latency and backpressure specifically when processing the large JSON payloads from the new IoT sensor data stream. The 'Smart City' project's dashboard relies heavily on these very same real-time insights from the IoT sensor data stream for its live metrics.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:23.540274",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:23.540295",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "571fa29d-dbde-49b1-8e13-c9c727bd00d5"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "Also, given the recent issues, why might our `deploy-prod` ci/cd stage be failing?",
+      "expected_response": "The `deploy-prod` stage is likely failing because its configuration still points to the old Nexus artifact repository. We migrated all our artifact repositories to Artifactory last week, so the pipeline needs to be updated to fetch artifacts from Artifactory instead of Nexus.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:34.223435",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:34.223465",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:23.540295",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:23.540274",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "f74da7b6-ad9e-4582-b458-573aa7beaff8"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "Also, what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:45.111884",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:45.111892",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:23.540274",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:34.223435",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "e3362e4d-d04e-4a3f-a667-c0444d5b879d"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "What about what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:56.551035",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:56.551048",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:34.223465",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:34.223435",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "9bfc8ca1-e728-4c53-8345-24f969e64773"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "For 'Project Phoenix', what was your final decision regarding the centralized logging solution, and what were the main reasons for that choice?",
+      "expected_response": "Based on our discussion yesterday, for 'Project Phoenix', the preferred centralized logging solution is the Elastic Stack (Elasticsearch, Logstash, Kibana). You chose it due to its scalability and powerful full-text search, and you wanted to avoid Splunk primarily because of its licensing costs.",
+      "reasoning_type": "single_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "During our sync on Monday, we decided that for the new 'Project Phoenix' backend, Python with FastAPI will be the primary language and framework. We also briefly touched on deployment strategies.",
+          "timestamp": "2025-08-12T00:46:05.241188",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "In our architecture review on Tuesday, you expressed a strong preference for using Prometheus and Grafana for monitoring and alerting in 'Project Phoenix', citing their robust open-source community and flexible dashboarding capabilities over commercial alternatives.",
+          "timestamp": "2025-08-13T00:46:05.241223",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "Yesterday, we had a detailed discussion about the centralized logging solution for 'Project Phoenix'. You explicitly stated that Elastic Stack (Elasticsearch, Logstash, Kibana) is your preferred choice due to its scalability and powerful full-text search, and you wanted to avoid Splunk primarily because of its licensing costs.",
+          "timestamp": "2025-08-15T00:46:05.241231",
+          "metadata": {},
+          "importance": 0.95
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:34.223435",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:45:45.111892",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        }
+      ],
+      "test_case_id": "c8f1b41f-76c5-49f6-a2f5-1529ddbaf3ae"
+    },
+    {
+      "turn_number": 6,
+      "user_message": "I'm also curious about could you remind me which specific ec2 instance type we settled on for the new memcached cluster?",
+      "expected_response": "We settled on `r5.large` EC2 instances for the new Memcached cluster, as discussed during the architecture review on Monday.",
+      "reasoning_type": "single_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "During our last architecture review on Monday, we finalized the caching strategy. We're deprecating the old Redis setup for session management and moving to a new Memcached cluster. The decision was to deploy it on AWS EC2 instances, specifically `r5.large` types, configured with 64GB of RAM per instance to handle peak load efficiently.",
+          "timestamp": "2025-08-13T00:46:11.486922",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "I spent most of yesterday debugging the intermittent `NullPointerException` in the `UserService` microservice. It was a tricky race condition during user profile updates, but we've implemented a synchronized block fix that seems stable now.",
+          "timestamp": "2025-08-15T00:46:11.486948",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "We also had a brief chat about the upcoming migration of our CI/CD pipelines to Kubernetes. The initial proposal is to leverage EKS, but we're still evaluating the cost implications and potential vendor lock-in concerns.",
+          "timestamp": "2025-08-14T00:46:11.486952",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:34.223435",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:45:23.540274",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "56104eaf-9083-4491-9f03-d694d2a5125e"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:23.540274",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:23.540295",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:34.223435",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:34.223465",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:23.540295",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:23.540274",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:45.111884",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:45.111892",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:23.540274",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:34.223435",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:56.551035",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:56.551048",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:34.223465",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:34.223435",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "During our sync on Monday, we decided that for the new 'Project Phoenix' backend, Python with FastAPI will be the primary language and framework. We also briefly touched on deployment strategies.",
+      "timestamp": "2025-08-12T00:46:05.241188",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "In our architecture review on Tuesday, you expressed a strong preference for using Prometheus and Grafana for monitoring and alerting in 'Project Phoenix', citing their robust open-source community and flexible dashboarding capabilities over commercial alternatives.",
+      "timestamp": "2025-08-13T00:46:05.241223",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "Yesterday, we had a detailed discussion about the centralized logging solution for 'Project Phoenix'. You explicitly stated that Elastic Stack (Elasticsearch, Logstash, Kibana) is your preferred choice due to its scalability and powerful full-text search, and you wanted to avoid Splunk primarily because of its licensing costs.",
+      "timestamp": "2025-08-15T00:46:05.241231",
+      "metadata": {},
+      "importance": 0.95
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:34.223435",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:45:45.111892",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "During our last architecture review on Monday, we finalized the caching strategy. We're deprecating the old Redis setup for session management and moving to a new Memcached cluster. The decision was to deploy it on AWS EC2 instances, specifically `r5.large` types, configured with 64GB of RAM per instance to handle peak load efficiently.",
+      "timestamp": "2025-08-13T00:46:11.486922",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "I spent most of yesterday debugging the intermittent `NullPointerException` in the `UserService` microservice. It was a tricky race condition during user profile updates, but we've implemented a synchronized block fix that seems stable now.",
+      "timestamp": "2025-08-15T00:46:11.486948",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "We also had a brief chat about the upcoming migration of our CI/CD pipelines to Kubernetes. The initial proposal is to leverage EKS, but we're still evaluating the cost implications and potential vendor lock-in concerns.",
+      "timestamp": "2025-08-14T00:46:11.486952",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:34.223435",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:45:23.540274",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    }
+  ],
+  "creation_timestamp": "2025-08-16T00:46:11.588667",
+  "generator_version": "1.0.0",
+  "total_test_cases": 6,
+  "reasoning_type_distribution": {
+    "single_hop": 2,
+    "multi_hop": 4
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "f7e69a7e-7417-4a66-8791-d1ee76b90858",
+  "name": "Pipeline Test Dataset",
+  "description": "Test of complete Task 1-2-3 pipeline",
+  "creation_timestamp": "2025-08-15T17:37:14.594543",
+  "version": "1.0",
+  "test_case_count": 1,
+  "reasoning_type_distribution": {
+    "single_hop": 1
+  },
+  "difficulty_distribution": {
+    "medium": 1
+  },
+  "persona_distribution": {
+    "casual": 1
+  },
+  "quality_stats": {},
+  "tags": []
+}

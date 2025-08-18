@@ -1,0 +1,353 @@
+{
+  "id": "7b742402-a683-41d6-b115-1fe9c01e8e15",
+  "name": "progressive_5turns_20250816_005204",
+  "description": "Generated via FRD-compliant CLI: progressive distribution, 5 turns",
+  "conversation_length": 5,
+  "distribution_type": "progressive",
+  "target_reasoning_types": [
+    "single_hop",
+    "multi_hop"
+  ],
+  "persona": "casual",
+  "turns": [
+    {
+      "turn_number": 1,
+      "user_message": "What new instrument is Alex learning?",
+      "expected_response": "Alex is learning to play the ukulele. (From: My friend Alex told me he's been spending a lot of time learning to play the ukulele. He even joined an online beginner's group.)",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "My friend Alex told me he's been spending a lot of time learning to play the ukulele. He even joined an online beginner's group.",
+          "timestamp": "2025-08-13T00:52:08.912228",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I finally finished reading that fantasy novel I started last month. It had a really surprising twist at the end!",
+          "timestamp": "2025-08-15T00:52:08.912269",
+          "metadata": {},
+          "importance": 0.5
+        },
+        {
+          "content": "Remembered to water all my plants today. My monstera is putting out a new leaf, which is exciting.",
+          "timestamp": "2025-08-16T00:52:08.912277",
+          "metadata": {},
+          "importance": 0.3
+        }
+      ],
+      "test_case_id": "e6a91fd5-7b50-4aef-8d2a-dff2a0b3ddaf"
+    },
+    {
+      "turn_number": 2,
+      "user_message": "I'm also curious about what's the name of alex's new cat?",
+      "expected_response": "Alex's new cat is named Whiskers. (from memory: 'Alex told me the cat's name is 'Whiskers' and it's a fluffy ginger tabby.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "easy",
+      "relevant_memories": [
+        {
+          "content": "My friend Alex just adopted a new cat. He's really excited about it.",
+          "timestamp": "2025-08-09T00:52:13.065931",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Alex told me the cat's name is 'Whiskers' and it's a fluffy ginger tabby.",
+          "timestamp": "2025-08-10T00:52:13.065967",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "He's planning to buy a new scratching post for Whiskers this weekend.",
+          "timestamp": "2025-08-13T00:52:13.065971",
+          "metadata": {},
+          "importance": 0.6
+        },
+        {
+          "content": "My friend Alex told me he's been spending a lot of time learning to play the ukulele. He even joined an online beginner's group.",
+          "timestamp": "2025-08-13T00:52:08.912228",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "Remembered to water all my plants today. My monstera is putting out a new leaf, which is exciting.",
+          "timestamp": "2025-08-16T00:52:08.912277",
+          "metadata": {},
+          "importance": 0.3
+        }
+      ],
+      "test_case_id": "ba45ec18-2005-49c1-ae60-73f6e214e602"
+    },
+    {
+      "turn_number": 3,
+      "user_message": "I'm also curious about what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:52:23.699261",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:52:23.699279",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "My friend Alex just adopted a new cat. He's really excited about it.",
+          "timestamp": "2025-08-09T00:52:13.065931",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "I finally finished reading that fantasy novel I started last month. It had a really surprising twist at the end!",
+          "timestamp": "2025-08-15T00:52:08.912269",
+          "metadata": {},
+          "importance": 0.5
+        }
+      ],
+      "test_case_id": "d0b1ce49-b6f5-4df1-927b-2b13571c7eea"
+    },
+    {
+      "turn_number": 4,
+      "user_message": "What about what can you tell me about my interests?",
+      "expected_response": "Based on your memories, you have various interests and activities.",
+      "reasoning_type": "multi_hop",
+      "difficulty": "medium",
+      "relevant_memories": [
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:52:36.043174",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:52:36.043191",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:52:23.699261",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        },
+        {
+          "content": "I finally finished reading that fantasy novel I started last month. It had a really surprising twist at the end!",
+          "timestamp": "2025-08-15T00:52:08.912269",
+          "metadata": {},
+          "importance": 0.5
+        }
+      ],
+      "test_case_id": "5b8390a8-5171-499c-95e5-ac433da2d5bf"
+    },
+    {
+      "turn_number": 5,
+      "user_message": "And hey, i remember you mentioning a specific iso limit for your lumina x-pro when you're doing astrophotography to keep the noise down. what was that exact maximum iso you found acceptable?",
+      "expected_response": "You mentioned that for your Lumina X-Pro, the absolute highest ISO you can use for astrophotography without getting unacceptable noise for your prints is 6400. (Memory: 'After a lot of trial and error, I figured out that for my Lumina X-Pro, the absolute highest ISO I can use for astrophotography without getting unacceptable noise for my prints is 6400. Anything above that just ruins the image quality.')",
+      "reasoning_type": "single_hop",
+      "difficulty": "hard",
+      "relevant_memories": [
+        {
+          "content": "I've been really getting into astrophotography lately with my new Lumina X-Pro camera. It's a steep learning curve, but super rewarding.",
+          "timestamp": "2025-08-09T00:52:55.353417",
+          "metadata": {},
+          "importance": 0.7
+        },
+        {
+          "content": "One of the biggest challenges with astrophotography is managing noise at high ISOs. I've been testing different settings on my Lumina X-Pro to find the sweet spot.",
+          "timestamp": "2025-08-11T00:52:55.353430",
+          "metadata": {},
+          "importance": 0.8
+        },
+        {
+          "content": "After a lot of trial and error, I figured out that for my Lumina X-Pro, the absolute highest ISO I can use for astrophotography without getting unacceptable noise for my prints is 6400. Anything above that just ruins the image quality.",
+          "timestamp": "2025-08-13T00:52:55.353432",
+          "metadata": {},
+          "importance": 0.9
+        },
+        {
+          "content": "User enjoys learning new things",
+          "timestamp": "2025-08-02T00:52:36.043191",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.6
+        },
+        {
+          "content": "User has shown interest in various activities",
+          "timestamp": "2025-08-09T00:52:23.699261",
+          "metadata": {
+            "connection_to": ""
+          },
+          "importance": 0.7
+        }
+      ],
+      "test_case_id": "b40a7108-7460-404c-8d77-f5e0600eb4ed"
+    }
+  ],
+  "all_memories": [
+    {
+      "content": "My friend Alex told me he's been spending a lot of time learning to play the ukulele. He even joined an online beginner's group.",
+      "timestamp": "2025-08-13T00:52:08.912228",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I finally finished reading that fantasy novel I started last month. It had a really surprising twist at the end!",
+      "timestamp": "2025-08-15T00:52:08.912269",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "Remembered to water all my plants today. My monstera is putting out a new leaf, which is exciting.",
+      "timestamp": "2025-08-16T00:52:08.912277",
+      "metadata": {},
+      "importance": 0.3
+    },
+    {
+      "content": "My friend Alex just adopted a new cat. He's really excited about it.",
+      "timestamp": "2025-08-09T00:52:13.065931",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Alex told me the cat's name is 'Whiskers' and it's a fluffy ginger tabby.",
+      "timestamp": "2025-08-10T00:52:13.065967",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "He's planning to buy a new scratching post for Whiskers this weekend.",
+      "timestamp": "2025-08-13T00:52:13.065971",
+      "metadata": {},
+      "importance": 0.6
+    },
+    {
+      "content": "My friend Alex told me he's been spending a lot of time learning to play the ukulele. He even joined an online beginner's group.",
+      "timestamp": "2025-08-13T00:52:08.912228",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "Remembered to water all my plants today. My monstera is putting out a new leaf, which is exciting.",
+      "timestamp": "2025-08-16T00:52:08.912277",
+      "metadata": {},
+      "importance": 0.3
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:52:23.699261",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:52:23.699279",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "My friend Alex just adopted a new cat. He's really excited about it.",
+      "timestamp": "2025-08-09T00:52:13.065931",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "I finally finished reading that fantasy novel I started last month. It had a really surprising twist at the end!",
+      "timestamp": "2025-08-15T00:52:08.912269",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:52:36.043174",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:52:36.043191",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:52:23.699261",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    },
+    {
+      "content": "I finally finished reading that fantasy novel I started last month. It had a really surprising twist at the end!",
+      "timestamp": "2025-08-15T00:52:08.912269",
+      "metadata": {},
+      "importance": 0.5
+    },
+    {
+      "content": "I've been really getting into astrophotography lately with my new Lumina X-Pro camera. It's a steep learning curve, but super rewarding.",
+      "timestamp": "2025-08-09T00:52:55.353417",
+      "metadata": {},
+      "importance": 0.7
+    },
+    {
+      "content": "One of the biggest challenges with astrophotography is managing noise at high ISOs. I've been testing different settings on my Lumina X-Pro to find the sweet spot.",
+      "timestamp": "2025-08-11T00:52:55.353430",
+      "metadata": {},
+      "importance": 0.8
+    },
+    {
+      "content": "After a lot of trial and error, I figured out that for my Lumina X-Pro, the absolute highest ISO I can use for astrophotography without getting unacceptable noise for my prints is 6400. Anything above that just ruins the image quality.",
+      "timestamp": "2025-08-13T00:52:55.353432",
+      "metadata": {},
+      "importance": 0.9
+    },
+    {
+      "content": "User enjoys learning new things",
+      "timestamp": "2025-08-02T00:52:36.043191",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.6
+    },
+    {
+      "content": "User has shown interest in various activities",
+      "timestamp": "2025-08-09T00:52:23.699261",
+      "metadata": {
+        "connection_to": ""
+      },
+      "importance": 0.7
+    }
+  ],
+  "creation_timestamp": "2025-08-16T00:52:55.454632",
+  "generator_version": "1.0.0",
+  "total_test_cases": 5,
+  "reasoning_type_distribution": {
+    "single_hop": 3,
+    "multi_hop": 2
+  }
+}

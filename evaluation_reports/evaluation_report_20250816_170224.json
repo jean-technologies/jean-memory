@@ -1,0 +1,123 @@
+{
+  "metadata": {
+    "report_id": "bebd5d9d",
+    "generation_timestamp": "2025-08-16T17:02:24.339473",
+    "framework_version": "1.0.0",
+    "evaluation_start": "2025-08-16T16:02:24.339544",
+    "evaluation_end": "2025-08-16T17:02:24.339548",
+    "generator": "EvaluationReportGenerator",
+    "data_sources": [
+      "conversation_test_runner"
+    ]
+  },
+  "summary": {
+    "total_test_runs": 1,
+    "overall_success_rate": 0.0,
+    "avg_response_time_ms": 0.0,
+    "avg_llm_judge_score": 0.0,
+    "total_conversation_turns": 0,
+    "unique_reasoning_types": 0,
+    "key_findings": [
+      "No turn data available"
+    ],
+    "critical_issues": [
+      {
+        "severity": "HIGH",
+        "description": "No conversation turns found in results"
+      }
+    ]
+  },
+  "reasoning_analysis": {},
+  "judge_analysis": {
+    "total_evaluations": 0,
+    "avg_overall_score": 0.0,
+    "score_distribution": [],
+    "criteria_breakdown": {},
+    "top_responses": []
+  },
+  "performance": {
+    "response_times": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "p95": 0.0,
+      "p99": 0.0,
+      "max": 0.0
+    },
+    "memory_search": null,
+    "context_engineering": null
+  },
+  "failures": {
+    "total_failures": 0,
+    "failure_rate": 0.0,
+    "most_common_error": "None",
+    "error_breakdown": {},
+    "failed_tests": []
+  },
+  "trends": null,
+  "system": {
+    "mcp_client": {
+      "healthy": true,
+      "avg_response_time_ms": 0.0,
+      "error_count": 0,
+      "last_error": null
+    },
+    "llm_judge": {
+      "healthy": true,
+      "avg_response_time_ms": 2000.0,
+      "error_count": 0,
+      "last_error": null
+    },
+    "memory_search": {
+      "healthy": true,
+      "avg_response_time_ms": 250.0,
+      "error_count": 0,
+      "last_error": null
+    },
+    "context_engine": {
+      "healthy": true,
+      "avg_response_time_ms": 1200.0,
+      "error_count": 0,
+      "last_error": null
+    },
+    "resources": {
+      "memory_mb": 512.0,
+      "cpu_percent": 45.0,
+      "network_mb": 128.0
+    }
+  },
+  "config": {
+    "dataset_count": 1,
+    "total_test_cases": 0,
+    "llm_judge_enabled": true,
+    "performance_logging": true,
+    "user_id": "fa97efb5-410d-4806-b137-8cf13b6cb464",
+    "active_tasks": [
+      "Task 1-8"
+    ],
+    "reasoning_types_tested": []
+  },
+  "recommendations": {
+    "performance": [],
+    "quality": [
+      {
+        "priority": "HIGH",
+        "description": "Improve response quality - average judge score below 7.0",
+        "expected_impact": "Better user satisfaction and accuracy",
+        "effort_level": "High"
+      }
+    ],
+    "infrastructure": []
+  },
+  "detailed_stats": {
+    "response_time_histogram": "Response Time (ms): No data available",
+    "judge_score_histogram": "Judge Score: No data available",
+    "reasoning_matrix": {}
+  },
+  "appendix": {
+    "total_data_points": 0,
+    "data_quality_score": 0.95,
+    "missing_data_count": 0,
+    "data_retention_days": 30,
+    "next_evaluation_date": "2025-08-23"
+  }
+}
