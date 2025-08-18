@@ -381,7 +381,7 @@ app.include_router(sdk_demo.router)
 logger.info("✅ Jean Memory SDK Demo Router loaded successfully at /sdk/*")
 # SDK MCP Router (uses existing MCP infrastructure with authentication)
 logger.info("🧠 Loading Jean Memory SDK MCP Router...")
-app.include_router(sdk_mcp.router, dependencies=[Depends(get_current_supa_user)])
+app.include_router(sdk_mcp.router, dependencies=[Depends(get_current_user)])
 logger.info("✅ Jean Memory SDK MCP Router loaded successfully at /api/jean-chat")
 # Test User Auto-Creation Router (for simple SDK onboarding)
 # FIXED: Changed from get_current_supa_user to get_current_user to enable API key access

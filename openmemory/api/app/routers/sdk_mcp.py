@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import logging
 
-from app.auth import get_current_supa_user
+from app.auth import get_current_user
 from app.models import User
 from app.mcp_claude_simple import handle_mcp_request
 from app.context import user_id_var, client_name_var, background_tasks_var
@@ -24,31 +24,74 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     system_prompt: Optional[str] = None
 
+class LegacyChatRequest(BaseModel):
+    message: str
+    user_token: Optional[str] = None
+    conversation_id: Optional[str] = None
+    system_prompt: Optional[str] = None
+
 @router.post("")
 async def jean_chat_endpoint(
     request: Request,
     background_tasks: BackgroundTasks,
-    chat_request: ChatRequest,
-    user: User = Depends(get_current_supa_user)
+    user: User = Depends(get_current_user)
 ):
     """
-    Jean Memory SDK chat endpoint using existing MCP infrastructure
-    This endpoint is designed to work seamlessly with assistant-ui
+    Jean Memory SDK chat endpoint supporting both new ChatRequest and legacy formats
+    Supports OAuth JWT user tokens and API key authentication
     """
-    logger.info(f"🤖 SDK MCP: Chat request from user {user.user_id}")
-    
     try:
+        # Parse request body to determine format
+        body = await request.json()
+        logger.info(f"🤖 SDK MCP: Chat request from user {user.user_id}, format: {type(body)}")
+        
+        # Determine current user (support user_token override for OAuth)
+        current_user = user
+        if "user_token" in body and body["user_token"]:
+            # Parse OAuth JWT to get user ID
+            import jwt
+            try:
+                payload = jwt.decode(body["user_token"], options={"verify_signature": False})
+                oauth_user_id = payload.get("sub")
+                if oauth_user_id:
+                    # Get or create user from OAuth token
+                    from app.auth import get_or_create_user_from_provider
+                    from app.database import get_db
+                    db = next(get_db())
+                    oauth_user = await get_or_create_user_from_provider(
+                        provider_id=oauth_user_id,
+                        email=payload.get("email", "oauth@example.com"),
+                        name=payload.get("name", "OAuth User"),
+                        provider="oauth_jwt"
+                    )
+                    if oauth_user:
+                        current_user = oauth_user
+                        logger.info(f"🔄 Using OAuth user: {oauth_user_id}")
+            except Exception as e:
+                logger.warning(f"Failed to parse user_token, using API key user: {e}")
+        
         # Set context variables for MCP tools
-        user_id_var.set(user.user_id)
+        user_id_var.set(current_user.user_id)
         client_name_var.set("Jean Memory SDK")
         background_tasks_var.set(background_tasks)
         
-        # Get the latest user message
-        user_messages = [msg for msg in chat_request.messages if msg.role == "user"]
-        if not user_messages:
-            raise HTTPException(status_code=400, detail="No user message found")
-        
-        latest_message = user_messages[-1].content
+        # Handle different request formats
+        if "messages" in body:
+            # New ChatRequest format
+            messages = body["messages"]
+            system_prompt = body.get("system_prompt", "You are a helpful assistant.")
+            user_messages = [msg for msg in messages if msg.get("role") == "user"]
+            if not user_messages:
+                raise HTTPException(status_code=400, detail="No user message found")
+            latest_message = user_messages[-1]["content"]
+            is_new_conversation = len(messages) <= 1
+        else:
+            # Legacy format with single message
+            latest_message = body.get("message", "")
+            if not latest_message:
+                raise HTTPException(status_code=400, detail="No message provided")
+            system_prompt = body.get("system_prompt", "You are a helpful assistant.")
+            is_new_conversation = True
         
         # Create MCP request for jean_memory tool
         mcp_request = {
@@ -58,7 +101,7 @@ async def jean_chat_endpoint(
                 "name": "jean_memory",
                 "arguments": {
                     "user_message": latest_message,
-                    "is_new_conversation": len(chat_request.messages) <= 1,
+                    "is_new_conversation": is_new_conversation,
                     "needs_context": True
                 }
             },
@@ -68,7 +111,7 @@ async def jean_chat_endpoint(
         logger.info(f"🧠 SDK MCP: Calling jean_memory tool for message: '{latest_message[:50]}...'")
         
         # Call existing MCP handler
-        mcp_response = await handle_mcp_request(mcp_request, user, background_tasks)
+        mcp_response = await handle_mcp_request(mcp_request, current_user, background_tasks)
         
         # Extract context from MCP response
         context = ""
@@ -78,22 +121,32 @@ async def jean_chat_endpoint(
         else:
             logger.info("💭 SDK MCP: No context retrieved")
         
-        # Build enhanced system prompt
-        system_content = chat_request.system_prompt or "You are a helpful assistant."
-        if context:
-            system_content += f"\n\nUser's relevant context from Jean Memory:\n{context}"
+        # Build response based on request format
+        if "messages" in body:
+            # Assistant-ui compatible response format
+            enhanced_system = system_prompt
+            if context:
+                enhanced_system += f"\n\nUser's relevant context from Jean Memory:\n{context}"
+            
+            response = {
+                "messages": [
+                    {"role": "system", "content": enhanced_system},
+                    *body["messages"]
+                ],
+                "context": context,
+                "context_retrieved": bool(context)
+            }
+        else:
+            # Legacy response format
+            response = {
+                "content": context or "I don't have any relevant context for your question.",
+                "context": context,
+                "context_retrieved": bool(context),
+                "user_id": current_user.user_id,
+                "message": latest_message
+            }
         
-        # Return assistant-ui compatible response format
-        response = {
-            "messages": [
-                {"role": "system", "content": system_content},
-                *[{"role": msg.role, "content": msg.content} for msg in chat_request.messages]
-            ],
-            "context": context,
-            "context_retrieved": bool(context)
-        }
-        
-        logger.info(f"🎉 SDK MCP: Chat enhancement completed for user {user.user_id}")
+        logger.info(f"🎉 SDK MCP: Chat enhancement completed for user {current_user.user_id}")
         return response
         
     except Exception as e:
