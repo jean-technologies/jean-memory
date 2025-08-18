@@ -54,19 +54,16 @@ async def jean_chat_endpoint(
                 payload = jwt.decode(body["user_token"], options={"verify_signature": False})
                 oauth_user_id = payload.get("sub")
                 if oauth_user_id:
-                    # Get or create user from OAuth token
-                    from app.auth import get_or_create_user_from_provider
+                    # Look up user by OAuth user ID
                     from app.database import get_db
+                    from app.models import User
                     db = next(get_db())
-                    oauth_user = await get_or_create_user_from_provider(
-                        provider_id=oauth_user_id,
-                        email=payload.get("email", "oauth@example.com"),
-                        name=payload.get("name", "OAuth User"),
-                        provider="oauth_jwt"
-                    )
+                    oauth_user = db.query(User).filter(User.user_id == oauth_user_id).first()
                     if oauth_user:
                         current_user = oauth_user
                         logger.info(f"🔄 Using OAuth user: {oauth_user_id}")
+                    else:
+                        logger.warning(f"OAuth user {oauth_user_id} not found in database")
             except Exception as e:
                 logger.warning(f"Failed to parse user_token, using API key user: {e}")
         
