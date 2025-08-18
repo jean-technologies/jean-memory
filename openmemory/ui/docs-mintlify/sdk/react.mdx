@@ -55,31 +55,29 @@ This code adds the `<JeanChat />` component to your page. It’s a pre-built, fu
 
 That's it! You now have a fully functional, context-aware chatbot in your application. The `<JeanChat />` component will automatically handle authentication using the secure `<SignInWithJean />` flow.
 
-### Authentication Modes
+### Authentication: Completely Automated
 
-The React SDK uses a robust, backend-driven OAuth system that ensures secure authentication and consistent user identity across all applications. The SDK supports two authentication modes depending on your API key:
+The React SDK uses a robust **Universal OAuth 2.1 PKCE system** that handles all authentication complexity for you. Users get secure, persistent sessions with zero configuration required from developers.
 
-#### Production Mode (OAuth 2.1 PKCE)
-With production API keys, users must authenticate via OAuth:
+#### What You Get Automatically:
+- ✅ **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
+- ✅ **Universal Identity** - Same user account across all Jean Memory applications  
+- ✅ **Session Persistence** - Users stay logged in across browser refreshes and tabs
+- ✅ **Automatic Token Management** - JWT tokens handled invisibly
+- ✅ **Error Recovery** - Graceful handling of network issues and token expiration
+
+#### Simple Setup for Any API Key:
 ```jsx
-<JeanProvider apiKey="jean_sk_live_your_production_key">
-  <JeanChat /> {/* Shows SignInWithJean button first */}
+<JeanProvider apiKey="jean_sk_your_api_key">
+  <JeanChat /> {/* Automatically handles authentication */}
 </JeanProvider>
 ```
 
-#### Development Mode (Auto Test User)
-With test API keys (containing `test`), authentication is automatic:
-```jsx
-<JeanProvider apiKey="jean_sk_test_demo_key_for_ui_testing">
-  <JeanChat /> {/* Works immediately, no sign-in required */}
-</JeanProvider>
-```
+**For Production Apps:**
+Users will see a "Sign In with Jean" button that triggers secure OAuth authentication.
 
-**Test User Features:**
-- ✅ **Automatic initialization** - no user interaction needed
-- ✅ **Consistent test user** - same user ID for each API key
-- ✅ **Isolated memories** - each test key gets its own test user
-- ✅ **Perfect for development** - start coding immediately
+**For Development/Testing:**
+Test API keys (containing `test`) automatically create isolated test users, so you can start coding immediately without any authentication setup.
 
 ---
 

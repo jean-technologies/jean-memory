@@ -7,6 +7,8 @@ description: "Securely connect your users to their memory with OAuth 2.1."
 
 Jean Memory handles sensitive personal data, and we take that responsibility seriously. That's why we've built our authentication system on the industry-standard **OAuth 2.1 protocol**. This ensures that user credentials are never shared with third-party applications and that users have full control over who can access their memory.
 
+**The best part? All this security is completely invisible to developers.** Our SDK handles OAuth 2.1 PKCE, JWT tokens, session persistence, and universal identity mapping automatically. You get enterprise-grade security with a 5-line integration.
+
 We provide two clear authentication flows to support different types of applications.
 
 ---
@@ -23,36 +25,54 @@ Jean Memory now features a universal identity system that ensures users maintain
 - **Provider Flexibility**: Users can sign in with any supported provider and access the same account
 - **Cross-Platform**: The same user account works on web, mobile, and desktop applications
 
-### The Easy Way: `<SignInWithJean />`
+### The Easy Way: 5 Lines of Code
 
-For React developers, we've made this incredibly simple. Our `<SignInWithJean />` component is a complete, one-line solution that handles the entire PKCE flow for you.
+For React developers, we've made this incredibly simple. Our SDK handles the entire OAuth 2.1 PKCE flow automatically, including session persistence and user identity management.
 
 ```jsx
-import { useJean, SignInWithJean } from '@jeanmemory/react';
+import { JeanProvider, SignInWithJean, useJean } from '@jeanmemory/react';
 
-function MyComponent() {
-  const agent = useJean();
+function App() {
+  return (
+    <JeanProvider apiKey="jean_sk_your_api_key">
+      <SignInWithJean onSuccess={(user) => console.log('Authenticated!')}>
+        Sign In with Jean
+      </SignInWithJean>
+      <YourApp />
+    </JeanProvider>
+  );
+}
 
-  if (agent.isAuthenticated) {
-    return <div>Welcome, {agent.user.name}!</div>;
+function YourApp() {
+  const { sendMessage, isAuthenticated, user } = useJean();
+
+  if (!isAuthenticated) {
+    return <div>Please sign in to continue</div>;
   }
 
-  // This component redirects to Jean Memory for authentication
-  // and securely handles the token exchange on return.
+  const handleChat = async () => {
+    // Automatically uses authenticated user's context and memories
+    const response = await sendMessage("What did I work on yesterday?");
+    console.log(response);
+  };
+
   return (
-    <SignInWithJean
-      onSuccess={(user) => {
-        // The user object, including the all-important `userToken`,
-        // is returned on success.
-        agent.setUser(user);
-      }}
-      onError={(error) => console.error(error)}
-    />
+    <div>
+      <h1>Welcome, {user.name}!</h1>
+      <button onClick={handleChat}>Ask about my work</button>
+    </div>
   );
 }
 ```
 
-When a user clicks the button, they are redirected to `jeanmemory.com` to sign in and grant your application permission. After they approve, they are redirected back to your app, and the `onSuccess` callback is fired with the user's information, including the `userToken` needed for backend requests.
+**What happens automatically:**
+- **OAuth 2.1 PKCE Flow**: Secure authentication with Google (no client secrets needed)
+- **Session Persistence**: Users stay logged in across browser refreshes and tabs
+- **Universal Identity**: Same user account across all Jean Memory applications
+- **Automatic API Requests**: All memory queries include user context automatically
+- **Error Recovery**: Handles token expiration and network issues gracefully
+
+When a user clicks "Sign In with Jean", they are redirected to Google OAuth, authenticate securely, and return to your app with a persistent session. No complex token management or API calls required on your end.
 
 ---
 
