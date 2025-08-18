@@ -353,15 +353,15 @@ async def get_service_client() -> SupabaseClient:
 
 def create_client_for_user(user_token: str) -> SupabaseClient:
     """
-    Create a Supabase client with a user's token for user-scoped operations.
+    Creates a Supabase client scoped to the user based on their JWT.
+    This uses the ANON key and relies on RLS.
     """
+    if not config.SUPABASE_URL or not config.SUPABASE_ANON_KEY:
+        raise HTTPException(status_code=500, detail="Supabase is not configured.")
     try:
         client = create_client(config.SUPABASE_URL, config.SUPABASE_ANON_KEY)
-        client.auth.set_session(user_token, refresh_token=None)
+        client.auth.set_session(access_token=user_token, refresh_token=user_token) # Simplification for example
         return client
     except Exception as e:
-        logger.error(f"Failed to create user client: {e}")
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Failed to create authenticated client"
-        ) 
+        logging.error(f"Failed to create Supabase client for user: {e}")
+        raise HTTPException(status_code=401, detail="Invalid user token.") 

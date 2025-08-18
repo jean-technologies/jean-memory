@@ -27,6 +27,7 @@ from app.routers.local_auth import router as local_auth_router
 from app.routers import sdk_demo
 from app.routers import sdk_mcp
 from app.routers import test_user
+from app.routers import sdk_oauth
 from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import oauth_mcp_router
 from app.routing.mcp import mcp_router as mcp_v2_router
@@ -405,9 +406,8 @@ app.include_router(stripe_webhooks_router)  # Stripe webhooks (no auth needed - 
 # OAuth 2.0 endpoints for Claude Web
 app.include_router(oauth_router)  # OAuth server at /oauth/*
 
-# SDK OAuth endpoints for React SDK
-from app.routers.sdk_oauth import sdk_oauth_router
-app.include_router(sdk_oauth_router)  # SDK OAuth server at /sdk/oauth/*
+# SDK OAuth endpoints for React SDK - NEW IMPLEMENTATION
+app.include_router(sdk_oauth.router)  # SDK OAuth server at /v1/sdk/oauth/*
 
 # MCP server endpoint for Claude Web  
 app.include_router(oauth_mcp_router)  # Claude MCP server at /mcp (Bearer token)
