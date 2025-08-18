@@ -15,6 +15,14 @@ We provide two clear authentication flows to support different types of applicat
 
 This flow is designed for frontend applications (e.g., React, Vue, Svelte) running in a user's browser. It uses the **Proof Key for Code Exchange (PKCE)** grant type, which is the current best practice for securing public clients.
 
+### Universal Identity System
+
+Jean Memory now features a universal identity system that ensures users maintain the same identity across all applications and sessions. When a user signs in with their email (via Google, GitHub, or email auth), they are mapped to a single, permanent user ID in our system. This means:
+
+- **Consistent Identity**: Users keep the same memories across different apps using Jean Memory
+- **Provider Flexibility**: Users can sign in with any supported provider and access the same account
+- **Cross-Platform**: The same user account works on web, mobile, and desktop applications
+
 ### The Easy Way: `<SignInWithJean />`
 
 For React developers, we've made this incredibly simple. Our `<SignInWithJean />` component is a complete, one-line solution that handles the entire PKCE flow for you.

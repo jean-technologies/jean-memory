@@ -44,3 +44,4 @@ chaos-testing/react-chaos-app/node_modules/
 dist/
 coverage/
 *.egg-info/
+.env.deploy
