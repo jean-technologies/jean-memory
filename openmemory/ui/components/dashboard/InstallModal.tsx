@@ -645,7 +645,7 @@ export function InstallModal({ app, open, onOpenChange, onSyncStart }: InstallMo
                                 {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">User ID authentication is built into the URL - no OAuth needed</p>
+                        <p className="text-xs text-muted-foreground mt-2">Authentication is handled automatically by Claude</p>
                     </div>
 
                     <div>
