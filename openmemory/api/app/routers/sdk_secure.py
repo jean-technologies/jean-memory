@@ -74,8 +74,15 @@ async def secure_jean_chat_endpoint(
         
         logger.info(f"🧠 SDK v2.0: Calling jean_memory tool for message: '{latest_message[:50]}...'")
         
+        # Convert User object to dictionary for MCP handler compatibility
+        user_dict = {
+            "user_id": user.user_id,
+            "email": user.email or "user@example.com",
+            "client": "Jean Memory SDK v2.0"
+        }
+        
         # Call existing MCP handler
-        mcp_response = await handle_mcp_request(mcp_request, user, background_tasks)
+        mcp_response = await handle_mcp_request(mcp_request, user_dict, background_tasks)
         
         # Extract context from MCP response
         context = ""
@@ -142,8 +149,15 @@ async def secure_messages_endpoint(
             "id": "sdk-v2-messages-request"
         }
         
+        # Convert User object to dictionary for MCP handler compatibility
+        user_dict = {
+            "user_id": user.user_id,
+            "email": user.email or "user@example.com",
+            "client": "Jean Memory SDK v2.0"
+        }
+        
         # Call MCP handler
-        mcp_response = await handle_mcp_request(mcp_request, user, background_tasks)
+        mcp_response = await handle_mcp_request(mcp_request, user_dict, background_tasks)
         
         # Extract context
         context = ""
