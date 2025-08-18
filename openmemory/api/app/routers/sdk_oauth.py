@@ -4,6 +4,7 @@ import secrets
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import jwt
 from sqlalchemy.orm import Session
 from supabase import Client as SupabaseClient
@@ -99,6 +100,15 @@ async def callback(
     redirect_url = f"{flow['redirect_uri']}?code={auth_code}&state={state}"
     return RedirectResponse(url=redirect_url)
 
+@router.options("/v1/sdk/oauth/token")
+async def token_options():
+    """Handle CORS preflight requests"""
+    response = JSONResponse(content={})
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
 @router.post("/v1/sdk/oauth/token")
 async def token(request: Request):
     form = await request.form()
@@ -138,4 +148,9 @@ async def token(request: Request):
     
     del oauth_flows[state]
 
-    return JSONResponse(content={"access_token": encoded_jwt, "token_type": "bearer"})
+    response = JSONResponse(content={"access_token": encoded_jwt, "token_type": "bearer"})
+    # Add CORS headers for browser-based clients
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
