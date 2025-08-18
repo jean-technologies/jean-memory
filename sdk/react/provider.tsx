@@ -3,8 +3,9 @@
  * Manages authentication state and API client
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { JEAN_API_BASE, SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
+import { JEAN_API_BASE } from './config';
 import { makeMCPRequest } from './mcp';
+import { getUserSession, isAuthenticated as checkAuth } from './oauth';
 
 // Declare Supabase types (will be loaded from CDN)
 declare global {

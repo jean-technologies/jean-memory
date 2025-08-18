@@ -133,9 +133,13 @@
             sessionStorage.setItem('oauth_state', state);
             
             // Build authorization URL
+            // Use a consistent client_id for the session
+            const clientId = sessionStorage.getItem('oauth_client_id') || 'test-client-' + Date.now();
+            sessionStorage.setItem('oauth_client_id', clientId);
+            
             const params = new URLSearchParams({
                 response_type: 'code',
-                client_id: 'test-client-' + Date.now(),
+                client_id: clientId,
                 redirect_uri: window.location.origin + window.location.pathname,
                 state: state,
                 code_challenge: pkce.challenge,
@@ -214,7 +218,7 @@
                             grant_type: 'authorization_code',
                             code: code,
                             redirect_uri: window.location.origin + window.location.pathname,
-                            client_id: 'test-client-' + Date.now(),
+                            client_id: sessionStorage.getItem('oauth_client_id'),
                             code_verifier: verifier
                         })
                     });

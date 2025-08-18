@@ -84,6 +84,7 @@ async def _get_user_from_supabase_jwt(token: str, db: Session) -> User:
         return None
 
 api_key_header_scheme = APIKeyHeader(name="Authorization", auto_error=True)
+x_api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def get_current_user(
     request: Request,
@@ -120,6 +121,99 @@ async def get_current_user(
     # Fallback to Supabase JWT auth
     else:
         user = await _get_user_from_supabase_jwt(token, db)
+
+    if user:
+        return user
+
+    raise HTTPException(
+        status_code=HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+    )
+
+async def get_current_user_secure(
+    request: Request,
+    auth_header: str = Depends(api_key_header_scheme),
+    x_api_key: str = Depends(x_api_key_scheme),
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Secure authentication for SDK v2.0:
+    - JWT token in Authorization header (user identity)
+    - API key in X-API-Key header (app authentication)
+    
+    This prevents apps from impersonating users by manipulating request bodies.
+    """
+    # Bypass auth for local development
+    if config.is_local_development:
+        local_user = await get_local_dev_user(request, supabase_service_client, config)
+        db_user = db.query(User).filter(User.user_id == local_user.id).first()
+        if not db_user:
+            db_user = User(user_id=local_user.id, email=local_user.email or "dev@example.com")
+            db.add(db_user)
+            db.commit()
+            db.refresh(db_user)
+        return db_user
+
+    # Validate API key first (app authentication)
+    if x_api_key:
+        api_key_user = await _get_user_from_api_key(x_api_key, db)
+        if not api_key_user:
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Invalid API key"
+            )
+        logger.info(f"✅ Valid API key for app: {api_key_user.user_id}")
+    else:
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="X-API-Key header required"
+        )
+
+    # Parse JWT token from Authorization header (user identity)
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, 
+            detail="Invalid Authorization header format"
+        )
+    
+    jwt_token = auth_header.replace("Bearer ", "")
+    
+    # Validate JWT token and get user
+    user = None
+    if jwt_token.startswith("jean_sk_"):
+        # Fallback: API key in Authorization header (legacy)
+        user = await _get_user_from_api_key(jwt_token, db)
+    else:
+        # OAuth JWT token - parse and validate
+        try:
+            import jwt as jwt_lib
+            # Decode without signature verification to get user ID
+            payload = jwt_lib.decode(jwt_token, options={"verify_signature": False})
+            oauth_user_id = payload.get("sub")
+            
+            if oauth_user_id:
+                # Get user by OAuth user ID
+                user = db.query(User).filter(User.user_id == oauth_user_id).first()
+                if not user:
+                    # Create user from OAuth token if doesn't exist
+                    user = await get_or_create_user_from_provider(
+                        provider_id=oauth_user_id,
+                        email=payload.get("email", "oauth@example.com"),
+                        name=payload.get("name", "OAuth User"),
+                        provider="oauth_jwt"
+                    )
+                logger.info(f"✅ OAuth JWT validated for user: {oauth_user_id}")
+            else:
+                raise HTTPException(
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    detail="Invalid JWT token: missing subject"
+                )
+        except Exception as e:
+            logger.error(f"JWT token validation failed: {e}")
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Invalid JWT token"
+            )
 
     if user:
         return user

@@ -28,6 +28,7 @@ from app.routers import sdk_demo
 from app.routers import sdk_mcp
 from app.routers import test_user
 from app.routers import sdk_oauth
+from app.routers import sdk_secure
 from app.oauth_simple_new import oauth_router
 from app.mcp_claude_simple import oauth_mcp_router
 from app.routing.mcp import mcp_router as mcp_v2_router
@@ -383,6 +384,10 @@ logger.info("✅ Jean Memory SDK Demo Router loaded successfully at /sdk/*")
 logger.info("🧠 Loading Jean Memory SDK MCP Router...")
 app.include_router(sdk_mcp.router, dependencies=[Depends(get_current_user)])
 logger.info("✅ Jean Memory SDK MCP Router loaded successfully at /api/jean-chat")
+# SDK v2.0 Secure Router (JWT-in-header authentication)
+logger.info("🔒 Loading Jean Memory SDK v2.0 Secure Router...")
+app.include_router(sdk_secure.router)
+logger.info("✅ Jean Memory SDK v2.0 Secure Router loaded successfully at /api/v2/jean-chat")
 # Test User Auto-Creation Router (for simple SDK onboarding)
 # FIXED: Changed from get_current_supa_user to get_current_user to enable API key access
 # This allows SDKs to create test users with just API keys (no OAuth required for testing)

@@ -1,20 +1,20 @@
 /**
- * Jean Memory React SDK - Sign In With Jean Component
- * OAuth 2.1 PKCE authentication flow - Backend-driven Universal OAuth
+ * Jean Memory React SDK v2.0 - Sign In With Jean Component
+ * Uses API key from provider context, secure OAuth 2.1 PKCE flow
  */
 import React, { useEffect, useState } from 'react';
 import { 
   initiateOAuth, 
   handleOAuthCallback, 
   getUserSession, 
-  clearUserSession, 
+  clearUserSession,
   isAuthenticated 
 } from './oauth';
+import { useJean } from './provider-v2';
 
 interface SignInWithJeanProps {
-  onSuccess: (user: any) => void;
+  onSuccess?: (user: any) => void;
   onError?: (error: Error) => void;
-  apiKey: string;
   className?: string;
   children?: React.ReactNode;
   redirectUri?: string;
@@ -35,15 +35,14 @@ export const signOutFromJean = () => {
   console.log('✅ Jean OAuth: Signed out successfully');
 };
 
-
 export function SignInWithJean({ 
   onSuccess, 
   onError, 
-  apiKey,
   className = '', 
   children,
   redirectUri
 }: SignInWithJeanProps) {
+  const { apiKey, setUser } = useJean();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -51,7 +50,10 @@ export function SignInWithJean({
     const existingUser = getUserSession();
     if (existingUser) {
       console.log('✅ Jean OAuth: Recovered existing session for user:', existingUser.email);
-      onSuccess(existingUser);
+      setUser(existingUser);
+      if (onSuccess) {
+        onSuccess(existingUser);
+      }
       return;
     }
 
@@ -61,7 +63,10 @@ export function SignInWithJean({
         const user = await handleOAuthCallback();
         if (user) {
           console.log('✅ Jean OAuth: Callback authentication successful');
-          onSuccess(user);
+          setUser(user);
+          if (onSuccess) {
+            onSuccess(user);
+          }
         }
       } catch (error) {
         console.error('OAuth callback error:', error);
@@ -76,8 +81,7 @@ export function SignInWithJean({
     if (params.get('code') && params.get('state')) {
       handleCallback();
     }
-  }, [onSuccess, onError]);
-
+  }, [onSuccess, onError, setUser]);
 
   const handleSignIn = async () => {
     if (!apiKey) {

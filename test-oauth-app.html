@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jean Memory OAuth 2.1 PKCE Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .token-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .user-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Jean Memory OAuth 2.1 PKCE Test</h1>
+        <p>Test the new Universal OAuth implementation with session persistence and JWT token parsing.</p>
+        
+        <!-- Current Session Status -->
+        <div class="test-section">
+            <h3>📊 Current Session Status</h3>
+            <div id="sessionStatus"></div>
+            <button onclick="checkSession()">🔍 Check Session</button>
+            <button onclick="clearAllData()">🗑️ Clear All Data</button>
+            <button onclick="refreshPage()">🔄 Refresh Page</button>
+        </div>
+
+        <!-- OAuth Flow Test -->
+        <div class="test-section">
+            <h3>🔐 OAuth 2.1 PKCE Flow Test</h3>
+            <div id="oauthStatus"></div>
+            <button id="startOAuthBtn" onclick="startOAuthFlow()">🚀 Start OAuth Flow</button>
+            <button onclick="handleCallbackTest()">📥 Handle Callback (if present)</button>
+        </div>
+
+        <!-- JWT Token Analysis -->
+        <div class="test-section">
+            <h3>🔑 JWT Token Analysis</h3>
+            <div id="tokenAnalysis"></div>
+            <button onclick="analyzeToken()">🔍 Analyze Current Token</button>
+        </div>
+
+        <!-- Session Persistence Test -->
+        <div class="test-section">
+            <h3>💾 Session Persistence Test</h3>
+            <div id="persistenceTest"></div>
+            <button onclick="testPersistence()">🧪 Test Storage Persistence</button>
+            <button onclick="simulateRefresh()">🔄 Simulate Browser Refresh</button>
+        </div>
+
+        <!-- Memory API Test -->
+        <div class="test-section">
+            <h3>🧠 Memory API Test</h3>
+            <div id="memoryTest"></div>
+            <input type="text" id="apiKeyInput" placeholder="Enter your API key (jean_sk_...)" style="width: 300px; padding: 8px; margin: 5px;">
+            <button onclick="testMemoryAPI()">🔬 Test Memory Access</button>
+        </div>
+
+        <!-- Real-time Logs -->
+        <div class="test-section">
+            <h3>📝 Real-time Logs</h3>
+            <div id="logs" class="log"></div>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+    </div>
+
+    <script>
+        // Import our OAuth utilities (simulated - in real app these would be from the SDK)
+        const JEAN_API_BASE = 'https://jean-memory-api-virginia.onrender.com';
+        
+        // Session storage keys (matching oauth.ts)
+        const SESSION_KEYS = {
+            OAUTH_SESSION: 'jean_oauth_session_v2',
+            USER_TOKEN: 'jean_user_token_v2',
+            USER_INFO: 'jean_user_info_v2',
+            AUTH_STATE: 'jean_auth_state_v2'
+        };
+
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(`Jean OAuth Test - ${message}`);
+        }
+
+        // Generate secure random string
+        function generateSecureRandom(length = 32) {
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            const array = new Uint8Array(length);
+            crypto.getRandomValues(array);
+            return Array.from(array, byte => charset[byte % charset.length]).join('');
+        }
+
+        // Generate PKCE code verifier and challenge
+        async function generatePKCE() {
+            const verifier = generateSecureRandom(128);
+            
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+                
+            return { verifier, challenge };
+        }
+
+        // Check current session status
+        function checkSession() {
+            log('Checking current session status...');
+            
+            const sessionInfo = sessionStorage.getItem(SESSION_KEYS.USER_INFO);
+            const localInfo = localStorage.getItem(SESSION_KEYS.USER_INFO);
+            const token = localStorage.getItem(SESSION_KEYS.USER_TOKEN);
+            const authState = localStorage.getItem(SESSION_KEYS.AUTH_STATE);
+            
+            let html = '<div class="info">Session Storage Analysis:</div>';
+            
+            if (sessionInfo) {
+                try {
+                    const user = JSON.parse(sessionInfo);
+                    html += `<div class="success">✅ Session Storage: Found user ${user.email || user.id}</div>`;
+                } catch (e) {
+                    html += `<div class="error">❌ Session Storage: Invalid JSON</div>`;
+                }
+            } else {
+                html += `<div class="warning">⚠️ Session Storage: No user info found</div>`;
+            }
+            
+            if (localInfo) {
+                try {
+                    const user = JSON.parse(localInfo);
+                    html += `<div class="success">✅ Local Storage: Found user ${user.email || user.id}</div>`;
+                } catch (e) {
+                    html += `<div class="error">❌ Local Storage: Invalid JSON</div>`;
+                }
+            } else {
+                html += `<div class="warning">⚠️ Local Storage: No user info found</div>`;
+            }
+            
+            if (token) {
+                html += `<div class="success">✅ Access Token: Present (${token.length} chars)</div>`;
+            } else {
+                html += `<div class="warning">⚠️ Access Token: Not found</div>`;
+            }
+            
+            html += `<div class="info">Auth State: ${authState || 'Not set'}</div>`;
+            
+            document.getElementById('sessionStatus').innerHTML = html;
+            log('Session check completed');
+        }
+
+        // Start OAuth flow
+        async function startOAuthFlow() {
+            try {
+                log('Starting OAuth 2.1 PKCE flow...');
+                document.getElementById('startOAuthBtn').disabled = true;
+                
+                // Generate PKCE parameters
+                const { verifier, challenge } = await generatePKCE();
+                const state = generateSecureRandom(32);
+                const clientId = `jean-test-${Date.now()}`;
+                const redirectUri = window.location.origin + window.location.pathname;
+                
+                log(`Generated PKCE verifier: ${verifier.substring(0, 20)}...`);
+                log(`Generated code challenge: ${challenge}`);
+                log(`Generated state: ${state}`);
+                log(`Client ID: ${clientId}`);
+                
+                // Store OAuth session
+                const session = {
+                    codeVerifier: verifier,
+                    state,
+                    clientId,
+                    redirectUri,
+                    apiKey: 'test-api-key',
+                    timestamp: Date.now(),
+                    expiresAt: Date.now() + (60 * 60 * 1000) // 1 hour
+                };
+                
+                sessionStorage.setItem(SESSION_KEYS.OAUTH_SESSION, JSON.stringify(session));
+                log('Stored OAuth session in sessionStorage');
+                
+                // Build authorization URL
+                const authUrl = new URL(`${JEAN_API_BASE}/v1/sdk/oauth/authorize`);
+                authUrl.searchParams.set('response_type', 'code');
+                authUrl.searchParams.set('client_id', clientId);
+                authUrl.searchParams.set('redirect_uri', redirectUri);
+                authUrl.searchParams.set('state', state);
+                authUrl.searchParams.set('code_challenge', challenge);
+                authUrl.searchParams.set('code_challenge_method', 'S256');
+                
+                log(`Authorization URL: ${authUrl.toString()}`);
+                
+                document.getElementById('oauthStatus').innerHTML = `
+                    <div class="info">🔄 OAuth flow initiated!</div>
+                    <div class="token-display">Redirect URL: ${authUrl.toString()}</div>
+                    <button onclick="window.location.href='${authUrl.toString()}'">🌐 Go to OAuth Provider</button>
+                `;
+                
+                log('OAuth flow setup complete - ready for redirect');
+                
+            } catch (error) {
+                log(`OAuth flow error: ${error.message}`, 'error');
+                document.getElementById('oauthStatus').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                document.getElementById('startOAuthBtn').disabled = false;
+            }
+        }
+
+        // Handle OAuth callback
+        async function handleCallbackTest() {
+            try {
+                log('Checking for OAuth callback...');
+                
+                const params = new URLSearchParams(window.location.search);
+                const code = params.get('code');
+                const state = params.get('state');
+                const error = params.get('error');
+                
+                if (error) {
+                    const errorDescription = params.get('error_description') || 'OAuth authorization failed';
+                    throw new Error(`OAuth Error: ${error} - ${errorDescription}`);
+                }
+                
+                if (!code || !state) {
+                    document.getElementById('oauthStatus').innerHTML = `<div class="warning">⚠️ No OAuth callback parameters found</div>`;
+                    log('No OAuth callback parameters in URL');
+                    return;
+                }
+                
+                log(`Found OAuth callback - Code: ${code.substring(0, 20)}..., State: ${state.substring(0, 20)}...`);
+                
+                // Retrieve stored OAuth session
+                const storedSession = sessionStorage.getItem(SESSION_KEYS.OAUTH_SESSION);
+                if (!storedSession) {
+                    throw new Error('OAuth session not found or expired');
+                }
+                
+                const session = JSON.parse(storedSession);
+                log('Retrieved stored OAuth session');
+                
+                // Verify state parameter
+                if (state !== session.state) {
+                    throw new Error('OAuth state mismatch - possible CSRF attack');
+                }
+                log('✅ State parameter verified');
+                
+                // Exchange authorization code for access token
+                log('Exchanging authorization code for token...');
+                const tokenResponse = await fetch(`${JEAN_API_BASE}/v1/sdk/oauth/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code,
+                        redirect_uri: session.redirectUri,
+                        client_id: session.clientId,
+                        code_verifier: session.codeVerifier
+                    })
+                });
+                
+                if (!tokenResponse.ok) {
+                    const errorData = await tokenResponse.text();
+                    throw new Error(`Token exchange failed: ${errorData}`);
+                }
+                
+                const tokenData = await tokenResponse.json();
+                const { access_token } = tokenData;
+                
+                if (!access_token) {
+                    throw new Error('No access token received');
+                }
+                
+                log('✅ Token exchange successful');
+                
+                // Parse JWT token
+                const payload = JSON.parse(atob(access_token.split('.')[1]));
+                const user = {
+                    id: payload.sub,
+                    sub: payload.sub,
+                    email: payload.email,
+                    name: payload.name || payload.email?.split('@')[0] || 'User',
+                    access_token
+                };
+                
+                // Store user session
+                const userInfo = {
+                    id: user.id,
+                    sub: user.sub,
+                    email: user.email,
+                    name: user.name,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem(SESSION_KEYS.USER_INFO, JSON.stringify(userInfo));
+                localStorage.setItem(SESSION_KEYS.USER_TOKEN, access_token);
+                localStorage.setItem(SESSION_KEYS.AUTH_STATE, 'authenticated');
+                sessionStorage.setItem(SESSION_KEYS.USER_INFO, JSON.stringify(userInfo));
+                sessionStorage.setItem(SESSION_KEYS.USER_TOKEN, access_token);
+                
+                // Clean up OAuth session
+                sessionStorage.removeItem(SESSION_KEYS.OAUTH_SESSION);
+                
+                // Clean up URL parameters
+                const url = new URL(window.location.href);
+                url.searchParams.delete('code');
+                url.searchParams.delete('state');
+                url.searchParams.delete('error');
+                url.searchParams.delete('error_description');
+                window.history.replaceState({}, '', url.toString());
+                
+                document.getElementById('oauthStatus').innerHTML = `
+                    <div class="success">✅ OAuth callback handled successfully!</div>
+                    <div class="user-info">
+                        <strong>User:</strong> ${user.name} (${user.email})<br>
+                        <strong>User ID:</strong> ${user.id}<br>
+                        <strong>Token Length:</strong> ${access_token.length} characters
+                    </div>
+                `;
+                
+                log(`✅ Authentication successful for user: ${user.email}`);
+                log('Session stored in both localStorage and sessionStorage');
+                
+                // Auto-refresh session status
+                checkSession();
+                
+            } catch (error) {
+                log(`OAuth callback error: ${error.message}`, 'error');
+                document.getElementById('oauthStatus').innerHTML = `<div class="error">❌ Callback Error: ${error.message}</div>`;
+                sessionStorage.removeItem(SESSION_KEYS.OAUTH_SESSION);
+            }
+        }
+
+        // Analyze JWT token
+        function analyzeToken() {
+            log('Analyzing JWT token...');
+            
+            const token = localStorage.getItem(SESSION_KEYS.USER_TOKEN);
+            if (!token) {
+                document.getElementById('tokenAnalysis').innerHTML = `<div class="warning">⚠️ No token found</div>`;
+                log('No token available for analysis');
+                return;
+            }
+            
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    throw new Error('Invalid JWT format - should have 3 parts');
+                }
+                
+                const header = JSON.parse(atob(parts[0]));
+                const payload = JSON.parse(atob(parts[1]));
+                
+                const analysis = {
+                    header,
+                    payload,
+                    signature: parts[2].substring(0, 20) + '...',
+                    tokenLength: token.length,
+                    isExpired: payload.exp ? Date.now() / 1000 > payload.exp : 'No expiration set',
+                    timeTillExpiry: payload.exp ? Math.max(0, payload.exp - Date.now() / 1000) : 'No expiration',
+                    issuer: payload.iss,
+                    audience: payload.aud,
+                    subject: payload.sub
+                };
+                
+                document.getElementById('tokenAnalysis').innerHTML = `
+                    <div class="success">✅ JWT Analysis Complete</div>
+                    <div class="token-display">${JSON.stringify(analysis, null, 2)}</div>
+                `;
+                
+                log('✅ JWT token analysis completed');
+                log(`Token subject: ${payload.sub}, issuer: ${payload.iss}`);
+                
+            } catch (error) {
+                document.getElementById('tokenAnalysis').innerHTML = `<div class="error">❌ Token analysis failed: ${error.message}</div>`;
+                log(`Token analysis error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test session persistence
+        function testPersistence() {
+            log('Testing session persistence...');
+            
+            const testData = {
+                sessionStorage: {},
+                localStorage: {}
+            };
+            
+            // Check what's in each storage
+            Object.values(SESSION_KEYS).forEach(key => {
+                testData.sessionStorage[key] = sessionStorage.getItem(key) ? 'Present' : 'Not found';
+                testData.localStorage[key] = localStorage.getItem(key) ? 'Present' : 'Not found';
+            });
+            
+            const persistenceReport = `
+                <div class="info">Storage Persistence Report:</div>
+                <div class="token-display">${JSON.stringify(testData, null, 2)}</div>
+            `;
+            
+            document.getElementById('persistenceTest').innerHTML = persistenceReport;
+            log('Persistence test completed');
+        }
+
+        // Simulate browser refresh
+        function simulateRefresh() {
+            log('Simulating browser refresh...');
+            
+            // Clear sessionStorage (simulating what happens on refresh)
+            Object.values(SESSION_KEYS).forEach(key => {
+                sessionStorage.removeItem(key);
+            });
+            
+            log('Cleared sessionStorage (simulating refresh)');
+            
+            // Now try to recover session from localStorage
+            const userInfo = localStorage.getItem(SESSION_KEYS.USER_INFO);
+            const token = localStorage.getItem(SESSION_KEYS.USER_TOKEN);
+            
+            if (userInfo && token) {
+                // Restore to sessionStorage
+                sessionStorage.setItem(SESSION_KEYS.USER_INFO, userInfo);
+                sessionStorage.setItem(SESSION_KEYS.USER_TOKEN, token);
+                
+                document.getElementById('persistenceTest').innerHTML = `
+                    <div class="success">✅ Session recovered successfully after simulated refresh!</div>
+                    <div class="info">Session was restored from localStorage to sessionStorage</div>
+                `;
+                log('✅ Session recovery successful');
+            } else {
+                document.getElementById('persistenceTest').innerHTML = `
+                    <div class="error">❌ No session to recover from localStorage</div>
+                `;
+                log('❌ No session data found in localStorage', 'error');
+            }
+            
+            checkSession();
+        }
+
+        // Test memory API
+        async function testMemoryAPI() {
+            const apiKey = document.getElementById('apiKeyInput').value;
+            if (!apiKey) {
+                document.getElementById('memoryTest').innerHTML = `<div class="error">❌ Please enter an API key</div>`;
+                return;
+            }
+            
+            const token = localStorage.getItem(SESSION_KEYS.USER_TOKEN);
+            if (!token) {
+                document.getElementById('memoryTest').innerHTML = `<div class="error">❌ No user token found - please authenticate first</div>`;
+                return;
+            }
+            
+            log('Testing memory API with OAuth token...');
+            
+            try {
+                const response = await fetch(`${JEAN_API_BASE}/api/jean-chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: "What OAuth and authentication work have I been doing recently? Search my memories.",
+                        user_token: token,
+                        conversation_id: "oauth-test-from-browser"
+                    })
+                });
+                
+                log(`Memory API response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('memoryTest').innerHTML = `
+                        <div class="success">✅ Memory API Test Successful!</div>
+                        <div class="token-display">Response: ${data.content?.substring(0, 500) || JSON.stringify(data, null, 2)}</div>
+                    `;
+                    log('✅ Memory API test successful');
+                } else {
+                    const errorData = await response.text();
+                    document.getElementById('memoryTest').innerHTML = `
+                        <div class="error">❌ Memory API Error (${response.status}): ${errorData}</div>
+                    `;
+                    log(`Memory API error: ${response.status} - ${errorData}`, 'error');
+                }
+                
+            } catch (error) {
+                document.getElementById('memoryTest').innerHTML = `
+                    <div class="error">❌ Memory API Error: ${error.message}</div>
+                `;
+                log(`Memory API error: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility functions
+        function clearAllData() {
+            Object.values(SESSION_KEYS).forEach(key => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+            log('All session data cleared');
+            checkSession();
+        }
+
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            log('Jean Memory OAuth 2.1 PKCE Test initialized');
+            checkSession();
+            
+            // Auto-handle callback if present
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('code') && params.get('state')) {
+                log('OAuth callback detected - auto-handling...');
+                handleCallbackTest();
+            }
+        };
+    </script>
+</body>
+</html>

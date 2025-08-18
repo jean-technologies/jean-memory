@@ -11,6 +11,17 @@ export { JeanProvider, useJean } from './provider';
 export { JeanChat } from './JeanChat';
 export { SignInWithJean, signOutFromJean } from './SignInWithJean';
 
+// OAuth Utilities
+export { 
+  initiateOAuth, 
+  handleOAuthCallback, 
+  getUserSession, 
+  clearUserSession, 
+  isAuthenticated, 
+  getUserToken,
+  storeUserSession 
+} from './oauth';
+
 // Advanced MCP Hook (for direct tool access)
 export { useJeanMCP } from './useJeanMCP';
 
