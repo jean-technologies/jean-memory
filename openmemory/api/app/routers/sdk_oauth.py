@@ -4,7 +4,7 @@ import secrets
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, JSONResponse
-from jose import jwt
+import jwt
 from sqlalchemy.orm import Session
 from supabase import Client as SupabaseClient
 
