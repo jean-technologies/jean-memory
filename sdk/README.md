@@ -3,10 +3,37 @@
 Official SDKs for integrating Jean Memory into your applications.
 
 **Status: All SDKs working and published!**  
-- **React v1.11.0** ✨ *Latest with major OAuth & context fixes*
-- Node.js v1.4.2, Python v1.4.2
+- **React v2.0.0** 🚀 *Major release with architecture improvements*
+- **Node.js v2.0.0** 🚀 *Aligned major release*  
+- **Python v2.0.0** 🚀 *Major modernization and API improvements*
 - All packages verified working from npm/PyPI
-- Production-ready authentication flow and React StrictMode support
+- Production-ready with unified v2.0.0 architecture
+
+## ⚠️ **Breaking Changes in v2.0.0**
+
+**Python SDK:**
+```python
+# ❌ v1.x (Old)
+from jean_memory import JeanMemoryClient
+client = JeanMemoryClient('jean_sk_...')
+
+# ✅ v2.0.0 (New)  
+from jeanmemory import JeanMemoryClient
+client = JeanMemoryClient(api_key='jean_sk_...')
+```
+
+**React SDK:**
+```typescript
+// ❌ v1.x (Old) - No longer available
+import { JeanProvider } from '@jeanmemory/react/provider-v2';
+
+// ✅ v2.0.0 (New) - Use main components
+import { JeanProvider } from '@jeanmemory/react';
+```
+
+**Node.js SDK:** No breaking changes (version aligned for consistency)
+
+---
 
 ## 🚀 Quick Start
 
@@ -35,9 +62,9 @@ pip install jeanmemory
 ```
 
 ```python
-from jean_memory import JeanMemoryClient
+from jeanmemory import JeanMemoryClient
 
-client = JeanMemoryClient('jean_sk_...')
+client = JeanMemoryClient(api_key='jean_sk_...')
 
 # Store a memory
 client.store_memory('I prefer morning meetings')

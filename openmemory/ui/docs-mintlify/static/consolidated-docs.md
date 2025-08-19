@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 22:00:28
+**Generated on:** 2025-08-18 22:02:32
 
 ## What is Jean Memory?
 
@@ -146,10 +146,10 @@ For developers who want to power their existing AI agents with our headless SDK.
 
 # 2. Get context before calling your LLM
 
-from jeanmemory import JeanClient
+from jeanmemory import JeanMemoryClient
 from openai import OpenAI
 
-jean = JeanClient(api_key=os.environ["JEAN_API_KEY"])
+jean = JeanMemoryClient(api_key=os.environ["JEAN_API_KEY"])
 openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 context = jean.get_context(
@@ -695,7 +695,7 @@ The example below shows how to create a Next.js API route that is compatible wit
 ```typescript {{ title: 'pages/api/chat.ts' }}
 
 // Create the clients
-const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
+const jean = new JeanMemoryClient({ apiKey: process.env.JEAN_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Set the runtime to edge for best performance
@@ -803,7 +803,7 @@ const context = await jean.getContext({
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```typescript
 // The intelligent, orchestrated way (recommended):
