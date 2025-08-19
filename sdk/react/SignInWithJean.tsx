@@ -5,17 +5,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   initiateOAuth, 
-  handleOAuthCallback, 
   getUserSession, 
   clearUserSession, 
   isAuthenticated,
   JeanUser
 } from './oauth';
+import { useJean } from './provider';
 
 interface SignInWithJeanProps {
   onSuccess: (user: any) => void;
   onError?: (error: Error) => void;
-  apiKey: string;
+  apiKey?: string;
   className?: string;
   children?: React.ReactNode;
   redirectUri?: string;
@@ -32,7 +32,7 @@ export const signOutFromJean = () => {
 export function SignInWithJean({ 
   onSuccess, 
   onError, 
-  apiKey,
+  apiKey: propApiKey,
   className = '', 
   children,
   redirectUri,
@@ -40,51 +40,47 @@ export function SignInWithJean({
 }: SignInWithJeanProps) {
   const [isLoading, setIsLoading] = useState(false);
   const hasHandledCallback = useRef(false);
+  
+  // Get context safely
+  let context: any = null;
+  let isInProvider = false;
+  try {
+    context = useJean();
+    isInProvider = true;
+  } catch {
+    // Not inside a JeanProvider
+    isInProvider = false;
+  }
+
+  const contextApiKey = context?.apiKey;
+
+  // Handle API key resolution with warnings
+  if (propApiKey && contextApiKey && propApiKey !== contextApiKey) {
+    console.warn('Jean SDK Warning: The `apiKey` provided to SignInWithJean conflicts with the one from JeanProvider. The prop value will be used.');
+  }
+
+  const apiKey = propApiKey || contextApiKey;
+
+  if (!apiKey) {
+    throw new Error('Jean SDK Error: API key is missing. Please pass it as a prop to SignInWithJean or wrap your component in a JeanProvider with an apiKey.');
+  }
 
   useEffect(() => {
-    // React StrictMode protection - prevent duplicate OAuth handling
-    if (hasHandledCallback.current) {
-      return;
-    }
-
-    // Check for existing session first
-    const existingUser = getUserSession();
-    if (existingUser) {
-      console.log('✅ Jean OAuth: Recovered existing session for user:', existingUser.email);
-      onSuccess(existingUser);
+    // If we're inside a JeanProvider, subscribe to its auth state
+    if (isInProvider && context?.isAuthenticated && context?.user && !hasHandledCallback.current) {
+      console.log('✅ Jean OAuth: User authenticated via Provider');
+      onSuccess(context.user);
       hasHandledCallback.current = true;
-      return;
-    }
-
-    // Handle OAuth callback if present
-    const handleCallback = async () => {
-      if (hasHandledCallback.current) {
-        return; // Prevent double handling
+    } else if (!isInProvider) {
+      // Standalone usage - check for existing session
+      const existingUser = getUserSession();
+      if (existingUser && !hasHandledCallback.current) {
+        console.log('✅ Jean OAuth: Recovered existing session for user:', existingUser.email);
+        onSuccess(existingUser);
+        hasHandledCallback.current = true;
       }
-      
-      hasHandledCallback.current = true;
-      
-      try {
-        const user = await handleOAuthCallback();
-        if (user) {
-          console.log('✅ Jean OAuth: Callback authentication successful');
-          onSuccess(user);
-        }
-      } catch (error) {
-        console.error('OAuth callback error:', error);
-        hasHandledCallback.current = false; // Reset on error for retry
-        if (onError) {
-          onError(error instanceof Error ? error : new Error('OAuth callback failed'));
-        }
-      }
-    };
-
-    // Check for OAuth callback parameters
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('code') && params.get('state')) {
-      handleCallback();
     }
-  }, [onSuccess, onError]);
+  }, [onSuccess, isInProvider, context?.isAuthenticated, context?.user]);
 
 
   const handleSignIn = async () => {
@@ -102,10 +98,16 @@ export function SignInWithJean({
     try {
       console.log('🔄 Jean OAuth: Initiating OAuth 2.1 PKCE flow...');
       
-      await initiateOAuth({
-        apiKey,
-        redirectUri
-      });
+      // If we're in a Provider context, use its signIn method for better state coordination
+      if (isInProvider && context?.signIn) {
+        await context.signIn();
+      } else {
+        // Standalone usage
+        await initiateOAuth({
+          apiKey,
+          redirectUri
+        });
+      }
       
       // The OAuth flow will redirect to Google, so we won't reach this point
       // unless there's an error in the initiation

@@ -3,9 +3,10 @@
 Official SDKs for integrating Jean Memory into your applications.
 
 **Status: All SDKs working and published!**  
-- React v1.4.2, Node.js v1.4.2, Python v1.4.2
+- **React v1.11.0** ✨ *Latest with major OAuth & context fixes*
+- Node.js v1.4.2, Python v1.4.2
 - All packages verified working from npm/PyPI
-- Documentation matches implementation 100%
+- Production-ready authentication flow and React StrictMode support
 
 ## 🚀 Quick Start
 

@@ -2,7 +2,7 @@
  * Jean Memory React SDK - Provider Component
  * Manages authentication state and API client
  */
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { JEAN_API_BASE } from './config';
 import { makeMCPRequest } from './mcp';
 import { 
@@ -72,21 +72,39 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [rawError, setRawError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const oAuthHandled = useRef(false);
 
   // Initialize OAuth and check for existing session
   useEffect(() => {
+    
     const initAuth = async () => {
       setIsLoading(true);
       
       try {
-        // Check for OAuth callback
-        const callbackUser = await handleOAuthCallback();
-        if (callbackUser) {
-          setUser(callbackUser);
-          console.log('✅ OAuth authentication completed');
-          setIsInitialized(true);
-          setIsLoading(false);
-          return;
+        // Check for OAuth callback parameters - handle only once per page load
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('code') && params.has('state') && !oAuthHandled.current) {
+          // Mark as handled immediately to prevent re-entry
+          oAuthHandled.current = true;
+          
+          console.log('🔄 Jean OAuth: Processing callback in Provider...');
+          const callbackUser = await handleOAuthCallback();
+          if (callbackUser) {
+            setUser(callbackUser);
+            console.log('✅ OAuth authentication completed');
+            
+            // Clean up URL parameters while preserving other query params
+            const url = new URL(window.location.href);
+            url.searchParams.delete('code');
+            url.searchParams.delete('state');
+            url.searchParams.delete('error');
+            url.searchParams.delete('error_description');
+            window.history.replaceState({}, document.title, url.toString());
+            
+            setIsInitialized(true);
+            setIsLoading(false);
+            return;
+          }
         }
         
         // Check for existing session
@@ -100,6 +118,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       } catch (error) {
         console.error('Auth initialization error:', error);
         setRawError(error instanceof Error ? error.message : 'Authentication failed');
+        oAuthHandled.current = false; // Reset on error for potential retry
       } finally {
         setIsLoading(false);
       }
