@@ -56,6 +56,9 @@ export async function makeMCPRequest(
   };
 
   // Extract user_id from token (handles both test_user_ and user_ prefixes)
+  if (!userToken) {
+    throw new Error('User token is required for MCP requests');
+  }
   const userId = userToken.replace('test_user_', '').replace('user_', '');
 
   const response = await fetch(`${apiBase}/mcp/${clientName}/messages/${userId}`, {

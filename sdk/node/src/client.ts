@@ -193,6 +193,12 @@ export class JeanMemoryClient {
       }
 
       const data = await response.json() as { user_token: string };
+      
+      // Add null checking for the response data
+      if (!data || !data.user_token) {
+        throw new Error('Invalid test user response: missing user_token');
+      }
+      
       return data.user_token;
     } catch (error: any) {
       throw new JeanMemoryError(`Failed to create test user: ${error?.message || 'Unknown error'}`);

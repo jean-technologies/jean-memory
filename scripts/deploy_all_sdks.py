@@ -135,7 +135,7 @@ class SDKDeployer:
                     f.write(updated_content)
                 
                 # Also update __init__.py if it has version
-                init_file = config["path"] / "jean_memory" / "__init__.py"
+                init_file = config["path"] / "jeanmemory" / "__init__.py"
                 if init_file.exists():
                     with open(init_file, 'r') as f:
                         init_content = f.read()
