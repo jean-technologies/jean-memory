@@ -2,6 +2,44 @@
 """
 Unified SDK Deployment Script
 Ensures consistent versioning and deployment across all 3 SDKs
+
+DEPLOYMENT INSTRUCTIONS:
+========================
+
+Prerequisites:
+1. PyPI Token: Get token from https://pypi.org/manage/account/token/
+2. npm Login: Run 'npm login' to authenticate with npm registry
+3. Python Tools: pip install twine build
+
+Environment Setup:
+export TWINE_USERNAME="__token__"
+export TWINE_PASSWORD="pypi-AgEI...your_full_pypi_token_here"
+
+Common Usage:
+1. Patch Release (bug fixes):
+   python3 scripts/deploy_all_sdks.py --bump patch
+
+2. Minor Release (new features):
+   python3 scripts/deploy_all_sdks.py --bump minor
+
+3. Major Release (breaking changes):
+   python3 scripts/deploy_all_sdks.py --bump major
+
+4. Specific Version:
+   python3 scripts/deploy_all_sdks.py --version "2.0.4"
+
+5. Deploy Only Specific SDKs:
+   python3 scripts/deploy_all_sdks.py --sdks react node --version "2.0.4"
+
+6. Dry Run (test without publishing):
+   python3 scripts/deploy_all_sdks.py --dry-run --version "2.0.4"
+
+Troubleshooting:
+- If npm publish fails: Check if version already exists, bump version number
+- If PyPI fails: Verify TWINE_PASSWORD is set correctly
+- If builds fail: Check TypeScript/Python syntax errors in SDK code
+
+Note: Script automatically syncs all SDK versions for consistency
 """
 
 import os
