@@ -543,50 +543,402 @@ Primary authentication for UI:
 
 ## Part VII: SDKs & Developer Tools
 
-### 7.1 React SDK
+**Current Status: Production Ready v2.0.1**
+The Jean Memory SDK Suite is a comprehensive set of enterprise-grade developer tools comprising React, Node.js, and Python SDKs, all aligned at version 2.0.1 with unified OAuth 2.1 PKCE security and cross-platform token sharing.
 
-#### 7.1.1 Installation
+### 7.1 SDK Architecture Overview
 
-```bash
-npm install jeanmemory-react
-# Current version: 0.1.3
+The Jean Memory SDK architecture follows a **unified API pattern** across all platforms:
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React SDK     │    │   Node.js SDK   │    │   Python SDK    │
+│   @2.0.1        │    │   @2.0.1        │    │   @2.0.1        │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ • OAuth UI      │    │ • Server Routes │    │ • Agent Backend │
+│ • Components    │    │ • API Endpoints │    │ • Data Pipeline │
+│ • Hooks         │    │ • Edge Runtime  │    │ • AI Integration│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 ▼
+              ┌─────────────────────────────────────┐
+              │        Unified Core API             │
+              │    jean-memory-api-virginia         │
+              │         /sdk/chat/enhance           │
+              │         OAuth 2.1 PKCE             │
+              └─────────────────────────────────────┘
 ```
 
-#### 7.1.2 Quick Start
+### 7.2 React SDK (@jeanmemory/react) - v2.0.1
 
+#### 7.2.1 Installation & Setup
+
+```bash
+npm install @jeanmemory/react
+```
+
+#### 7.2.2 Core Components
+
+**JeanProvider**: Context provider for SDK configuration
 ```tsx
-import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from 'jeanmemory-react';
+import { JeanProvider, JeanChatComplete } from '@jeanmemory/react';
 
-function MyApp() {
-  const [user, setUser] = useState(null);
-  const { agent } = useJean({ user });
-
-  if (!agent) {
-    return <SignInWithJean apiKey="your-api-key" onSuccess={setUser} />;
-  }
-  return <JeanChat agent={agent} />;
+function App() {
+  return (
+    <JeanProvider apiKey="jean_sk_your_key">
+      <JeanChatComplete />
+    </JeanProvider>
+  );
 }
 ```
 
-#### 7.1.3 Components
-
-**SignInWithJean**: OAuth authentication button
-- Auto-detects redirect URI
-- Handles complete OAuth flow
+**JeanChatComplete**: Drop-in complete chat interface
+- Full-featured chat component
+- Built-in OAuth authentication
+- Real-time context integration
 - Customizable styling
 
-**JeanChat**: Chat interface component
-- Built-in message handling
-- Context management
-- Customizable UI
+**SignInWithJean**: OAuth authentication component
+```tsx
+<SignInWithJean onSuccess={handleAuth} />
+```
 
-**useJean**: Core React hook
-- Manages authentication state
-- Handles API communication
-- Provides agent interface
+#### 7.2.3 Hooks API
 
-### 7.2 Documentation (Mintlify)
+**useJeanAuth()**: Authentication state management
+```tsx
+const { user, token, login, logout, loading } = useJeanAuth();
+```
+
+**useJeanMemory()**: Direct memory operations
+```tsx
+const { storeMemory, getContext, loading } = useJeanMemory();
+
+// Usage
+const context = await getContext({
+  message: "What's my schedule?",
+  speed: "balanced" // fast | balanced | comprehensive
+});
+```
+
+### 7.3 Node.js SDK (@jeanmemory/node) - v2.0.1
+
+#### 7.3.1 Installation & Setup
+
+```bash
+npm install @jeanmemory/node
+```
+
+#### 7.3.2 Core Client
+
+**JeanClient**: Main SDK client with comprehensive API
+```typescript
+import { JeanClient } from '@jeanmemory/node';
+
+const jean = new JeanClient({ 
+  apiKey: process.env.JEAN_API_KEY 
+});
+```
+
+#### 7.3.3 Primary Methods
+
+**getContext()**: Intelligent context retrieval
+```typescript
+const context = await jean.getContext({
+  user_token: userToken, // From OAuth flow
+  message: "What's my schedule?",
+  speed: "balanced", // fast | balanced | comprehensive
+  tool: "jean_memory", // jean_memory | search_memory
+  format: "enhanced" // simple | enhanced
+});
+```
+
+**Tools Namespace**: Direct API access for advanced use cases
+```typescript
+// Memory operations
+await jean.tools.add_memory({ user_token, content: "Meeting at 3pm" });
+const results = await jean.tools.search_memory({ user_token, query: "meetings" });
+
+// Advanced operations
+const deep = await jean.tools.deep_memory_query({ user_token, query: "project status" });
+const doc = await jean.tools.store_document({ 
+  user_token, title: "Notes", content: "...", document_type: "markdown" 
+});
+```
+
+#### 7.3.4 Test User Support
+
+Automatic test user creation for development without OAuth:
+```typescript
+// Production with OAuth token
+const context = await jean.getContext({
+  user_token: userToken, // From frontend OAuth
+  message: "Hello"
+});
+
+// Development with automatic test user  
+const context = await jean.getContext({
+  // user_token automatically set to test user for this API key
+  message: "Hello"
+});
+```
+
+#### 7.3.5 Next.js Integration Pattern
+
+```typescript
+// pages/api/chat.ts
+import { JeanClient } from '@jeanmemory/node';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
+
+const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
+
+export default async function POST(req: Request) {
+  const { messages, userToken } = await req.json();
+  
+  // Get context from Jean Memory
+  const context = await jean.getContext({
+    user_token: userToken,
+    message: messages[messages.length - 1].content
+  });
+  
+  // Stream response with context
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4-turbo',
+    stream: true,
+    messages: [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: `Context: ${context.text}\n\nUser: ${currentMessage}` }
+    ]
+  });
+
+  return new StreamingTextResponse(OpenAIStream(response));
+}
+```
+
+### 7.4 Python SDK (jeanmemory) - v2.0.1
+
+#### 7.4.1 Installation & Setup
+
+```bash
+pip install jeanmemory
+```
+
+#### 7.4.2 Core Client
+
+**JeanMemoryClient**: Main SDK client (with JeanClient alias)
+```python
+from jeanmemory import JeanMemoryClient
+
+jean = JeanMemoryClient(api_key=os.environ.get("JEAN_API_KEY"))
+```
+
+#### 7.4.3 Primary Methods
+
+**get_context()**: Intelligent context retrieval
+```python
+context = jean.get_context(
+    user_token=user_token, # From frontend OAuth or None for test user
+    message="What were the key takeaways from our last meeting?",
+    speed="balanced",  # fast | balanced | comprehensive
+    tool="jean_memory",  # jean_memory | search_memory  
+    format="enhanced"  # simple | enhanced
+)
+```
+
+**Tools Namespace**: Direct API access
+```python
+# Memory operations
+jean.tools.add_memory(user_token=token, content="Meeting scheduled for Friday")
+results = jean.tools.search_memory(user_token=token, query="meetings")
+
+# Advanced operations  
+deep_results = jean.tools.deep_memory_query(user_token=token, query="project status")
+doc_result = jean.tools.store_document(
+    user_token=token, 
+    title="Meeting Notes",
+    content="...", 
+    document_type="markdown"
+)
+```
+
+#### 7.4.4 Authentication Options
+
+**Production with OAuth Token:**
+```python
+# Token received from frontend via OAuth flow
+user_token = get_user_token_from_request()
+context = jean.get_context(user_token=user_token, message="Hello")
+```
+
+**Development with Test User:**
+```python
+# Automatic test user when user_token is None
+context = jean.get_context(user_token=None, message="Hello")
+```
+
+**Headless OAuth (Backend-Only):**
+```python
+# Generate OAuth URL for manual authentication
+auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
+print(f"Visit: {auth_url}")
+
+# After user visits URL and you get the code:
+user_token = jean.exchange_code_for_token(auth_code)
+```
+
+#### 7.4.5 FastAPI Integration Pattern
+
+```python
+from fastapi import FastAPI
+from jeanmemory import JeanMemoryClient
+import openai
+
+app = FastAPI()
+jean = JeanMemoryClient(api_key=os.environ.get("JEAN_API_KEY"))
+
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    # Get context from Jean Memory
+    context = jean.get_context(
+        user_token=request.user_token,
+        message=request.message
+    )
+    
+    # Generate response with context
+    response = openai.chat.completions.create(
+        model="gpt-4-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", content: f"Context: {context.text}\n\nUser: {request.message}"}
+        ]
+    )
+    
+    return {"response": response.choices[0].message.content}
+```
+
+### 7.5 Cross-SDK Features
+
+#### 7.5.1 Unified API Pattern
+
+All SDKs implement the same core methods with platform-appropriate signatures:
+
+| Method | React | Node.js | Python |
+|--------|-------|---------|--------|
+| Context Retrieval | `useJeanMemory().getContext()` | `jean.getContext()` | `jean.get_context()` |
+| Memory Storage | `useJeanMemory().storeMemory()` | `jean.tools.add_memory()` | `jean.tools.add_memory()` |
+| Memory Search | `useJeanMemory().searchMemory()` | `jean.tools.search_memory()` | `jean.tools.search_memory()` |
+| Authentication | `useJeanAuth()` | N/A (token-based) | `jean.get_auth_url()` |
+
+#### 7.5.2 Configuration Options
+
+All SDKs support the same configuration parameters:
+
+**Speed Control:**
+- `fast` - Optimized for speed, less comprehensive context
+- `balanced` - Default, balanced speed vs comprehensiveness  
+- `comprehensive` - Maximum context depth, slower response
+
+**Tool Selection:**
+- `jean_memory` - Default, intelligent context orchestration
+- `search_memory` - Direct memory search without orchestration
+
+**Response Format:**
+- `enhanced` - Default, full metadata and structured response
+- `simple` - Plain text response only
+
+### 7.6 OAuth 2.1 PKCE Security Architecture
+
+#### 7.6.1 Complete OAuth Implementation
+
+**Security Features:**
+- PKCE (Proof Key for Code Exchange) for enhanced security
+- Secure token storage and transmission
+- Automatic token refresh
+- Cross-domain security measures
+
+**Flow Architecture:**
+```
+Frontend (React) → OAuth Authorization → Jean Memory Auth Server
+       ↓                                           ↓
+   User Token ←─────── Token Exchange ←─────── Auth Code
+       ↓
+Backend (Node.js/Python) ← Token via Request Body
+```
+
+#### 7.6.2 Cross-Platform Token Sharing
+
+**Secure Token Transmission:**
+- Frontend obtains token via OAuth
+- Backend receives token via secure API calls
+- Token validation on every request
+- Automatic token refresh handling
+
+### 7.7 Enterprise Production Features
+
+#### 7.7.1 Rate Limiting & Quotas
+- Per-API-key rate limiting
+- Subscription tier enforcement
+- Graceful handling of limit exceeded
+
+#### 7.7.2 Error Recovery
+- Automatic retry with exponential backoff
+- Circuit breaker patterns
+- Fallback strategies for degraded service
+
+#### 7.7.3 Monitoring & Analytics
+- Request tracing and logging
+- Performance metrics collection
+- Usage analytics for optimization
+
+### 7.8 Version 2.0.1 Critical Updates
+
+#### 7.8.1 Bug Fixes Implemented
+
+**Python SDK Exports Restoration:**
+- Restored 20+ missing exports in `__init__.py`
+- Added `JeanClient` alias for documentation compatibility
+- Fixed import paths for all model classes
+
+**Node.js SDK Null Reference Fixes:**
+- Fixed `getTestUserToken()` null handling in `client.ts:712`
+- Fixed `makeMCPRequest()` null reference bug in `mcp.ts`
+- Added comprehensive null checking throughout
+
+**API Endpoint Updates:**
+- Updated `store_memory()` to use working `/sdk/chat/enhance`
+- Updated `retrieve_memories()` to use working endpoints
+- Fixed 401/404 errors from deprecated `/api/v1/` endpoints
+
+#### 7.8.2 Documentation Corrections
+- Fixed class name references (JeanClient vs JeanMemoryClient)
+- Updated all version references to 2.0.1
+- Corrected API endpoint documentation
+- Added comprehensive examples for all methods
+
+### 7.9 SDK Development & Testing
+
+#### 7.9.1 Test User System
+
+All SDKs support automatic test user creation for development:
+- When `user_token` is not provided, SDK creates isolated test user
+- Test user is tied to specific API key
+- All memory operations are isolated per test user
+- No OAuth setup required for development
+
+#### 7.9.2 Built-in Development Tools
+
+**CLI Tools:**
+- Python SDK includes CLI for testing: `jean-cli`
+- Node.js SDK includes debug utilities
+- React SDK includes development components
+
+**Testing Utilities:**
+- Mock clients for unit testing
+- Integration test helpers
+- Performance benchmarking tools
+
+### 7.10 Documentation (Mintlify)
 
 The documentation is organized in `docs-mintlify/`:
 
@@ -594,13 +946,11 @@ The documentation is organized in `docs-mintlify/`:
 docs-mintlify/
 ├── mint.json              # Mintlify configuration
 ├── quickstart.mdx         # Getting started guide
-├── architecture.mdx       # System architecture
-├── tools.mdx             # MCP tools reference
-├── oauth-troubleshooting.mdx  # OAuth guide
+├── authentication.mdx     # OAuth 2.1 PKCE guide
 ├── sdk/                  # SDK documentation
-│   ├── react.mdx        # React SDK guide
-│   ├── python.mdx       # Python SDK guide
-│   └── node.mdx         # Node.js SDK guide
+│   ├── react.mdx        # React SDK v2.0.1
+│   ├── nodejs.mdx       # Node.js SDK v2.0.1
+│   └── python.mdx       # Python SDK v2.0.1
 ├── mcp/                  # MCP documentation
 │   ├── claude.mdx       # Claude integration
 │   └── chatgpt.mdx      # ChatGPT integration
@@ -609,20 +959,26 @@ docs-mintlify/
     └── vscode.mdx       # VS Code integration
 ```
 
-### 7.3 Python SDK
+**Key Documentation Updates in v2.0.1:**
+- All SDK examples updated to use correct class names
+- API endpoints corrected to working `/sdk/` paths
+- Version references aligned to 2.0.1
+- OAuth flow documentation enhanced
+- Test user mode documentation added
 
-```python
-from jean_memory import Agent
+### 7.11 Future SDK Roadmap
 
-# Initialize with API key
-agent = Agent(api_key="your-api-key")
+#### 7.11.1 Planned SDK Additions
+- React Native SDK (Q4 2025)
+- Flutter SDK (Q1 2026)
+- Go SDK (Q4 2025)
+- Java SDK (Q1 2026)
 
-# Or use OAuth
-agent = Agent.from_oauth_flow()
-
-# Send messages
-response = agent.send_message("Remember that I prefer dark mode")
-```
+#### 7.11.2 Feature Enhancements
+- Multi-modal context (images, documents)
+- Real-time context streaming
+- Collaborative memory spaces
+- Advanced analytics dashboards
 
 ---
 
