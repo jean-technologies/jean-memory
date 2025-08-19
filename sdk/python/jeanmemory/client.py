@@ -24,7 +24,7 @@ class JeanMemoryClient:
         memories = client.retrieve_memories("What do I like?")
     """
     
-    def __init__(self, api_key: str, api_base: Optional[str] = None):
+    def __init__(self, *, api_key: str, api_base: Optional[str] = None):
         """
         Initialize Jean Memory client
         
@@ -290,6 +290,36 @@ class JeanMemoryClient:
             Health status dictionary
         """
         return self._make_request('GET', '/api/v1/health')
+
+    def store_document(self, title: str, content: str, document_type: str = "markdown") -> Dict:
+        """
+        Store a document for processing and memory extraction
+        
+        Args:
+            title: Document title
+            content: Document content
+            document_type: Type of document (markdown, pdf, txt, etc.)
+            
+        Returns:
+            Document storage confirmation
+        """
+        final_user_token = self._get_test_user_token()
+        mcp_response = make_mcp_request(
+            user_token=final_user_token,
+            api_key=self.api_key,
+            tool_name='store_document',
+            arguments={
+                'title': title,
+                'content': content,
+                'document_type': document_type
+            },
+            api_base=self.api_base
+        )
+
+        if mcp_response.error:
+            raise JeanMemoryError(f"MCP request failed: {mcp_response.error.get('message', 'Unknown error')}")
+
+        return mcp_response.result
 
     class Tools:
         """Direct tool access namespace (matching documentation)"""
