@@ -147,16 +147,16 @@ app = FastAPI(
 app.add_middleware(MemoryMonitorMiddleware)
 
 # CORS Middleware Configuration
-# When allow_credentials=True, allow_origins cannot be "*"
-# It must be a list of specific origins.
+# Allow ANY website to use our API - no business reason to restrict origins
+# We use API keys and JWT tokens for authentication, not cookies
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.FRONTEND_URLS,  
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], # Added PATCH
-    allow_headers=["*"], # Allow all headers to fix CORS issues
-    expose_headers=["*"], # Expose all headers
-    max_age=3600, # Cache preflight requests for 1 hour
+    allow_origins=["*"],  # Allow ANY website to use our API
+    allow_credentials=False,  # We don't use credentials/cookies, just API keys + JWT
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"],  # Expose all headers
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Add health check endpoints early before any dependencies

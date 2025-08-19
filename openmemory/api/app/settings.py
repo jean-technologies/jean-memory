@@ -101,8 +101,9 @@ class Config:
         # SMS service always uses production (Twilio only configured there)
         self.SMS_SERVICE_URL = "https://jean-memory-api-virginia.onrender.com"
         
-        # Frontend URL configuration for CORS
-        self.FRONTEND_URLS = self._get_frontend_urls()
+        # Frontend URL configuration for CORS (DEPRECATED - now using allow_origins=["*"])
+        # Keeping for backward compatibility but not actively used
+        self.FRONTEND_URLS = ["*"]
         
         # Neo4j configuration for graph memory
         # Only adding what's needed for Neo4j connectivity testing
