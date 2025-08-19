@@ -11,49 +11,94 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 npm install @jeanmemory/react
 ```
 
-## Path 1: The 5-Minute Chatbot (Appliance)
+## Three Integration Approaches
 
-This is the fastest way to get a full-featured chatbot running in your app.
+The Jean Memory React SDK provides three levels of integration complexity, allowing you to choose the right approach for your use case.
 
-### 1. Wrap Your App in `JeanProvider`
+### Level 1: Complete Drop-in Solution (2 lines)
 
-The provider manages all the state and network requests for you.
+The fastest way to get a full-featured chatbot with authentication running in your app.
 
-```jsx {{ title: 'pages/_app.tsx' }}
-import { JeanProvider } from '@jeanmemory/react';
+```jsx {{ title: 'pages/index.tsx' }}
+import { JeanProvider, JeanChatComplete } from '@jeanmemory/react';
 
-function MyApp({ Component, pageProps }) {
+export default function Home() {
   return (
     <JeanProvider apiKey={process.env.NEXT_PUBLIC_JEAN_API_KEY}>
-      <Component {...pageProps} />
+      <JeanChatComplete />
+    </JeanProvider>
+  );
+}
+```
+
+The `JeanChatComplete` component includes everything you need out of the box:
+- Automatic OAuth 2.1 PKCE authentication flow
+- Complete chat interface with professional styling
+- Sign-in and sign-out buttons
+- Loading states and error handling
+- Welcome message and example prompts
+
+**Styling Options:**
+```jsx
+<JeanChatComplete 
+  placeholder="Ask me anything..."
+  welcomeMessage="Welcome to your AI assistant"
+  examplePrompts={["What's my schedule?", "Remember this meeting"]}
+  showSignOut={true}
+  showExamples={true}
+  chatHeight={500}
+  style={{ maxWidth: '600px', margin: '0 auto' }}
+  className="my-custom-chat"
+  header={<CustomHeader />}
+/>
+```
+
+**Current Limitations:** `JeanChatComplete` uses inline styles for rapid prototyping. For production applications requiring extensive brand customization, consider Level 2 or Level 3 approaches.
+
+### Level 2: Authentication Guard with Custom UI (5 lines)
+
+When you want your own UI but simplified authentication management.
+
+```jsx {{ title: 'pages/index.tsx' }}
+import { JeanProvider, JeanAuthGuard, useJean } from '@jeanmemory/react';
+
+export default function Home() {
+  return (
+    <JeanProvider apiKey={process.env.NEXT_PUBLIC_JEAN_API_KEY}>
+      <JeanAuthGuard>
+        <MyCustomChatApp />
+      </JeanAuthGuard>
     </JeanProvider>
   );
 }
 
-export default MyApp;
-```
-
-This code wraps your entire application with the `JeanProvider`. This provider is essential as it manages the connection to Jean Memory, handles authentication, and makes the `useJean` hook available to all its child components. You provide it with your unique API key, which authenticates your application with the Jean Memory service.
-
-### 2. Add the `JeanChat` Component
-
-This component renders the entire chat interface.
-
-```jsx {{ title: 'pages/index.tsx' }}
-import { JeanChat } from '@jeanmemory/react';
-
-export default function Home() {
-  return (
-    <div style={{ height: '100vh' }}>
-      <JeanChat />
-    </div>
-  );
+function MyCustomChatApp() {
+  const { sendMessage, messages, user, signOut } = useJean();
+  // Your custom UI implementation
+  return <div>Your custom chat interface</div>;
 }
 ```
 
-This code adds the `<JeanChat />` component to your page. It’s a pre-built, fully functional chat interface that handles user input, displays the conversation, and manages the sign-in process. It's the quickest way to integrate a context-aware AI into your application.
+`JeanAuthGuard` automatically handles:
+- Loading states while checking authentication
+- Sign-in UI when user is not authenticated
+- Displaying your custom app when authenticated
+- Customizable loading and fallback components
 
-That's it! You now have a fully functional, context-aware chatbot in your application. The `<JeanChat />` component will automatically handle authentication using the secure `<SignInWithJean />` flow.
+**Customization Options:**
+```jsx
+<JeanAuthGuard
+  loadingComponent={<div>Checking authentication...</div>}
+  fallback={<CustomSignInPage />}
+  showDefaultSignIn={false}
+>
+  <MyApp />
+</JeanAuthGuard>
+```
+
+### Level 3: Full Control (Advanced)
+
+Complete control over authentication flow and UI implementation.
 
 ### Authentication: Completely Automated
 
@@ -79,32 +124,68 @@ Users will see a "Sign In with Jean" button that triggers secure OAuth authentic
 **For Development/Testing:**
 Test API keys (containing `test`) automatically create isolated test users, so you can start coding immediately without any authentication setup.
 
+```jsx
+import { JeanProvider, SignInWithJean, useJean } from '@jeanmemory/react';
+
+function App() {
+  return (
+    <JeanProvider apiKey="jean_sk_your_api_key">
+      <AuthenticatedApp />
+    </JeanProvider>
+  );
+}
+
+function AuthenticatedApp() {
+  const { sendMessage, isAuthenticated, user, signOut } = useJean();
+  
+  if (!isAuthenticated) {
+    return (
+      <SignInWithJean 
+        onSuccess={(user) => console.log('Signed in:', user)}
+      >
+        Custom Sign In Button
+      </SignInWithJean>
+    );
+  }
+
+  // Your completely custom app implementation
+  return (
+    <div>
+      <h1>Welcome, {user?.name}</h1>
+      <button onClick={signOut}>Sign Out</button>
+      {/* Your custom chat interface */}
+    </div>
+  );
+}
+```
+
 ---
 
-## Path 2: Building a Custom UI (Advanced)
+## The `useJean` Hook
 
-For full control over the look and feel, you can use the `useJean` hook.
-
-The `useJean` hook gives you access to all the core functionality you need to build your own chat interface.
-
-### The `useJean` Hook
+The `useJean` hook provides access to all core functionality for building custom interfaces.
 
 ```typescript
 const {
-  // State
+  // Authentication State
   isAuthenticated: boolean,
+  isLoading: boolean,
   user: JeanUser | null,
-  messages: JeanMessage[],
   
-  // Methods
-  sendMessage: (message: string) => Promise<void>,
+  // Conversation State
+  messages: JeanMessage[],
+  error: string | null,
+  
+  // Core Methods
+  sendMessage: (message: string, options?: MessageOptions) => Promise<void>,
+  signOut: () => void,
+  clearConversation: () => void,
+  
+  // Document Management
   storeDocument: (title: string, content: string) => Promise<void>,
   connect: (service: 'notion' | 'slack' | 'gdrive') => void,
-  clearConversation: () => void,
-  setUser: (user: JeanUser) => void,
-  signOut: () => void,
-
-  // Tools
+  
+  // Direct Memory Tools
   tools: {
     add_memory: (content: string) => Promise<any>;
     search_memory: (query: string) => Promise<any>;
@@ -114,66 +195,69 @@ const {
 } = useJean();
 ```
 
-The `useJean` hook is the core of the React SDK. It provides the state, such as the user's authentication status and conversation messages, and methods to interact with the Jean Memory service, like sending messages or signing out. This hook gives you the building blocks to create a completely custom user experience.
+### Building a Custom Chat Interface
 
-### Example: Custom Chat UI
-
-This example shows how to build a custom sign-in flow and chat interface.
+Example implementation showing authentication handling and message management:
 
 ```jsx
 import { useJean, SignInWithJean } from '@jeanmemory/react';
 import { useState } from 'react';
 
-function CustomChat() {
-  const agent = useJean();
+function CustomChatInterface() {
+  const { isAuthenticated, messages, sendMessage, signOut, user } = useJean();
   const [input, setInput] = useState('');
 
-  // 1. Handle Authentication
-  // The `<SignInWithJean />` component handles the entire OAuth flow.
-  // The `onSuccess` callback receives the user object, which we use
-  // to update the agent's state.
-  if (!agent.isAuthenticated) {
+  if (!isAuthenticated) {
     return (
-      <SignInWithJean
-        onSuccess={(user) => agent.setUser(user)}
-      />
+      <div className="auth-container">
+        <h2>Sign in to continue</h2>
+        <SignInWithJean onSuccess={(user) => console.log('Welcome:', user.email)}>
+          Sign In with Jean
+        </SignInWithJean>
+      </div>
     );
   }
 
-  // 2. Build Your Chat UI
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    
+    try {
+      await sendMessage(input);
+      setInput('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
   return (
-    <div>
+    <div className="chat-container">
+      <header>
+        <span>Welcome, {user?.name}</span>
+        <button onClick={signOut}>Sign Out</button>
+      </header>
+      
       <div className="messages">
-        {agent.messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.role}`}>
-            {msg.content}
+        {messages.map((message) => (
+          <div key={message.id} className={`message ${message.role}`}>
+            <strong>{message.role === 'user' ? 'You' : 'Jean'}:</strong>
+            {message.content}
           </div>
         ))}
       </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          agent.sendMessage(input);
-          setInput('');
-        }}
-      >
+      
+      <form onSubmit={handleSubmit}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask something..."
+          placeholder="Ask Jean anything..."
         />
         <button type="submit">Send</button>
       </form>
-      <button onClick={() => agent.signOut()}>Sign Out</button>
     </div>
   );
 }
 ```
-
-This code demonstrates how to use the `useJean` hook to build a custom chat interface from scratch. It shows how to:
-1.  **Manage Authentication**: It conditionally renders the `<SignInWithJean />` button if the user is not authenticated. The `onSuccess` callback updates the agent's state with the user's information upon a successful login.
-2.  **Display Messages**: It iterates over the `agent.messages` array to display the conversation history.
-3.  **Handle User Input**: It uses a form to capture the user's message and calls `agent.sendMessage` to send it to the backend.
 
 ---
 
@@ -260,30 +344,39 @@ function AdvancedComponent() {
 
 ### Sign Out
 
-To properly sign out users and clear their session data:
+User sign-out is handled automatically through the `useJean` hook:
 
 ```typescript
-import { signOutFromJean } from '@jeanmemory/react';
-
-function SignOutButton() {
-  const handleSignOut = () => {
-    // Clears all session data including localStorage and Supabase sessions
-    signOutFromJean();
-    
-    // Optionally redirect or update your app state
-    window.location.reload(); // Or use your router
+function MyComponent() {
+  const { signOut, user } = useJean();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    // User is automatically signed out and state is cleared
   };
 
   return (
-    <button onClick={handleSignOut}>
-      Sign Out
-    </button>
+    <div>
+      <span>Welcome, {user?.name}</span>
+      <button onClick={handleSignOut}>Sign Out</button>
+    </div>
   );
 }
 ```
 
-The `signOutFromJean()` function:
-- Clears all Jean Memory session data
-- Removes Supabase authentication tokens
-- Stays within your React app (no external redirects)
-- Prepares for a fresh sign-in experience
+The `signOut()` method:
+- Clears all authentication tokens and session data
+- Resets the authentication state
+- Removes locally stored user information
+- Prepares the application for a fresh sign-in
+
+**Alternative Manual Approach:**
+```typescript
+import { signOutFromJean } from '@jeanmemory/react';
+
+// Direct function call (not recommended for most use cases)
+const handleManualSignOut = () => {
+  signOutFromJean();
+  window.location.reload();
+};
+```
