@@ -2,7 +2,7 @@
  * Jean Memory React SDK - Sign In With Jean Component
  * OAuth 2.1 PKCE authentication flow - Backend-driven Universal OAuth
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   initiateOAuth, 
   handleOAuthCallback, 
@@ -19,6 +19,7 @@ interface SignInWithJeanProps {
   className?: string;
   children?: React.ReactNode;
   redirectUri?: string;
+  asChild?: boolean;
 }
 
 // Utility function to sign out and clear session
@@ -34,21 +35,35 @@ export function SignInWithJean({
   apiKey,
   className = '', 
   children,
-  redirectUri
+  redirectUri,
+  asChild = false
 }: SignInWithJeanProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const hasHandledCallback = useRef(false);
 
   useEffect(() => {
+    // React StrictMode protection - prevent duplicate OAuth handling
+    if (hasHandledCallback.current) {
+      return;
+    }
+
     // Check for existing session first
     const existingUser = getUserSession();
     if (existingUser) {
       console.log('✅ Jean OAuth: Recovered existing session for user:', existingUser.email);
       onSuccess(existingUser);
+      hasHandledCallback.current = true;
       return;
     }
 
     // Handle OAuth callback if present
     const handleCallback = async () => {
+      if (hasHandledCallback.current) {
+        return; // Prevent double handling
+      }
+      
+      hasHandledCallback.current = true;
+      
       try {
         const user = await handleOAuthCallback();
         if (user) {
@@ -57,6 +72,7 @@ export function SignInWithJean({
         }
       } catch (error) {
         console.error('OAuth callback error:', error);
+        hasHandledCallback.current = false; // Reset on error for retry
         if (onError) {
           onError(error instanceof Error ? error : new Error('OAuth callback failed'));
         }
@@ -102,6 +118,16 @@ export function SignInWithJean({
     }
   };
 
+  // If asChild is true, clone the child element and add onClick handler
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      onClick: handleSignIn,
+      disabled: isLoading,
+      ...children.props
+    });
+  }
+
+  // Default button implementation
   return (
     <button
       onClick={handleSignIn}

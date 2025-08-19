@@ -230,6 +230,10 @@ export async function initiateOAuth(config: OAuthConfig): Promise<void> {
   }
 }
 
+// Global flag to prevent duplicate token exchanges in React StrictMode
+let isExchangingToken = false;
+let tokenExchangePromise: Promise<JeanUser | null> | null = null;
+
 /**
  * Handle OAuth callback and exchange authorization code for token
  */
@@ -248,6 +252,17 @@ export async function handleOAuthCallback(): Promise<JeanUser | null> {
     if (!code || !state) {
       return null; // No OAuth callback parameters
     }
+
+    // React StrictMode protection - prevent duplicate token exchanges
+    if (isExchangingToken && tokenExchangePromise) {
+      console.log('🔄 Jean OAuth: Token exchange already in progress, returning existing promise');
+      return tokenExchangePromise;
+    }
+    
+    if (isExchangingToken) {
+      console.log('⚠️ Jean OAuth: Token exchange already in progress, skipping duplicate request');
+      return null;
+    }
     
     // Retrieve stored OAuth session
     const session = getOAuthSession();
@@ -260,63 +275,79 @@ export async function handleOAuthCallback(): Promise<JeanUser | null> {
       throw new Error('OAuth state mismatch - possible CSRF attack');
     }
     
+    // Set flag and create promise to prevent duplicate exchanges
+    isExchangingToken = true;
     console.log('🔄 Jean OAuth: Exchanging authorization code for token...');
     
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch(`${JEAN_API_BASE}/v1/sdk/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: session.redirectUri,
-        client_id: session.clientId,
-        code_verifier: session.codeVerifier
-      })
-    });
+    // Create the token exchange promise
+    tokenExchangePromise = (async () => {
+      try {
+        // Exchange authorization code for access token
+        const tokenResponse = await fetch(`${JEAN_API_BASE}/v1/sdk/oauth/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: session.redirectUri,
+            client_id: session.clientId,
+            code_verifier: session.codeVerifier
+          })
+        });
+        
+        if (!tokenResponse.ok) {
+          const errorData = await tokenResponse.text();
+          throw new Error(`Token exchange failed: ${errorData}`);
+        }
+        
+        const tokenData = await tokenResponse.json();
+        const { access_token } = tokenData;
+        
+        if (!access_token) {
+          throw new Error('No access token received');
+        }
+        
+        // Parse JWT token to extract user info (only client-safe fields)
+        const payload = JSON.parse(atob(access_token.split('.')[1]));
+        const user: JeanUser = {
+          email: payload.email || '',
+          name: payload.name || payload.email?.split('@')[0] || 'User',
+          access_token
+        };
+        
+        // Store user session
+        storeUserSession(user);
+        
+        // Clean up OAuth session
+        clearOAuthSession();
+        
+        // Clean up URL parameters
+        const url = new URL(window.location.href);
+        url.searchParams.delete('code');
+        url.searchParams.delete('state');
+        url.searchParams.delete('error');
+        url.searchParams.delete('error_description');
+        window.history.replaceState({}, '', url.toString());
+        
+        console.log('✅ Jean OAuth: Authentication successful for user:', user.email);
+        
+        return user;
+      } finally {
+        // Reset flags
+        isExchangingToken = false;
+        tokenExchangePromise = null;
+      }
+    })();
     
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      throw new Error(`Token exchange failed: ${errorData}`);
-    }
-    
-    const tokenData = await tokenResponse.json();
-    const { access_token } = tokenData;
-    
-    if (!access_token) {
-      throw new Error('No access token received');
-    }
-    
-    // Parse JWT token to extract user info (only client-safe fields)
-    const payload = JSON.parse(atob(access_token.split('.')[1]));
-    const user: JeanUser = {
-      email: payload.email || '',
-      name: payload.name || payload.email?.split('@')[0] || 'User',
-      access_token
-    };
-    
-    // Store user session
-    storeUserSession(user);
-    
-    // Clean up OAuth session
-    clearOAuthSession();
-    
-    // Clean up URL parameters
-    const url = new URL(window.location.href);
-    url.searchParams.delete('code');
-    url.searchParams.delete('state');
-    url.searchParams.delete('error');
-    url.searchParams.delete('error_description');
-    window.history.replaceState({}, '', url.toString());
-    
-    console.log('✅ Jean OAuth: Authentication successful for user:', user.email);
-    
-    return user;
+    return tokenExchangePromise;
   } catch (error) {
     console.error('OAuth callback handling failed:', error);
     clearOAuthSession();
+    // Reset flags on error
+    isExchangingToken = false;
+    tokenExchangePromise = null;
     throw error;
   }
 }
