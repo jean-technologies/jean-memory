@@ -11,6 +11,10 @@ export { JeanProvider, useJean } from './provider';
 export { JeanChat } from './JeanChat';
 export { SignInWithJean, signOutFromJean } from './SignInWithJean';
 
+// New simplified components
+export { JeanAuthGuard } from './JeanAuthGuard';
+export { JeanChatComplete } from './JeanChatComplete';
+
 // OAuth Utilities
 export { 
   initiateOAuth, 

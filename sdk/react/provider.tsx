@@ -32,6 +32,7 @@ interface JeanContextValue {
   user: JeanUser | null;
   messages: JeanMessage[];
   error: string | null;
+  apiKey: string;
   
   // Essential methods
   signIn: () => void;
@@ -391,6 +392,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     user,
     messages,
     error: rawError,
+    apiKey,
     
     // Essential methods
     signIn,
