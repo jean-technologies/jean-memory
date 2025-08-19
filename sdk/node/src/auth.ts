@@ -18,8 +18,17 @@ interface PKCEPair {
   challenge: string;
 }
 
-interface AuthResult {
+// Internal auth result (includes user_id for internal use)
+interface InternalAuthResult {
   user_id: string;
+  email: string;
+  name?: string;
+  access_token: string;
+  created_at: string;
+}
+
+// Client-facing auth result (no user_id exposed)
+interface AuthResult {
   email: string;
   name?: string;
   access_token: string;
@@ -127,8 +136,8 @@ export class JeanMemoryAuth {
 
     const userInfo = await userResponse.json() as any;
     
+    // Return client-safe result (no user_id)
     return {
-      user_id: userInfo.user_id,
       email: userInfo.email,
       name: userInfo.name,
       created_at: userInfo.created_at,
@@ -309,8 +318,8 @@ export class JeanMemoryAuth {
 
     const userInfo = await response.json() as any;
     
+    // Return client-safe result (no user_id)
     return {
-      user_id: userInfo.user_id,
       email: userInfo.email,
       name: userInfo.name,
       created_at: userInfo.created_at,

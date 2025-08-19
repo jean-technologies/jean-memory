@@ -7,6 +7,26 @@ description: "Securely connect your users to their memory with OAuth 2.1."
 
 Jean Memory handles sensitive personal data, and we take that responsibility seriously. That's why we've built our authentication system on the industry-standard **OAuth 2.1 protocol**. This ensures that user credentials are never shared with third-party applications and that users have full control over who can access their memory.
 
+## Two-Layer Security Architecture
+
+Jean Memory uses a **dual authentication system** for maximum security:
+
+### 🔑 Layer 1: Application Authentication
+- **API Key**: Each application gets a unique API key (`jean_sk_...`)
+- **Purpose**: Identifies and authorizes your application to use Jean Memory
+- **Scope**: Application-level permissions and billing
+
+### 👤 Layer 2: User Authentication  
+- **JWT Token**: Each user gets a unique JWT token per session
+- **Purpose**: Identifies the specific user and their memories
+- **Scope**: User-specific data access and privacy
+
+### How They Work Together:
+```http
+Authorization: Bearer <user_jwt_token>    # User identity
+X-API-Key: jean_sk_your_app_key          # Application identity
+```
+
 **The best part? All this security is completely invisible to developers.** Our SDK handles OAuth 2.1 PKCE, JWT tokens, session persistence, and universal identity mapping automatically. You get enterprise-grade security with a 5-line integration.
 
 We provide two clear authentication flows to support different types of applications.

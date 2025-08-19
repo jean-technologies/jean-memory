@@ -12,7 +12,6 @@ export interface OAuthConfig {
 }
 
 export interface JeanUser {
-  user_id: string;
   email: string;
   name?: string;
   access_token: string;
@@ -119,7 +118,6 @@ export function storeUserSession(user: JeanUser): void {
   try {
     // Store in both localStorage (persistent) and sessionStorage (current session)
     const userInfo = {
-      user_id: user.user_id,
       email: user.email,
       name: user.name,
       timestamp: Date.now()
@@ -291,10 +289,9 @@ export async function handleOAuthCallback(): Promise<JeanUser | null> {
       throw new Error('No access token received');
     }
     
-    // Parse JWT token to extract user info
+    // Parse JWT token to extract user info (only client-safe fields)
     const payload = JSON.parse(atob(access_token.split('.')[1]));
     const user: JeanUser = {
-      user_id: payload.sub,
       email: payload.email || '',
       name: payload.name || payload.email?.split('@')[0] || 'User',
       access_token

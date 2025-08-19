@@ -330,7 +330,6 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       
       // Create test user object
       const testUser: JeanUser = {
-        user_id: testUserId,
         email: 'test@example.com',
         name: 'Test User',
         access_token: `test_token_${hashHex}`

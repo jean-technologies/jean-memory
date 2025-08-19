@@ -32,7 +32,7 @@ export interface MCPResponse {
 let requestId = 0;
 
 export async function makeMCPRequest(
-  user: { user_id: string },
+  user: { access_token: string },
   apiKey: string,
   toolName: string,
   arguments_: any,
@@ -50,14 +50,17 @@ export async function makeMCPRequest(
     }
   };
 
-  const response = await fetch(`${JEAN_API_BASE}/mcp/${clientName}/messages/${user.user_id}`, {
+  // Extract user_id from JWT token for URL path
+  const payload = JSON.parse(atob(user.access_token.split('.')[1]));
+  const userId = payload.sub;
+
+  const response = await fetch(`${JEAN_API_BASE}/mcp/${clientName}/messages/${userId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'X-User-Id': user.user_id,
+      'Authorization': `Bearer ${user.access_token}`,  // Use user's JWT token
       'X-Client-Name': clientName,
-      'X-Api-Key': apiKey
+      'X-API-Key': apiKey  // API key for app identification
     },
     body: JSON.stringify(mcpRequest)
   });

@@ -7,7 +7,6 @@ import { JEAN_API_BASE } from './config';
 import { getUserSession, isAuthenticated as checkAuth, getUserToken } from './oauth';
 
 export interface JeanUser {
-  user_id: string;
   email: string;
   name?: string;
   access_token: string;

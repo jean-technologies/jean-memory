@@ -53,10 +53,9 @@ def make_mcp_request(
     url = f"{api_base}/mcp/{client_name}/messages/{user_id}"
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {api_key}',
-        'X-User-Id': user_id,
+        'Authorization': f'Bearer {user_token}',  # Use user's JWT token
         'X-Client-Name': client_name,
-        'X-Api-Key': api_key
+        'X-API-Key': api_key  # API key for app identification
     }
 
     response = requests.post(url, json=mcp_request, headers=headers)
