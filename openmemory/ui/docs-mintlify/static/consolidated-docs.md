@@ -565,14 +565,14 @@ For headless applications without a frontend, you have several options:
 
 ```python
 # Option 1: Test mode (development)
-jean = JeanMemoryClient(api_key="jean_sk_test_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_your_key")
 context = jean.get_context(
     # user_token=None automatically uses test user
     message="Hello"
 )
 
 # Option 2: Manual OAuth flow (production)
-jean = JeanMemoryClient(api_key="jean_sk_live_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_your_key")
 
 # Generate OAuth URL for manual authentication
 auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
@@ -583,7 +583,7 @@ user_token = jean.exchange_code_for_token(auth_code)
 
 # Option 3: Service account (enterprise)
 jean = JeanMemoryClient(
-    api_key="jean_sk_live_your_key",
+    api_key="jean_sk_your_key",
     service_account_key="your_service_account_key"
 )
 ```
@@ -716,7 +716,7 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
 
-**Test User Support:** The Node.js SDK v2.0.0+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
+**Test User Support:** The Node.js SDK v2.0.1+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
 
 ```typescript
 // With user token (production)
