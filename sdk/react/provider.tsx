@@ -50,7 +50,7 @@ interface JeanContextValue {
     search_memory: (query: string) => Promise<any>;
     deep_memory_query: (query: string) => Promise<any>;
     store_document: (title: string, content: string, document_type?: string) => Promise<any>;
-    getContext: (query: string, options?: { mode: 'fast' | 'balanced' | 'deep' }) => Promise<any>;
+    getContext: (query: string, options?: { mode: 'fast' | 'balanced' | 'deep' | 'autonomous' | 'comprehensive' }) => Promise<any>;
   };
 }
 
@@ -207,7 +207,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }
   };
 
-  const getContext = async (query: string, options: { mode: 'fast' | 'balanced' | 'deep' } = { mode: 'balanced' }) => {
+  const getContext = async (query: string, options: { mode: 'fast' | 'balanced' | 'deep' | 'autonomous' | 'comprehensive' } = { mode: 'balanced' }) => {
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -220,12 +220,26 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         user_message: query,
         is_new_conversation: false, // getContext is for ongoing context retrieval
         needs_context: true,
-        speed: options.mode,
+        speed: options.mode === 'deep' ? 'comprehensive' : options.mode, // Map 'deep' to 'comprehensive' for backward compat
       }
     );
 
     if (response.error) {
       throw new Error(response.error.message);
+    }
+
+    // Extract text content from response for consistency
+    const content = response.result?.content?.[0]?.text || response.result;
+    
+    // Add to messages if content was retrieved (for UI consistency)
+    if (content && typeof content === 'string') {
+      const assistantMessage: JeanMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: content,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
     }
 
     return response.result;

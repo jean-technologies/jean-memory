@@ -18,10 +18,22 @@ def _track_tool_usage(tool_name: str, properties: dict = None):
     pass
 
 @mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!! This is the primary tool for ALL conversational interactions. It saves new information, and provides relevant context on the user's life. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.")
-async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool = True, speed: str = "balanced", format: str = "enhanced") -> str:
+async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool = True, speed: str = "autonomous", format: str = "enhanced") -> str:
     """
-    Asynchronous, dual-path orchestration. Provides a fast search result immediately
-    while triggering intelligent, asynchronous memory analysis and saving in the background.
+    Primary tool for conversational interactions with contextual memory retrieval.
+    Saves new information and provides relevant context from the user's memory.
+    
+    Speed modes:
+    - fast: Direct memory search returning raw memories (0.5s, 10 results maximum)
+    - balanced: AI synthesis using Gemini 2.5 Flash for conversational responses (3-5s)
+    - autonomous: Intelligent orchestration with adaptive context analysis (variable latency, default)
+    - comprehensive: Extensive memory analysis with document search (20-30s)
+    
+    The autonomous mode uses intelligent orchestration that analyzes the context to decide
+    whether information should be saved, how much context to retrieve, and what depth of
+    analysis is needed. It autonomously orchestrates the response based on conversation
+    state and content complexity, with latency ranging from seconds to potentially longer
+    than comprehensive mode depending on the analysis requirements.
     """
     supa_uid = user_id_var.get(None)
     client_name = client_name_var.get(None)
@@ -33,12 +45,21 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
 
     # --- Speed-based routing ---
     if speed == "fast":
-        logger.info(f"⚡️ [Fast Path] Using search_memory for query: '{user_message[:50]}...'")
-        return await search_memory(query=user_message)
+        logger.info(f"[Fast Path] Using search_memory for query: '{user_message[:50]}...'")
+        # Use explicit limit to prevent response bloat
+        return await search_memory(query=user_message, limit=10)
     
-    if speed == "deep":
-        logger.info(f"🔬 [Deep Path] Using deep_memory_query for query: '{user_message[:50]}...'")
+    if speed == "balanced":
+        logger.info(f"[Balanced Path] Using ask_memory with Gemini 2.5 Flash synthesis for query: '{user_message[:50]}...'")
+        # Use ask_memory for intelligent synthesis of memories (3-5s typical response time)
+        from app.tools.memory import ask_memory
+        return await ask_memory(question=user_message)
+    
+    if speed == "comprehensive" or speed == "deep":
+        logger.info(f"[Comprehensive Path] Using deep_memory_query for query: '{user_message[:50]}...'")
         return await deep_memory_query(search_query=user_message)
+    
+    # "autonomous" mode or any unspecified speed falls through to full orchestration below
 
     total_start_time = time.time()
     try:

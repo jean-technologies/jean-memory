@@ -348,14 +348,18 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
 
             # Initialize services
             memory_client = await get_async_memory_client()
-            llm = OpenAILLM(config=BaseLlmConfig(model="gpt-4o-mini"))
+            
+            # Use Gemini 2.5 Flash for fast, cost-efficient synthesis
+            from mem0.llms.google import GoogleLLM
+            llm = GoogleLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
             
             # 1. Initial vector search
             search_start_time = time.time()
             logger.info(f"ask_memory: Starting memory search for user {supa_uid}")
             
             # Call async memory client directly - this uses Jean Memory V2 mem0 + graphiti search
-            search_result = await memory_client.search(query=question, user_id=supa_uid, limit=10)
+            # Reduced limit for balanced mode to ensure fast responses
+            search_result = await memory_client.search(query=question, user_id=supa_uid, limit=8)
             
             # Process initial results
             initial_memories = []
@@ -419,10 +423,10 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             
             logger.info(f"ask_memory: Memory search for user {supa_uid} took {search_duration:.2f}s. Found {len(memories)} results.")
             
-            # Filter out contaminated memories and limit token usage
+            # Filter out contaminated memories and limit token usage for efficient synthesis
             clean_memories = []
             total_chars = 0
-            max_chars = 8000  # Conservative limit to avoid token issues
+            max_chars = 4000  # Reduced for faster Gemini processing and concise responses
             
             for idx, mem in enumerate(memories):
                 memory_text = mem.get('memory', mem.get('content', ''))
@@ -435,19 +439,19 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
                 clean_memories.append(memory_line)
                 total_chars += len(memory_line)
             
-            # 2. Generate conversational response using LLM
+            # 2. Generate conversational response using Gemini 2.5 Flash
             if clean_memories:
                 memory_context = "\n".join(clean_memories)
-                prompt = f"""Based on the following memories, answer the question: "{question}"
+                prompt = f"""Question: "{question}"
 
 Relevant memories:
 {memory_context}
 
-Provide a helpful and conversational answer based on the memories above. If the memories don't contain enough information to answer the question, say so."""
+Provide a concise, helpful answer (2-3 sentences max) based on these memories. If insufficient information, state what's missing."""
             else:
-                prompt = f"""The user asked: "{question}"
+                prompt = f"""Question: "{question}"
 
-No relevant memories were found. Provide a helpful response indicating that no relevant information was found in their memory."""
+No relevant memories found. Provide a brief, helpful response (1-2 sentences) indicating no relevant information was found."""
             
             synthesis_start_time = time.time()
             response = llm.generate_response([{"role": "user", "content": prompt}])
