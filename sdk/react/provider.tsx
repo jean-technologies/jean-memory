@@ -38,6 +38,7 @@ interface JeanContextValue {
   signIn: () => void;
   signOut: () => void;
   sendMessage: (message: string, options?: MessageOptions) => Promise<void>;
+  getContext: (query: string, options?: { mode: 'fast' | 'balanced' | 'deep' }) => Promise<any>;
   storeDocument: (title: string, content: string) => Promise<void>;
   connect: (service: 'notion' | 'slack' | 'gdrive') => void;
   clearConversation: () => void;
