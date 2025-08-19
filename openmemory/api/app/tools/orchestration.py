@@ -6,6 +6,7 @@ from app.mcp_instance import mcp
 from app.context import user_id_var, client_name_var, background_tasks_var
 from app.mcp_orchestration import get_smart_orchestrator
 from app.tools.memory import search_memory
+from app.tools.documents import deep_memory_query # Import deep_memory_query
 from app.analytics import track_tool_usage
 
 
@@ -29,6 +30,15 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
         return "Error: User ID not available"
     if not client_name:
         return "Error: Client name not available"
+
+    # --- Speed-based routing ---
+    if speed == "fast":
+        logger.info(f"⚡️ [Fast Path] Using search_memory for query: '{user_message[:50]}...'")
+        return await search_memory(query=user_message)
+    
+    if speed == "deep":
+        logger.info(f"🔬 [Deep Path] Using deep_memory_query for query: '{user_message[:50]}...'")
+        return await deep_memory_query(search_query=user_message)
 
     total_start_time = time.time()
     try:

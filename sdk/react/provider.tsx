@@ -49,6 +49,7 @@ interface JeanContextValue {
     search_memory: (query: string) => Promise<any>;
     deep_memory_query: (query: string) => Promise<any>;
     store_document: (title: string, content: string, document_type?: string) => Promise<any>;
+    getContext: (query: string, options?: { mode: 'fast' | 'balanced' | 'deep' }) => Promise<any>;
   };
 }
 
@@ -205,6 +206,30 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     }
   };
 
+  const getContext = async (query: string, options: { mode: 'fast' | 'balanced' | 'deep' } = { mode: 'balanced' }) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await makeMCPRequest(
+      user,
+      apiKey,
+      'jean_memory', // Always use the jean_memory tool
+      {
+        user_message: query,
+        is_new_conversation: false, // getContext is for ongoing context retrieval
+        needs_context: true,
+        speed: options.mode,
+      }
+    );
+
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+
+    return response.result;
+  };
+
   const storeDocument = async (title: string, content: string): Promise<void> => {
     if (!user) {
       throw new Error("User not authenticated");
@@ -324,7 +349,9 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
       }
       
       return response.result;
-    }
+    },
+
+    getContext: getContext
   };
 
   // Initialize test user for development/testing
@@ -417,6 +444,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
     signIn,
     signOut,
     sendMessage,
+    getContext,
     storeDocument,
     connect,
     clearConversation,
