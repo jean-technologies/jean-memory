@@ -8,7 +8,8 @@ import {
   handleOAuthCallback, 
   getUserSession, 
   clearUserSession, 
-  isAuthenticated 
+  isAuthenticated,
+  JeanUser
 } from './oauth';
 
 interface SignInWithJeanProps {
@@ -18,15 +19,6 @@ interface SignInWithJeanProps {
   className?: string;
   children?: React.ReactNode;
   redirectUri?: string;
-}
-
-export interface JeanUser {
-  id: string;
-  sub: string;
-  email?: string;
-  name?: string;
-  access_token: string;
-  [key: string]: any;
 }
 
 // Utility function to sign out and clear session

@@ -12,12 +12,10 @@ export interface OAuthConfig {
 }
 
 export interface JeanUser {
-  id: string;
-  sub: string;
-  email?: string;
+  user_id: string;
+  email: string;
   name?: string;
   access_token: string;
-  [key: string]: any;
 }
 
 export interface OAuthSession {
@@ -121,8 +119,7 @@ export function storeUserSession(user: JeanUser): void {
   try {
     // Store in both localStorage (persistent) and sessionStorage (current session)
     const userInfo = {
-      id: user.id || user.sub,
-      sub: user.sub,
+      user_id: user.user_id,
       email: user.email,
       name: user.name,
       timestamp: Date.now()
@@ -175,7 +172,7 @@ export function getUserSession(): JeanUser | null {
  */
 export function clearUserSession(): void {
   // Clear all session keys from both storages
-  Object.values(SESSION_KEYS).forEach(key => {
+  Object.values(SESSION_KEYS).forEach((key: string) => {
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
   });
@@ -297,9 +294,8 @@ export async function handleOAuthCallback(): Promise<JeanUser | null> {
     // Parse JWT token to extract user info
     const payload = JSON.parse(atob(access_token.split('.')[1]));
     const user: JeanUser = {
-      id: payload.sub,
-      sub: payload.sub,
-      email: payload.email,
+      user_id: payload.sub,
+      email: payload.email || '',
       name: payload.name || payload.email?.split('@')[0] || 'User',
       access_token
     };

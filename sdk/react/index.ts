@@ -26,5 +26,4 @@ export {
 export { useJeanMCP } from './useJeanMCP';
 
 // Types
-export type { JeanUser as JeanProviderUser, JeanMessage, MessageOptions } from './provider';
-export type { JeanUser } from './SignInWithJean';
+export type { JeanUser, JeanMessage, MessageOptions } from './provider';
