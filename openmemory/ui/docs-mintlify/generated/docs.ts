@@ -5,7 +5,7 @@
 export const consolidatedDocs = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 20:36:28
+**Generated on:** 2025-08-18 20:43:14
 
 ## What is Jean Memory?
 
@@ -35,16 +35,16 @@ function MyApp() {
 
 #### Python:
 \`\`\`python
-from jeanmemory import JeanAgent
-agent = JeanAgent(api_key="your-api-key")
-agent.run()
+from jeanmemory import JeanClient
+jean = JeanClient(api_key="your-api-key")
+context = jean.get_context(user_token="token", message="Hello")
 \`\`\`
 
 #### Node.js:
 \`\`\`javascript
-import { JeanAgent } from '@jeanmemory/node';
-const agent = new JeanAgent({ apiKey: "your-api-key" });
-await agent.run();
+import { JeanClient } from '@jeanmemory/node';
+const jean = new JeanClient({ apiKey: "your-api-key" });
+const context = await jean.getContext({ user_token: "token", message: "Hello" });
 \`\`\`
 
 ### NPM Packages:
@@ -511,7 +511,7 @@ The example below shows a typical workflow where we get context from Jean Memory
 \`\`\`python
 
 from openai import OpenAI
-from jean_memory import JeanClient
+from jeanmemory import JeanClient
 
 # 1. Initialize the clients
 jean = JeanClient(api_key=os.environ.get("JEAN_API_KEY"))
