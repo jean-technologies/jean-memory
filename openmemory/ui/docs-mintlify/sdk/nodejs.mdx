@@ -141,9 +141,50 @@ const context = await jean.getContext({ user_token: ..., message: "..." });
 
 // The deterministic, tool-based way:
 await jean.tools.add_memory({ user_token: ..., content: "My project's deadline is next Friday." });
+
 const search_results = await jean.tools.search_memory({ user_token: ..., query: "project deadlines" });
+// Parse search results - they come as JSON in content[0].text
+const searchData = JSON.parse(search_results.content[0].text);
+console.log('Found memories:', searchData.memories);
 
 // Advanced tools for complex operations:
-const deep_results = await jean.tools.deep_memory_query({ user_token: ..., query: "complex relationship query" });
-const doc_result = await jean.tools.store_document({ user_token: ..., title: "Meeting Notes", content: "...", document_type: "markdown" });
+try {
+  const deep_results = await jean.tools.deep_memory_query({ user_token: ..., query: "complex relationship query" });
+  // Deep queries return analysis directly in content[0].text
+  const analysis = deep_results.content[0].text;
+  console.log('Deep analysis:', analysis);
+} catch (error) {
+  console.error('Deep query failed:', error);
+  // Fallback to regular search
+}
+
+const doc_result = await jean.tools.store_document({ 
+  user_token: ..., 
+  title: "Meeting Notes", 
+  content: "...", 
+  document_type: "markdown" 
+});
+```
+
+### Performance Expectations
+
+Different operations have different timing characteristics:
+
+- **`tools.search_memory()`**: 1-2 seconds - Fast semantic search, returns JSON
+- **`getContext()` (orchestration)**: 3-10 seconds - Full AI conversation with context  
+- **`tools.deep_memory_query()`**: 5-15 seconds - Comprehensive cross-memory analysis
+- **`tools.store_document()`**: Immediate response + background processing (30-60 seconds total)
+
+### Response Format
+
+Most tool responses follow this structure:
+```javascript
+{
+  content: [
+    {
+      type: "text", 
+      text: "JSON string or direct text response"
+    }
+  ]
+}
 ```

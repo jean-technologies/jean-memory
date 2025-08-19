@@ -297,7 +297,7 @@ export function JeanProvider({ apiKey, children }: JeanProviderProps) {
         user,
         apiKey,
         'deep_memory_query',
-        { query }
+        { search_query: query }
       );
       
       if (response.error) {

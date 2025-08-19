@@ -303,7 +303,14 @@ function AdvancedComponent() {
     
     const results = await tools.search_memory("information about my pets");
     
-    console.log('Search results:', results);
+    // Parse the response - search_memory returns JSON in content[0].text
+    const data = JSON.parse(results.content[0].text);
+    const memories = data.memories; // Array of memory objects
+    
+    console.log('Found memories:', memories);
+    memories.forEach(memory => {
+      console.log('Memory:', memory.content, 'Score:', memory.score);
+    });
   };
   
   // Store documents directly
@@ -321,11 +328,23 @@ function AdvancedComponent() {
   const handleDeepQuery = async () => {
     if (!isAuthenticated) return;
     
-    const insights = await tools.deep_memory_query(
-      "connections between my preferences and goals"
-    );
-    
-    console.log('Deep insights:', insights);
+    try {
+      const insights = await tools.deep_memory_query(
+        "connections between my preferences and goals"
+      );
+      
+      // Deep queries return text analysis directly in content[0].text
+      const analysis = insights.content[0].text;
+      console.log('Deep insights:', analysis);
+      
+      // Note: deep_memory_query is slower (5-15 seconds) but more comprehensive
+    } catch (error) {
+      console.error('Deep query failed:', error);
+      // Fallback to regular search for faster results
+      const fallback = await tools.search_memory("preferences and goals");
+      const data = JSON.parse(fallback.content[0].text);
+      console.log('Fallback results:', data.memories);
+    }
   };
 }
 ```
@@ -333,11 +352,78 @@ function AdvancedComponent() {
 ### Available Tools
 
 - `tools.add_memory(content)` - Add a specific memory
-- `tools.search_memory(query)` - Search existing memories  
-- `tools.deep_memory_query(query)` - Complex relationship queries
-- `tools.store_document(title, content, type?)` - Store structured documents
+- `tools.search_memory(query)` - Search existing memories (fast: 1-2 seconds)
+- `tools.deep_memory_query(query)` - Complex relationship queries (slower: 5-15 seconds)
+- `tools.store_document(title, content, type?)` - Store structured documents (background processing)
+
+### Performance Expectations
+
+Different tools have different performance characteristics:
+
+- **`search_memory`**: 1-2 seconds - Fast keyword/semantic search, returns JSON that needs parsing
+- **`sendMessage` (orchestration)**: 3-10 seconds - Full AI conversation with context
+- **`deep_memory_query`**: 5-15 seconds - Comprehensive analysis across all memories
+- **`store_document`**: Immediate response + background processing (30-60 seconds total)
+
+### Response Format Patterns
+
+Most tools return responses in this format:
+```javascript
+{
+  content: [
+    {
+      type: "text",
+      text: "JSON string or direct text response"
+    }
+  ]
+}
+```
 
 **Note**: These tools automatically handle authentication and use your user context. No manual token management required.
+
+---
+
+## Tools vs Orchestration: What's the Difference?
+
+The React SDK provides two ways to interact with Jean Memory:
+
+### 🔧 Direct Tools (Fast & Specific)
+Use the `tools` object for specific operations:
+```javascript
+const { tools } = useJean();
+
+// Direct memory operations
+await tools.add_memory("content");
+await tools.search_memory("query"); 
+await tools.deep_memory_query("complex query");
+await tools.store_document("title", "content");
+```
+
+**Best for**: Specific data operations, integrating memory into your app's logic
+
+### 🤖 Orchestration (Smart & Conversational) 
+Use `sendMessage()` for AI-powered conversations:
+```javascript
+const { sendMessage } = useJean();
+
+// Intelligent orchestration with context
+await sendMessage("What did I learn about React last week?");
+await sendMessage("Summarize my meeting notes from yesterday");
+await sendMessage("What are the patterns in my project preferences?");
+```
+
+**Best for**: Natural language queries, contextual conversations, complex reasoning
+
+### Key Differences
+
+| Direct Tools | Orchestration (`sendMessage`) |
+|--------------|------------------------------|
+| Fast (1-15 seconds) | Slower but smarter (3-30 seconds) |
+| Specific operations | Conversational and contextual |
+| Raw data access | AI-generated insights |
+| Predictable responses | Dynamic, intelligent responses |
+
+**Note**: The `jean_memory` orchestration tool is not directly exposed in `tools` - it's accessed through `sendMessage()` which provides the full conversational AI experience.
 
 ---
 
