@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 22:02:32
+**Generated on:** 2025-08-18 22:08:00
 
 ## What is Jean Memory?
 
@@ -225,24 +225,6 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 npm install @jeanmemory/react
 ```
 
-**Warning:**
-**Breaking Changes in v2.0.0**
-
-The React SDK has been simplified and improved in v2.0.0:
-
-```typescript
-// ❌ v1.x (Old) - No longer available
-
-// ✅ v2.0.0 (New) - Use unified components
-
-```
-
-**Changes:**
-- Removed incomplete v2 components (`-v2.tsx` files)
-- Consolidated to single, robust component API
-- All v2.0.0 authentication fixes preserved
-- Enhanced StrictMode compatibility and OAuth reliability
-
 ## Three Integration Approaches
 
 The Jean Memory React SDK provides three levels of integration complexity, allowing you to choose the right approach for your use case.
@@ -333,11 +315,11 @@ Complete control over authentication flow and UI implementation.
 The React SDK uses a robust **Universal OAuth 2.1 PKCE system** that handles all authentication complexity for you. Users get secure, persistent sessions with zero configuration required from developers.
 
 #### What You Get Automatically:
-- ✅ **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
-- ✅ **Universal Identity** - Same user account across all Jean Memory applications  
-- ✅ **Session Persistence** - Users stay logged in across browser refreshes and tabs
-- ✅ **Automatic Token Management** - JWT tokens handled invisibly
-- ✅ **Error Recovery** - Graceful handling of network issues and token expiration
+- **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
+- **Universal Identity** - Same user account across all Jean Memory applications  
+- **Session Persistence** - Users stay logged in across browser refreshes and tabs
+- **Automatic Token Management** - JWT tokens handled invisibly
+- **Error Recovery** - Graceful handling of network issues and token expiration
 
 #### Simple Setup for Any API Key:
 ```jsx
@@ -514,26 +496,6 @@ The Jean Memory Python SDK provides a simple, headless interface to our powerful
 ```bash
 pip install jeanmemory
 ```
-
-**Warning:**
-**Breaking Changes in v2.0.0**
-
-The Python SDK has undergone major improvements in v2.0.0:
-
-```python
-# ❌ v1.x (Old)
-from jean_memory import JeanMemoryClient
-client = JeanMemoryClient('jean_sk_...')
-
-# ✅ v2.0.0 (New)  
-from jeanmemory import JeanMemoryClient
-client = JeanMemoryClient(api_key='jean_sk_...')
-```
-
-**Changes:**
-- Package name: `jean_memory` → `jeanmemory` 
-- Constructor: Positional → Keyword-only arguments
-- More consistent API with other SDKs
 
 ## Usage: Adding Context to an Agent
 
@@ -871,11 +833,11 @@ For detailed instructions on implementing this flow, please consult standard OAu
 
 ---
 
-## 🧠 Live Demo
+## Live Demo
 
 Want to see the OAuth 2.1 PKCE flow in action? Check out our **[Jean Authentication Demo Repository](https://github.com/jonathan-politzki/jean-authentication-demo)** - a complete React application that demonstrates the 5-line integration promise.
 
-**[🚀 View Live Demo Repository →](https://github.com/jonathan-politzki/jean-authentication-demo)**
+**[View Live Demo Repository →](https://github.com/jonathan-politzki/jean-authentication-demo)**
 
 This demo shows:
 - Complete OAuth 2.1 PKCE authentication flow

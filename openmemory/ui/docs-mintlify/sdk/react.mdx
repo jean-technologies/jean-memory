@@ -11,26 +11,6 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 npm install @jeanmemory/react
 ```
 
-<Warning>
-**Breaking Changes in v2.0.0**
-
-The React SDK has been simplified and improved in v2.0.0:
-
-```typescript
-// ❌ v1.x (Old) - No longer available
-import { JeanProvider } from '@jeanmemory/react/provider-v2';
-import { SignInWithJean } from '@jeanmemory/react/SignInWithJean-v2';
-
-// ✅ v2.0.0 (New) - Use unified components
-import { JeanProvider, SignInWithJean } from '@jeanmemory/react';
-```
-
-**Changes:**
-- Removed incomplete v2 components (`-v2.tsx` files)
-- Consolidated to single, robust component API
-- All v2.0.0 authentication fixes preserved
-- Enhanced StrictMode compatibility and OAuth reliability
-</Warning>
 
 ## Three Integration Approaches
 
@@ -126,11 +106,11 @@ Complete control over authentication flow and UI implementation.
 The React SDK uses a robust **Universal OAuth 2.1 PKCE system** that handles all authentication complexity for you. Users get secure, persistent sessions with zero configuration required from developers.
 
 #### What You Get Automatically:
-- ✅ **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
-- ✅ **Universal Identity** - Same user account across all Jean Memory applications  
-- ✅ **Session Persistence** - Users stay logged in across browser refreshes and tabs
-- ✅ **Automatic Token Management** - JWT tokens handled invisibly
-- ✅ **Error Recovery** - Graceful handling of network issues and token expiration
+- **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
+- **Universal Identity** - Same user account across all Jean Memory applications  
+- **Session Persistence** - Users stay logged in across browser refreshes and tabs
+- **Automatic Token Management** - JWT tokens handled invisibly
+- **Error Recovery** - Graceful handling of network issues and token expiration
 
 #### Simple Setup for Any API Key:
 ```jsx

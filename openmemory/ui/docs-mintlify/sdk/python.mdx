@@ -11,26 +11,6 @@ The Jean Memory Python SDK provides a simple, headless interface to our powerful
 pip install jeanmemory
 ```
 
-<Warning>
-**Breaking Changes in v2.0.0**
-
-The Python SDK has undergone major improvements in v2.0.0:
-
-```python
-# ❌ v1.x (Old)
-from jean_memory import JeanMemoryClient
-client = JeanMemoryClient('jean_sk_...')
-
-# ✅ v2.0.0 (New)  
-from jeanmemory import JeanMemoryClient
-client = JeanMemoryClient(api_key='jean_sk_...')
-```
-
-**Changes:**
-- Package name: `jean_memory` → `jeanmemory` 
-- Constructor: Positional → Keyword-only arguments
-- More consistent API with other SDKs
-</Warning>
 
 ## Usage: Adding Context to an Agent
 

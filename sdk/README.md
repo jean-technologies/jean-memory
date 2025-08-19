@@ -1,41 +1,17 @@
-# Jean Memory SDKs ✅
+# Jean Memory SDKs
 
 Official SDKs for integrating Jean Memory into your applications.
 
 **Status: All SDKs working and published!**  
-- **React v2.0.0** 🚀 *Major release with architecture improvements*
-- **Node.js v2.0.0** 🚀 *Aligned major release*  
-- **Python v2.0.0** 🚀 *Major modernization and API improvements*
+- **React v2.0.0** - Major release with architecture improvements
+- **Node.js v2.0.0** - Aligned major release  
+- **Python v2.0.0** - Major modernization and API improvements
 - All packages verified working from npm/PyPI
 - Production-ready with unified v2.0.0 architecture
 
-## ⚠️ **Breaking Changes in v2.0.0**
-
-**Python SDK:**
-```python
-# ❌ v1.x (Old)
-from jean_memory import JeanMemoryClient
-client = JeanMemoryClient('jean_sk_...')
-
-# ✅ v2.0.0 (New)  
-from jeanmemory import JeanMemoryClient
-client = JeanMemoryClient(api_key='jean_sk_...')
-```
-
-**React SDK:**
-```typescript
-// ❌ v1.x (Old) - No longer available
-import { JeanProvider } from '@jeanmemory/react/provider-v2';
-
-// ✅ v2.0.0 (New) - Use main components
-import { JeanProvider } from '@jeanmemory/react';
-```
-
-**Node.js SDK:** No breaking changes (version aligned for consistency)
-
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### React SDK (`@jeanmemory/react`)
 
@@ -95,14 +71,14 @@ console.log(memories);
 
 ## ✨ Features
 
-- **🧠 Personalized Context**: Automatically retrieves relevant user context from Jean Memory
-- **🔐 Secure Authentication**: Built-in "Sign in with Jean" flow
-- **⚡ 5-Line Integration**: Minimal code required for full functionality
+- **Personalized Context**: Automatically retrieves relevant user context from Jean Memory
+- **Secure Authentication**: Built-in "Sign in with Jean" flow
+- **5-Line Integration**: Minimal code required for full functionality
 - **🎨 UI Components**: Works with assistant-ui, NLUX, and custom UIs
 - **🐍 Multi-Language**: React/TypeScript and Python SDKs available
-- **📊 Real-time Context**: Dynamic context retrieval based on conversation
+- **Real-time Context**: Dynamic context retrieval based on conversation
 
-## 🎯 Use Cases
+## Use Cases
 
 ### Personal Tutoring
 ```python
@@ -128,7 +104,7 @@ coach = JeanAgent(
 )
 ```
 
-## 🔧 How It Works
+## How It Works
 
 1. **User Authentication**: Users sign in with their Jean Memory account
 2. **Context Retrieval**: SDK automatically fetches relevant personal context
@@ -144,7 +120,7 @@ graph LR
     E --> F[Personalized Response]
 ```
 
-## 📚 API Reference
+## API Reference
 
 ### React: `useJean` Hook
 
@@ -213,7 +189,7 @@ class JeanClient {
 3. Create a new API key for your application
 4. Use the `jean_sk_...` key in your SDK configuration
 
-## 🛡️ Security
+## Security
 
 - API keys are validated server-side
 - User authentication uses secure Supabase integration
@@ -227,17 +203,17 @@ class JeanClient {
 - [Next.js Full Stack](./examples/ultimate-nextjs/) - Complete Next.js app with streaming
 - [React Ultimate](./examples/ultimate-react/) - Complete React application
 
-## 🤝 Support
+## Support
 
-- 📧 Email: support@jeanmemory.com
-- 💬 Discord: [Join our community](https://discord.gg/jeanmemory)
-- 📚 Docs: [jeanmemory.com/docs](https://jeanmemory.com/docs)
-- 🐛 Issues: [GitHub Issues](https://github.com/jean-technologies/jean-memory/issues)
+- Email: support@jeanmemory.com
+- Discord: [Join our community](https://discord.gg/jeanmemory)
+- Docs: [jeanmemory.com/docs](https://jeanmemory.com/docs)
+- Issues: [GitHub Issues](https://github.com/jean-technologies/jean-memory/issues)
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
 
-Built with ❤️ by the Jean Memory team
+Built by the Jean Memory team
