@@ -238,24 +238,28 @@ class Config:
             "https://platform.openai.com",  # OpenAI API Playground
         ]
         
-        # Allow all localhost URLs for development
-        if not self.IS_PRODUCTION:
-            # Allow any localhost port for development flexibility
-            import re
-            base_urls.extend([
-                f"http://localhost:{port}" for port in range(3000, 9000)
+        # Always allow ALL common localhost URLs for development and testing
+        # There's no security benefit to restricting localhost
+        localhost_origins = []
+        
+        # Add common development ports
+        for port in range(1000, 10000):  # Covers all common dev ports
+            localhost_origins.extend([
+                f"http://localhost:{port}",
+                f"http://127.0.0.1:{port}"
             ])
-            base_urls.extend([
-                f"http://127.0.0.1:{port}" for port in range(3000, 9000)
-            ])
+        
+        # Add base localhost
+        localhost_origins.extend([
+            "http://localhost",
+            "http://127.0.0.1"
+        ])
+        
+        base_urls.extend(localhost_origins)
         
         # Add environment-specific URLs
         if self.IS_PRODUCTION:
             base_urls.append("https://jean-memory-ui-virginia.onrender.com")
-            # Allow localhost for OAuth testing in production
-            base_urls.extend([
-                f"http://localhost:{port}" for port in range(8000, 9000)
-            ])
         else:
             base_urls.append("https://jean-memory-ui-dev.onrender.com")
         
