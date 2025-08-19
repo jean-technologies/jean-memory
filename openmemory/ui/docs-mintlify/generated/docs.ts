@@ -5,7 +5,7 @@
 export const consolidatedDocs = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 20:34:04
+**Generated on:** 2025-08-18 20:36:28
 
 ## What is Jean Memory?
 
@@ -20,17 +20,16 @@ Jean Memory is the universal memory layer for AI applications. It provides persi
 
 ### Quick Integration Examples:
 
-#### React (5 lines):
+#### React (2 lines):
 \`\`\`tsx
-import { useState } from 'react';
-import { useJean, SignInWithJean, JeanChat } from '@jeanmemory/react';
+import { JeanProvider, JeanChatComplete } from '@jeanmemory/react';
 
 function MyApp() {
-  const [user, setUser] = useState(null);
-  const { agent } = useJean({ user });
-  
-  if (!agent) return <SignInWithJean apiKey="your-api-key" onSuccess={setUser} />;
-  return <JeanChat agent={agent} />;
+  return (
+    <JeanProvider apiKey="your-api-key">
+      <JeanChatComplete />
+    </JeanProvider>
+  );
 }
 \`\`\`
 
