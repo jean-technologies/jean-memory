@@ -404,3 +404,101 @@ fetch('/api/v2/jean-chat', {
 **Status:** Production Ready  
 
 **Key Achievement:** Same user email = Same user ID across ALL Jean Memory applications forever.
+
+---
+
+## 🚀 **AUGUST 19, 2025 UPDATE: DEMO REPOSITORY & SDK INTEGRATION STATUS**
+
+### ✅ **Demo Repository Created and Deployed**
+
+**Repository:** https://github.com/jonathan-politzki/jean-authentication-demo  
+**Status:** Public repository with complete implementation  
+**Documentation:** Added live demo link to `authentication.mdx`
+
+**Demo Features:**
+- ✅ Complete React TypeScript application 
+- ✅ Comprehensive README with 5-minute setup guide
+- ✅ Working API key integration (`jean_sk_HbMsS3EEsZtlIcxlivYM0yPy6auK3ThYek9QMeX8lOo`)
+- ✅ Professional package.json with repository metadata
+- ✅ Example prompts and user guidance included
+- ✅ Production deployment instructions
+
+### 🔍 **CRITICAL DISCOVERY: SDK Integration Gap**
+
+**Issue Identified:** Published React SDK still uses old Supabase OAuth bridge  
+**Status:** `@jeanmemory/react@1.8.7` does NOT include Universal OAuth 2.1 PKCE implementation
+
+**What Happened During Testing:**
+1. **User clicked "Sign In with Jean"** in demo application
+2. **Redirected to Supabase OAuth** (old flow) instead of new Universal OAuth endpoints
+3. **Confirmed:** Published SDK has not been updated with new authentication system
+
+**Root Cause:**
+- Demo uses `@jeanmemory/react": "^1.8.7"` from npm
+- This version predates Universal OAuth implementation
+- New SDK v2.0 components exist locally but are not published
+
+### 📋 **IMMEDIATE ACTION ITEMS**
+
+**Priority 1: SDK Publishing**
+- [ ] Publish React SDK v2.0 with Universal OAuth to npm
+- [ ] Update demo to use new SDK version  
+- [ ] Verify complete OAuth 2.1 PKCE flow in demo
+
+**Priority 2: Documentation Updates**  
+- [ ] Update all SDK documentation to reflect new OAuth system
+- [ ] Create migration guide from v1.x to v2.0
+- [ ] Ensure "5 lines of code" promise works with published SDK
+
+**Priority 3: Testing & Validation**
+- [ ] Test published SDK with demo repository
+- [ ] Verify JWT token generation and user identity mapping
+- [ ] Confirm memory persistence across sessions
+
+### 🏗️ **SDK v2.0 Architecture Ready for Publishing**
+
+**Files Ready:**
+- ✅ `sdk/react/provider-v2.tsx` - Secure provider with Universal OAuth
+- ✅ `sdk/react/SignInWithJean-v2.tsx` - PKCE authentication component  
+- ✅ `sdk/react/oauth.ts` - OAuth 2.1 utilities and session management
+- ✅ `openmemory/api/app/routers/sdk_secure.py` - Secure v2.0 endpoints
+
+**Key Features:**
+- ✅ OAuth 2.1 PKCE flow (no more Supabase bridge)
+- ✅ JWT-in-header authentication for security
+- ✅ Universal identity across all applications
+- ✅ Session persistence and automatic recovery
+- ✅ Single API key configuration (no duplication)
+
+### 🎯 **Expected Outcome After SDK Publishing**
+
+**Demo Flow:**
+1. **User clicks "Sign In with Jean"** → Triggers Universal OAuth 2.1 PKCE
+2. **Google OAuth authentication** → Secure redirect to `/v1/sdk/oauth/callback`
+3. **JWT token generation** → User ID: `66d3d5d1-fc48-44a7-bbc0-1efa2e164fad`
+4. **Return to demo app** → Persistent session with localStorage
+5. **AI chat interface** → Memory-enabled conversations with user context
+
+**Success Metrics:**
+- ✅ Sub-5 minute setup time maintained
+- ✅ Zero configuration complexity for developers  
+- ✅ Universal identity working across all Jean Memory apps
+- ✅ "5 lines of code" promise delivered in production
+
+### 📊 **Current Status Summary**
+
+**✅ COMPLETED:**
+- Universal OAuth 2.1 PKCE backend implementation
+- Complete demo repository with documentation
+- GitHub deployment and public access
+- SDK v2.0 architecture and components
+
+**🔄 IN PROGRESS:**
+- SDK v2.0 publishing to npm
+- Demo integration with new SDK version
+- End-to-end OAuth flow testing
+
+**🎯 NEXT MILESTONE:** 
+Complete SDK publishing and verify the demo works with published Universal OAuth components, delivering the full "5 lines of code" promise with enterprise-grade security.
+
+**Impact:** Once SDK v2.0 is published, developers will get OAuth 2.1 PKCE, universal identity, and JWT authentication automatically - no configuration required.
