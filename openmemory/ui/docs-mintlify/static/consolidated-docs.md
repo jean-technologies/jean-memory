@@ -37,8 +37,8 @@ context = jean.get_context(user_token="token", message="Hello")
 
 #### Node.js:
 ```javascript
-import { JeanMemoryClient } from '@jeanmemory/node';
-const jean = new JeanMemoryClient({ apiKey: "your-api-key" });
+import { JeanClient } from '@jeanmemory/node';
+const jean = new JeanClient({ apiKey: "your-api-key" });
 const context = await jean.getContext({ user_token: "token", message: "Hello" });
 ```
 
@@ -621,7 +621,7 @@ context = jean.get_context(
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```python
 # The intelligent, orchestrated way (recommended):
@@ -657,7 +657,7 @@ The example below shows how to create a Next.js API route that is compatible wit
 ```typescript {{ title: 'pages/api/chat.ts' }}
 
 // Create the clients
-const jean = new JeanMemoryClient({ apiKey: process.env.JEAN_API_KEY });
+const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Set the runtime to edge for best performance
@@ -765,7 +765,7 @@ const context = await jean.getContext({
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```typescript
 // The intelligent, orchestrated way (recommended):

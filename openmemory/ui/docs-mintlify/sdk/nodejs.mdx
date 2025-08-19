@@ -18,12 +18,12 @@ A common use case is to create an API endpoint that your frontend can call. This
 The example below shows how to create a Next.js API route that is compatible with edge runtimes and the Vercel AI SDK.
 
 ```typescript {{ title: 'pages/api/chat.ts' }}
-import { JeanMemoryClient } from '@jeanmemory/node';
+import { JeanClient } from '@jeanmemory/node';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import OpenAI from 'openai';
 
 // Create the clients
-const jean = new JeanMemoryClient({ apiKey: process.env.JEAN_API_KEY });
+const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Set the runtime to edge for best performance
@@ -133,7 +133,7 @@ const context = await jean.getContext({
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```typescript
 // The intelligent, orchestrated way (recommended):
