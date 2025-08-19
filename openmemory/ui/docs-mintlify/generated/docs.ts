@@ -5,7 +5,7 @@
 export const consolidatedDocs = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 20:43:14
+**Generated on:** 2025-08-18 21:57:27
 
 ## What is Jean Memory?
 
@@ -229,6 +229,24 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 \`\`\`bash
 npm install @jeanmemory/react
 \`\`\`
+
+**Warning:**
+**Breaking Changes in v2.0.0**
+
+The React SDK has been simplified and improved in v2.0.0:
+
+\`\`\`typescript
+// ❌ v1.x (Old) - No longer available
+
+// ✅ v2.0.0 (New) - Use unified components
+
+\`\`\`
+
+**Changes:**
+- Removed incomplete v2 components (\`-v2.tsx\` files)
+- Consolidated to single, robust component API
+- All v1.11.0 authentication fixes preserved
+- Enhanced StrictMode compatibility and OAuth reliability
 
 ## Three Integration Approaches
 
@@ -502,6 +520,26 @@ The Jean Memory Python SDK provides a simple, headless interface to our powerful
 pip install jeanmemory
 \`\`\`
 
+**Warning:**
+**Breaking Changes in v2.0.0**
+
+The Python SDK has undergone major improvements in v2.0.0:
+
+\`\`\`python
+# ❌ v1.x (Old)
+from jean_memory import JeanMemoryClient
+client = JeanMemoryClient('jean_sk_...')
+
+# ✅ v2.0.0 (New)  
+from jeanmemory import JeanMemoryClient
+client = JeanMemoryClient(api_key='jean_sk_...')
+\`\`\`
+
+**Changes:**
+- Package name: \`jean_memory\` → \`jeanmemory\` 
+- Constructor: Positional → Keyword-only arguments
+- More consistent API with other SDKs
+
 ## Usage: Adding Context to an Agent
 
 The primary use case for the Python SDK is to retrieve context that you can then inject into a prompt for your chosen Large Language Model.
@@ -511,10 +549,10 @@ The example below shows a typical workflow where we get context from Jean Memory
 \`\`\`python
 
 from openai import OpenAI
-from jeanmemory import JeanClient
+from jeanmemory import JeanMemoryClient
 
 # 1. Initialize the clients
-jean = JeanClient(api_key=os.environ.get("JEAN_API_KEY"))
+jean = JeanMemoryClient(api_key=os.environ.get("JEAN_API_KEY"))
 openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # 2. Get the user token from your frontend (or use auto test user)
@@ -554,7 +592,7 @@ print(completion.choices[0].message.content)
 \`\`\`
 
 This code block demonstrates the complete "golden path" for using the headless Python SDK. Here's a step-by-step breakdown:
-1.  **Initialization**: It creates instances of the \`JeanClient\` and a large language model client (in this case, \`OpenAI\`).
+1.  **Initialization**: It creates instances of the \`JeanMemoryClient\` and a large language model client (in this case, \`OpenAI\`).
 2.  **Authentication**: It retrieves a \`user_token\` that your frontend would have acquired through the OAuth sign-in flow. This token is crucial as it identifies the user whose memory you want to access.
 3.  **Context Retrieval**: It calls \`jean.get_context()\`, sending the user's token and their latest message. This is the core of the integration, where Jean Memory performs its context engineering.
 4.  **Prompt Engineering**: It constructs a final prompt for the LLM, strategically placing the retrieved context before the user's actual question. This gives the LLM the necessary background information to provide a relevant, personalized response.
@@ -570,14 +608,14 @@ For headless applications without a frontend, you have several options:
 
 \`\`\`python
 # Option 1: Test mode (development)
-jean = JeanClient(api_key="jean_sk_test_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_test_your_key")
 context = jean.get_context(
     # user_token=None automatically uses test user
     message="Hello"
 )
 
 # Option 2: Manual OAuth flow (production)
-jean = JeanClient(api_key="jean_sk_live_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_live_your_key")
 
 # Generate OAuth URL for manual authentication
 auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
@@ -587,7 +625,7 @@ print(f"Visit: {auth_url}")
 user_token = jean.exchange_code_for_token(auth_code)
 
 # Option 3: Service account (enterprise)
-jean = JeanClient(
+jean = JeanMemoryClient(
     api_key="jean_sk_live_your_key",
     service_account_key="your_service_account_key"
 )
@@ -626,7 +664,7 @@ context = jean.get_context(
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the \`JeanClient\` also provides a \`tools\` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the \`JeanMemoryClient\` also provides a \`tools\` namespace for direct, deterministic access to the core memory functions.
 
 \`\`\`python
 # The intelligent, orchestrated way (recommended):
