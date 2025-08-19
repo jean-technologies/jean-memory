@@ -421,7 +421,7 @@ class JeanMemoryClient:
                 user_token=final_user_token,
                 api_key=self.client.api_key,
                 tool_name='deep_memory_query',
-                arguments={'query': query},
+                arguments={'search_query': query},
                 api_base=self.client.api_base
             )
 

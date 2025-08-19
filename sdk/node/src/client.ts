@@ -437,7 +437,7 @@ export class JeanMemoryClient {
         this.apiKey,
         'deep_memory_query',
         { 
-          query: query
+          search_query: query
         },
         this.apiBase
       );
