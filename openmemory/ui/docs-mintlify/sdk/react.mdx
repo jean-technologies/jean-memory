@@ -11,6 +11,27 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 npm install @jeanmemory/react
 ```
 
+<Warning>
+**Breaking Changes in v2.0.0**
+
+The React SDK has been simplified and improved in v2.0.0:
+
+```typescript
+// ❌ v1.x (Old) - No longer available
+import { JeanProvider } from '@jeanmemory/react/provider-v2';
+import { SignInWithJean } from '@jeanmemory/react/SignInWithJean-v2';
+
+// ✅ v2.0.0 (New) - Use unified components
+import { JeanProvider, SignInWithJean } from '@jeanmemory/react';
+```
+
+**Changes:**
+- Removed incomplete v2 components (`-v2.tsx` files)
+- Consolidated to single, robust component API
+- All v2.0.0 authentication fixes preserved
+- Enhanced StrictMode compatibility and OAuth reliability
+</Warning>
+
 ## Three Integration Approaches
 
 The Jean Memory React SDK provides three levels of integration complexity, allowing you to choose the right approach for your use case.

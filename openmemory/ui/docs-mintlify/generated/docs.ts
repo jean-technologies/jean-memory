@@ -5,7 +5,7 @@
 export const consolidatedDocs = `
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 21:57:27
+**Generated on:** 2025-08-18 22:00:28
 
 ## What is Jean Memory?
 
@@ -35,15 +35,15 @@ function MyApp() {
 
 #### Python:
 \`\`\`python
-from jeanmemory import JeanClient
-jean = JeanClient(api_key="your-api-key")
+from jeanmemory import JeanMemoryClient
+jean = JeanMemoryClient(api_key="your-api-key")
 context = jean.get_context(user_token="token", message="Hello")
 \`\`\`
 
 #### Node.js:
 \`\`\`javascript
-import { JeanClient } from '@jeanmemory/node';
-const jean = new JeanClient({ apiKey: "your-api-key" });
+import { JeanMemoryClient } from '@jeanmemory/node';
+const jean = new JeanMemoryClient({ apiKey: "your-api-key" });
 const context = await jean.getContext({ user_token: "token", message: "Hello" });
 \`\`\`
 
@@ -245,7 +245,7 @@ The React SDK has been simplified and improved in v2.0.0:
 **Changes:**
 - Removed incomplete v2 components (\`-v2.tsx\` files)
 - Consolidated to single, robust component API
-- All v1.11.0 authentication fixes preserved
+- All v2.0.0 authentication fixes preserved
 - Enhanced StrictMode compatibility and OAuth reliability
 
 ## Three Integration Approaches
@@ -759,7 +759,7 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the \`userToken\` is obtained by your frontend application through a secure OAuth 2.1 flow using our \`@jeanmemory/react\` SDK. Your frontend makes an authenticated request to this API route, including the \`userToken\` in the request body. See the [Authentication](/authentication) guide for more details.
 
-**Test User Support:** The Node.js SDK v1.2.10+ automatically detects when you don't provide a \`user_token\` and creates isolated test users for each API key:
+**Test User Support:** The Node.js SDK v2.0.0+ automatically detects when you don't provide a \`user_token\` and creates isolated test users for each API key:
 
 \`\`\`typescript
 // With user token (production)
