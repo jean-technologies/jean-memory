@@ -38,7 +38,7 @@ interface JeanContextValue {
   signIn: () => void;
   signOut: () => void;
   sendMessage: (message: string, options?: MessageOptions) => Promise<void>;
-  getContext: (query: string, options?: { mode: 'fast' | 'balanced' | 'deep' }) => Promise<any>;
+  getContext: (query: string, options?: { mode: 'fast' | 'balanced' | 'autonomous' | 'comprehensive' | 'deep' }) => Promise<any>;
   storeDocument: (title: string, content: string) => Promise<void>;
   connect: (service: 'notion' | 'slack' | 'gdrive') => void;
   clearConversation: () => void;
@@ -55,7 +55,7 @@ interface JeanContextValue {
 }
 
 export interface MessageOptions {
-  speed?: 'fast' | 'balanced' | 'comprehensive';
+  speed?: 'fast' | 'balanced' | 'autonomous' | 'comprehensive';
   tool?: 'jean_memory' | 'search_memory';
   format?: 'simple' | 'enhanced';
 }
