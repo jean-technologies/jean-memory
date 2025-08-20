@@ -51,7 +51,8 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
     
     if speed == "balanced":
         logger.info(f"[Balanced Path] Using ask_memory with Gemini 2.5 Flash synthesis for query: '{user_message[:50]}...'")
-        # Use ask_memory for intelligent synthesis of memories (3-5s typical response time)
+        # Use ask_memory for intelligent synthesis of memories with Gemini 2.5 Flash
+        # Gemini 2.5 Flash provides optimal adaptive thinking and cost efficiency (3-5s typical response time)
         from app.tools.memory import ask_memory
         return await ask_memory(question=user_message)
     

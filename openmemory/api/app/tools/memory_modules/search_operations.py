@@ -349,8 +349,9 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             # Initialize services
             memory_client = await get_async_memory_client()
             
-            # Use GPT-4o-mini for fast, cost-efficient synthesis
-            llm = OpenAILLM(config=BaseLlmConfig(model="gpt-4o-mini"))
+            # Use Gemini 2.5 Flash for optimal adaptive thinking and cost efficiency
+            from mem0.llms.gemini import GeminiLLM
+            llm = GeminiLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
             
             # 1. Initial vector search
             search_start_time = time.time()
