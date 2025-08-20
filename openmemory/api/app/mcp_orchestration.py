@@ -320,7 +320,8 @@ Provide rich context that helps understand them deeply, but keep it conversation
             
         except Exception as e:
             logger.error(f"❌ [Standard] Error in standard orchestration: {e}", exc_info=True)
-            return "" # Fail gracefully with no context
+            # Return a meaningful fallback instead of empty string
+            return f"I apologize, but I encountered an issue while retrieving your context. The system is experiencing some technical difficulties. Please try again in a moment."
 
     async def _handle_background_memory_saving(
         self, 
@@ -528,11 +529,11 @@ Provide rich context that helps understand them deeply, but keep it conversation
                 except (json.JSONDecodeError, TypeError):
                     logger.warning(f"Could not parse fallback search result: {search_result}")
             
-            return ""  # Return empty context if everything fails
+            return "I'm having difficulty accessing your memories right now. Please try your request again."
             
         except Exception as e:
             logger.error(f"🆘 [Fallback] Even fallback search failed: {e}", exc_info=True)
-            return ""
+            return "The memory system is currently unavailable. Please try again later."
 
     async def _get_deep_understanding_primer(self, plan: Dict, user_id: str) -> Dict:
         """
