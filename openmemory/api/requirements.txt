@@ -25,6 +25,7 @@ gotrue>=2.4.0
 feedparser>=6.0.11
 python-dateutil>=2.9.0
 google-generativeai>=0.8.0
+google-genai>=0.6.0
 beautifulsoup4>=4.12.3
 psutil>=6.1.0
 starlette>=0.40.0
