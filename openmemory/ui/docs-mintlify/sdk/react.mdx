@@ -7,26 +7,32 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 
 ## Getting Context: The `getContext` Function
 
-The primary way to retrieve context from Jean Memory is with the `getContext` function. It provides predictable performance tiers, allowing you to choose the right balance of speed and quality for your application.
+The primary way to retrieve context from Jean Memory is with the `getContext` function. It provides four distinct speed modes, allowing you to choose the right balance of speed and quality for your application.
 
 ```typescript
 const { getContext } = useJean();
 
-// Fast: Get a quick, reliable result in 1-2 seconds.
+// Fast: Direct memory search (0.5-1s)
 const fastContext = await getContext("What was my recent idea about AI?", { mode: 'fast' });
 
-// Deep: Get a comprehensive, synthesized analysis in ~30 seconds.
-const deepContext = await getContext("Analyze my writing style across my recent essays.", { mode: 'deep' });
+// Balanced: AI synthesis with Gemini 2.5 Flash (3-5s) - Recommended
+const balancedContext = await getContext("How should I approach this project?", { mode: 'balanced' });
 
-// Balanced (Default): Uses the standard intelligent orchestration.
-const balancedContext = await getContext("What are my current project goals?");
+// Autonomous: Intelligent orchestration with adaptive decision-making (variable latency)
+const smartContext = await getContext("Help me plan my week based on my goals", { mode: 'autonomous' });
+
+// Comprehensive: Deep document analysis (20-30s)
+const deepContext = await getContext("Analyze my writing style across my recent essays.", { mode: 'comprehensive' });
 ```
 
-### Performance Tiers
+### Speed Modes
 
--   **`fast`**: Uses a direct `search_memory` call. Ideal for real-time applications where speed is critical.
--   **`deep`**: Uses the powerful `deep_memory_query` for in-depth analysis. Best for asynchronous tasks or when the user has explicitly requested a deep dive.
--   **`balanced`** (Default): Uses the standard, AI-driven orchestration to determine the best context. Performance is variable.
+-   **`fast`**: Direct memory search returning raw memories. Ideal for real-time applications where speed is critical.
+-   **`balanced`**: AI synthesis using Gemini 2.5 Flash for conversational responses. Recommended for most use cases.
+-   **`autonomous`**: Intelligent orchestration that adaptively determines context analysis depth. May take longer for complex reasoning.
+-   **`comprehensive`**: Deep document analysis with extensive memory search. Best for research and detailed analysis.
+
+[Learn more about speed modes →](/speed-modes)
 
 ## Installation
 

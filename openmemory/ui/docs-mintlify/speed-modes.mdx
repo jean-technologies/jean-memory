@@ -1,0 +1,305 @@
+---
+title: "Speed Modes"
+description: "Configure the speed and depth of context retrieval with Jean Memory's four distinct processing modes."
+---
+
+## Overview
+
+Jean Memory provides four distinct speed modes that allow you to balance response time with context depth based on your application's requirements. Each mode is optimized for different use cases, from real-time chat responses to comprehensive document analysis.
+
+<CardGroup cols={2}>
+  <Card title="Fast Mode" icon="bolt" color="#10B981">
+    Direct memory search with sub-second response times
+  </Card>
+  <Card title="Balanced Mode" icon="balance-scale" color="#6366F1">
+    AI synthesis with Gemini 2.5 Flash for conversational responses
+  </Card>
+  <Card title="Autonomous Mode" icon="brain" color="#8B5CF6">
+    Intelligent orchestration with adaptive decision-making
+  </Card>
+  <Card title="Comprehensive Mode" icon="magnifying-glass" color="#F59E0B">
+    Deep document analysis with extensive memory search
+  </Card>
+</CardGroup>
+
+## Speed Mode Details
+
+### Fast Mode
+
+**Purpose**: Optimized for applications requiring sub-second response times with direct memory retrieval.
+
+**Performance**: 0.5-1 second response time
+
+**Use Cases**:
+- Real-time chat applications
+- Mobile applications with strict latency requirements
+- Quick factual lookups
+- Autocomplete and suggestion systems
+
+**Returns**: Raw memory search results with a maximum of 10 relevant memories
+
+```javascript
+await jeanMemory({
+  user_message: "What are my meeting preferences?",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "fast"
+});
+```
+
+### Balanced Mode (Recommended)
+
+**Purpose**: Provides natural language synthesis of memories using Gemini 2.5 Flash for conversational AI interactions.
+
+**Performance**: 3-5 seconds with Gemini 2.5 Flash processing
+
+**Technology**: Powered by Google's Gemini 2.5 Flash model, optimized for adaptive thinking and cost efficiency
+
+**Use Cases**:
+- Conversational AI chatbots
+- Personal assistant applications
+- Customer support systems
+- Educational tutoring platforms
+
+**Returns**: AI-synthesized conversational response based on relevant memories
+
+```javascript
+await jeanMemory({
+  user_message: "How should I approach this work conflict?",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "balanced"
+});
+```
+
+<Info>
+Balanced mode is the recommended default for most conversational AI applications, providing the optimal balance between response quality and performance.
+</Info>
+
+### Autonomous Mode
+
+**Purpose**: Intelligent orchestration that adaptively determines the appropriate level of context analysis based on conversation state and content complexity.
+
+**Performance**: Variable latency depending on analysis requirements. Can range from seconds to potentially longer than comprehensive mode for complex multi-step reasoning.
+
+**Intelligence**: The autonomous mode analyzes the context to decide:
+- Whether new information should be saved
+- How much context to retrieve
+- What depth of analysis is needed
+- Whether to trigger background processes
+
+**Use Cases**:
+- Complex planning and decision-making tasks
+- Multi-step reasoning requirements
+- Context-aware adaptive responses
+- Applications requiring intelligent workflow orchestration
+
+**Returns**: Intelligently orchestrated response with adaptive context analysis
+
+```javascript
+await jeanMemory({
+  user_message: "Help me plan my week based on my goals and schedule",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "autonomous"
+});
+```
+
+<Warning>
+Autonomous mode may take longer than other modes when performing complex analysis, as it prioritizes intelligent decision-making over consistent response times.
+</Warning>
+
+### Comprehensive Mode
+
+**Purpose**: Extensive memory analysis with deep document search capabilities for research and detailed information retrieval.
+
+**Performance**: 20-30 seconds for thorough analysis
+
+**Capabilities**:
+- Deep document chunk search
+- Extensive memory correlation
+- Comprehensive context synthesis
+- Cross-document relationship analysis
+
+**Use Cases**:
+- Research and analysis tasks
+- Detailed document exploration
+- Comprehensive information synthesis
+- Academic and professional research
+
+**Returns**: Extensive memory analysis with document search results
+
+```javascript
+await jeanMemory({
+  user_message: "Analyze all mentions of productivity strategies in my documents",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "comprehensive"
+});
+```
+
+<Note>
+Comprehensive mode can also be accessed using `speed: "deep"` for backward compatibility.
+</Note>
+
+## Performance Comparison
+
+| Mode | Response Time | Technology | Best For |
+|------|---------------|------------|----------|
+| Fast | 0.5-1s | Direct search | Real-time interactions |
+| Balanced | 3-5s | Gemini 2.5 Flash synthesis | Conversational AI |
+| Autonomous | Variable | Intelligent orchestration | Complex reasoning |
+| Comprehensive | 20-30s | Deep document analysis | Research tasks |
+
+## Implementation Examples
+
+### React SDK
+
+```tsx
+import { useJeanMemory } from '@jeanmemory/react';
+
+function ChatComponent() {
+  const { getContext } = useJeanMemory();
+  
+  // Fast mode for quick responses
+  const handleQuickQuery = async (query: string) => {
+    const response = await getContext(query, { mode: 'fast' });
+    return response;
+  };
+  
+  // Balanced mode for conversational responses
+  const handleConversation = async (message: string) => {
+    const response = await getContext(message, { mode: 'balanced' });
+    return response;
+  };
+  
+  // Autonomous mode for complex tasks
+  const handleComplexTask = async (task: string) => {
+    const response = await getContext(task, { mode: 'autonomous' });
+    return response;
+  };
+}
+```
+
+### Node.js SDK
+
+```javascript
+import { JeanMemoryClient } from '@jeanmemory/node';
+
+const client = new JeanMemoryClient({ apiKey: 'your_api_key' });
+
+// Fast mode for APIs requiring quick responses
+const quickResponse = await client.getContext({
+  query: "User's last order status",
+  speed: "fast"
+});
+
+// Balanced mode for natural conversation
+const conversationalResponse = await client.getContext({
+  query: "How can I improve my productivity?",
+  speed: "balanced"
+});
+
+// Comprehensive mode for detailed analysis
+const detailedAnalysis = await client.getContext({
+  query: "Analyze my learning patterns from all documents",
+  speed: "comprehensive"
+});
+```
+
+### Python SDK
+
+```python
+from jeanmemory import JeanMemoryClient
+
+client = JeanMemoryClient(api_key="your_api_key")
+
+# Fast mode for quick lookups
+quick_result = client.get_context(
+    query="Meeting preferences",
+    speed="fast"
+)
+
+# Balanced mode for conversational AI
+conversation = client.get_context(
+    query="What's the best way to handle team conflicts?",
+    speed="balanced"
+)
+
+# Autonomous mode for intelligent decision-making
+smart_response = client.get_context(
+    query="Create a project timeline based on my goals",
+    speed="autonomous"
+)
+```
+
+## Best Practices
+
+### Mode Selection Guidelines
+
+1. **Default Choice**: Use balanced mode for most conversational interactions
+2. **Performance Critical**: Choose fast mode when sub-second response is required
+3. **Complex Analysis**: Select autonomous mode for multi-step reasoning and adaptive responses
+4. **Research Tasks**: Use comprehensive mode for thorough document analysis
+
+### Optimization Tips
+
+- **Fast Mode**: Ideal for autocomplete, quick facts, and simple queries where raw data is sufficient
+- **Balanced Mode**: Perfect for chatbots, personal assistants, and natural conversation flows
+- **Autonomous Mode**: Best for planning, analysis, and context-dependent responses requiring intelligence
+- **Comprehensive Mode**: Use sparingly due to latency; excellent for detailed research and analysis
+
+### Error Handling
+
+Always implement proper error handling for all modes, especially autonomous and comprehensive modes which may have variable response times:
+
+```javascript
+try {
+  const response = await getContext(query, { mode: 'autonomous' });
+  // Handle successful response
+} catch (error) {
+  // Handle timeout or processing errors
+  console.error('Context retrieval failed:', error);
+}
+```
+
+## Response Formats
+
+### Fast Mode Response
+```json
+{
+  "status": "success",
+  "memories": [
+    {
+      "id": "mem_123",
+      "content": "User prefers morning meetings at 9 AM",
+      "score": 0.92,
+      "created_at": "2024-01-15T09:00:00Z"
+    }
+  ],
+  "total_found": 5,
+  "response_time": 0.8
+}
+```
+
+### Balanced Mode Response
+```json
+{
+  "status": "success",
+  "question": "How do I handle work stress?",
+  "answer": "Based on your memories, you typically handle work stress by taking short walks, practicing deep breathing, and scheduling regular breaks. You've mentioned that listening to calm music during breaks is particularly effective for you.",
+  "memories_found": 8,
+  "total_duration": 3.2
+}
+```
+
+## Technical Implementation
+
+The speed modes are implemented at the orchestration layer, where the `jean_memory` tool routes requests to different processing pathways based on the specified speed parameter:
+
+- **Fast**: Direct `search_memory` with explicit result limits
+- **Balanced**: `ask_memory` with Gemini 2.5 Flash synthesis
+- **Autonomous**: Full orchestration with intelligent context analysis
+- **Comprehensive**: `deep_memory_query` with document chunk search
+
+This architecture ensures optimal performance for each use case while maintaining consistent API interfaces across all modes.

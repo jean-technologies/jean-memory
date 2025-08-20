@@ -5,6 +5,27 @@ description: "The low-level, deterministic tools that power Jean Memory's contex
 
 These are the primitive, low-level tools that our context engineering flows are built upon. While our primary `jean_memory` tool orchestrates these for you, they are directly callable for advanced use cases where you need precise, deterministic control over the memory layer.
 
+## Primary Tool: jean_memory
+
+The `jean_memory` tool is the main interface for context-aware interactions. It supports four speed modes for different performance requirements:
+
+```javascript
+await jean_memory({
+  user_message: "Your query here",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "balanced" // Options: "fast", "balanced", "autonomous", "comprehensive"
+});
+```
+
+**Speed Modes**:
+- **fast**: Direct memory search (0.5-1s)
+- **balanced**: AI synthesis with Gemini 2.5 Flash (3-5s) - Recommended
+- **autonomous**: Intelligent orchestration with variable latency
+- **comprehensive**: Deep document analysis (20-30s)
+
+[Learn more about speed modes →](/speed-modes)
+
 ### Document and Memory Tools
 
 -   **`store_document(title, content)`**: Store large documents, files, or lengthy content. Perfect for saving meeting notes, documentation, or articles for future reference.

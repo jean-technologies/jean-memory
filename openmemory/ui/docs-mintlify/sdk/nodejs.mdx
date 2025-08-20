@@ -39,11 +39,12 @@ export default async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // 2. Get context from Jean Memory
+  // 2. Get context from Jean Memory with speed control
   const contextResponse = await jean.getContext({
     user_token: userToken,
     message: currentMessage,
-    // All defaults: tool="jean_memory", speed="balanced", format="enhanced"
+    speed: "balanced", // Options: "fast", "balanced", "autonomous", "comprehensive"
+    // tool="jean_memory", format="enhanced" (defaults)
   });
 
   // 3. Engineer your final prompt
@@ -104,18 +105,53 @@ This allows you to test core functionality immediately without implementing full
 
 ---
 
-## Configuration Options (Optional)
+## Speed Modes
 
-For 99% of use cases, the defaults work perfectly. But when you need control:
+Jean Memory provides four distinct speed modes to balance response time with context depth:
 
 ```typescript
-// Speed-optimized (faster, less comprehensive)
-const context = await jean.getContext({
+// Fast: Direct memory search (0.5-1s)
+const fastContext = await jean.getContext({
   user_token: userToken,
-  message: currentMessage,
-  speed: "fast"  // vs "balanced" (default) or "comprehensive"
+  message: "What's my schedule?",
+  speed: "fast"
 });
 
+// Balanced: AI synthesis with Gemini 2.5 Flash (3-5s) - Recommended
+const balancedContext = await jean.getContext({
+  user_token: userToken,
+  message: "How should I handle this situation?",
+  speed: "balanced"
+});
+
+// Autonomous: Intelligent orchestration (variable latency)
+const smartContext = await jean.getContext({
+  user_token: userToken,
+  message: "Help me plan my project timeline",
+  speed: "autonomous"
+});
+
+// Comprehensive: Deep document analysis (20-30s)
+const deepContext = await jean.getContext({
+  user_token: userToken,
+  message: "Analyze patterns in my communication style",
+  speed: "comprehensive"
+});
+```
+
+**Speed Mode Selection:**
+- **fast**: Ideal for real-time applications requiring sub-second responses
+- **balanced**: Recommended for most conversational AI use cases with natural language synthesis
+- **autonomous**: Best for complex tasks requiring intelligent decision-making
+- **comprehensive**: Use for research and detailed analysis tasks
+
+[Learn more about speed modes →](/speed-modes)
+
+## Additional Configuration
+
+For advanced use cases, you can configure additional options:
+
+```typescript
 // Different tools for specific needs
 const context = await jean.getContext({
   user_token: userToken,

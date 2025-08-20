@@ -54,6 +54,7 @@
       "pages": [
         "authentication",
         "context-engineering",
+        "speed-modes",
         "tools"
       ]
     },

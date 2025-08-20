@@ -1,0 +1,24 @@
+{
+  "api_connectivity": true,
+  "mcp_endpoint": {
+    "accessible": true,
+    "response_time": 0.4089188575744629,
+    "has_jsonrpc": true,
+    "has_result": true,
+    "has_content": true,
+    "error_detected": true,
+    "error_message": "Failed to generate answer: The 'google-genai' library is required. Please install it using 'pip install google-genai'."
+  },
+  "speed_modes": {
+    "fast": {
+      "success": true,
+      "response_time": 2.940629005432129,
+      "has_error": false
+    },
+    "balanced": {
+      "success": true,
+      "response_time": 0.3393559455871582,
+      "has_error": true
+    }
+  }
+}

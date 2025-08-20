@@ -19,7 +19,20 @@ This is a continuous process. Memories are constantly being saved and analyzed i
 
 ## The Orchestration Engine
 
-The `jean_memory` API is the heart of the system. It's the primary interface for your AI to interact with the memory layer, orchestrating various underlying functions to provide the right context at the right depth. 
+The `jean_memory` API is the heart of the system. It's the primary interface for your AI to interact with the memory layer, orchestrating various underlying functions to provide the right context at the right depth.
+
+### Speed and Depth Control
+
+Jean Memory provides four distinct speed modes that allow you to balance response time with context depth:
+
+- **Fast Mode**: Direct memory search (0.5-1s) for real-time applications
+- **Balanced Mode**: AI synthesis with Gemini 2.5 Flash (3-5s) for conversational responses
+- **Autonomous Mode**: Intelligent orchestration with variable latency for complex decision-making
+- **Comprehensive Mode**: Deep document analysis (20-30s) for research tasks
+
+The autonomous mode is particularly intelligent - it analyzes the conversation context to autonomously determine whether information should be saved, how much context to retrieve, and what depth of analysis is needed. While this may take longer than other modes for complex analysis, it prioritizes intelligent decision-making over consistent response times.
+
+[Learn more about configuring speed modes →](/speed-modes) 
 
 ```mermaid
 graph TD;
