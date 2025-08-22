@@ -55,7 +55,8 @@
         "authentication",
         "context-engineering",
         "speed-modes",
-        "tools"
+        "tools",
+        "mcp-api"
       ]
     },
     {

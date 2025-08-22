@@ -353,80 +353,37 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             from mem0.llms.gemini import GeminiLLM
             llm = GeminiLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
             
-            # 1. Initial vector search
+            # 1. Perform multiple, targeted vector searches for richer context
             search_start_time = time.time()
-            logger.info(f"ask_memory: Starting memory search for user {supa_uid}")
-            
-            # Call async memory client directly - this uses Jean Memory V2 mem0 + graphiti search
-            # Increased limit for a much richer context in balanced mode
-            search_result = await memory_client.search(query=question, user_id=supa_uid, limit=50)
-            
-            # Process initial results
-            initial_memories = []
-            if isinstance(search_result, dict) and 'results' in search_result:
-                initial_memories = search_result['results']
-            elif isinstance(search_result, list):
-                initial_memories = search_result
-            
-            # Check if we should do deep search (for questions about detailed content)
-            has_substack = any(
-                m.get('metadata', {}).get('source_app') == 'substack' 
-                for m in initial_memories
-            )
-            
-            # Trigger deep search for questions that need detailed content
-            should_deep_search = (
-                has_substack and (
-                    'detail' in question.lower() or
-                    'specific' in question.lower() or
-                    'exactly' in question.lower() or
-                    'full' in question.lower() or
-                    len(initial_memories) < 3
-                )
-            )
-            
-            # TEMPORARILY DISABLED: Deep search causing PostgreSQL hangs
-            # TODO: Re-enable once PostgreSQL full-text search is fixed
-            if False:  # should_deep_search:
-                logger.info("ask_memory: Triggering deep search for detailed content")
-                
-                # Extract document IDs
-                document_ids = extract_document_ids_from_results(initial_memories)
-                
-                if document_ids:
-                    # Search chunks for more detailed content
-                    chunk_results = await search_document_chunks(
-                        query=question,
-                        user_id=supa_uid,
-                        document_ids=list(document_ids),
-                        limit_per_doc=3,
-                        total_limit=10
-                    )
-                    
-                    # Combine results for LLM context
-                    if chunk_results:
-                        # Add chunks to the search results
-                        search_result = {
-                            'results': initial_memories + chunk_results
-                        }
-            
-            logger.info("ask_memory: Chunk search temporarily disabled due to PostgreSQL issues")
+            logger.info(f"ask_memory: Starting targeted memory searches for user {supa_uid}")
 
+            search_queries = [
+                question, # The user's direct question
+                "user's core preferences, personality traits, and values",
+                "user's current projects, work, and learning goals"
+            ]
+
+            tasks = [memory_client.search(query=q, user_id=supa_uid, limit=20) for q in search_queries]
+            search_results = await asyncio.gather(*tasks)
+
+            # Combine and deduplicate memories from all searches
+            unique_memories = {}
+            for result in search_results:
+                if isinstance(result, list):
+                    for mem in result:
+                        if isinstance(mem, dict) and mem.get('id'):
+                            unique_memories[mem['id']] = mem
+            
+            memories = list(unique_memories.values())
             search_duration = time.time() - search_start_time
             
-            # Process results
-            memories = []
-            if isinstance(search_result, dict) and 'results' in search_result:
-                memories = search_result['results'][:10]
-            elif isinstance(search_result, list):
-                memories = search_result[:10]
-            
-            logger.info(f"ask_memory: Memory search for user {supa_uid} took {search_duration:.2f}s. Found {len(memories)} results.")
+            logger.info(f"ask_memory: Memory search for user {supa_uid} took {search_duration:.2f}s. Found {len(memories)} unique results from {len(search_queries)} queries.")
+
             
             # Filter out contaminated memories and limit token usage for efficient synthesis
             clean_memories = []
             total_chars = 0
-            max_chars = 16000 # Further increased for richer synthesis
+            max_chars = 16000 # Increased for richer synthesis
             
             for idx, mem in enumerate(memories):
                 memory_text = mem.get('memory', mem.get('content', ''))

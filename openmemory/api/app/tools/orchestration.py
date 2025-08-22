@@ -129,4 +129,41 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
         logger.error(f"Error in jean_memory dual-path orchestration: {e}", exc_info=True)
         return f"I had trouble processing your message: {str(e)}"
     finally:
-        logger.info(f"[PERF] Total jean_memory call took {time.time() - total_start_time:.4f}s") 
+        logger.info(f"[PERF] Total jean_memory call took {time.time() - total_start_time:.4f}s")
+
+
+@mcp.tool
+async def get_context_by_depth(
+    user_message: str, 
+    depth: str = "balanced"
+) -> str:
+    """
+    Retrieves context from Jean Memory based on a specified depth level.
+    This provides more direct and predictable control for MCP clients.
+    ---
+    Args:
+        user_message (str): The user's message or query.
+        depth (str): The desired context depth.
+            - "none": No context is retrieved. Returns a simple confirmation message.
+            - "fast": Performs a quick vector search for raw memories (uses search_memory).
+            - "balanced": Synthesizes a conversational answer from relevant memories (uses ask_memory).
+            - "comprehensive": Performs a deep analysis of memories and documents (uses deep_memory_query).
+    ---
+    Returns:
+        str: The retrieved context, formatted for an LLM.
+    """
+    logger.info(f"🧠 [get_context_by_depth] Called with depth: '{depth}' for message: '{user_message[:50]}...'")
+    
+    if depth == "none":
+        return "No context requested."
+    elif depth == "fast":
+        return await search_memory(query=user_message, limit=15)
+    elif depth == "balanced":
+        from app.tools.memory import ask_memory
+        return await ask_memory(question=user_message)
+    elif depth == "comprehensive":
+        return await deep_memory_query(search_query=user_message)
+    else:
+        logger.warning(f"Invalid depth '{depth}' specified. Defaulting to 'balanced'.")
+        from app.tools.memory import ask_memory
+        return await ask_memory(question=user_message) 

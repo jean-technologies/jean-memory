@@ -1,0 +1,148 @@
+---
+title: "MCP API Reference"
+description: "Learn how to connect directly to the Jean Memory MCP API for advanced use cases and building autonomous agents."
+---
+
+## Overview
+
+While our SDKs are the recommended way to integrate Jean Memory for most applications, we also provide a powerful, low-level API endpoint for advanced use cases. The Model Context Protocol (MCP) API is designed for developers who need direct control over the context engineering process or are building autonomous agents that can leverage Jean Memory's tool-calling capabilities.
+
+This is the same endpoint that our enterprise partners, like Claude, use to integrate Jean Memory as a tool for their models.
+
+<Info>
+**When to use the MCP API:**
+- You are building an autonomous AI agent.
+- You need to integrate Jean Memory as a callable tool for an existing LLM.
+- You require streaming responses using Server-Sent Events (SSE).
+- You need more control than the SDKs provide.
+</Info>
+
+## Endpoint URL
+
+The primary endpoint for all MCP interactions is a single HTTP POST request:
+
+```bash
+https://jean-memory-api-virginia.onrender.com/mcp/v2/{client_name}/{user_id}
+```
+
+-   **`client_name`**: A unique identifier for your application (e.g., `my-agent`, `claude`).
+-   **`user_id`**: The unique identifier for the end-user.
+
+## Authentication
+
+The MCP API uses the same secure authentication as our SDKs. All requests must include a valid JWT in the `Authorization` header.
+
+```
+Authorization: Bearer <your_pkce_jwt>
+```
+
+Our SDKs handle the PKCE flow for generating these tokens automatically. If you are building a custom client, you will need to implement a standard PKCE authentication flow to acquire a user-specific JWT.
+
+## Request Body
+
+The request body is a JSON object that specifies the tool you want to call and its parameters.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "tool_name": "get_context_by_depth",
+    "tool_params": {
+      "user_message": "What have I been working on recently?",
+      "depth": "balanced"
+    }
+  },
+  "id": "1"
+}
+```
+
+### Key Parameters:
+
+-   **`method`**: Should always be `tools/call`.
+-   **`tool_name`**: The name of the tool you want to execute. We recommend using `get_context_by_depth` for predictable results.
+-   **`tool_params`**: An object containing the parameters for the specified tool.
+
+## The `get_context_by_depth` Tool
+
+This is the recommended tool for all direct API interactions. It provides direct control over the context depth.
+
+**Tool Parameters:**
+- **`user_message`** (string, required): The user's message or query.
+- **`depth`** (string, optional, default: `"balanced"`): The desired context depth.
+    - `"none"`: Returns no context. Useful when your agent has determined it doesn't need external information.
+    - `"fast"`: A quick vector search for raw memories. Sub-second response time.
+    - `"balanced"`: Synthesizes a conversational answer from a rich set of memories. The recommended default. (≈5-10 seconds)
+    - `"comprehensive"`: A deep analysis of memories and documents. (≈30 seconds)
+
+## Server-Sent Events (SSE) for Streaming
+
+For clients that support streaming (like many conversational AI applications), the MCP API can stream responses using SSE. This allows you to receive the response as it's generated, improving the user experience.
+
+To enable streaming, include the `Accept: text/event-stream` header in your request.
+
+**Example JavaScript Client:**
+
+```javascript
+const clientName = 'your_client_name';
+const userId = 'user_123';
+const token = 'your_pkce_jwt'; // Acquired via your auth flow
+
+const eventSource = new EventSource(
+  `https://jean-memory-api-virginia.onrender.com/mcp/v2/${clientName}/${userId}`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        tool_name: 'get_context_by_depth',
+        tool_params: {
+          user_message: "What are my current project goals?",
+          depth: "balanced"
+        },
+      },
+      id: "1",
+    }),
+  }
+);
+
+eventSource.onmessage = (event) => {
+  // Each chunk of the response will arrive here
+  console.log('Received chunk:', event.data);
+};
+
+eventSource.onerror = (error) => {
+  console.error('SSE Error:', error);
+  eventSource.close();
+};
+```
+
+<Warning>
+**Heartbeats:** The API will send colon-prefixed comments (`:heartbeat`) periodically to keep the connection alive, especially through proxies like Cloudflare. Your client should be prepared to ignore these messages.
+</Warning>
+
+## Example Response (Non-Streaming)
+
+A standard, non-streaming `POST` request will receive a JSON response like this:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "content": [
+            {
+                "type": "text",
+                "text": "Based on your recent memories, you've been heavily focused on developing 'Jean Memory', an AI memory layer. This includes work on SDKs, comprehensive testing, and preparing for a YC application. You're also exploring machine learning applications in your data analysis work."
+            }
+        ],
+        "tool_name": "get_context_by_depth"
+    },
+    "id": "1"
+}
+```
