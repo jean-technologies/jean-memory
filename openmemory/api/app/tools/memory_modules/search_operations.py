@@ -337,6 +337,8 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
     """
     from app.utils.memory import get_async_memory_client
     
+    start_time = time.time()  # Add missing start_time definition
+    
     try:
         memory_client = await get_async_memory_client()
         llm = GeminiLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
@@ -418,22 +420,22 @@ Provide a helpful and conversational answer based on the memories above. If the 
             prompt = f"""The user asked: "{question}"
 
 No relevant memories were found. Provide a helpful response indicating that no relevant information was found in their memory."""
-
-            
-            synthesis_start_time = time.time()
-            response = llm.generate_response([{"role": "user", "content": prompt}])
-            synthesis_duration = time.time() - synthesis_start_time
-            
-            total_duration = time.time() - start_time
-            logger.info(f"ask_memory: Completed for user {supa_uid} in {total_duration:.2f}s (search: {search_duration:.2f}s, synthesis: {synthesis_duration:.2f}s)")
-            
-            return format_success_response({
-                "question": question,
-                "answer": response,
-                "memories_found": len(memories),
-                "search_duration": round(search_duration, 2),
-                "total_duration": round(total_duration, 2)
-            })
+        
+        # Synthesis should happen for both cases (with or without memories)
+        synthesis_start_time = time.time()
+        response = llm.generate_response([{"role": "user", "content": prompt}])
+        synthesis_duration = time.time() - synthesis_start_time
+        
+        total_duration = time.time() - start_time
+        logger.info(f"ask_memory: Completed for user {supa_uid} in {total_duration:.2f}s (search: {search_duration:.2f}s, synthesis: {synthesis_duration:.2f}s)")
+        
+        return format_success_response({
+            "question": question,
+            "answer": response,
+            "memories_found": len(memories),
+            "search_duration": round(search_duration, 2),
+            "total_duration": round(total_duration, 2)
+        })
     except Exception as e:
         logger.error(f"Error in ask memory implementation: {e}", exc_info=True)
         return format_error_response(f"Failed to generate answer: {e}", "ask_memory")
