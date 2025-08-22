@@ -85,6 +85,19 @@ def format_error_response(error_message: str, operation: str = None) -> str:
     return safe_json_dumps(response)
 
 
+def format_success_response(data: dict, operation: str = None) -> str:
+    """Format success responses consistently."""
+    response = {
+        "status": "success",
+        **data
+    }
+    
+    if operation:
+        response["operation"] = operation
+    
+    return safe_json_dumps(response)
+
+
 def validate_memory_limits(user_id: str, current_count: int, limit_config: dict) -> tuple[bool, str]:
     """Validate if user can add more memories based on limits."""
     try:

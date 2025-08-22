@@ -14,7 +14,7 @@ from app.models import Memory, MemoryState, User
 from app.utils.db import get_user_and_app
 from app.config.memory_limits import MEMORY_LIMITS
 from app.utils.decorators import retry_on_exception
-from .utils import safe_json_dumps, track_tool_usage, format_memory_response, format_error_response
+from .utils import safe_json_dumps, track_tool_usage, format_memory_response, format_error_response, format_success_response
 from .chunk_search import (
     search_document_chunks, 
     extract_document_ids_from_results,
@@ -435,7 +435,7 @@ No relevant memories were found. Provide a helpful response indicating that no r
             "memories_found": len(memories),
             "search_duration": round(search_duration, 2),
             "total_duration": round(total_duration, 2)
-        })
+        }, "ask_memory")
     except Exception as e:
         logger.error(f"Error in ask memory implementation: {e}", exc_info=True)
         return format_error_response(f"Failed to generate answer: {e}", "ask_memory")

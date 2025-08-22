@@ -29,7 +29,7 @@ class JeanMemoryTester:
         
     async def test_direct_api(self, query: str, mode: str) -> Dict[str, Any]:
         """Test direct API call to verify server-side functionality"""
-        url = "https://openmemory.ai/api/v1/tools/jean_memory"
+        url = "https://jean-memory-api-virginia.onrender.com/api/v1/tools/jean_memory"
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
