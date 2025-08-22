@@ -28,7 +28,8 @@ import time
 from mem0.llms.openai import OpenAILLM
 from mem0.llms.base import BaseLlmConfig
 from mem0.llms.gemini import GeminiLLM
-from app.tools.memory import list_memories
+from app.tools.memory_modules.crud_operations import list_memories
+from app.utils.memory import get_async_memory_client
 
 logger = logging.getLogger(__name__)
 
