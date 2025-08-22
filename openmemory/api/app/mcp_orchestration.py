@@ -23,6 +23,7 @@ from app.utils.mcp_modules.cache_manager import ContextCacheManager
 from app.utils.mcp_modules.ai_service import MCPAIService
 from app.utils.mcp_modules.background_tasks import MCPBackgroundTaskHandler
 from app.utils.mcp_modules.memory_analysis import MemoryAnalyzer
+from app.tools.memory import ask_memory # Import ask_memory
 
 logger = logging.getLogger(__name__)
 
@@ -289,16 +290,12 @@ Provide rich context that helps understand them deeply, but keep it conversation
             if context_strategy == "comprehensive_analysis":
                 logger.info("🔬 [Standard] Executing comprehensive analysis with deep memory query (Level 4 - Maximum Depth).")
                 context_task = self._execute_deep_comprehensive_analysis(plan, user_message, user_id, client_name)
-            elif context_strategy == "deep_understanding":
-                logger.info("🔥 [Standard] Executing deep understanding context primer.")
-                context_task = self._get_deep_understanding_primer(plan, user_id)
-            elif context_strategy == "relevant_context" and plan.get("search_queries"):
-                logger.info("💬 [Standard] Executing relevant context search.")
-                context_task = self._execute_relevant_context_search(plan, user_id, client_name)
             else:
-                # If no context strategy specified, create a no-op task
-                logger.info("📝 [Standard] No specific context strategy, using basic search.")
-                context_task = self._execute_relevant_context_search(plan, user_id, client_name)
+                # --- FIX IMPLEMENTED ---
+                # Default to the reliable 'balanced' mode (ask_memory) for all other cases.
+                # This prevents empty responses from the flawed "relevant_context" path.
+                logger.info("✅ [Standard] Using 'ask_memory' (balanced mode) as the reliable default context strategy.")
+                context_task = ask_memory(question=user_message)
 
             # Step 3: Handle memory saving
             await self._handle_background_memory_saving_from_plan(plan, user_message, user_id, client_name, interaction_id)
@@ -308,7 +305,12 @@ Provide rich context that helps understand them deeply, but keep it conversation
             context_results = await context_task
             logger.info(f"[PERF] Context Execution took {time.time() - context_exec_start_time:.4f}s")
             
-            # Step 5: Format the context using top-down approach
+            # Step 5: If the result is a direct string from ask_memory, return it. Otherwise, format it.
+            if isinstance(context_results, str):
+                logger.info("✅ [Standard] Returning direct response from 'ask_memory'.")
+                return context_results
+
+            # Step 6: Format the context using top-down approach
             formatting_start_time = time.time()
             enhanced_context = self._format_layered_context(context_results, plan)
             logger.info(f"[PERF] Context Formatting took {time.time() - formatting_start_time:.4f}s")
@@ -1699,33 +1701,36 @@ User Message: "what time is it?"
         client_name: str
     ):
         """
-        Runs a deep, AI-powered analysis in the background.
-        NOTE: This function should NOT save memories to avoid duplication with the main orchestration flow.
+        Runs a deep, AI-powered analysis in the background and saves the
+        result as a new high-priority memory. This is completely decoupled
+        from the immediate response orchestration.
         """
         try:
-            logger.info(f"🧠 [Async Analysis BG] Starting deep analysis for user {user_id} on message: '{user_message[:50]}...'")
+            logger.info(f"🧠 [Async Analysis BG] Starting DECOUPLED deep analysis for user {user_id} on message: '{user_message[:50]}...'")
             
-            # Generate a unique interaction ID to prevent duplicate memory saves
-            import hashlib
-            interaction_id = f"{user_id}_{hashlib.md5(user_message.encode()).hexdigest()}"
-            
-            # Use standard orchestration but with interaction ID to prevent duplicate saves
-            analysis_result = await self._standard_orchestration(
-                user_message=user_message,
-                user_id=user_id,
-                client_name=client_name,
-                is_new_conversation=False,
-                interaction_id=interaction_id  # This prevents duplicate memory saves
-            )
+            # 1. Perform a true deep memory query.
+            deep_query = f"Comprehensive analysis of user's context related to: '{user_message}'"
+            analysis_result = await self._get_tools()['deep_memory_query'](search_query=deep_query)
 
-            # Analysis complete - context provided without duplicate memory save
-            if analysis_result and "Error" not in analysis_result:
-                logger.info(f"✅ [Async Analysis BG] Deep analysis completed for user {user_id}. Context provided without duplicate memory save.")
+            # 2. If the analysis yields a result, save it as a new memory.
+            if analysis_result and "Error" not in analysis_result and len(analysis_result) > 50:
+                memorable_content = f"Background Analysis Result for '{user_message[:30]}...':\n{analysis_result}"
+                
+                logger.info(f"💾 [Async Analysis BG] Saving deep analysis result as new memory for user {user_id}.")
+                
+                # Use the main add_memory function to ensure proper processing
+                await self._add_memory_background(
+                    content=memorable_content,
+                    user_id=user_id,
+                    client_name=client_name,
+                    priority=True  # Save this high-value context with priority
+                )
+                logger.info(f"✅ [Async Analysis BG] Deep analysis completed and saved for user {user_id}.")
             else:
-                logger.warning(f"⚠️ [Async Analysis BG] Deep analysis did not produce a valid result for user {user_id}.")
+                logger.warning(f"⚠️ [Async Analysis BG] Deep analysis did not produce a valid result to save for user {user_id}.")
 
         except Exception as e:
-            logger.error(f"❌ [Async Analysis BG] Failed for user {user_id}: {e}", exc_info=True)
+            logger.error(f"❌ [Async Analysis BG] Decoupled analysis failed for user {user_id}: {e}", exc_info=True)
 
     async def triage_and_save_memory_background(
         self,

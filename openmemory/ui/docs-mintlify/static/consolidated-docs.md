@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 22:08:00
+**Generated on:** 2025-08-18 22:02:32
 
 ## What is Jean Memory?
 
@@ -37,8 +37,8 @@ context = jean.get_context(user_token="token", message="Hello")
 
 #### Node.js:
 ```javascript
-import { JeanClient } from '@jeanmemory/node';
-const jean = new JeanClient({ apiKey: "your-api-key" });
+import { JeanMemoryClient } from '@jeanmemory/node';
+const jean = new JeanMemoryClient({ apiKey: "your-api-key" });
 const context = await jean.getContext({ user_token: "token", message: "Hello" });
 ```
 
@@ -225,6 +225,24 @@ The Jean Memory React SDK provides two powerful ways to integrate: a simple, out
 npm install @jeanmemory/react
 ```
 
+**Warning:**
+**Breaking Changes in v2.0.0**
+
+The React SDK has been simplified and improved in v2.0.0:
+
+```typescript
+// ❌ v1.x (Old) - No longer available
+
+// ✅ v2.0.0 (New) - Use unified components
+
+```
+
+**Changes:**
+- Removed incomplete v2 components (`-v2.tsx` files)
+- Consolidated to single, robust component API
+- All v2.0.0 authentication fixes preserved
+- Enhanced StrictMode compatibility and OAuth reliability
+
 ## Three Integration Approaches
 
 The Jean Memory React SDK provides three levels of integration complexity, allowing you to choose the right approach for your use case.
@@ -315,11 +333,11 @@ Complete control over authentication flow and UI implementation.
 The React SDK uses a robust **Universal OAuth 2.1 PKCE system** that handles all authentication complexity for you. Users get secure, persistent sessions with zero configuration required from developers.
 
 #### What You Get Automatically:
-- **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
-- **Universal Identity** - Same user account across all Jean Memory applications  
-- **Session Persistence** - Users stay logged in across browser refreshes and tabs
-- **Automatic Token Management** - JWT tokens handled invisibly
-- **Error Recovery** - Graceful handling of network issues and token expiration
+- ✅ **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
+- ✅ **Universal Identity** - Same user account across all Jean Memory applications  
+- ✅ **Session Persistence** - Users stay logged in across browser refreshes and tabs
+- ✅ **Automatic Token Management** - JWT tokens handled invisibly
+- ✅ **Error Recovery** - Graceful handling of network issues and token expiration
 
 #### Simple Setup for Any API Key:
 ```jsx
@@ -497,6 +515,26 @@ The Jean Memory Python SDK provides a simple, headless interface to our powerful
 pip install jeanmemory
 ```
 
+**Warning:**
+**Breaking Changes in v2.0.0**
+
+The Python SDK has undergone major improvements in v2.0.0:
+
+```python
+# ❌ v1.x (Old)
+from jean_memory import JeanMemoryClient
+client = JeanMemoryClient('jean_sk_...')
+
+# ✅ v2.0.0 (New)  
+from jeanmemory import JeanMemoryClient
+client = JeanMemoryClient(api_key='jean_sk_...')
+```
+
+**Changes:**
+- Package name: `jean_memory` → `jeanmemory` 
+- Constructor: Positional → Keyword-only arguments
+- More consistent API with other SDKs
+
 ## Usage: Adding Context to an Agent
 
 The primary use case for the Python SDK is to retrieve context that you can then inject into a prompt for your chosen Large Language Model.
@@ -565,14 +603,14 @@ For headless applications without a frontend, you have several options:
 
 ```python
 # Option 1: Test mode (development)
-jean = JeanMemoryClient(api_key="jean_sk_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_test_your_key")
 context = jean.get_context(
     # user_token=None automatically uses test user
     message="Hello"
 )
 
 # Option 2: Manual OAuth flow (production)
-jean = JeanMemoryClient(api_key="jean_sk_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_live_your_key")
 
 # Generate OAuth URL for manual authentication
 auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
@@ -583,7 +621,7 @@ user_token = jean.exchange_code_for_token(auth_code)
 
 # Option 3: Service account (enterprise)
 jean = JeanMemoryClient(
-    api_key="jean_sk_your_key",
+    api_key="jean_sk_live_your_key",
     service_account_key="your_service_account_key"
 )
 ```
@@ -621,7 +659,7 @@ context = jean.get_context(
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```python
 # The intelligent, orchestrated way (recommended):
@@ -657,7 +695,7 @@ The example below shows how to create a Next.js API route that is compatible wit
 ```typescript {{ title: 'pages/api/chat.ts' }}
 
 // Create the clients
-const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
+const jean = new JeanMemoryClient({ apiKey: process.env.JEAN_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Set the runtime to edge for best performance
@@ -716,7 +754,7 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
 
-**Test User Support:** The Node.js SDK v2.0.1+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
+**Test User Support:** The Node.js SDK v2.0.0+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
 
 ```typescript
 // With user token (production)
@@ -765,7 +803,7 @@ const context = await jean.getContext({
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```typescript
 // The intelligent, orchestrated way (recommended):
@@ -837,7 +875,7 @@ For detailed instructions on implementing this flow, please consult standard OAu
 
 Want to see the OAuth 2.1 PKCE flow in action? Check out our **[Jean Authentication Demo Repository](https://github.com/jonathan-politzki/jean-authentication-demo)** - a complete React application that demonstrates the 5-line integration promise.
 
-**[View Live Demo Repository →](https://github.com/jonathan-politzki/jean-authentication-demo)**
+**[🚀 View Live Demo Repository →](https://github.com/jonathan-politzki/jean-authentication-demo)**
 
 This demo shows:
 - Complete OAuth 2.1 PKCE authentication flow

@@ -358,8 +358,8 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             logger.info(f"ask_memory: Starting memory search for user {supa_uid}")
             
             # Call async memory client directly - this uses Jean Memory V2 mem0 + graphiti search
-            # Reduced limit for balanced mode to ensure fast responses
-            search_result = await memory_client.search(query=question, user_id=supa_uid, limit=8)
+            # Increased limit for a much richer context in balanced mode
+            search_result = await memory_client.search(query=question, user_id=supa_uid, limit=50)
             
             # Process initial results
             initial_memories = []
@@ -426,7 +426,7 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             # Filter out contaminated memories and limit token usage for efficient synthesis
             clean_memories = []
             total_chars = 0
-            max_chars = 4000  # Reduced for faster Gemini processing and concise responses
+            max_chars = 16000 # Further increased for richer synthesis
             
             for idx, mem in enumerate(memories):
                 memory_text = mem.get('memory', mem.get('content', ''))

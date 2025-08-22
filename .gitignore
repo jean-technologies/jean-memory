@@ -45,3 +45,5 @@ dist/
 coverage/
 *.egg-info/
 .env.deploy
+
+.env

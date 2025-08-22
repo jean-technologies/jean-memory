@@ -17,6 +17,34 @@ def _track_tool_usage(tool_name: str, properties: dict = None):
     # Placeholder for the actual analytics call.
     pass
 
+async def _get_immediate_context(orchestrator, user_message: str, supa_uid: str, client_name: str, is_new_conversation: bool, needs_context: bool) -> str:
+    """
+    Handles the logic for providing an immediate response to the user,
+    cleanly separated from background tasks.
+    """
+    # 1. Handle NEW conversations
+    if is_new_conversation:
+        logger.info("🌟 [New Conversation] Handling new conversation flow.")
+        narrative = await orchestrator._get_cached_narrative(supa_uid)
+        if narrative:
+            logger.info("✅ [New Conversation] Found cached narrative.")
+            narrative_with_context = f"---\n[Your Life Context]\n{narrative}\n---"
+            return orchestrator._append_system_directive(narrative_with_context)
+        else:
+            logger.info("🧐 [New Conversation] No cached narrative found. Providing default welcome.")
+            default_message = "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
+            return orchestrator._append_system_directive(default_message)
+
+    # 2. Handle CONTINUING conversations where context is NOT needed
+    if not needs_context:
+        logger.info("✅ [Continuing Conversation] Context not required by client.")
+        no_context_message = "Context is not required for this query. The user's message will be analyzed for important information in the background."
+        return orchestrator._append_system_directive(no_context_message)
+
+    # 3. Handle CONTINUING conversations that DO need context
+    logger.info("🔍 [Continuing Conversation] Using standard orchestration to get context.")
+    return await orchestrator._standard_orchestration(user_message, supa_uid, client_name, is_new_conversation)
+
 @mcp.tool(description="🌟 ALWAYS USE THIS TOOL!!! This is the primary tool for ALL conversational interactions. It saves new information, and provides relevant context on the user's life. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations.")
 async def jean_memory(user_message: str, is_new_conversation: bool, needs_context: bool = True, speed: str = "autonomous", format: str = "enhanced") -> str:
     """
@@ -72,64 +100,30 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
             background_tasks = BackgroundTasks()
             background_tasks_var.set(background_tasks)
 
-        # --- ASYNCHRONOUS ACTIONS (Always Triggered) ---
-
-        # 1. ALWAYS trigger memory triage - decouple from context retrieval
-        logger.info(f"🧠 [Memory Triage] Always analyzing message for memorable content: '{user_message[:50]}...'")
-        triage_start_time = time.time()
+        # --- BACKGROUND TASKS ---
+        # 1. Always trigger memory triage to analyze for memorable content.
+        logger.info(f"🧠 [Memory Triage] Always analyzing message: '{user_message[:50]}...'")
         background_tasks.add_task(
             orchestrator.triage_and_save_memory_background,
             user_message,
             supa_uid,
             client_name
         )
-        logger.info(f"[PERF] Memory Triage triggered in {time.time() - triage_start_time:.4f}s")
 
-        # 2. If context is needed, also trigger the separate deep analysis background task.
+        # 2. If context is needed, trigger a separate deep analysis in the background.
+        # This task should NOT return a value and runs independently.
         if needs_context:
-            logger.info(f"🧠 [Async Analysis] Triggering deep analysis for: '{user_message[:50]}...'")
-            analysis_task_start_time = time.time()
+            logger.info(f"🧠 [Async Analysis] Triggering independent deep analysis for: '{user_message[:50]}...'")
             background_tasks.add_task(
                 orchestrator.run_deep_analysis_and_save_as_memory,
                 user_message,
                 supa_uid,
                 client_name
             )
-            logger.info(f"[PERF] Deep Analysis Task triggered in {time.time() - analysis_task_start_time:.4f}s")
 
-
-        # --- IMMEDIATE RESPONSE (Logic Flow) ---
-
-        # 1. Handle NEW conversations FIRST, regardless of the 'needs_context' flag.
-        if is_new_conversation:
-            logger.info("🌟 [New Conversation] Handling new conversation flow.")
-            narrative_start_time = time.time()
-            # Use the orchestrator's method to get the cached narrative
-            narrative = await orchestrator._get_cached_narrative(supa_uid)
-            logger.info(f"[PERF] Narrative Cache Check took {time.time() - narrative_start_time:.4f}s")
-            
-            if narrative:
-                logger.info("✅ [New Conversation] Found cached narrative.")
-                narrative_with_context = f"---\n[Your Life Context]\n{narrative}\n---"
-                return orchestrator._append_system_directive(narrative_with_context)
-            else:
-                logger.info("🧐 [New Conversation] No cached narrative found. Providing default welcome.")
-                # The background task will generate the narrative for the next time.
-                default_message = "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
-                return orchestrator._append_system_directive(default_message)
-
-        # 2. Handle CONTINUING conversations where the client does NOT need context.
-        if not needs_context:
-            logger.info("✅ [Continuing Conversation] Context not required by client.")
-            no_context_message = "Context is not required for this query. The user's message will be analyzed for important information in the background."
-            return orchestrator._append_system_directive(no_context_message)
-
-        # 3. Handle CONTINUING conversations that DO need context.
-        logger.info("🔍 [Continuing Conversation] Using standard orchestration to get context.")
-        orchestration_start_time = time.time()
-        context = await orchestrator._standard_orchestration(user_message, supa_uid, client_name, is_new_conversation)
-        logger.info(f"[PERF] Standard Orchestration took {time.time() - orchestration_start_time:.4f}s")
-        return context
+        # --- IMMEDIATE RESPONSE ---
+        # This is now cleanly separated and will return the actual context.
+        return await _get_immediate_context(orchestrator, user_message, supa_uid, client_name, is_new_conversation, needs_context)
 
     except Exception as e:
         logger.error(f"Error in jean_memory dual-path orchestration: {e}", exc_info=True)
