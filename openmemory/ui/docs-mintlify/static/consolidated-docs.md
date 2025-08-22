@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-22 16:28:43
+**Generated on:** 2025-08-22 16:32:29
 
 ## What is Jean Memory?
 
@@ -172,20 +172,9 @@ completion = openai.chat.completions.create(
 
 ---
 
-## Interactive Playground
-
-Want to test different depth levels and see Jean Memory in action? Check out our **[Memory Playground](https://github.com/jean-technologies/memory-playground)** - a complete React application that demonstrates all context retrieval modes.
-
-**[View Memory Playground Repository →](https://github.com/jean-technologies/memory-playground)**
-
-This playground shows:
-- Live testing of all depth levels (0-3) and speed modes
-- Real-time performance comparisons between fast, balanced, and comprehensive modes  
-- Interactive API calling with working code examples
-- Visual demonstration of context engineering and memory synthesis
-- Production-ready implementation patterns you can copy directly
-
-The playground includes comprehensive setup instructions and showcases the actual performance differences between each mode with real API calls.
+<Note>
+Want to test different depth levels interactively? Check out our **[Memory Playground](https://github.com/jean-technologies/memory-playground)** with working code examples and live performance comparisons.
+</Note>
 
 ---
 
