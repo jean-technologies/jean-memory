@@ -179,8 +179,6 @@ async def _search_memory_unified_impl(query: str, supa_uid: str, client_name: st
     except Exception as e:
         logger.error(f"Error in search implementation: {e}", exc_info=True)
         return format_error_response(f"Search failed: {str(e)}", "search_memory")
-    finally:
-        db.close()
 
 
 async def search_memory_v2(query: str, limit: int = None, tags_filter: Optional[List[str]] = None, deep_search: bool = False) -> str:
@@ -377,7 +375,6 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             # Simple separation: memories from the direct question are "relevant", others are "recent/core"
             # This avoids complex parsing and is more robust.
             question_results = search_results[0]
-            other_results = search_results[1:]
             
             question_ids = {mem['id'] for mem in question_results if isinstance(mem, dict) and mem.get('id')}
 
@@ -408,43 +405,38 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             if clean_recent_memories or clean_relevant_memories:
                 memory_context = ""
                 if clean_recent_memories:
-                    memory_context += "[Recent Memories]\n" + "\n".join(clean_recent_memories) + "\n\n"
+                    memory_context += "[Recent & Core Memories]\n" + "\n".join(clean_recent_memories) + "\n\n"
                 if clean_relevant_memories:
-                    memory_context += "[Relevant Context]\n" + "\n".join(clean_relevant_memories)
+                    memory_context += "[Context Directly Relevant to Your Question]\n" + "\n".join(clean_relevant_memories)
 
-                prompt = f"""Question: "{question}"
+                prompt = f"""Based on the following memories, answer the question: "{question}"
 
 {memory_context}
 
-Provide a concise, helpful answer (2-3 sentences max) based on these memories. If insufficient information, state what's missing."""
+Provide a helpful and conversational answer based on the memories above. If the memories don't contain enough information to answer the question, say so."""
             else:
-                prompt = f"""Question: "{question}"
+                prompt = f"""The user asked: "{question}"
 
-No relevant memories found. Provide a brief, helpful response (1-2 sentences) indicating no relevant information was found."""
+No relevant memories were found. Provide a helpful response indicating that no relevant information was found in their memory."""
+
             
             synthesis_start_time = time.time()
             response = llm.generate_response([{"role": "user", "content": prompt}])
             synthesis_duration = time.time() - synthesis_start_time
             
             total_duration = time.time() - start_time
-            
             logger.info(f"ask_memory: Completed for user {supa_uid} in {total_duration:.2f}s (search: {search_duration:.2f}s, synthesis: {synthesis_duration:.2f}s)")
             
-            return safe_json_dumps({
-                "status": "success",
+            return format_success_response({
                 "question": question,
                 "answer": response,
                 "memories_found": len(memories),
                 "search_duration": round(search_duration, 2),
                 "total_duration": round(total_duration, 2)
             })
-            
-        finally:
-            db.close()
-        
     except Exception as e:
         logger.error(f"Error in ask memory implementation: {e}", exc_info=True)
-        return format_error_response(f"Failed to generate answer: {str(e)}", "ask_memory")
+        return format_error_response(f"Failed to generate answer: {e}", "ask_memory")
 
 
 async def smart_memory_query(search_query: str) -> str:
