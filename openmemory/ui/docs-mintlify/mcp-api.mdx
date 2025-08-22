@@ -47,10 +47,11 @@ The request body is a JSON object that specifies the tool you want to call and i
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "tool_name": "get_context_by_depth",
+    "tool_name": "jean_memory",
     "tool_params": {
       "user_message": "What have I been working on recently?",
-      "depth": "balanced"
+      "is_new_conversation": false,
+      "depth": 2
     }
   },
   "id": "1"
@@ -60,20 +61,21 @@ The request body is a JSON object that specifies the tool you want to call and i
 ### Key Parameters:
 
 -   **`method`**: Should always be `tools/call`.
--   **`tool_name`**: The name of the tool you want to execute. We recommend using `get_context_by_depth` for predictable results.
+-   **`tool_name`**: The name of the tool you want to execute. Use `jean_memory` for all interactions.
 -   **`tool_params`**: An object containing the parameters for the specified tool.
 
-## The `get_context_by_depth` Tool
+## The `jean_memory` Tool
 
-This is the recommended tool for all direct API interactions. It provides direct control over the context depth.
+This is the primary tool for all MCP interactions. It provides intelligent context engineering with configurable depth levels.
 
 **Tool Parameters:**
-- **`user_message`** (string, required): The user's message or query.
-- **`depth`** (string, optional, default: `"balanced"`): The desired context depth.
-    - `"none"`: Returns no context. Useful when your agent has determined it doesn't need external information.
-    - `"fast"`: A quick vector search for raw memories. Sub-second response time.
-    - `"balanced"`: Synthesizes a conversational answer from a rich set of memories. The recommended default. (≈5-10 seconds)
-    - `"comprehensive"`: A deep analysis of memories and documents. (≈30 seconds)
+- **`user_message`** (string, required): The user's complete message or query.
+- **`is_new_conversation`** (boolean, required): Set to `true` only for the very first message in a new conversation.
+- **`depth`** (integer, optional, default: `2`): The desired context depth level.
+    - `0`: No context retrieval. Use for generic knowledge questions that don't require personal context.
+    - `1`: Fast search for quick personal facts or simple lookups (sub-second response time).
+    - `2`: Balanced synthesis for conversational responses using AI-powered memory synthesis (3-5 seconds).
+    - `3`: Comprehensive analysis with deep document search and extensive memory correlation (20-30 seconds).
 
 ## Server-Sent Events (SSE) for Streaming
 
@@ -101,10 +103,11 @@ const eventSource = new EventSource(
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
-        tool_name: 'get_context_by_depth',
+        tool_name: 'jean_memory',
         tool_params: {
           user_message: "What are my current project goals?",
-          depth: "balanced"
+          is_new_conversation: false,
+          depth: 2
         },
       },
       id: "1",
@@ -141,7 +144,7 @@ A standard, non-streaming `POST` request will receive a JSON response like this:
                 "text": "Based on your recent memories, you've been heavily focused on developing 'Jean Memory', an AI memory layer. This includes work on SDKs, comprehensive testing, and preparing for a YC application. You're also exploring machine learning applications in your data analysis work."
             }
         ],
-        "tool_name": "get_context_by_depth"
+        "tool_name": "jean_memory"
     },
     "id": "1"
 }

@@ -7,7 +7,30 @@ These are the primitive, low-level tools that our context engineering flows are 
 
 ## Primary Tool: jean_memory
 
-The `jean_memory` tool is the main interface for context-aware interactions. It supports four speed modes for different performance requirements:
+The `jean_memory` tool is the main interface for context-aware interactions. The interface varies based on your integration method:
+
+### MCP Integration
+For MCP clients (Claude, cursor, custom MCP tools):
+
+```json
+{
+  "tool_name": "jean_memory",
+  "tool_params": {
+    "user_message": "Your query here",
+    "is_new_conversation": false,
+    "depth": 2
+  }
+}
+```
+
+**Depth Levels**:
+- **0**: No context (generic knowledge questions)
+- **1**: Fast search (quick personal facts, 0.5-1s)
+- **2**: Balanced synthesis (conversational AI, 3-5s) - Recommended
+- **3**: Comprehensive analysis (research tasks, 20-30s)
+
+### SDK Integration
+For SDK users (React, Node.js, Python):
 
 ```javascript
 await jean_memory({

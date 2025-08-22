@@ -1,11 +1,16 @@
 ---
 title: "Speed Modes"
-description: "Configure the speed and depth of context retrieval with Jean Memory's four distinct processing modes."
+description: "Configure the speed and depth of context retrieval with Jean Memory's processing modes for SDK and MCP interfaces."
 ---
 
 ## Overview
 
-Jean Memory provides four distinct speed modes that allow you to balance response time with context depth based on your application's requirements. Each mode is optimized for different use cases, from real-time chat responses to comprehensive document analysis.
+Jean Memory provides different approaches to control context depth and response time based on your integration method:
+
+- **SDK Integration**: Uses speed modes (`fast`, `balanced`, `autonomous`, `comprehensive`)
+- **MCP Integration**: Uses depth levels (0, 1, 2, 3) for simplified tool calling
+
+This page covers both approaches to help you choose the right configuration for your application.
 
 <CardGroup cols={2}>
   <Card title="Fast Mode" icon="bolt" color="#10B981">
@@ -22,7 +27,46 @@ Jean Memory provides four distinct speed modes that allow you to balance respons
   </Card>
 </CardGroup>
 
-## Speed Mode Details
+## MCP Integration (Depth Levels)
+
+For MCP clients (like Claude, cursor, or custom MCP implementations), use the simplified depth parameter:
+
+### Depth Levels
+
+**depth=0 (No Context)**
+- **Purpose**: For generic knowledge questions that don't require personal context
+- **Performance**: Immediate response (just saves information in background)
+- **Examples**: "What is the capital of France?", "Explain quantum physics"
+
+**depth=1 (Fast Search)**
+- **Purpose**: Quick personal facts or simple lookups from user memories
+- **Performance**: Sub-second response time
+- **Examples**: "What's my phone number?", "Where do I work?"
+
+**depth=2 (Balanced Synthesis)** - Recommended Default
+- **Purpose**: Conversational responses that benefit from personal context
+- **Performance**: 3-5 seconds with AI synthesis
+- **Examples**: "How should I handle this work situation?", "What have I been working on?"
+
+**depth=3 (Comprehensive Analysis)**
+- **Purpose**: Complex analysis requiring deep document search
+- **Performance**: 20-30 seconds for thorough analysis
+- **Examples**: "Analyze all my learning patterns", "Compare my productivity strategies"
+
+```json
+{
+  "tool_name": "jean_memory",
+  "tool_params": {
+    "user_message": "What have I been working on recently?",
+    "is_new_conversation": false,
+    "depth": 2
+  }
+}
+```
+
+## SDK Integration (Speed Modes)
+
+For SDK users (React, Node.js, Python), use the traditional speed mode parameter:
 
 ### Fast Mode
 
@@ -144,6 +188,15 @@ Comprehensive mode can also be accessed using `speed: "deep"` for backward compa
 
 ## Performance Comparison
 
+### MCP Interface (Depth Levels)
+| Depth | Response Time | Technology | Best For |
+|-------|---------------|------------|----------|
+| 0 | Immediate | No context retrieval | Generic knowledge |
+| 1 | 0.5-1s | Direct search | Quick personal facts |
+| 2 | 3-5s | Gemini 2.5 Flash synthesis | Conversational AI |
+| 3 | 20-30s | Deep document analysis | Research tasks |
+
+### SDK Interface (Speed Modes)
 | Mode | Response Time | Technology | Best For |
 |------|---------------|------------|----------|
 | Fast | 0.5-1s | Direct search | Real-time interactions |

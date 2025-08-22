@@ -46,7 +46,25 @@ class ClaudeProfile(BaseClientProfile):
             logger.error(f"🔧 [CLAUDE PROFILE] Error accessing MCP tools: {e}")
         
         # Base tool description
-        jean_memory_description = "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Use 'depth' to control context level: 0=none (just save memory), 1=fast search, 2=balanced synthesis (default), 3=comprehensive analysis."
+        jean_memory_description = """PRIMARY TOOL for all conversational interactions. Saves new information and provides relevant background context.
+
+ALWAYS set 'is_new_conversation' to true for the very first message in a conversation.
+
+Choose 'depth' based on context needs:
+
+depth=0 (No Context): Use when the query is purely generic knowledge that doesn't require personal context.
+Examples: "What is the capital of France?", "Explain quantum physics", "How does photosynthesis work?"
+
+depth=1 (Fast Search): Use for quick personal facts or simple lookups from user's memories.
+Examples: "What's my phone number?", "Where do I work?", "What's my favorite food?"
+
+depth=2 (Balanced Synthesis): Use for conversational responses that benefit from personal context and memories.
+Examples: "How should I handle this work situation?", "What have I been working on?", "Give me advice on my project"
+
+depth=3 (Comprehensive Analysis): Use for complex analysis requiring deep document search and extensive memory correlation.
+Examples: "Analyze all my learning patterns", "Compare my productivity strategies across projects", "What themes emerge from my journal entries?"
+
+Default to depth=2 for most conversational interactions."""
         
         # Add multi-agent session context if applicable (only for Claude Code)
         if is_multi_agent and is_claude_code:
