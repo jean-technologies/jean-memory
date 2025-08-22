@@ -333,80 +333,35 @@ async def ask_memory(question: str) -> str:
 
 
 async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name: str) -> str:
-    """Lightweight ask_memory implementation for quick answers using mem0 + graphiti search"""
+    """
+    Lightweight, fast version of ask_memory using Gemini Flash.
+    Does not use documents.
+    """
     from app.utils.memory import get_async_memory_client
-    from mem0.llms.openai import OpenAILLM
-    from mem0.configs.llms.base import BaseLlmConfig
-    from app.database import SessionLocal
-    from app.utils.db import get_or_create_user
-    
-    import time
-    start_time = time.time()
-    logger.info(f"ask_memory: Starting for user {supa_uid}")
     
     try:
-        db = SessionLocal()
-        try:
-            # Get user quickly
-            user = get_or_create_user(db, supa_uid, None)
-            
-            # SECURITY CHECK: Verify user ID matches
-            if user.user_id != supa_uid:
-                logger.error(f"🚨 USER ID MISMATCH: Expected {supa_uid}, got {user.user_id}")
-                return format_error_response("User ID validation failed. Security issue detected.", "ask_memory")
-
-            # Initialize services
-            memory_client = await get_async_memory_client()
-            
-            # Use Gemini 2.5 Flash for optimal adaptive thinking and cost efficiency
-            from mem0.llms.gemini import GeminiLLM
+        async with get_async_memory_client() as memory_client:
             llm = GeminiLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
             
-            # 1. Gather context from multiple sources in parallel
+            # 1. Gather context from multiple, direct searches in parallel
             search_start_time = time.time()
-            logger.info(f"ask_memory: Starting parallel context gathering for user {supa_uid}")
+            logger.info(f"ask_memory: Starting parallel, direct memory searches for user {supa_uid}")
 
-            # a. Get the 20 most recent memories for chronological context
-            list_memories_task = list_memories(limit=20)
-
-            # b. Perform targeted semantic searches for relevant context
+            # Use direct client calls for all searches to ensure consistent data types
             search_queries = [
-                question, # The user's direct question
+                question,  # The user's direct question
                 "user's core preferences, personality traits, and values",
+                "user's recent activities, conversations, and events" # Replaces list_memories
             ]
-            search_tasks = [memory_client.search(query=q, user_id=supa_uid, limit=20) for q in search_queries]
             
-            # Execute all tasks concurrently
-            results = await asyncio.gather(list_memories_task, *search_tasks)
-            
-            recent_memories_raw = results[0]
-            search_results = results[1:]
+            tasks = [memory_client.search(query=q, user_id=supa_uid, limit=25) for q in search_queries]
+            search_results = await asyncio.gather(*tasks)
 
-            # Combine and deduplicate memories from all sources
+            # Combine and deduplicate memories from all searches
             unique_memories = {}
-            
-            # Process recent memories
-            recent_memories_list = []
-            try:
-                raw_json = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
-                # The actual memories are nested under a 'memories' key
-                if isinstance(raw_json, dict) and 'memories' in raw_json:
-                    recent_memories_list = raw_json['memories']
-                elif isinstance(raw_json, list): # Handle cases where it might just be a list
-                    recent_memories_list = raw_json
-
-            except (json.JSONDecodeError, TypeError):
-                logger.warning("Could not parse recent memories from list_memories.")
-
-            # Process recent memories
-            for mem in recent_memories_list:
-                if isinstance(mem, dict) and mem.get('id'):
-                    unique_memories[mem['id']] = mem
-
-            # Process search results
-            for result in search_results:
-                if isinstance(result, list):
-                    for mem in result:
+            for result_list in search_results:
+                if isinstance(result_list, list):
+                    for mem in result_list:
                         if isinstance(mem, dict) and mem.get('id'):
                             unique_memories[mem['id']] = mem
             
@@ -418,27 +373,21 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             # Organize memories for the prompt
             recent_memory_content = []
             relevant_memory_content = []
-
-            # Re-separate the memories for clear labeling in the prompt
-            recent_ids = set()
-            try:
-                # The logic needs to be consistent with the parsing above
-                raw_json = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
-                if isinstance(raw_json, dict) and 'memories' in raw_json:
-                    mem_list = raw_json['memories']
-                    recent_ids = {mem['id'] for mem in mem_list if isinstance(mem, dict) and 'id' in mem}
-                elif isinstance(raw_json, list):
-                    recent_ids = {mem['id'] for mem in raw_json if isinstance(mem, dict) and 'id' in mem}
-            except (json.JSONDecodeError, TypeError):
-                logger.warning("Could not parse recent_ids from list_memories for separation.")
+            
+            # Simple separation: memories from the direct question are "relevant", others are "recent/core"
+            # This avoids complex parsing and is more robust.
+            question_results = search_results[0]
+            other_results = search_results[1:]
+            
+            question_ids = {mem['id'] for mem in question_results if isinstance(mem, dict) and mem.get('id')}
 
             for mem in memories:
                 content = mem.get('memory', mem.get('content', ''))
-                if mem.get('id') in recent_ids:
-                    recent_memory_content.append(content)
-                else:
+                if mem.get('id') in question_ids:
                     relevant_memory_content.append(content)
-            
+                else:
+                    recent_memory_content.append(content)
+
             # Filter and prepare memories for the prompt
             def prepare_memory_list(memory_list, max_chars):
                 clean_list = []
