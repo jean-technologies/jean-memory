@@ -1,6 +1,6 @@
 # Jean Memory - Complete Documentation for AI Coding Tools
 
-**Generated on:** 2025-08-18 22:02:32
+**Generated on:** 2025-08-22 14:10:39
 
 ## What is Jean Memory?
 
@@ -129,7 +129,7 @@ The fastest way to get a full-featured chatbot running in your app.
 
 function MyPage() {
   return (
-    <JeanProvider apiKey="YOUR_API_KEY">
+    <JeanProvider apiKey="jean_sk_your_key">
       <JeanChatComplete />
     </JeanProvider>
   );
@@ -219,29 +219,40 @@ We provide a suite of specialized SDKs, each designed for a specific part of the
 
 The Jean Memory React SDK provides two powerful ways to integrate: a simple, out-of-the-box UI component for rapid development, and a flexible hook for building completely custom experiences.
 
+## Getting Context: The `getContext` Function
+
+The primary way to retrieve context from Jean Memory is with the `getContext` function. It provides four distinct speed modes, allowing you to choose the right balance of speed and quality for your application.
+
+```typescript
+const { getContext } = useJean();
+
+// Fast: Direct memory search (0.5-1s)
+const fastContext = await getContext("What was my recent idea about AI?", { mode: 'fast' });
+
+// Balanced: AI synthesis with Gemini 2.5 Flash (3-5s) - Recommended
+const balancedContext = await getContext("How should I approach this project?", { mode: 'balanced' });
+
+// Autonomous: Intelligent orchestration with adaptive decision-making (variable latency)
+const smartContext = await getContext("Help me plan my week based on my goals", { mode: 'autonomous' });
+
+// Comprehensive: Deep document analysis (20-30s)
+const deepContext = await getContext("Analyze my writing style across my recent essays.", { mode: 'comprehensive' });
+```
+
+### Speed Modes
+
+-   **`fast`**: Direct memory search returning raw memories. Ideal for real-time applications where speed is critical.
+-   **`balanced`**: AI synthesis using Gemini 2.5 Flash for conversational responses. Recommended for most use cases.
+-   **`autonomous`**: Intelligent orchestration that adaptively determines context analysis depth. May take longer for complex reasoning.
+-   **`comprehensive`**: Deep document analysis with extensive memory search. Best for research and detailed analysis.
+
+[Learn more about speed modes →](/speed-modes)
+
 ## Installation
 
 ```bash
 npm install @jeanmemory/react
 ```
-
-**Warning:**
-**Breaking Changes in v2.0.0**
-
-The React SDK has been simplified and improved in v2.0.0:
-
-```typescript
-// ❌ v1.x (Old) - No longer available
-
-// ✅ v2.0.0 (New) - Use unified components
-
-```
-
-**Changes:**
-- Removed incomplete v2 components (`-v2.tsx` files)
-- Consolidated to single, robust component API
-- All v2.0.0 authentication fixes preserved
-- Enhanced StrictMode compatibility and OAuth reliability
 
 ## Three Integration Approaches
 
@@ -333,11 +344,11 @@ Complete control over authentication flow and UI implementation.
 The React SDK uses a robust **Universal OAuth 2.1 PKCE system** that handles all authentication complexity for you. Users get secure, persistent sessions with zero configuration required from developers.
 
 #### What You Get Automatically:
-- ✅ **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
-- ✅ **Universal Identity** - Same user account across all Jean Memory applications  
-- ✅ **Session Persistence** - Users stay logged in across browser refreshes and tabs
-- ✅ **Automatic Token Management** - JWT tokens handled invisibly
-- ✅ **Error Recovery** - Graceful handling of network issues and token expiration
+- **OAuth 2.1 PKCE Flow** - Industry-standard security with Google authentication
+- **Universal Identity** - Same user account across all Jean Memory applications  
+- **Session Persistence** - Users stay logged in across browser refreshes and tabs
+- **Automatic Token Management** - JWT tokens handled invisibly
+- **Error Recovery** - Graceful handling of network issues and token expiration
 
 #### Simple Setup for Any API Key:
 ```jsx
@@ -403,9 +414,13 @@ await sendMessage("What's my schedule?", { tool: "search_memory" });
 await sendMessage("What's my schedule?", { format: "simple" });
 ```
 
-## Advanced: Direct Tool Access
+## Advanced Use or Legacy Implementations: Direct Tool Access
 
-For advanced use cases where you need fine-grained control over Jean Memory, use the `tools` namespace from the `useJean` hook. These tools provide direct access to memory operations.
+<Note>
+  **Primary Method:** For most use cases, we strongly recommend using the new `getContext` function to retrieve context. It provides a simpler interface with predictable performance.
+</Note>
+
+For advanced use cases where you need fine-grained control over Jean Memory, you can use the `tools` namespace from the `useJean` hook.
 
 ```typescript
 
@@ -515,26 +530,6 @@ The Jean Memory Python SDK provides a simple, headless interface to our powerful
 pip install jeanmemory
 ```
 
-**Warning:**
-**Breaking Changes in v2.0.0**
-
-The Python SDK has undergone major improvements in v2.0.0:
-
-```python
-# ❌ v1.x (Old)
-from jean_memory import JeanMemoryClient
-client = JeanMemoryClient('jean_sk_...')
-
-# ✅ v2.0.0 (New)  
-from jeanmemory import JeanMemoryClient
-client = JeanMemoryClient(api_key='jean_sk_...')
-```
-
-**Changes:**
-- Package name: `jean_memory` → `jeanmemory` 
-- Constructor: Positional → Keyword-only arguments
-- More consistent API with other SDKs
-
 ## Usage: Adding Context to an Agent
 
 The primary use case for the Python SDK is to retrieve context that you can then inject into a prompt for your chosen Large Language Model.
@@ -603,14 +598,14 @@ For headless applications without a frontend, you have several options:
 
 ```python
 # Option 1: Test mode (development)
-jean = JeanMemoryClient(api_key="jean_sk_test_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_your_key")
 context = jean.get_context(
     # user_token=None automatically uses test user
     message="Hello"
 )
 
 # Option 2: Manual OAuth flow (production)
-jean = JeanMemoryClient(api_key="jean_sk_live_your_key")
+jean = JeanMemoryClient(api_key="jean_sk_your_key")
 
 # Generate OAuth URL for manual authentication
 auth_url = jean.get_auth_url(callback_url="http://localhost:8000/callback")
@@ -621,7 +616,7 @@ user_token = jean.exchange_code_for_token(auth_code)
 
 # Option 3: Service account (enterprise)
 jean = JeanMemoryClient(
-    api_key="jean_sk_live_your_key",
+    api_key="jean_sk_your_key",
     service_account_key="your_service_account_key"
 )
 ```
@@ -695,7 +690,7 @@ The example below shows how to create a Next.js API route that is compatible wit
 ```typescript {{ title: 'pages/api/chat.ts' }}
 
 // Create the clients
-const jean = new JeanMemoryClient({ apiKey: process.env.JEAN_API_KEY });
+const jean = new JeanClient({ apiKey: process.env.JEAN_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Set the runtime to edge for best performance
@@ -709,11 +704,12 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // 2. Get context from Jean Memory
+  // 2. Get context from Jean Memory with speed control
   const contextResponse = await jean.getContext({
     user_token: userToken,
     message: currentMessage,
-    // All defaults: tool="jean_memory", speed="balanced", format="enhanced"
+    speed: "balanced", // Options: "fast", "balanced", "autonomous", "comprehensive"
+    // tool="jean_memory", format="enhanced" (defaults)
   });
 
   // 3. Engineer your final prompt
@@ -754,7 +750,7 @@ This code sets up a Next.js API route that acts as a secure bridge between your 
 
 As with the Python SDK, the `userToken` is obtained by your frontend application through a secure OAuth 2.1 flow using our `@jeanmemory/react` SDK. Your frontend makes an authenticated request to this API route, including the `userToken` in the request body. See the [Authentication](/authentication) guide for more details.
 
-**Test User Support:** The Node.js SDK v2.0.0+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
+**Test User Support:** The Node.js SDK v2.0.1+ automatically detects when you don't provide a `user_token` and creates isolated test users for each API key:
 
 ```typescript
 // With user token (production)
@@ -774,18 +770,53 @@ This allows you to test core functionality immediately without implementing full
 
 ---
 
-## Configuration Options (Optional)
+## Speed Modes
 
-For 99% of use cases, the defaults work perfectly. But when you need control:
+Jean Memory provides four distinct speed modes to balance response time with context depth:
 
 ```typescript
-// Speed-optimized (faster, less comprehensive)
-const context = await jean.getContext({
+// Fast: Direct memory search (0.5-1s)
+const fastContext = await jean.getContext({
   user_token: userToken,
-  message: currentMessage,
-  speed: "fast"  // vs "balanced" (default) or "comprehensive"
+  message: "What's my schedule?",
+  speed: "fast"
 });
 
+// Balanced: AI synthesis with Gemini 2.5 Flash (3-5s) - Recommended
+const balancedContext = await jean.getContext({
+  user_token: userToken,
+  message: "How should I handle this situation?",
+  speed: "balanced"
+});
+
+// Autonomous: Intelligent orchestration (variable latency)
+const smartContext = await jean.getContext({
+  user_token: userToken,
+  message: "Help me plan my project timeline",
+  speed: "autonomous"
+});
+
+// Comprehensive: Deep document analysis (20-30s)
+const deepContext = await jean.getContext({
+  user_token: userToken,
+  message: "Analyze patterns in my communication style",
+  speed: "comprehensive"
+});
+```
+
+**Speed Mode Selection:**
+- **fast**: Ideal for real-time applications requiring sub-second responses
+- **balanced**: Recommended for most conversational AI use cases with natural language synthesis
+- **autonomous**: Best for complex tasks requiring intelligent decision-making
+- **comprehensive**: Use for research and detailed analysis tasks
+
+[Learn more about speed modes →](/speed-modes)
+
+## Additional Configuration
+
+For advanced use cases, you can configure additional options:
+
+```typescript
 // Different tools for specific needs
 const context = await jean.getContext({
   user_token: userToken,
@@ -803,7 +834,7 @@ const context = await jean.getContext({
 
 ## Advanced: Direct Tool Access
 
-For advanced use cases, the `JeanMemoryClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
+For advanced use cases, the `JeanClient` also provides a `tools` namespace for direct, deterministic access to the core memory functions.
 
 ```typescript
 // The intelligent, orchestrated way (recommended):
@@ -811,11 +842,52 @@ const context = await jean.getContext({ user_token: ..., message: "..." });
 
 // The deterministic, tool-based way:
 await jean.tools.add_memory({ user_token: ..., content: "My project's deadline is next Friday." });
+
 const search_results = await jean.tools.search_memory({ user_token: ..., query: "project deadlines" });
+// Parse search results - they come as JSON in content[0].text
+const searchData = JSON.parse(search_results.content[0].text);
+console.log('Found memories:', searchData.memories);
 
 // Advanced tools for complex operations:
-const deep_results = await jean.tools.deep_memory_query({ user_token: ..., query: "complex relationship query" });
-const doc_result = await jean.tools.store_document({ user_token: ..., title: "Meeting Notes", content: "...", document_type: "markdown" });
+try {
+  const deep_results = await jean.tools.deep_memory_query({ user_token: ..., query: "complex relationship query" });
+  // Deep queries return analysis directly in content[0].text
+  const analysis = deep_results.content[0].text;
+  console.log('Deep analysis:', analysis);
+} catch (error) {
+  console.error('Deep query failed:', error);
+  // Fallback to regular search
+}
+
+const doc_result = await jean.tools.store_document({ 
+  user_token: ..., 
+  title: "Meeting Notes", 
+  content: "...", 
+  document_type: "markdown" 
+});
+```
+
+### Performance Expectations
+
+Different operations have different timing characteristics:
+
+- **`tools.search_memory()`**: 1-2 seconds - Fast semantic search, returns JSON
+- **`getContext()` (orchestration)**: 3-10 seconds - Full AI conversation with context  
+- **`tools.deep_memory_query()`**: 5-15 seconds - Comprehensive cross-memory analysis
+- **`tools.store_document()`**: Immediate response + background processing (30-60 seconds total)
+
+### Response Format
+
+Most tool responses follow this structure:
+```javascript
+{
+  content: [
+    {
+      type: "text", 
+      text: "JSON string or direct text response"
+    }
+  ]
+}
 ```
 
 ---
@@ -830,12 +902,12 @@ Jean Memory handles sensitive personal data, and we take that responsibility ser
 
 Jean Memory uses a **dual authentication system** for maximum security:
 
-### 🔑 Layer 1: Application Authentication
+### Layer 1: Application Authentication
 - **API Key**: Each application gets a unique API key (`jean_sk_...`)
 - **Purpose**: Identifies and authorizes your application to use Jean Memory
 - **Scope**: Application-level permissions and billing
 
-### 👤 Layer 2: User Authentication  
+### Layer 2: User Authentication  
 - **JWT Token**: Each user gets a unique JWT token per session
 - **Purpose**: Identifies the specific user and their memories
 - **Scope**: User-specific data access and privacy
@@ -875,7 +947,7 @@ For detailed instructions on implementing this flow, please consult standard OAu
 
 Want to see the OAuth 2.1 PKCE flow in action? Check out our **[Jean Authentication Demo Repository](https://github.com/jonathan-politzki/jean-authentication-demo)** - a complete React application that demonstrates the 5-line integration promise.
 
-**[🚀 View Live Demo Repository →](https://github.com/jonathan-politzki/jean-authentication-demo)**
+**[View Live Demo Repository →](https://github.com/jonathan-politzki/jean-authentication-demo)**
 
 This demo shows:
 - Complete OAuth 2.1 PKCE authentication flow
@@ -904,7 +976,20 @@ This is a continuous process. Memories are constantly being saved and analyzed i
 
 ## The Orchestration Engine
 
-The `jean_memory` API is the heart of the system. It's the primary interface for your AI to interact with the memory layer, orchestrating various underlying functions to provide the right context at the right depth. 
+The `jean_memory` API is the heart of the system. It's the primary interface for your AI to interact with the memory layer, orchestrating various underlying functions to provide the right context at the right depth.
+
+### Speed and Depth Control
+
+Jean Memory provides four distinct speed modes that allow you to balance response time with context depth:
+
+- **Fast Mode**: Direct memory search (0.5-1s) for real-time applications
+- **Balanced Mode**: AI synthesis with Gemini 2.5 Flash (3-5s) for conversational responses
+- **Autonomous Mode**: Intelligent orchestration with variable latency for complex decision-making
+- **Comprehensive Mode**: Deep document analysis (20-30s) for research tasks
+
+The autonomous mode is particularly intelligent - it analyzes the conversation context to autonomously determine whether information should be saved, how much context to retrieve, and what depth of analysis is needed. While this may take longer than other modes for complex analysis, it prioritizes intelligent decision-making over consistent response times.
+
+[Learn more about configuring speed modes →](/speed-modes) 
 
 ```mermaid
 graph TD;
@@ -1036,9 +1121,400 @@ Whether you're building a hyper-personalized tutor, a strategic research agent, 
 
 ---
 
+## Speed Modes
+
+## Overview
+
+Jean Memory provides different approaches to control context depth and response time based on your integration method:
+
+- **SDK Integration**: Uses speed modes (`fast`, `balanced`, `autonomous`, `comprehensive`)
+- **MCP Integration**: Uses depth levels (0, 1, 2, 3) for simplified tool calling
+
+This page covers both approaches to help you choose the right configuration for your application.
+
+    Direct memory search with sub-second response times
+
+    AI synthesis with Gemini 2.5 Flash for conversational responses
+
+    Intelligent orchestration with adaptive decision-making
+
+    Deep document analysis with extensive memory search
+
+## MCP Integration (Depth Levels)
+
+For MCP clients (like Claude, cursor, or custom MCP implementations), use the simplified depth parameter:
+
+### Depth Levels
+
+**depth=0 (No Context)**
+- **Purpose**: For generic knowledge questions that don't require personal context
+- **Performance**: Immediate response (just saves information in background)
+- **Examples**: "What is the capital of France?", "Explain quantum physics"
+
+**depth=1 (Fast Search)**
+- **Purpose**: Quick personal facts or simple lookups from user memories
+- **Performance**: Sub-second response time
+- **Examples**: "What's my phone number?", "Where do I work?"
+
+**depth=2 (Balanced Synthesis)** - Recommended Default
+- **Purpose**: Conversational responses that benefit from personal context
+- **Performance**: 3-5 seconds with AI synthesis
+- **Examples**: "How should I handle this work situation?", "What have I been working on?"
+
+**depth=3 (Comprehensive Analysis)**
+- **Purpose**: Complex analysis requiring deep document search
+- **Performance**: 20-30 seconds for thorough analysis
+- **Examples**: "Analyze all my learning patterns", "Compare my productivity strategies"
+
+```json
+{
+  "tool_name": "jean_memory",
+  "tool_params": {
+    "user_message": "What have I been working on recently?",
+    "is_new_conversation": false,
+    "depth": 2
+  }
+}
+```
+
+## SDK Integration (Speed Modes)
+
+For SDK users (React, Node.js, Python), use the traditional speed mode parameter:
+
+### Fast Mode
+
+**Purpose**: Optimized for applications requiring sub-second response times with direct memory retrieval.
+
+**Performance**: 0.5-1 second response time
+
+**Use Cases**:
+- Real-time chat applications
+- Mobile applications with strict latency requirements
+- Quick factual lookups
+- Autocomplete and suggestion systems
+
+**Returns**: Raw memory search results with a maximum of 10 relevant memories
+
+```javascript
+await jeanMemory({
+  user_message: "What are my meeting preferences?",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "fast"
+});
+```
+
+### Balanced Mode (Recommended)
+
+**Purpose**: Provides natural language synthesis of memories using Gemini 2.5 Flash for conversational AI interactions.
+
+**Performance**: 3-5 seconds with Gemini 2.5 Flash processing
+
+**Technology**: Powered by Google's Gemini 2.5 Flash model, optimized for adaptive thinking and cost efficiency
+
+**Use Cases**:
+- Conversational AI chatbots
+- Personal assistant applications
+- Customer support systems
+- Educational tutoring platforms
+
+**Returns**: AI-synthesized conversational response based on relevant memories
+
+```javascript
+await jeanMemory({
+  user_message: "How should I approach this work conflict?",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "balanced"
+});
+```
+
+**Info:**
+Balanced mode is the recommended default for most conversational AI applications, providing the optimal balance between response quality and performance.
+
+### Autonomous Mode
+
+**Purpose**: Intelligent orchestration that adaptively determines the appropriate level of context analysis based on conversation state and content complexity.
+
+**Performance**: Variable latency depending on analysis requirements. Can range from seconds to potentially longer than comprehensive mode for complex multi-step reasoning.
+
+**Intelligence**: The autonomous mode analyzes the context to decide:
+- Whether new information should be saved
+- How much context to retrieve
+- What depth of analysis is needed
+- Whether to trigger background processes
+
+**Use Cases**:
+- Complex planning and decision-making tasks
+- Multi-step reasoning requirements
+- Context-aware adaptive responses
+- Applications requiring intelligent workflow orchestration
+
+**Returns**: Intelligently orchestrated response with adaptive context analysis
+
+```javascript
+await jeanMemory({
+  user_message: "Help me plan my week based on my goals and schedule",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "autonomous"
+});
+```
+
+**Warning:**
+Autonomous mode may take longer than other modes when performing complex analysis, as it prioritizes intelligent decision-making over consistent response times.
+
+### Comprehensive Mode
+
+**Purpose**: Extensive memory analysis with deep document search capabilities for research and detailed information retrieval.
+
+**Performance**: 20-30 seconds for thorough analysis
+
+**Capabilities**:
+- Deep document chunk search
+- Extensive memory correlation
+- Comprehensive context synthesis
+- Cross-document relationship analysis
+
+**Use Cases**:
+- Research and analysis tasks
+- Detailed document exploration
+- Comprehensive information synthesis
+- Academic and professional research
+
+**Returns**: Extensive memory analysis with document search results
+
+```javascript
+await jeanMemory({
+  user_message: "Analyze all mentions of productivity strategies in my documents",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "comprehensive"
+});
+```
+
+<Note>
+Comprehensive mode can also be accessed using `speed: "deep"` for backward compatibility.
+</Note>
+
+## Performance Comparison
+
+### MCP Interface (Depth Levels)
+| Depth | Response Time | Technology | Best For |
+|-------|---------------|------------|----------|
+| 0 | Immediate | No context retrieval | Generic knowledge |
+| 1 | 0.5-1s | Direct search | Quick personal facts |
+| 2 | 3-5s | Gemini 2.5 Flash synthesis | Conversational AI |
+| 3 | 20-30s | Deep document analysis | Research tasks |
+
+### SDK Interface (Speed Modes)
+| Mode | Response Time | Technology | Best For |
+|------|---------------|------------|----------|
+| Fast | 0.5-1s | Direct search | Real-time interactions |
+| Balanced | 3-5s | Gemini 2.5 Flash synthesis | Conversational AI |
+| Autonomous | Variable | Intelligent orchestration | Complex reasoning |
+| Comprehensive | 20-30s | Deep document analysis | Research tasks |
+
+## Implementation Examples
+
+### React SDK
+
+```tsx
+
+function ChatComponent() {
+  const { getContext } = useJeanMemory();
+  
+  // Fast mode for quick responses
+  const handleQuickQuery = async (query: string) => {
+    const response = await getContext(query, { mode: 'fast' });
+    return response;
+  };
+  
+  // Balanced mode for conversational responses
+  const handleConversation = async (message: string) => {
+    const response = await getContext(message, { mode: 'balanced' });
+    return response;
+  };
+  
+  // Autonomous mode for complex tasks
+  const handleComplexTask = async (task: string) => {
+    const response = await getContext(task, { mode: 'autonomous' });
+    return response;
+  };
+}
+```
+
+### Node.js SDK
+
+```javascript
+
+const client = new JeanMemoryClient({ apiKey: 'your_api_key' });
+
+// Fast mode for APIs requiring quick responses
+const quickResponse = await client.getContext({
+  query: "User's last order status",
+  speed: "fast"
+});
+
+// Balanced mode for natural conversation
+const conversationalResponse = await client.getContext({
+  query: "How can I improve my productivity?",
+  speed: "balanced"
+});
+
+// Comprehensive mode for detailed analysis
+const detailedAnalysis = await client.getContext({
+  query: "Analyze my learning patterns from all documents",
+  speed: "comprehensive"
+});
+```
+
+### Python SDK
+
+```python
+from jeanmemory import JeanMemoryClient
+
+client = JeanMemoryClient(api_key="your_api_key")
+
+# Fast mode for quick lookups
+quick_result = client.get_context(
+    query="Meeting preferences",
+    speed="fast"
+)
+
+# Balanced mode for conversational AI
+conversation = client.get_context(
+    query="What's the best way to handle team conflicts?",
+    speed="balanced"
+)
+
+# Autonomous mode for intelligent decision-making
+smart_response = client.get_context(
+    query="Create a project timeline based on my goals",
+    speed="autonomous"
+)
+```
+
+## Best Practices
+
+### Mode Selection Guidelines
+
+1. **Default Choice**: Use balanced mode for most conversational interactions
+2. **Performance Critical**: Choose fast mode when sub-second response is required
+3. **Complex Analysis**: Select autonomous mode for multi-step reasoning and adaptive responses
+4. **Research Tasks**: Use comprehensive mode for thorough document analysis
+
+### Optimization Tips
+
+- **Fast Mode**: Ideal for autocomplete, quick facts, and simple queries where raw data is sufficient
+- **Balanced Mode**: Perfect for chatbots, personal assistants, and natural conversation flows
+- **Autonomous Mode**: Best for planning, analysis, and context-dependent responses requiring intelligence
+- **Comprehensive Mode**: Use sparingly due to latency; excellent for detailed research and analysis
+
+### Error Handling
+
+Always implement proper error handling for all modes, especially autonomous and comprehensive modes which may have variable response times:
+
+```javascript
+try {
+  const response = await getContext(query, { mode: 'autonomous' });
+  // Handle successful response
+} catch (error) {
+  // Handle timeout or processing errors
+  console.error('Context retrieval failed:', error);
+}
+```
+
+## Response Formats
+
+### Fast Mode Response
+```json
+{
+  "status": "success",
+  "memories": [
+    {
+      "id": "mem_123",
+      "content": "User prefers morning meetings at 9 AM",
+      "score": 0.92,
+      "created_at": "2024-01-15T09:00:00Z"
+    }
+  ],
+  "total_found": 5,
+  "response_time": 0.8
+}
+```
+
+### Balanced Mode Response
+```json
+{
+  "status": "success",
+  "question": "How do I handle work stress?",
+  "answer": "Based on your memories, you typically handle work stress by taking short walks, practicing deep breathing, and scheduling regular breaks. You've mentioned that listening to calm music during breaks is particularly effective for you.",
+  "memories_found": 8,
+  "total_duration": 3.2
+}
+```
+
+## Technical Implementation
+
+The speed modes are implemented at the orchestration layer, where the `jean_memory` tool routes requests to different processing pathways based on the specified speed parameter:
+
+- **Fast**: Direct `search_memory` with explicit result limits
+- **Balanced**: `ask_memory` with Gemini 2.5 Flash synthesis
+- **Autonomous**: Full orchestration with intelligent context analysis
+- **Comprehensive**: `deep_memory_query` with document chunk search
+
+This architecture ensures optimal performance for each use case while maintaining consistent API interfaces across all modes.
+
+---
+
 ## Tools
 
 These are the primitive, low-level tools that our context engineering flows are built upon. While our primary `jean_memory` tool orchestrates these for you, they are directly callable for advanced use cases where you need precise, deterministic control over the memory layer.
+
+## Primary Tool: jean_memory
+
+The `jean_memory` tool is the main interface for context-aware interactions. The interface varies based on your integration method:
+
+### MCP Integration
+For MCP clients (Claude, cursor, custom MCP tools):
+
+```json
+{
+  "tool_name": "jean_memory",
+  "tool_params": {
+    "user_message": "Your query here",
+    "is_new_conversation": false,
+    "depth": 2
+  }
+}
+```
+
+**Depth Levels**:
+- **0**: No context (generic knowledge questions)
+- **1**: Fast search (quick personal facts, 0.5-1s)
+- **2**: Balanced synthesis (conversational AI, 3-5s) - Recommended
+- **3**: Comprehensive analysis (research tasks, 20-30s)
+
+### SDK Integration
+For SDK users (React, Node.js, Python):
+
+```javascript
+await jean_memory({
+  user_message: "Your query here",
+  is_new_conversation: false,
+  needs_context: true,
+  speed: "balanced" // Options: "fast", "balanced", "autonomous", "comprehensive"
+});
+```
+
+**Speed Modes**:
+- **fast**: Direct memory search (0.5-1s)
+- **balanced**: AI synthesis with Gemini 2.5 Flash (3-5s) - Recommended
+- **autonomous**: Intelligent orchestration with variable latency
+- **comprehensive**: Deep document analysis (20-30s)
+
+[Learn more about speed modes →](/speed-modes)
 
 ### Document and Memory Tools
 
@@ -1048,6 +1524,155 @@ These are the primitive, low-level tools that our context engineering flows are 
 -   **`ask_memory(question)`**: Asks a simple question about your stored memories.
 -   **`list_memories()`**: Browses through your stored memories.
 -   **`deep_memory_query(query)`**: Performs a complex analysis across all of your memories to synthesize deeper insights.
+
+---
+
+## Mcp Api
+
+## Overview
+
+While our SDKs are the recommended way to integrate Jean Memory for most applications, we also provide a powerful, low-level API endpoint for advanced use cases. The Model Context Protocol (MCP) API is designed for developers who need direct control over the context engineering process or are building autonomous agents that can leverage Jean Memory's tool-calling capabilities.
+
+This is the same endpoint that our enterprise partners, like Claude, use to integrate Jean Memory as a tool for their models.
+
+**Info:**
+**When to use the MCP API:**
+- You are building an autonomous AI agent.
+- You need to integrate Jean Memory as a callable tool for an existing LLM.
+- You require streaming responses using Server-Sent Events (SSE).
+- You need more control than the SDKs provide.
+
+## Endpoint URL
+
+The primary endpoint for all MCP interactions is a single HTTP POST request:
+
+```bash
+https://jean-memory-api-virginia.onrender.com/mcp/v2/{client_name}/{user_id}
+```
+
+-   **`client_name`**: A unique identifier for your application (e.g., `my-agent`, `claude`).
+-   **`user_id`**: The unique identifier for the end-user.
+
+## Authentication
+
+The MCP API uses the same secure authentication as our SDKs. All requests must include a valid JWT in the `Authorization` header.
+
+```
+Authorization: Bearer <your_pkce_jwt>
+```
+
+Our SDKs handle the PKCE flow for generating these tokens automatically. If you are building a custom client, you will need to implement a standard PKCE authentication flow to acquire a user-specific JWT.
+
+## Request Body
+
+The request body is a JSON object that specifies the tool you want to call and its parameters.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "tool_name": "jean_memory",
+    "tool_params": {
+      "user_message": "What have I been working on recently?",
+      "is_new_conversation": false,
+      "depth": 2
+    }
+  },
+  "id": "1"
+}
+```
+
+### Key Parameters:
+
+-   **`method`**: Should always be `tools/call`.
+-   **`tool_name`**: The name of the tool you want to execute. Use `jean_memory` for all interactions.
+-   **`tool_params`**: An object containing the parameters for the specified tool.
+
+## The `jean_memory` Tool
+
+This is the primary tool for all MCP interactions. It provides intelligent context engineering with configurable depth levels.
+
+**Tool Parameters:**
+- **`user_message`** (string, required): The user's complete message or query.
+- **`is_new_conversation`** (boolean, required): Set to `true` only for the very first message in a new conversation.
+- **`depth`** (integer, optional, default: `2`): The desired context depth level.
+    - `0`: No context retrieval. Use for generic knowledge questions that don't require personal context.
+    - `1`: Fast search for quick personal facts or simple lookups (sub-second response time).
+    - `2`: Balanced synthesis for conversational responses using AI-powered memory synthesis (3-5 seconds).
+    - `3`: Comprehensive analysis with deep document search and extensive memory correlation (20-30 seconds).
+
+## Server-Sent Events (SSE) for Streaming
+
+For clients that support streaming (like many conversational AI applications), the MCP API can stream responses using SSE. This allows you to receive the response as it's generated, improving the user experience.
+
+To enable streaming, include the `Accept: text/event-stream` header in your request.
+
+**Example JavaScript Client:**
+
+```javascript
+const clientName = 'your_client_name';
+const userId = 'user_123';
+const token = 'your_pkce_jwt'; // Acquired via your auth flow
+
+const eventSource = new EventSource(
+  `https://jean-memory-api-virginia.onrender.com/mcp/v2/${clientName}/${userId}`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        tool_name: 'jean_memory',
+        tool_params: {
+          user_message: "What are my current project goals?",
+          is_new_conversation: false,
+          depth: 2
+        },
+      },
+      id: "1",
+    }),
+  }
+);
+
+eventSource.onmessage = (event) => {
+  // Each chunk of the response will arrive here
+  console.log('Received chunk:', event.data);
+};
+
+eventSource.onerror = (error) => {
+  console.error('SSE Error:', error);
+  eventSource.close();
+};
+```
+
+**Warning:**
+**Heartbeats:** The API will send colon-prefixed comments (`:heartbeat`) periodically to keep the connection alive, especially through proxies like Cloudflare. Your client should be prepared to ignore these messages.
+
+## Example Response (Non-Streaming)
+
+A standard, non-streaming `POST` request will receive a JSON response like this:
+
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "content": [
+            {
+                "type": "text",
+                "text": "Based on your recent memories, you've been heavily focused on developing 'Jean Memory', an AI memory layer. This includes work on SDKs, comprehensive testing, and preparing for a YC application. You're also exploring machine learning applications in your data analysis work."
+            }
+        ],
+        "tool_name": "jean_memory"
+    },
+    "id": "1"
+}
+```
 
 ---
 
