@@ -386,13 +386,22 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             unique_memories = {}
             
             # Process recent memories
+            recent_memories_list = []
             try:
-                recent_memories_list = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
-                for mem in recent_memories_list:
-                    if isinstance(mem, dict) and mem.get('id'):
-                        unique_memories[mem['id']] = mem
+                raw_json = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
+                # The actual memories are nested under a 'memories' key
+                if isinstance(raw_json, dict) and 'memories' in raw_json:
+                    recent_memories_list = raw_json['memories']
+                elif isinstance(raw_json, list): # Handle cases where it might just be a list
+                    recent_memories_list = raw_json
+
             except (json.JSONDecodeError, TypeError):
                 logger.warning("Could not parse recent memories from list_memories.")
+
+            # Process recent memories
+            for mem in recent_memories_list:
+                if isinstance(mem, dict) and mem.get('id'):
+                    unique_memories[mem['id']] = mem
 
             # Process search results
             for result in search_results:
@@ -413,11 +422,15 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             # Re-separate the memories for clear labeling in the prompt
             recent_ids = set()
             try:
-                recent_memories_list = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
-                if isinstance(recent_memories_list, list):
-                    recent_ids = {mem['id'] for mem in recent_memories_list if isinstance(mem, dict) and 'id' in mem}
+                # The logic needs to be consistent with the parsing above
+                raw_json = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
+                if isinstance(raw_json, dict) and 'memories' in raw_json:
+                    mem_list = raw_json['memories']
+                    recent_ids = {mem['id'] for mem in mem_list if isinstance(mem, dict) and 'id' in mem}
+                elif isinstance(raw_json, list):
+                    recent_ids = {mem['id'] for mem in raw_json if isinstance(mem, dict) and 'id' in mem}
             except (json.JSONDecodeError, TypeError):
-                logger.warning("Could not parse recent_ids from list_memories.")
+                logger.warning("Could not parse recent_ids from list_memories for separation.")
 
             for mem in memories:
                 content = mem.get('memory', mem.get('content', ''))
