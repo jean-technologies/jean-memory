@@ -296,26 +296,42 @@ Default to depth=2 for most conversational interactions."""
         elif tool_name == "add_memories":
             tool_args.pop("tags", None)
         elif tool_name == "jean_memory":
-            # Convert depth parameter to speed and needs_context for existing tool
-            depth = tool_args.pop("depth", 2)  # Default to balanced
+            # Check if this is a new conversation - if so, return cached life narrative directly
+            is_new_conversation = tool_args.get("is_new_conversation", False)
             
-            # Map depth to speed and needs_context
-            if depth == 0:
-                tool_args["speed"] = "fast"
-                tool_args["needs_context"] = False
-            elif depth == 1:
-                tool_args["speed"] = "fast" 
-                tool_args["needs_context"] = True
-            elif depth == 2:
-                tool_args["speed"] = "balanced"
-                tool_args["needs_context"] = True
-            elif depth == 3:
-                tool_args["speed"] = "comprehensive"
-                tool_args["needs_context"] = True
+            if is_new_conversation:
+                # For new conversations, return cached life narrative directly (no orchestration)
+                from app.mcp_orchestration import get_smart_orchestrator
+                orchestrator = get_smart_orchestrator()
+                cached_narrative = await orchestrator._get_cached_narrative(user_id)
+                
+                if cached_narrative:
+                    narrative_with_context = f"---\n[Your Life Context]\n{cached_narrative}\n---"
+                    return orchestrator._append_system_directive(narrative_with_context)
+                else:
+                    default_message = "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
+                    return orchestrator._append_system_directive(default_message)
             else:
-                # Fallback to balanced for invalid values
-                tool_args["speed"] = "balanced"
-                tool_args["needs_context"] = True
+                # Convert depth parameter to speed and needs_context for existing tool
+                depth = tool_args.pop("depth", 2)  # Default to balanced
+                
+                # Map depth to speed and needs_context
+                if depth == 0:
+                    tool_args["speed"] = "fast"
+                    tool_args["needs_context"] = False
+                elif depth == 1:
+                    tool_args["speed"] = "fast" 
+                    tool_args["needs_context"] = True
+                elif depth == 2:
+                    tool_args["speed"] = "balanced"
+                    tool_args["needs_context"] = True
+                elif depth == 3:
+                    tool_args["speed"] = "comprehensive"
+                    tool_args["needs_context"] = True
+                else:
+                    # Fallback to balanced for invalid values
+                    tool_args["speed"] = "balanced"
+                    tool_args["needs_context"] = True
 
         # Call the base handler with the sanitized arguments
         return await super().handle_tool_call(tool_name, tool_args, user_id) 
