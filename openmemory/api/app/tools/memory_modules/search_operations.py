@@ -22,6 +22,8 @@ from .chunk_search import (
     should_trigger_deep_search
 )
 
+import json
+
 logger = logging.getLogger(__name__)
 
 
@@ -353,21 +355,39 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             from mem0.llms.gemini import GeminiLLM
             llm = GeminiLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
             
-            # 1. Perform multiple, targeted vector searches for richer context
+            # 1. Gather context from multiple sources in parallel
             search_start_time = time.time()
-            logger.info(f"ask_memory: Starting targeted memory searches for user {supa_uid}")
+            logger.info(f"ask_memory: Starting parallel context gathering for user {supa_uid}")
 
+            # a. Get the 20 most recent memories for chronological context
+            list_memories_task = list_memories(limit=20)
+
+            # b. Perform targeted semantic searches for relevant context
             search_queries = [
                 question, # The user's direct question
                 "user's core preferences, personality traits, and values",
-                "user's current projects, work, and learning goals"
             ]
+            search_tasks = [memory_client.search(query=q, user_id=supa_uid, limit=20) for q in search_queries]
+            
+            # Execute all tasks concurrently
+            results = await asyncio.gather(list_memories_task, *search_tasks)
+            
+            recent_memories_raw = results[0]
+            search_results = results[1:]
 
-            tasks = [memory_client.search(query=q, user_id=supa_uid, limit=20) for q in search_queries]
-            search_results = await asyncio.gather(*tasks)
-
-            # Combine and deduplicate memories from all searches
+            # Combine and deduplicate memories from all sources
             unique_memories = {}
+            
+            # Process recent memories
+            try:
+                recent_memories_list = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
+                for mem in recent_memories_list:
+                    if isinstance(mem, dict) and mem.get('id'):
+                        unique_memories[mem['id']] = mem
+            except (json.JSONDecodeError, TypeError):
+                logger.warning("Could not parse recent memories from list_memories.")
+
+            # Process search results
             for result in search_results:
                 if isinstance(result, list):
                     for mem in result:
@@ -377,31 +397,47 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             memories = list(unique_memories.values())
             search_duration = time.time() - search_start_time
             
-            logger.info(f"ask_memory: Memory search for user {supa_uid} took {search_duration:.2f}s. Found {len(memories)} unique results from {len(search_queries)} queries.")
+            logger.info(f"ask_memory: Context gathering took {search_duration:.2f}s. Found {len(memories)} unique results.")
 
+            # Organize memories for the prompt
+            recent_memory_content = []
+            relevant_memory_content = []
+
+            # Re-separate the memories for clear labeling in the prompt
+            recent_ids = {mem['id'] for mem in (json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw)}
+            for mem in memories:
+                content = mem.get('memory', mem.get('content', ''))
+                if mem['id'] in recent_ids:
+                    recent_memory_content.append(content)
+                else:
+                    relevant_memory_content.append(content)
             
-            # Filter out contaminated memories and limit token usage for efficient synthesis
-            clean_memories = []
-            total_chars = 0
-            max_chars = 16000 # Increased for richer synthesis
-            
-            for idx, mem in enumerate(memories):
-                memory_text = mem.get('memory', mem.get('content', ''))
-                memory_line = f"Memory {idx+1}: {memory_text}"
-                
-                # Stop adding memories if we're approaching token limits
-                if total_chars + len(memory_line) > max_chars:
-                    break
-                    
-                clean_memories.append(memory_line)
-                total_chars += len(memory_line)
-            
+            # Filter and prepare memories for the prompt
+            def prepare_memory_list(memory_list, max_chars):
+                clean_list = []
+                current_chars = 0
+                for mem_text in memory_list:
+                    if "SYSTEM DIRECTIVE" in mem_text or "User provided feedback" in mem_text:
+                        continue
+                    if current_chars + len(mem_text) > max_chars:
+                        break
+                    clean_list.append(f"- {mem_text}")
+                    current_chars += len(mem_text)
+                return clean_list
+
+            clean_recent_memories = prepare_memory_list(recent_memory_content, 8000)
+            clean_relevant_memories = prepare_memory_list(relevant_memory_content, 8000)
+
             # 2. Generate conversational response using Gemini 2.5 Flash
-            if clean_memories:
-                memory_context = "\n".join(clean_memories)
+            if clean_recent_memories or clean_relevant_memories:
+                memory_context = ""
+                if clean_recent_memories:
+                    memory_context += "[Recent Memories]\n" + "\n".join(clean_recent_memories) + "\n\n"
+                if clean_relevant_memories:
+                    memory_context += "[Relevant Context]\n" + "\n".join(clean_relevant_memories)
+
                 prompt = f"""Question: "{question}"
 
-Relevant memories:
 {memory_context}
 
 Provide a concise, helpful answer (2-3 sentences max) based on these memories. If insufficient information, state what's missing."""

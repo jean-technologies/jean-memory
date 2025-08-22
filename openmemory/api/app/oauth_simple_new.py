@@ -40,7 +40,7 @@ credentials_exception = HTTPException(
 
 # Logger for this module
 logger = logging.getLogger(__name__)
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # Increased to 24 hours for better client stability
 
 oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
 bearer_scheme = HTTPBearer(auto_error=True)

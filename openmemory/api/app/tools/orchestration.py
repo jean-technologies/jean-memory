@@ -5,8 +5,6 @@ import time
 from app.mcp_instance import mcp
 from app.context import user_id_var, client_name_var, background_tasks_var
 from app.mcp_orchestration import get_smart_orchestrator
-from app.tools.memory import search_memory
-from app.tools.documents import deep_memory_query # Import deep_memory_query
 from app.analytics import track_tool_usage
 
 
@@ -73,6 +71,7 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
 
     # --- Speed-based routing ---
     if speed == "fast":
+        from app.tools.memory import search_memory
         logger.info(f"[Fast Path] Using search_memory for query: '{user_message[:50]}...'")
         # Use explicit limit to prevent response bloat
         return await search_memory(query=user_message, limit=10)
@@ -85,6 +84,7 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
         return await ask_memory(question=user_message)
     
     if speed == "comprehensive" or speed == "deep":
+        from app.tools.documents import deep_memory_query
         logger.info(f"[Comprehensive Path] Using deep_memory_query for query: '{user_message[:50]}...'")
         return await deep_memory_query(search_query=user_message)
     
@@ -132,7 +132,7 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
         logger.info(f"[PERF] Total jean_memory call took {time.time() - total_start_time:.4f}s")
 
 
-@mcp.tool
+@mcp.tool()
 async def get_context_by_depth(
     user_message: str, 
     depth: str = "balanced"
@@ -157,11 +157,13 @@ async def get_context_by_depth(
     if depth == "none":
         return "No context requested."
     elif depth == "fast":
+        from app.tools.memory import search_memory
         return await search_memory(query=user_message, limit=15)
     elif depth == "balanced":
         from app.tools.memory import ask_memory
         return await ask_memory(question=user_message)
     elif depth == "comprehensive":
+        from app.tools.documents import deep_memory_query
         return await deep_memory_query(search_query=user_message)
     else:
         logger.warning(f"Invalid depth '{depth}' specified. Defaulting to 'balanced'.")
