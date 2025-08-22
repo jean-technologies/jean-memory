@@ -411,10 +411,17 @@ async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name
             relevant_memory_content = []
 
             # Re-separate the memories for clear labeling in the prompt
-            recent_ids = {mem['id'] for mem in (json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw)}
+            recent_ids = set()
+            try:
+                recent_memories_list = json.loads(recent_memories_raw) if isinstance(recent_memories_raw, str) else recent_memories_raw
+                if isinstance(recent_memories_list, list):
+                    recent_ids = {mem['id'] for mem in recent_memories_list if isinstance(mem, dict) and 'id' in mem}
+            except (json.JSONDecodeError, TypeError):
+                logger.warning("Could not parse recent_ids from list_memories.")
+
             for mem in memories:
                 content = mem.get('memory', mem.get('content', ''))
-                if mem['id'] in recent_ids:
+                if mem.get('id') in recent_ids:
                     recent_memory_content.append(content)
                 else:
                     relevant_memory_content.append(content)
