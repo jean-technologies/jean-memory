@@ -332,87 +332,47 @@ async def ask_memory(question: str) -> str:
 
 async def _lightweight_ask_memory_impl(question: str, supa_uid: str, client_name: str) -> str:
     """
-    Lightweight, fast version of ask_memory using Gemini Flash.
-    Does not use documents.
+    Simple, reliable ask_memory implementation using direct search.
+    Restored to working version without complex parallel processing.
     """
     from app.utils.memory import get_async_memory_client
     
-    start_time = time.time()  # Add missing start_time definition
+    start_time = time.time()
     
     try:
         memory_client = await get_async_memory_client()
         llm = GeminiLLM(config=BaseLlmConfig(model="gemini-2.5-flash"))
         
-        # 1. Gather context from multiple, direct searches in parallel
+        # Simple, direct memory search (the working approach)
         search_start_time = time.time()
-        logger.info(f"ask_memory: Starting parallel, direct memory searches for user {supa_uid}")
-
-        # Use direct client calls for all searches to ensure consistent data types
-        search_queries = [
-            question,  # The user's direct question
-            "user's core preferences, personality traits, and values",
-            "user's recent activities, conversations, and events" # Replaces list_memories
-        ]
+        logger.info(f"ask_memory: Starting memory search for user {supa_uid}")
         
-        tasks = [memory_client.search(query=q, user_id=supa_uid, limit=25) for q in search_queries]
-        search_results = await asyncio.gather(*tasks)
-
-        # Combine and deduplicate memories from all searches
-        unique_memories = {}
-        for result_list in search_results:
-            if isinstance(result_list, list):
-                for mem in result_list:
-                    if isinstance(mem, dict) and mem.get('id'):
-                        unique_memories[mem['id']] = mem
+        # Single search with higher limit for better results
+        search_result = await memory_client.search(query=question, user_id=supa_uid, limit=50)
         
-        memories = list(unique_memories.values())
+        # Extract memories from search result
+        memories = []
+        if isinstance(search_result, dict) and 'results' in search_result:
+            memories = search_result['results']
+        elif isinstance(search_result, list):
+            memories = search_result
+        
         search_duration = time.time() - search_start_time
-        
-        logger.info(f"ask_memory: Context gathering took {search_duration:.2f}s. Found {len(memories)} unique results.")
+        logger.info(f"ask_memory: Memory search completed in {search_duration:.2f}s. Found {len(memories)} memories.")
 
-        # Organize memories for the prompt
-        recent_memory_content = []
-        relevant_memory_content = []
-        
-        # Simple separation: memories from the direct question are "relevant", others are "recent/core"
-        # This avoids complex parsing and is more robust.
-        question_results = search_results[0]
-        
-        question_ids = {mem['id'] for mem in question_results if isinstance(mem, dict) and mem.get('id')}
-
-        for mem in memories:
+        # Prepare memories for synthesis
+        memory_texts = []
+        for mem in memories[:30]:  # Limit to 30 for synthesis
             content = mem.get('memory', mem.get('content', ''))
-            if mem.get('id') in question_ids:
-                relevant_memory_content.append(content)
-            else:
-                recent_memory_content.append(content)
+            if content and "SYSTEM DIRECTIVE" not in content and "User provided feedback" not in content:
+                memory_texts.append(f"- {content}")
 
-        # Filter and prepare memories for the prompt
-        def prepare_memory_list(memory_list, max_chars):
-            clean_list = []
-            current_chars = 0
-            for mem_text in memory_list:
-                if "SYSTEM DIRECTIVE" in mem_text or "User provided feedback" in mem_text:
-                    continue
-                if current_chars + len(mem_text) > max_chars:
-                    break
-                clean_list.append(f"- {mem_text}")
-                current_chars += len(mem_text)
-            return clean_list
-
-        clean_recent_memories = prepare_memory_list(recent_memory_content, 8000)
-        clean_relevant_memories = prepare_memory_list(relevant_memory_content, 8000)
-
-        # 2. Generate conversational response using Gemini 2.5 Flash
-        if clean_recent_memories or clean_relevant_memories:
-            memory_context = ""
-            if clean_recent_memories:
-                memory_context += "[Recent & Core Memories]\n" + "\n".join(clean_recent_memories) + "\n\n"
-            if clean_relevant_memories:
-                memory_context += "[Context Directly Relevant to Your Question]\n" + "\n".join(clean_relevant_memories)
-
+        # Generate response using Gemini 2.5 Flash
+        if memory_texts:
+            memory_context = "\n".join(memory_texts)
             prompt = f"""Based on the following memories, answer the question: "{question}"
 
+Relevant memories:
 {memory_context}
 
 Provide a helpful and conversational answer based on the memories above. If the memories don't contain enough information to answer the question, say so."""
@@ -421,7 +381,6 @@ Provide a helpful and conversational answer based on the memories above. If the 
 
 No relevant memories were found. Provide a helpful response indicating that no relevant information was found in their memory."""
         
-        # Synthesis should happen for both cases (with or without memories)
         synthesis_start_time = time.time()
         response = llm.generate_response([{"role": "user", "content": prompt}])
         synthesis_duration = time.time() - synthesis_start_time
