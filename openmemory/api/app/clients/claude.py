@@ -46,7 +46,7 @@ class ClaudeProfile(BaseClientProfile):
             logger.error(f"🔧 [CLAUDE PROFILE] Error accessing MCP tools: {e}")
         
         # Base tool description
-        jean_memory_description = "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Set needs_context=false for generic knowledge questions that don't require personal context about the specific user (e.g., 'what is the relationship between introversion and conformity', 'explain quantum physics'). Set needs_context=true only for questions that would benefit from the user's personal context, memories, or previous conversations."
+        jean_memory_description = "🌟 PRIMARY TOOL for all conversational interactions. Intelligently engineers context for the user's message, saves new information, and provides relevant background. For the very first message in a conversation, set 'is_new_conversation' to true. Use 'depth' to control context level: 0=none (just save memory), 1=fast search, 2=balanced synthesis (default), 3=comprehensive analysis."
         
         # Add multi-agent session context if applicable (only for Claude Code)
         if is_multi_agent and is_claude_code:
@@ -61,7 +61,7 @@ class ClaudeProfile(BaseClientProfile):
                     "properties": {
                         "user_message": {"type": "string", "description": "The user's complete message or question"},
                         "is_new_conversation": {"type": "boolean", "description": "Set to true only for the very first message in a new chat session, otherwise false."},
-                        "needs_context": {"type": "boolean", "description": "Whether personal context retrieval is needed for this query. Set to false for generic knowledge questions (science, definitions, general concepts). Set to true for questions that would benefit from the user's personal context, memories, or previous conversations.", "default": True}
+                        "depth": {"type": "integer", "description": "Context depth level: 0=none (just save memory), 1=fast search, 2=balanced synthesis, 3=comprehensive analysis", "default": 2, "minimum": 0, "maximum": 3}
                     },
                     "required": ["user_message", "is_new_conversation"]
                 }
@@ -277,6 +277,27 @@ class ClaudeProfile(BaseClientProfile):
             tool_args.pop("tags_filter", None)
         elif tool_name == "add_memories":
             tool_args.pop("tags", None)
+        elif tool_name == "jean_memory":
+            # Convert depth parameter to speed and needs_context for existing tool
+            depth = tool_args.pop("depth", 2)  # Default to balanced
+            
+            # Map depth to speed and needs_context
+            if depth == 0:
+                tool_args["speed"] = "fast"
+                tool_args["needs_context"] = False
+            elif depth == 1:
+                tool_args["speed"] = "fast" 
+                tool_args["needs_context"] = True
+            elif depth == 2:
+                tool_args["speed"] = "balanced"
+                tool_args["needs_context"] = True
+            elif depth == 3:
+                tool_args["speed"] = "comprehensive"
+                tool_args["needs_context"] = True
+            else:
+                # Fallback to balanced for invalid values
+                tool_args["speed"] = "balanced"
+                tool_args["needs_context"] = True
 
         # Call the base handler with the sanitized arguments
         return await super().handle_tool_call(tool_name, tool_args, user_id) 
