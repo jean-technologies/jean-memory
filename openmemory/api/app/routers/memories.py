@@ -1466,9 +1466,11 @@ async def delete_memories(
 
     deleted_count = 0
     not_found_count = 0
-    jean_deleted_count = 0
+    mem0_deleted_count = 0
+    graphiti_deleted_count = 0
+    failed_deletions = []
 
-    # Also prepare to delete from Jean Memory V2
+    # Initialize Jean Memory V2 client for deletion
     memory_client = None
     try:
         from app.utils.memory import get_async_memory_client
@@ -1477,46 +1479,109 @@ async def delete_memories(
         logger.error(f"Failed to initialize Jean Memory V2 client for deletion: {e}")
 
     for memory_id_to_delete in request.memory_ids:
+        memory_to_delete = None
+        mem0_id = None
+        deletion_success = True
+        
         try:
-            # 1. Delete from SQL database (existing behavior)
-            update_memory_state(db, memory_id_to_delete, MemoryState.deleted, user.id)
-            deleted_count += 1
+            # 1. First get the memory to extract mem0_id from metadata
+            memory_to_delete = db.query(Memory).filter(
+                Memory.id == memory_id_to_delete,
+                Memory.user_id == user.id
+            ).first()
             
-            # 2. Also try to delete from Jean Memory V2 (NEW: dual deletion)
-            if memory_client:
+            if not memory_to_delete:
+                not_found_count += 1
+                continue
+            
+            # Extract mem0_id from metadata if it exists
+            if memory_to_delete.metadata_:
+                mem0_id = memory_to_delete.metadata_.get('mem0_id')
+                logger.info(f"🔍 Found mem0_id {mem0_id} for memory {memory_id_to_delete}")
+            
+            # 2. Try to delete from Jean Memory V2 (mem0 + Graphiti) FIRST
+            if memory_client and mem0_id:
                 try:
                     jean_result = await memory_client.delete(
-                        memory_id=str(memory_id_to_delete),
+                        memory_id=mem0_id,  # Use mem0_id instead of SQL memory ID
                         user_id=supabase_user_id_str
                     )
-                    if jean_result and jean_result.get('message'):
-                        jean_deleted_count += 1
+                    
+                    if jean_result and jean_result.get('deleted_count', 0) > 0:
+                        if jean_result.get('mem0_deleted'):
+                            mem0_deleted_count += 1
+                            logger.info(f"✅ Deleted from mem0/Qdrant: {mem0_id}")
+                        if jean_result.get('graphiti_deleted'):
+                            graphiti_deleted_count += 1
+                            logger.info(f"✅ Deleted from Graphiti/Neo4j: {mem0_id}")
+                    else:
+                        # Deletion failed from vector/graph stores
+                        deletion_success = False
+                        error_msg = jean_result.get('errors', ['Unknown error'])
+                        logger.warning(f"⚠️ Failed to delete {mem0_id} from Jean Memory V2: {error_msg}")
+                        failed_deletions.append({
+                            'memory_id': str(memory_id_to_delete),
+                            'mem0_id': mem0_id,
+                            'error': error_msg
+                        })
+                        
                 except Exception as e:
-                    logger.warning(f"Failed to delete memory {memory_id_to_delete} from Jean Memory V2: {e}")
-                    # Don't fail the whole operation if Jean Memory V2 deletion fails
+                    # Jean Memory V2 deletion failed - log but don't block SQL deletion
+                    logger.error(f"❌ Exception deleting {mem0_id} from Jean Memory V2: {e}")
+                    # Continue with SQL deletion anyway
             
+            # 3. Mark as deleted in SQL database (soft delete with deleted_at timestamp)
+            # Only do this if vector/graph deletion succeeded OR if we don't have mem0_id
+            if deletion_success or not mem0_id:
+                update_memory_state(db, memory_id_to_delete, MemoryState.deleted, user.id)
+                deleted_count += 1
+                logger.info(f"✅ Marked as deleted in SQL: {memory_id_to_delete}")
+            else:
+                logger.warning(f"⚠️ Skipping SQL deletion for {memory_id_to_delete} due to vector/graph deletion failure")
+                
         except HTTPException as e:
             if e.status_code == 404:
                 not_found_count += 1
             else:
-                raise e # Re-raise other exceptions
+                raise e
+        except Exception as e:
+            logger.error(f"❌ Unexpected error deleting memory {memory_id_to_delete}: {e}")
+            failed_deletions.append({
+                'memory_id': str(memory_id_to_delete),
+                'error': str(e)
+            })
     
+    # Commit SQL changes
     try:
         db.commit()
+        logger.info(f"✅ Committed {deleted_count} SQL deletions")
     except Exception as e:
         db.rollback()
+        logger.error(f"❌ Failed to commit SQL deletions: {e}")
         raise HTTPException(status_code=500, detail=f"Error committing deletions: {e}")
 
-    # Enhanced response with dual system info
-    message = f"Successfully deleted {deleted_count} memories from SQL database"
-    if jean_deleted_count > 0:
-        message += f" and {jean_deleted_count} from Jean Memory V2"
+    # Build comprehensive response message
+    message_parts = []
+    if deleted_count > 0:
+        message_parts.append(f"Deleted {deleted_count} memories from SQL")
+    if mem0_deleted_count > 0:
+        message_parts.append(f"{mem0_deleted_count} from Qdrant")
+    if graphiti_deleted_count > 0:
+        message_parts.append(f"{graphiti_deleted_count} from Neo4j")
     if not_found_count > 0:
-        message += f". Not found: {not_found_count}"
+        message_parts.append(f"Not found: {not_found_count}")
+    if failed_deletions:
+        message_parts.append(f"Failed: {len(failed_deletions)}")
     
-    logger.info(f"✅ Deleted {deleted_count} SQL + {jean_deleted_count} Jean Memory V2 memories")
+    message = "Successfully " + ", ".join(message_parts) if message_parts else "No memories deleted"
     
-    return {"message": message}
+    logger.info(f"🗑️ DELETION SUMMARY: SQL={deleted_count}, Qdrant={mem0_deleted_count}, Neo4j={graphiti_deleted_count}, Failed={len(failed_deletions)}")
+    
+    response = {"message": message}
+    if failed_deletions:
+        response["failed_deletions"] = failed_deletions
+    
+    return response
 
 
 # Archive memories

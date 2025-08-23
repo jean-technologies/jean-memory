@@ -897,6 +897,102 @@ class JeanMemoryAPI:
                 metadata={"unexpected_error": True}
             )
     
+    async def delete_memory(self, memory_id: str, user_id: str) -> Dict[str, Any]:
+        """
+        Delete a specific memory by ID from all databases (mem0 and Graphiti)
+        
+        Args:
+            memory_id: The memory ID to delete
+            user_id: The user ID who owns the memory
+            
+        Returns:
+            Dict with deletion status
+        """
+        if not self._initialized:
+            await self.initialize()
+            
+        logger.info(f"🗑️ Deleting memory {memory_id} for user {user_id}")
+        
+        errors = []
+        mem0_deleted = False
+        graphiti_deleted = False
+        
+        # Delete from mem0 (Qdrant)
+        try:
+            mem0_instance = await self._get_user_memory_instance(user_id)
+            if mem0_instance:
+                # Use mem0's delete method (only needs memory_id)
+                result = mem0_instance.delete(memory_id)
+                mem0_deleted = True
+                logger.info(f"✅ Deleted memory {memory_id} from mem0/Qdrant")
+        except Exception as e:
+            error_msg = f"Failed to delete from mem0: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            errors.append(error_msg)
+        
+        # Delete from Graphiti (Neo4j) if available
+        if self._graphiti:
+            try:
+                # For Graphiti, we need to delete the episode
+                # Try multiple patterns since episode naming has varied:
+                # 1. f"memory_{memory_id}" (current pattern in api.py)
+                # 2. f"memory_{user_id}_{timestamp}" (pattern in integrations.py)
+                
+                from neo4j import AsyncGraphDatabase
+                
+                if hasattr(self._graphiti, 'driver'):
+                    async with self._graphiti.driver.session() as session:
+                        # First try exact match with memory_id pattern
+                        episode_name = f"memory_{memory_id}"
+                        query = """
+                        MATCH (e:Episode {name: $episode_name, group_id: $user_id})
+                        DETACH DELETE e
+                        RETURN COUNT(e) as deleted_count
+                        """
+                        result = await session.run(query, episode_name=episode_name, user_id=user_id)
+                        record = await result.single()
+                        
+                        if record and record['deleted_count'] > 0:
+                            graphiti_deleted = True
+                            logger.info(f"✅ Deleted episode {episode_name} from Graphiti/Neo4j")
+                        else:
+                            # Try to find episodes that contain the memory_id in their name
+                            # This handles timestamp-based naming or other patterns
+                            query = """
+                            MATCH (e:Episode {group_id: $user_id})
+                            WHERE e.name CONTAINS $memory_id 
+                               OR e.uuid = $memory_id
+                               OR e.name ENDS WITH $memory_id
+                            DETACH DELETE e
+                            RETURN COUNT(e) as deleted_count
+                            """
+                            result = await session.run(query, memory_id=memory_id, user_id=user_id)
+                            record = await result.single()
+                            
+                            if record and record['deleted_count'] > 0:
+                                graphiti_deleted = True
+                                logger.info(f"✅ Deleted episode containing/matching {memory_id} from Graphiti/Neo4j")
+                            else:
+                                # Last resort: delete any recent episode for this user
+                                # This is a fallback for orphaned episodes
+                                logger.warning(f"⚠️ Could not find episode with memory_id {memory_id}, skipping Graphiti deletion")
+            except Exception as e:
+                error_msg = f"Failed to delete from Graphiti: {str(e)}"
+                logger.warning(f"⚠️ {error_msg}")
+                # Don't add to errors if Graphiti is optional
+        
+        success = mem0_deleted and (graphiti_deleted or not self._graphiti)
+        
+        return {
+            'success': success,
+            'memory_id': memory_id,
+            'user_id': user_id,
+            'mem0_deleted': mem0_deleted,
+            'graphiti_deleted': graphiti_deleted,
+            'errors': errors,
+            'message': f"Memory {memory_id} {'deleted successfully' if success else 'deletion failed'}"
+        }
+    
     async def get_system_status(self) -> SystemStatus:
         """Get system health status"""
         if not self._initialized:

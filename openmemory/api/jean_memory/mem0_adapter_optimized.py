@@ -285,6 +285,45 @@ class AsyncMemoryAdapterOptimized:
                 'message': f'Error deleting memories: {str(e)}',
                 'deleted_count': 0
             }
+    
+    async def delete(self, memory_id: str, user_id: str) -> Dict:
+        """
+        OPTIMIZED Delete specific memory by ID (async)
+        
+        Args:
+            memory_id: Memory identifier
+            user_id: User identifier
+            
+        Returns:
+            Dict with deletion result
+        """
+        await self._ensure_initialized()
+        
+        try:
+            # Call the delete_memory method in Jean Memory V2 API
+            result = await self._api.delete_memory(memory_id=memory_id, user_id=user_id)
+            
+            if result.get('success', False):
+                logger.info(f"✅ Successfully deleted memory {memory_id} for user {user_id}")
+                return {
+                    'message': f'Memory {memory_id} deleted successfully',
+                    'deleted_count': 1,
+                    'mem0_deleted': result.get('mem0_deleted', False),
+                    'graphiti_deleted': result.get('graphiti_deleted', False)
+                }
+            else:
+                logger.warning(f"⚠️ Failed to delete memory {memory_id}: {result.get('message', 'Unknown error')}")
+                return {
+                    'message': result.get('message', f'Failed to delete memory {memory_id}'),
+                    'deleted_count': 0,
+                    'errors': result.get('errors', [])
+                }
+        except Exception as e:
+            logger.error(f"Error deleting memory {memory_id} for user {user_id}: {e}")
+            return {
+                'message': f'Error deleting memory: {str(e)}',
+                'deleted_count': 0
+            }
 
 
 class MemoryAdapterOptimized:
@@ -352,6 +391,19 @@ class MemoryAdapterOptimized:
         OPTIMIZED Delete all memories for a user (sync wrapper)
         """
         return asyncio.run(self._async_adapter.delete_all(user_id, agent_id))
+    
+    def delete(self, memory_id: str, user_id: str) -> Dict:
+        """
+        OPTIMIZED Delete specific memory by ID (sync wrapper)
+        
+        Args:
+            memory_id: Memory identifier
+            user_id: User identifier
+            
+        Returns:
+            Dict with deletion result
+        """
+        return asyncio.run(self._async_adapter.delete(memory_id, user_id))
 
 
 # mem0 compatibility aliases
