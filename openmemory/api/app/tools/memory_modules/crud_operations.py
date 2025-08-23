@@ -204,6 +204,14 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
             logger.error(f"💾 [Memory Add] ❌ Memory client add failed: {e}", exc_info=True)
             return format_error_response(f"Memory system add failed: {str(e)}", "add_memories")
         
+        # Extract mem0_id from result
+        mem0_id = None
+        if result and 'results' in result and len(result['results']) > 0:
+            mem0_id = result['results'][0].get('id')
+            logger.info(f"💾 [Memory Add] ✅ Extracted mem0_id: {mem0_id}")
+        else:
+            logger.warning(f"💾 [Memory Add] ⚠️ Could not extract mem0_id from result: {result}")
+        
         # Also save to local database for backup/querying
         logger.info(f"💾 [Memory Add] Step 7: Saving to local database")
         try:
@@ -212,7 +220,7 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
                 user_id=user.id,
                 app_id=app.id,
                 state=MemoryState.active,
-                metadata_={'tags': tags, 'priority': priority, 'mem0_id': result.get('id') if result else None}
+                metadata_={'tags': tags, 'priority': priority, 'mem0_id': mem0_id}
             )
             db.add(memory_record)
             db.commit()
@@ -229,7 +237,7 @@ async def _add_memories_background_claude(text: str, tags: Optional[List[str]],
         return safe_json_dumps({
             "status": "success",
             "message": "Memory added successfully",
-            "memory_id": result.get('id') if result else str(memory_record.id),
+            "memory_id": mem0_id if mem0_id else str(memory_record.id),
             "content_preview": text[:100] + "..." if len(text) > 100 else text,
             "tags": tags,
             "priority": priority,
