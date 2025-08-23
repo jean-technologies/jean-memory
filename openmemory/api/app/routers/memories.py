@@ -36,7 +36,8 @@ from .memories_modules.schemas import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/memories", tags=["memories"])
 
-# REMOVED: Jean Memory V2 app ID no longer needed
+# Jean Memory V2 dummy app ID for compatibility
+JEAN_MEMORY_V2_APP_ID = UUID("00000000-0000-4000-8000-000000000001")
 
 
 
