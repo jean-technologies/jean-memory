@@ -246,8 +246,11 @@ export class JeanMemoryClient {
     // Handle OAuth API - object with user_token and message
     const { user_token, message, speed = 'balanced', tool = 'jean_memory', format = 'enhanced' } = paramsOrQuery;
     
+    // Auto-create test user if no user_token provided (like string overload does)
+    const finalUserToken = user_token || await this.getTestUserToken();
+    
     const mcpResponse = await makeMCPRequest(
-      user_token,
+      finalUserToken,
       this.apiKey,
       tool,
       {

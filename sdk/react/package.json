@@ -1,6 +1,6 @@
 {
   "name": "@jeanmemory/react",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "React SDK for Jean Memory - Build personalized AI chatbots in 5 lines of code",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
