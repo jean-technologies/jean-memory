@@ -85,7 +85,7 @@ For headless applications without a frontend, you have several options:
 # Option 1: Test mode (development)
 jean = JeanMemoryClient(api_key="jean_sk_your_key")
 context = jean.get_context(
-    # user_token=None automatically uses test user
+    user_token=None,  # Explicitly None for test user
     message="Hello"
 )
 

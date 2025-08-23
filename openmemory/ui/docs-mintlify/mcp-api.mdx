@@ -36,7 +36,9 @@ The MCP API uses the same secure authentication as our SDKs. All requests must i
 Authorization: Bearer <your_pkce_jwt>
 ```
 
-Our SDKs handle the PKCE flow for generating these tokens automatically. If you are building a custom client, you will need to implement a standard PKCE authentication flow to acquire a user-specific JWT.
+**For SDK Users**: Our SDKs handle the PKCE flow and JWT tokens automatically—you don't need to manage this manually.
+
+**For Custom Clients**: If you are building a custom client, you will need to implement a standard PKCE authentication flow to acquire a user-specific JWT token.
 
 ## Request Body
 
