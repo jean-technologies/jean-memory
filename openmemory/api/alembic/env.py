@@ -76,9 +76,8 @@ def run_migrations_online() -> None:
     configuration["sqlalchemy.url"] = os.getenv("DATABASE_URL", "sqlite:///./openmemory.db")
     
     # Add connection pool settings to reduce connection usage
-    configuration["sqlalchemy.pool_pre_ping"] = "true"
-    configuration["sqlalchemy.pool_recycle"] = "300"
-    configuration["sqlalchemy.connect_args"] = "{'connect_timeout': 10}"
+    configuration["sqlalchemy.pool_pre_ping"] = True
+    configuration["sqlalchemy.pool_recycle"] = 300
     
     connectable = engine_from_config(
         configuration,
