@@ -296,69 +296,26 @@ BE CONSERVATIVE: Most queries should use depth=0 unless they specifically need p
         elif tool_name == "add_memories":
             tool_args.pop("tags", None)
         elif tool_name == "jean_memory":
-            # Check if this is a new conversation - if so, return cached life narrative directly
-            is_new_conversation = tool_args.get("is_new_conversation", False)
+            # Convert depth parameter to speed and needs_context for existing tool
+            depth = tool_args.pop("depth", 2)  # Default to balanced
             
-            if is_new_conversation:
-                # For new conversations, return cached life narrative directly (no orchestration)
-                from app.mcp_orchestration import get_smart_orchestrator
-                orchestrator = get_smart_orchestrator()
-                cached_narrative = await orchestrator._get_cached_narrative(user_id)
-                
-                if cached_narrative:
-                    narrative_with_context = f"---\n[Your Life Context]\n{cached_narrative}\n---"
-                    return orchestrator._append_system_directive(narrative_with_context)
-                else:
-                    default_message = "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
-                    return orchestrator._append_system_directive(default_message)
+            # Map depth to speed and needs_context
+            if depth == 0:
+                tool_args["speed"] = "fast"
+                tool_args["needs_context"] = False
+            elif depth == 1:
+                tool_args["speed"] = "fast" 
+                tool_args["needs_context"] = True
+            elif depth == 2:
+                tool_args["speed"] = "balanced"
+                tool_args["needs_context"] = True
+            elif depth == 3:
+                tool_args["speed"] = "comprehensive"
+                tool_args["needs_context"] = True
             else:
-                # Convert depth parameter to speed and needs_context for existing tool
-                depth = tool_args.pop("depth", 2)  # Default to balanced
-                
-                # Handle depth=0 early exit - just save memory, no context
-                if depth == 0:
-                    from app.mcp_orchestration import get_smart_orchestrator
-                    from app.context import background_tasks_var
-                    
-                    orchestrator = get_smart_orchestrator()
-                    user_message = tool_args.get("user_message", "")
-                    
-                    try:
-                        background_tasks = background_tasks_var.get()
-                    except LookupError:
-                        from fastapi import BackgroundTasks
-                        background_tasks = BackgroundTasks()
-                        background_tasks_var.set(background_tasks)
-                    
-                    # Save memory in background and return immediately 
-                    from app.context import client_name_var
-                    client_name = client_name_var.get(None)
-                    
-                    background_tasks.add_task(
-                        orchestrator.triage_and_save_memory_background,
-                        user_message,
-                        user_id,
-                        client_name
-                    )
-                    
-                    # Return success without context as JSON string
-                    import json
-                    return json.dumps({"status": "success", "memories": [], "total_count": 0, "query": user_message})
-                
-                # Map other depth values to speed and needs_context
-                elif depth == 1:
-                    tool_args["speed"] = "fast" 
-                    tool_args["needs_context"] = True
-                elif depth == 2:
-                    tool_args["speed"] = "balanced"
-                    tool_args["needs_context"] = True
-                elif depth == 3:
-                    tool_args["speed"] = "comprehensive"
-                    tool_args["needs_context"] = True
-                else:
-                    # Fallback to balanced for invalid values
-                    tool_args["speed"] = "balanced"
-                    tool_args["needs_context"] = True
+                # Fallback to balanced for invalid values
+                tool_args["speed"] = "balanced"
+                tool_args["needs_context"] = True
 
         # Call the base handler with the sanitized arguments
         return await super().handle_tool_call(tool_name, tool_args, user_id) 

@@ -36,8 +36,9 @@ async def _get_immediate_context(orchestrator, user_message: str, supa_uid: str,
     # 2. Handle CONTINUING conversations where context is NOT needed
     if not needs_context:
         logger.info("✅ [Continuing Conversation] Context not required by client.")
-        no_context_message = "Context is not required for this query. The user's message will be analyzed for important information in the background."
-        return orchestrator._append_system_directive(no_context_message)
+        # Return empty response matching API format for depth=0
+        import json
+        return json.dumps({"status": "success", "memories": [], "total_count": 0, "query": user_message})
 
     # 3. Handle CONTINUING conversations that DO need context
     logger.info("🔍 [Continuing Conversation] Using standard orchestration to get context.")
