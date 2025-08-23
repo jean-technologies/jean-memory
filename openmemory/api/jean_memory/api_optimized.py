@@ -292,6 +292,14 @@ class JeanMemoryAPIOptimized:
             # Create Memory instance
             memory = Memory.from_config(config_dict=user_config)
             
+            # Log memory instance details for debugging
+            logger.info(f"🔍 mem0 Memory instance details:")
+            logger.info(f"   - API version: {getattr(memory, 'api_version', 'unknown')}")
+            logger.info(f"   - enable_graph: {getattr(memory, 'enable_graph', 'unknown')}")
+            logger.info(f"   - graph_store type: {type(getattr(memory, 'graph_store', None))}")
+            if hasattr(memory, 'config'):
+                logger.info(f"   - config keys: {list(memory.config.keys()) if hasattr(memory.config, 'keys') else 'not dict-like'}")
+            
             # Cache the instance
             self._user_memory_cache[user_id] = memory
             
@@ -345,11 +353,30 @@ class JeanMemoryAPIOptimized:
             
             # Add memory to mem0 (includes vector and graph if configured)
             logger.info(f"💾 Adding to integrated storage for user {user_id}")
+            logger.info(f"🔧 Graph storage enabled: {self.api_config.enable_graph_storage}")
+            
             result = user_memory.add(
                 memory_text,
                 user_id=user_id,
                 metadata=metadata or {}
             )
+            
+            # Log the full result to understand what mem0 returns
+            logger.info(f"🔍 Full mem0 result: {result}")
+            
+            # Check if mem0 has graph integration enabled
+            if hasattr(user_memory, 'enable_graph'):
+                logger.info(f"🔧 mem0 enable_graph: {user_memory.enable_graph}")
+            if hasattr(user_memory, 'graph_store'):
+                logger.info(f"🔧 mem0 graph_store: {type(user_memory.graph_store) if user_memory.graph_store else None}")
+            
+            # Log what mem0 thinks about graph operations
+            if isinstance(result, dict) and 'relations' in result:
+                logger.info(f"📊 Graph relations returned by mem0: {len(result.get('relations', []))} relations")
+                if result.get('relations'):
+                    logger.info(f"🔗 Sample relation: {result['relations'][0] if result['relations'] else 'None'}")
+            else:
+                logger.info(f"ℹ️ No 'relations' field in mem0 result - graph operations may be internal")
             
             # Extract memory ID from mem0's response
             # mem0 v1.1 returns: {"results": [{"id": "...", "memory": "...", "event": "ADD"}]}
