@@ -341,8 +341,9 @@ BE CONSERVATIVE: Most queries should use depth=0 unless they specifically need p
                         client_name
                     )
                     
-                    # Return success without context
-                    return {"status": "success", "memories": [], "total_count": 0, "query": user_message}
+                    # Return success without context as JSON string
+                    import json
+                    return json.dumps({"status": "success", "memories": [], "total_count": 0, "query": user_message})
                 
                 # Map other depth values to speed and needs_context
                 elif depth == 1:
