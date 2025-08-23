@@ -50,21 +50,21 @@ class ClaudeProfile(BaseClientProfile):
 
 ALWAYS set 'is_new_conversation' to true for the very first message in a conversation.
 
-Choose 'depth' based on context needs:
+Choose 'depth' carefully based on whether personal context is actually needed:
 
-depth=0 (No Context): Use when the query is purely generic knowledge that doesn't require personal context.
-Examples: "What is the capital of France?", "Explain quantum physics", "How does photosynthesis work?"
+depth=0 (No Context - COMMON): Use for purely factual/knowledge questions that don't require personal context. Most generic queries should use this.
+Examples: "What is the capital of France?", "Explain quantum physics", "How does machine learning work?", "What's the weather like?", "Define recursion"
 
 depth=1 (Fast Search): Use for quick personal facts or simple lookups from user's memories.
-Examples: "What's my phone number?", "Where do I work?", "What's my favorite food?"
+Examples: "What's my phone number?", "Where do I work?", "What's my favorite food?", "What time is my meeting?"
 
-depth=2 (Balanced Synthesis): Use for conversational responses that benefit from personal context and memories.
-Examples: "How should I handle this work situation?", "What have I been working on?", "Give me advice on my project"
+depth=2 (Balanced Synthesis): Use for conversational responses that benefit from personal context and memories. This should be LESS common than depth=0.
+Examples: "How should I handle this work situation?", "What have I been working on?", "Give me advice based on my experience"
 
-depth=3 (Comprehensive Analysis): Use for complex analysis requiring deep document search and extensive memory correlation.
+depth=3 (Comprehensive Analysis - RARE): Use only for complex analysis requiring deep document search and extensive memory correlation.
 Examples: "Analyze all my learning patterns", "Compare my productivity strategies across projects", "What themes emerge from my journal entries?"
 
-Default to depth=2 for most conversational interactions."""
+BE CONSERVATIVE: Most queries should use depth=0 unless they specifically need personal context. Only use depth=1+ when the user's personal information or history is actually relevant to the response."""
         
         # Add multi-agent session context if applicable (only for Claude Code)
         if is_multi_agent and is_claude_code:
@@ -315,10 +315,36 @@ Default to depth=2 for most conversational interactions."""
                 # Convert depth parameter to speed and needs_context for existing tool
                 depth = tool_args.pop("depth", 2)  # Default to balanced
                 
-                # Map depth to speed and needs_context
+                # Handle depth=0 early exit - just save memory, no context
                 if depth == 0:
-                    tool_args["speed"] = "fast"
-                    tool_args["needs_context"] = False
+                    from app.mcp_orchestration import get_smart_orchestrator
+                    from app.context import background_tasks_var
+                    
+                    orchestrator = get_smart_orchestrator()
+                    user_message = tool_args.get("user_message", "")
+                    
+                    try:
+                        background_tasks = background_tasks_var.get()
+                    except LookupError:
+                        from fastapi import BackgroundTasks
+                        background_tasks = BackgroundTasks()
+                        background_tasks_var.set(background_tasks)
+                    
+                    # Save memory in background and return immediately 
+                    from app.context import client_name_var
+                    client_name = client_name_var.get(None)
+                    
+                    background_tasks.add_task(
+                        orchestrator.triage_and_save_memory_background,
+                        user_message,
+                        user_id,
+                        client_name
+                    )
+                    
+                    # Return success without context
+                    return {"status": "success", "memories": [], "total_count": 0, "query": user_message}
+                
+                # Map other depth values to speed and needs_context
                 elif depth == 1:
                     tool_args["speed"] = "fast" 
                     tool_args["needs_context"] = True
