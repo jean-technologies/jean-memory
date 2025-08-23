@@ -923,12 +923,24 @@ class JeanMemoryAPI:
             if mem0_instance:
                 # Use mem0's delete method (only needs memory_id)
                 result = mem0_instance.delete(memory_id)
-                mem0_deleted = True
-                logger.info(f"✅ Deleted memory {memory_id} from mem0/Qdrant")
+                
+                # Check if deletion was successful
+                if result and isinstance(result, dict) and result.get('message'):
+                    mem0_deleted = True
+                    logger.info(f"✅ Deleted memory {memory_id} from mem0/Qdrant")
+                else:
+                    # Memory might not exist in Qdrant - this is OK for cleanup
+                    logger.warning(f"⚠️ Memory {memory_id} not found in Qdrant (likely already deleted or never stored)")
+                    mem0_deleted = True  # Consider this successful for cleanup purposes
         except Exception as e:
-            error_msg = f"Failed to delete from mem0: {str(e)}"
-            logger.error(f"❌ {error_msg}")
-            errors.append(error_msg)
+            # Handle specific mem0 errors
+            if "'NoneType' object has no attribute 'payload'" in str(e):
+                logger.warning(f"⚠️ Memory {memory_id} not found in Qdrant: {str(e)}")
+                mem0_deleted = True  # Consider this successful - memory doesn't exist to delete
+            else:
+                error_msg = f"Failed to delete from mem0: {str(e)}"
+                logger.error(f"❌ {error_msg}")
+                errors.append(error_msg)
         
         # Delete from Graphiti (Neo4j) if available
         if self._graphiti:
