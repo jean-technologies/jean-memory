@@ -71,6 +71,20 @@ async def jean_memory(user_message: str, is_new_conversation: bool, needs_contex
         return "Error: Client name not available"
 
     # --- Speed-based routing ---
+    # IMPORTANT: Check for new conversations first, regardless of speed
+    if is_new_conversation:
+        orchestrator = get_smart_orchestrator()
+        logger.info("🌟 [New Conversation] Handling new conversation flow (bypassing speed routing).")
+        narrative = await orchestrator._get_cached_narrative(supa_uid)
+        if narrative:
+            logger.info("✅ [New Conversation] Found cached narrative.")
+            narrative_with_context = f"---\n[Your Life Context]\n{narrative}\n---"
+            return orchestrator._append_system_directive(narrative_with_context)
+        else:
+            logger.info("🧐 [New Conversation] No cached narrative found. Providing default welcome.")
+            default_message = "This is a new conversation. Your interactions will be analyzed and saved to build your personal context over time."
+            return orchestrator._append_system_directive(default_message)
+    
     if speed == "fast":
         from app.tools.memory import search_memory
         logger.info(f"[Fast Path] Using search_memory for query: '{user_message[:50]}...'")
