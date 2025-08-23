@@ -69,21 +69,42 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    import time
+    import logging
+    
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = os.getenv("DATABASE_URL", "sqlite:///./openmemory.db")
+    
+    # Add connection pool settings to reduce connection usage
+    configuration["sqlalchemy.pool_pre_ping"] = "true"
+    configuration["sqlalchemy.pool_recycle"] = "300"
+    configuration["sqlalchemy.connect_args"] = "{'connect_timeout': 10}"
+    
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+    # Retry connection with backoff for connection pool exhaustion
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with connectable.connect() as connection:
+                context.configure(
+                    connection=connection, target_metadata=target_metadata
+                )
 
-        with context.begin_transaction():
-            context.run_migrations()
+                with context.begin_transaction():
+                    context.run_migrations()
+            break  # Success, exit retry loop
+        except Exception as e:
+            if "Max client connections reached" in str(e) and attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 10  # 10, 20, 30 seconds
+                logging.warning(f"Database connection pool exhausted, retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                raise  # Re-raise if not connection pool issue or final attempt
 
 
 if context.is_offline_mode():
