@@ -316,7 +316,7 @@ class JeanMemoryAPIOptimized:
         if not self._initialized:
             await self.initialize()
         
-        memory_id = str(uuid4())
+        memory_id = None  # Will be set from mem0's response
         start_time = time.time()
         
         try:
@@ -351,11 +351,32 @@ class JeanMemoryAPIOptimized:
                 metadata=metadata or {}
             )
             
-            # Extract memory ID
+            # Extract memory ID from mem0's response
+            # mem0 v1.1 returns: {"results": [{"id": "...", "memory": "...", "event": "ADD"}]}
             if isinstance(result, dict):
-                memory_id = result.get('memory_id', memory_id)
+                if 'results' in result and isinstance(result['results'], list) and result['results']:
+                    # Get the ID from the first result item
+                    first_result = result['results'][0]
+                    if isinstance(first_result, dict) and 'id' in first_result:
+                        memory_id = first_result['id']
+                        logger.info(f"📌 Extracted mem0 ID from results: {memory_id}")
+                    else:
+                        logger.warning(f"⚠️ No ID found in first result")
+                elif 'memory_id' in result:
+                    # Fallback for older versions or different response format
+                    memory_id = result['memory_id']
+                    logger.info(f"📌 Extracted mem0 ID from memory_id field: {memory_id}")
+                else:
+                    logger.warning(f"⚠️ No ID found in result dict")
             elif hasattr(result, 'memory_id'):
                 memory_id = result.memory_id
+                logger.info(f"📌 Extracted mem0 ID from attribute: {memory_id}")
+            
+            # Fallback: generate an ID if we couldn't extract one (should not happen with mem0 v1.1)
+            if not memory_id:
+                memory_id = str(uuid4())
+                logger.error(f"❌ Failed to extract mem0 ID, generated fallback: {memory_id}")
+                logger.error(f"❌ mem0 result structure: {result}")
             
             elapsed_time = time.time() - start_time
             logger.info(f"✅ Memory added successfully in {elapsed_time:.2f}s (ID: {memory_id})")
