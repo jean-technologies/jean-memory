@@ -1730,10 +1730,55 @@ async def update_memory(
     if memory_to_update.user_id != user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this memory")
 
+    # Extract mem0_id from metadata if it exists
+    mem0_id = None
+    update_success = True
+    
+    if memory_to_update.metadata_:
+        mem0_id = memory_to_update.metadata_.get('mem0_id')
+        logger.info(f"🔍 Found mem0_id {mem0_id} for memory {memory_id}")
+    
+    # Try to update in Jean Memory V2 (mem0 + Graphiti) FIRST
+    if mem0_id:
+        memory_client = None
+        try:
+            from app.utils.memory import get_async_memory_client
+            memory_client = await get_async_memory_client()
+            
+            if memory_client:
+                update_result = await memory_client.update(
+                    memory_id=mem0_id,  # Use mem0_id instead of SQL memory ID
+                    data=request.memory_content,
+                    user_id=supabase_user_id_str
+                )
+                
+                if update_result and update_result.get('updated'):
+                    logger.info(f"✅ Updated memory in mem0/Qdrant: {mem0_id}")
+                    
+                    # Check if a new ID was generated (fallback case)
+                    if update_result.get('new_id') and update_result.get('fallback_used'):
+                        # Update metadata with new mem0_id
+                        if not memory_to_update.metadata_:
+                            memory_to_update.metadata_ = {}
+                        memory_to_update.metadata_['mem0_id'] = update_result['new_id']
+                        logger.info(f"📝 Updated mem0_id from {mem0_id} to {update_result['new_id']}")
+                else:
+                    # Update failed in vector/graph stores
+                    update_success = False
+                    logger.warning(f"⚠️ Failed to update {mem0_id} in Jean Memory V2")
+                    
+        except Exception as e:
+            logger.error(f"❌ Exception updating {mem0_id} in Jean Memory V2: {e}")
+            # Continue with SQL update anyway for backwards compatibility
+    else:
+        logger.info(f"ℹ️ No mem0_id found for memory {memory_id}, updating SQL only")
+
+    # Update in SQL database
     memory_to_update.content = request.memory_content
     try:
         db.commit()
         db.refresh(memory_to_update)
+        logger.info(f"✅ Updated memory in SQL: {memory_id}")
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
