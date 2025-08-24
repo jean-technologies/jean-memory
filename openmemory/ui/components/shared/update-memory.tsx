@@ -64,7 +64,7 @@ const UpdateMemory = ({
             <Textarea
               ref={textRef}
               id="memory"
-              className="bg-zinc-950 border-zinc-800 min-h-[150px]"
+              className="bg-zinc-950 border-zinc-800 text-white min-h-[150px]"
               defaultValue={memoryContent}
             />
           </div>
