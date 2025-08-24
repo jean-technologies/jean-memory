@@ -649,6 +649,59 @@ class JeanMemoryAPIOptimized:
             'message': f"Memory {memory_id} {'deleted successfully' if success else 'deletion failed'}"
         }
     
+    async def update_memory(self, memory_id: str, data: str, user_id: str) -> Dict[str, Any]:
+        """
+        Update a specific memory by ID in mem0 (and optionally Graphiti)
+        
+        Args:
+            memory_id: The memory ID to update
+            data: New content for the memory
+            user_id: The user ID who owns the memory
+            
+        Returns:
+            Dict with update status
+        """
+        if not self._initialized:
+            await self.initialize()
+            
+        logger.info(f"📝 Updating memory {memory_id} for user {user_id}")
+        
+        errors = []
+        mem0_updated = False
+        
+        # Update in mem0 (Qdrant)
+        try:
+            user_memory = await self._get_user_memory_instance_optimized(user_id)
+            if user_memory:
+                # Use mem0's update method
+                result = user_memory.update(memory_id=memory_id, data=data)
+                
+                # Check if update was successful
+                if result:
+                    mem0_updated = True
+                    logger.info(f"✅ Updated memory {memory_id} in mem0/Qdrant")
+                else:
+                    logger.warning(f"⚠️ Failed to update memory {memory_id} in mem0")
+        except Exception as e:
+            error_msg = f"Failed to update in mem0: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            errors.append(error_msg)
+        
+        # Note: Graphiti doesn't have a direct update method, would need delete+add
+        # For now, we only update mem0 which is the primary search index
+        
+        success = mem0_updated
+        
+        return {
+            'success': success,
+            'memory_id': memory_id,
+            'user_id': user_id,
+            'mem0_updated': mem0_updated,
+            'errors': errors,
+            'updated': mem0_updated,
+            'message': f"Memory {memory_id} {'updated successfully' if success else 'update failed'}"
+        }
+    
     async def clear_memories(self, user_id: str, confirm: bool = False) -> ClearMemoriesResponse:
         """
         Clear memories with cache invalidation

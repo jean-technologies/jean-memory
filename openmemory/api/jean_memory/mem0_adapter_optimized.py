@@ -340,50 +340,25 @@ class AsyncMemoryAdapterOptimized:
         await self._ensure_initialized()
         
         try:
-            # Direct call to mem0's update method if available
-            if hasattr(self._api.mem0_client, 'update'):
-                result = await self._api.mem0_client.update(memory_id=memory_id, data=data)
-                logger.info(f"✅ Successfully updated memory {memory_id} via mem0")
+            # Call the update_memory method in Jean Memory V2 API
+            result = await self._api.update_memory(memory_id=memory_id, data=data, user_id=user_id)
+            
+            if result.get('success', False):
+                logger.info(f"✅ Successfully updated memory {memory_id} for user {user_id}")
                 return {
                     'success': True,
                     'message': f'Memory {memory_id} updated successfully',
                     'updated': True,
-                    'mem0_updated': True
+                    'mem0_updated': result.get('mem0_updated', False)
                 }
             else:
-                # Fallback: delete and re-add (less efficient but works)
-                logger.warning(f"⚠️ mem0 update not available, using delete+add fallback")
-                
-                # Delete old memory
-                delete_result = await self.delete(memory_id=memory_id, user_id=user_id)
-                if not delete_result.get('deleted_count', 0):
-                    return {
-                        'success': False,
-                        'message': f'Failed to update memory {memory_id} (delete step failed)',
-                        'updated': False
-                    }
-                
-                # Add new memory
-                add_result = await self.add(
-                    messages=data,
-                    user_id=user_id,
-                    metadata={'previous_id': memory_id}
-                )
-                
-                if add_result.get('results'):
-                    return {
-                        'success': True,
-                        'message': f'Memory updated via delete+add',
-                        'updated': True,
-                        'new_id': add_result['results'][0].get('id'),
-                        'fallback_used': True
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': f'Failed to update memory {memory_id} (add step failed)',
-                        'updated': False
-                    }
+                logger.warning(f"⚠️ Failed to update memory {memory_id}: {result.get('message', 'Unknown error')}")
+                return {
+                    'success': False,
+                    'message': result.get('message', f'Failed to update memory {memory_id}'),
+                    'updated': False,
+                    'errors': result.get('errors', [])
+                }
                     
         except Exception as e:
             logger.error(f"Error updating memory {memory_id} for user {user_id}: {e}")
