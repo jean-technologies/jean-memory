@@ -416,11 +416,21 @@ class JeanMemoryAPIOptimized:
             
         except Exception as e:
             elapsed_time = time.time() - start_time
+            # Log detailed exception information for debugging
+            logger.error(f"❌ Exception type: {type(e)}")
+            logger.error(f"❌ Exception value: {repr(e)}")
+            logger.error(f"❌ Exception str: {str(e)}")
+            logger.error(f"❌ Current memory_id: {memory_id}")
+            
+            # Import traceback to get full stack trace
+            import traceback
+            logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+            
             error_msg = f"Memory addition failed after {elapsed_time:.2f}s: {e}"
             logger.error(f"❌ {error_msg}")
             return AddMemoryResponse(
                 success=False,
-                memory_id=memory_id,
+                memory_id=memory_id or "unknown",
                 vector_stored=False,
                 graph_stored=False,
                 message=error_msg
