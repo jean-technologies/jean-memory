@@ -24,17 +24,150 @@ from app.models import (
 )
 from app.schemas import MemoryResponse, PaginatedMemoryResponse
 from app.utils.permissions import check_memory_access_permissions
-from .memories_modules.utils import (
-    get_memory_or_404, update_memory_state, get_accessible_memory_ids,
-    group_memories_into_threads
-)
-from .memories_modules.schemas import (
-    CreateMemoryRequestData, DeleteMemoriesRequestData, PauseMemoriesRequestData,
-    UpdateMemoryRequestData, FilterMemoriesRequestData
-)
+# Removed imports from deleted memories_modules - functions moved inline below
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/memories", tags=["memories"])
+
+# Inline schemas (from memories_modules/schemas.py)
+class CreateMemoryRequestData(BaseModel):
+    text: str
+    metadata: dict = {}
+    infer: bool = True
+    app_name: str
+
+class DeleteMemoriesRequestData(BaseModel):
+    memory_ids: List[UUID]
+
+class PauseMemoriesRequestData(BaseModel):
+    memory_ids: Optional[List[UUID]] = None
+    category_ids: Optional[List[UUID]] = None
+    app_id: Optional[UUID] = None
+    global_pause_for_user: bool = False
+    state: Optional[MemoryState] = MemoryState.paused
+
+class UpdateMemoryRequestData(BaseModel):
+    memory_content: str
+
+class FilterMemoriesRequestData(BaseModel):
+    search_query: Optional[str] = None
+    app_ids: Optional[List[UUID]] = None
+    category_ids: Optional[List[UUID]] = None
+    sort_column: Optional[str] = None
+    sort_direction: Optional[str] = None
+    from_date: Optional[int] = None
+    to_date: Optional[int] = None
+    show_archived: Optional[bool] = False
+
+# Inline utility functions (from memories_modules/utils.py)
+def get_memory_or_404(db: Session, memory_id: UUID, user_id: UUID) -> Memory:
+    """Get memory by ID with permission check, raise 404 if not found."""
+    memory = db.query(Memory).filter(Memory.id == memory_id, Memory.user_id == user_id).first()
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found or you do not have permission")
+    return memory
+
+def update_memory_state(db: Session, memory_id: UUID, new_state: MemoryState, changed_by_user_id: UUID):
+    """Update memory state with history tracking."""
+    memory = get_memory_or_404(db, memory_id, changed_by_user_id)
+    
+    old_state = memory.state
+    memory.state = new_state
+    if new_state == MemoryState.archived:
+        memory.archived_at = datetime.datetime.now(datetime.timezone.utc)
+    elif new_state == MemoryState.deleted:
+        memory.deleted_at = datetime.datetime.now(datetime.timezone.utc)
+
+    history = MemoryStatusHistory(
+        memory_id=memory_id,
+        changed_by=changed_by_user_id,
+        old_state=old_state,
+        new_state=new_state
+    )
+    db.add(history)
+
+def get_accessible_memory_ids(db: Session, app_id: UUID) -> Optional[Set[UUID]]:
+    """Get the set of memory IDs that the app has access to based on app-level ACL rules."""
+    app_access = db.query(AccessControl).filter(
+        AccessControl.subject_type == "app",
+        AccessControl.subject_id == app_id,
+        AccessControl.object_type == "memory"
+    ).all()
+
+    if not app_access:
+        return None
+
+    allowed_memory_ids = set()
+    denied_memory_ids = set()
+
+    for rule in app_access:
+        if rule.effect == "allow":
+            if rule.object_id:
+                allowed_memory_ids.add(rule.object_id)
+            else:
+                return None
+        elif rule.effect == "deny":
+            if rule.object_id:
+                denied_memory_ids.add(rule.object_id)
+            else:
+                return set()
+
+    if allowed_memory_ids:
+        allowed_memory_ids -= denied_memory_ids
+
+    return allowed_memory_ids
+
+def group_memories_into_threads(memories: List[MemoryResponse]) -> List[MemoryResponse]:
+    """Group related memories into threads using mem0_id linking."""
+    try:
+        if not memories:
+            return memories
+        
+        sql_memories = []
+        jean_memories = []
+        
+        for memory in memories:
+            if (hasattr(memory, 'app_name') and 
+                ('Jean Memory V2' in memory.app_name or 'jean memory' in memory.app_name.lower())):
+                jean_memories.append(memory)
+            else:
+                sql_memories.append(memory)
+        
+        jean_memory_lookup = {}
+        for memory in jean_memories:
+            jean_memory_lookup[str(memory.id)] = memory
+            if hasattr(memory, 'metadata_') and memory.metadata_:
+                original_id = memory.metadata_.get('original_mem0_id') or memory.metadata_.get('mem0_id')
+                if original_id:
+                    jean_memory_lookup[str(original_id)] = memory
+        
+        result_memories = []
+        processed_jean_ids = set()
+        
+        for sql_memory in sql_memories:
+            result_memory = sql_memory
+            thread_memories = []
+            
+            if hasattr(sql_memory, 'mem0_id') and sql_memory.mem0_id:
+                jean_match = jean_memory_lookup.get(str(sql_memory.mem0_id))
+                if jean_match:
+                    thread_memories.append(jean_match)
+                    processed_jean_ids.add(str(jean_match.id))
+            
+            if thread_memories:
+                result_memory.thread_memories = thread_memories
+            
+            result_memories.append(result_memory)
+        
+        for jean_memory in jean_memories:
+            if str(jean_memory.id) not in processed_jean_ids:
+                result_memories.append(jean_memory)
+        
+        return result_memories
+        
+    except Exception as e:
+        logger.warning(f"Memory threading failed: {e}")
+        return memories
 
 # Jean Memory V2 dummy app ID for compatibility
 JEAN_MEMORY_V2_APP_ID = UUID("00000000-0000-4000-8000-000000000001")
