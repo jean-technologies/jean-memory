@@ -370,9 +370,16 @@ class JeanMemoryAPIOptimized:
             
             # Log what mem0 thinks about graph operations
             if isinstance(result, dict) and 'relations' in result:
-                logger.info(f"📊 Graph relations returned by mem0: {len(result.get('relations', []))} relations")
-                if result.get('relations'):
-                    logger.info(f"🔗 Sample relation: {result['relations'][0] if result['relations'] else 'None'}")
+                relations = result.get('relations', {})
+                if isinstance(relations, dict):
+                    # Relations is a dict with deleted_entities, added_entities, etc.
+                    total_relations = sum(len(v) if isinstance(v, list) else 0 for v in relations.values())
+                    logger.info(f"📊 Graph relations returned by mem0: {total_relations} relations")
+                    if relations:
+                        logger.info(f"🔗 Relations structure: {list(relations.keys())}")
+                else:
+                    # Fallback for different relation formats
+                    logger.info(f"📊 Graph relations returned by mem0: {len(relations) if hasattr(relations, '__len__') else 0} relations")
             else:
                 logger.info(f"ℹ️ No 'relations' field in mem0 result - graph operations may be internal")
             
@@ -416,16 +423,6 @@ class JeanMemoryAPIOptimized:
             
         except Exception as e:
             elapsed_time = time.time() - start_time
-            # Log detailed exception information for debugging
-            logger.error(f"❌ Exception type: {type(e)}")
-            logger.error(f"❌ Exception value: {repr(e)}")
-            logger.error(f"❌ Exception str: {str(e)}")
-            logger.error(f"❌ Current memory_id: {memory_id}")
-            
-            # Import traceback to get full stack trace
-            import traceback
-            logger.error(f"❌ Full traceback: {traceback.format_exc()}")
-            
             error_msg = f"Memory addition failed after {elapsed_time:.2f}s: {e}"
             logger.error(f"❌ {error_msg}")
             return AddMemoryResponse(
