@@ -81,8 +81,6 @@ class JeanMemoryAPIOptimized:
         # Initialize components
         self._mem0_memory = None
         self._user_memory_cache: Dict[str, Any] = {}  # Cache user memory instances
-        self._graphiti = None
-        self._graphiti_initializing = False
         self._initialized = False
         
         logger.info(f"Jean Memory V2 API OPTIMIZED v{self.VERSION} initialized")
@@ -590,54 +588,10 @@ class JeanMemoryAPIOptimized:
                 logger.error(f"❌ {error_msg}")
                 errors.append(error_msg)
         
-        # Delete from Graphiti (Neo4j) if available - reuse logic from main API
-        if hasattr(self, '_graphiti') and self._graphiti:
-            try:
-                # For Graphiti, we need to delete the episode
-                # Try multiple patterns since episode naming has varied
-                
-                from neo4j import AsyncGraphDatabase
-                
-                if hasattr(self._graphiti, 'driver'):
-                    async with self._graphiti.driver.session() as session:
-                        # First try exact match with memory_id pattern
-                        episode_name = f"memory_{memory_id}"
-                        query = """
-                        MATCH (e:Episode {name: $episode_name, group_id: $user_id})
-                        DETACH DELETE e
-                        RETURN COUNT(e) as deleted_count
-                        """
-                        result = await session.run(query, episode_name=episode_name, user_id=user_id)
-                        record = await result.single()
-                        
-                        if record and record['deleted_count'] > 0:
-                            graphiti_deleted = True
-                            logger.info(f"✅ Deleted episode {episode_name} from Graphiti/Neo4j")
-                        else:
-                            # Try to find episodes that contain the memory_id in their name
-                            # This handles timestamp-based naming or other patterns
-                            query = """
-                            MATCH (e:Episode {group_id: $user_id})
-                            WHERE e.name CONTAINS $memory_id 
-                               OR e.uuid = $memory_id
-                               OR e.name ENDS WITH $memory_id
-                            DETACH DELETE e
-                            RETURN COUNT(e) as deleted_count
-                            """
-                            result = await session.run(query, memory_id=memory_id, user_id=user_id)
-                            record = await result.single()
-                            
-                            if record and record['deleted_count'] > 0:
-                                graphiti_deleted = True
-                                logger.info(f"✅ Deleted episode containing/matching {memory_id} from Graphiti/Neo4j")
-                            else:
-                                logger.warning(f"⚠️ Could not find episode with memory_id {memory_id}, skipping Graphiti deletion")
-            except Exception as e:
-                error_msg = f"Failed to delete from Graphiti: {str(e)}"
-                logger.warning(f"⚠️ {error_msg}")
-                # Don't add to errors if Graphiti is optional
+        # Graphiti deletion removed - not used in production
+        graphiti_deleted = False
         
-        success = mem0_deleted and (graphiti_deleted or not hasattr(self, '_graphiti') or not self._graphiti)
+        success = mem0_deleted
         
         return {
             'success': success,

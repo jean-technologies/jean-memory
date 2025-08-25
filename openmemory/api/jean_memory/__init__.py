@@ -59,14 +59,9 @@ __version__ = "2.0.0"
 __author__ = "Jean Memory Team"
 
 # Core exports
-from .core import JeanMemoryV2
 from .config import JeanMemoryConfig
-from .search import HybridSearchEngine
-from .ingestion import MemoryIngestionEngine
-from .api_adapter import JeanMemoryV2ApiAdapter
 
-# New Unified API (v2.0)
-from .api import JeanMemoryAPI, add_memory, search_memories, clear_memories
+# New Unified API (v2.0) - removed (api.py moved to backup)
 from .models import (
     AddMemoryRequest, AddMemoryResponse,
     AddMemoriesBulkRequest, AddMemoriesBulkResponse,
@@ -89,13 +84,7 @@ from .exceptions import (
     ValidationError
 )
 
-# Database utilities for testing
-from .database_utils import (
-    DatabaseCleaner,
-    clear_user_for_testing,
-    clear_all_for_testing,
-    verify_clean_database
-)
+# Database utilities for testing - removed (moved to backup)
 
 # Setup utilities for automatic dependency management
 from .setup_utils import (
@@ -104,31 +93,16 @@ from .setup_utils import (
     check_core_imports
 )
 
-# Orchestrator for rate limiting protection
-from .orchestrator import (
-    JeanMemoryOrchestrator,
-    orchestrated_setup
-)
+# Orchestrator - removed (moved to backup)
 
 # Convenience aliases
-JeanMemory = JeanMemoryV2  # Alias for backwards compatibility
 Config = JeanMemoryConfig
 
 __all__ = [
     # Core classes
-    "JeanMemoryV2",
-    "JeanMemory",  # Alias
     "JeanMemoryConfig",
     "Config",  # Alias
-    "HybridSearchEngine", 
-    "MemoryIngestionEngine",
-    "JeanMemoryV2ApiAdapter",
     
-    # New Unified API (v2.0)
-    "JeanMemoryAPI",
-    "add_memory",
-    "search_memories", 
-    "clear_memories",
     
     # API Models
     "AddMemoryRequest", "AddMemoryResponse",
@@ -155,18 +129,8 @@ __all__ = [
     "AuthenticationError",
     "ValidationError",
     
-    # Database utilities
-    "DatabaseCleaner",
-    "clear_user_for_testing",
-    "clear_all_for_testing", 
-    "verify_clean_database",
-    
     # Setup utilities
     "DependencyManager",
     "setup_jean_memory_environment",
     "check_core_imports",
-    
-    # Orchestrator utilities
-    "JeanMemoryOrchestrator", 
-    "orchestrated_setup",
 ] 

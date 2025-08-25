@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .exceptions import ConfigurationError
-from .ontology import get_ontology_config
 from .custom_fact_extraction import CUSTOM_FACT_EXTRACTION_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -210,28 +209,4 @@ class JeanMemoryConfig:
         logger.info("✅ CUSTOM FACT EXTRACTION PROMPT APPLIED TO MEM0 CONFIG")
         return config
     
-    def to_graphiti_config(self) -> Dict[str, Any]:
-        """Convert to Graphiti configuration format with ontology support"""
-        logger.info("🕸️ APPLYING ONTOLOGY TO GRAPHITI CONFIG")
-        
-        base_config = {
-            "neo4j_uri": self.neo4j_uri,
-            "neo4j_user": self.neo4j_user,
-            "neo4j_password": self.neo4j_password,
-            "openai_api_key": self.openai_api_key
-        } 
-        
-        # Add ontology configuration
-        ontology_config = get_ontology_config()
-        logger.info(f"   Entity types: {len(ontology_config['entity_types'])}")
-        logger.info(f"   Edge types: {len(ontology_config['edge_types'])}")
-        logger.info(f"   Edge mappings: {len(ontology_config['edge_type_map'])}")
-        
-        base_config.update(ontology_config)
-        
-        logger.info("✅ ONTOLOGY APPLIED TO GRAPHITI CONFIG")
-        return base_config
-    
-    def get_ontology_config(self) -> Dict[str, Any]:
-        """Get the ontology configuration for use with Graphiti"""
-        return get_ontology_config() 
+ 

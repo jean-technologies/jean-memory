@@ -227,7 +227,7 @@ class APIError(BaseModel):
 class APIConfig(BaseModel):
     """Configuration for the Jean Memory V2 API"""
     enable_vector_storage: bool = Field(default=True, description="Enable Mem0 vector storage")
-    enable_graph_storage: bool = Field(default=True, description="Enable Graphiti graph storage")
+    enable_graph_storage: bool = Field(default=True, description="Enable mem0's Neo4j graph storage provider")
     default_search_strategy: SearchStrategy = Field(default=SearchStrategy.HYBRID, description="Default search strategy")
     auto_create_indexes: bool = Field(default=True, description="Automatically create Qdrant indexes")
     index_wait_time: int = Field(default=5, description="Seconds to wait after index creation")
