@@ -70,10 +70,8 @@ from .models import (
     MemoryItem, MemoryType, SearchStrategy,
     SystemStatus, APIConfig
 )
-from .index_setup_utils import IndexSetupManager, ensure_collection_indexes
-
-# Utility exports
-from .utils import SearchResult, IngestionResult
+# Index setup utilities - removed (moved to backup)
+# Utility exports - removed (moved to backup)
 from .exceptions import (
     JeanMemoryError,
     ConfigurationError,
@@ -86,12 +84,7 @@ from .exceptions import (
 
 # Database utilities for testing - removed (moved to backup)
 
-# Setup utilities for automatic dependency management
-from .setup_utils import (
-    DependencyManager,
-    setup_jean_memory_environment,
-    check_core_imports
-)
+# Setup utilities - removed (moved to backup)
 
 # Orchestrator - removed (moved to backup)
 
@@ -112,13 +105,6 @@ __all__ = [
     "MemoryItem", "MemoryType", "SearchStrategy",
     "SystemStatus", "APIConfig",
     
-    # Dynamic indexing
-    "IndexSetupManager",
-    "ensure_collection_indexes",
-    
-    # Utility classes
-    "SearchResult",
-    "IngestionResult",
     
     # Exceptions
     "JeanMemoryError",
@@ -129,8 +115,4 @@ __all__ = [
     "AuthenticationError",
     "ValidationError",
     
-    # Setup utilities
-    "DependencyManager",
-    "setup_jean_memory_environment",
-    "check_core_imports",
 ] 
