@@ -76,12 +76,49 @@ This is actually **correct** - userToken IS the PKCE JWT. No fix needed, just do
 3. Add performance benchmarking guide
 4. Expand use case examples
 
+## CRITICAL BUG: MCP Authentication Completely Broken
+
+### Issue (CRITICAL PRIORITY)
+**Date Identified**: 2024-08-23
+
+The MCP endpoints in the backend **completely ignore user JWT tokens**, making user authentication non-functional. This is a fundamental architecture flaw.
+
+**Problem**: 
+- **SDKs send**: Both `Authorization: Bearer {jwt_token}` AND `X-API-Key: {api_key}`
+- **Backend processes**: Only `X-API-Key` via `get_user_from_api_key_header()`  
+- **JWT token is completely ignored** - all users with same API key become identical
+
+**Impact**:
+- All SDK users sharing same API key are treated as same user
+- No per-user memory isolation  
+- User authentication is completely bypassed
+- Multi-user apps cannot work correctly
+
+**Root Cause**:
+`openmemory/api/app/routing/mcp.py:217` calls `get_user_from_api_key_header()` instead of `get_current_user_secure()`
+
+**Fix Required**:
+Change MCP endpoints to use `get_current_user_secure()` which validates BOTH:
+1. `X-API-Key` header (company/app identification)  
+2. `Authorization: Bearer {jwt}` header (user identity)
+
+**Files Affected**:
+- `openmemory/api/app/routing/mcp.py` (line 217)
+- All SDK MCP calls currently broken for multi-user scenarios
+
+**Severity**: **CRITICAL** - Authentication is "one of the most important parts of these working SDKs"
+
+**Status**: 🔴 **UNRESOLVED** - Active blocker for production multi-user deployments
+
 ## Status
 - ✅ **Critical Node.js SDK crash fixed** (2024-08-23)
 - ✅ **Misleading documentation removed** (2024-08-23)  
+- 🔴 **CRITICAL: MCP user authentication broken** - HIGHEST PRIORITY
 - ⏳ **Performance documentation** - Low priority
 - ⏳ **Troubleshooting guide** - Medium priority
 - ⏳ **JWT persistence docs** - Low priority
 
 ## Notes
 These are all quality-of-life improvements. The SDKs are functional and a reasonably good developer with AI assistance can work around any remaining gaps.
+
+**EXCEPTION**: The MCP authentication issue is a critical blocker that prevents proper multi-user functionality.
