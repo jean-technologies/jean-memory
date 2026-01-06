@@ -84,6 +84,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <DeprecationBanner />
               <Navbar />
               <main className="flex-1">
                 {children}

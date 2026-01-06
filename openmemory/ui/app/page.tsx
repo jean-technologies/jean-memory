@@ -1,275 +1,205 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
+import ParticleNetwork from "@/components/landing/ParticleNetwork";
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/ui/code-block";
-import ParticleNetwork from "@/components/landing/ParticleNetwork";
-import { ArrowRight, FileText, Users, Code, BookOpen, Building2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function DeveloperLandingPage() {
-  const [activeTab, setActiveTab] = useState("react");
-
-  const codeExamples = {
-    react: {
-      title: "React SDK",
-      code: `import { JeanProvider, JeanChat } from '@jeanmemory/react';
-
-function App() {
-  return (
-    <JeanProvider apiKey="YOUR_API_KEY">
-      <JeanChat />
-    </JeanProvider>
+const ChatBubble = ({ message, isUser, isPersonalized }: { message: string; isUser: boolean; isPersonalized?: boolean; }) => (
+    <div className={`flex items-start gap-3 my-2 ${isUser ? "justify-end" : ""}`}>
+      {!isUser && (
+        <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isPersonalized ? "bg-slate-400" : "bg-gray-400"}`}></div>
+      )}
+      <div className="min-w-0"> 
+        <div
+          className={`px-4 py-2 rounded-lg max-w-xs text-sm inline-block break-words ${
+            isUser
+              ? "bg-gray-800 text-white rounded-br-none"
+              : "bg-gray-200 text-gray-800 rounded-bl-none"
+          }`}
+        >
+          {message}
+        </div>
+      </div>
+    </div>
   );
-}`,
-      install: "npm install @jeanmemory/react"
-    },
-    python: {
-      title: "Python SDK",
-      code: `from jeanmemory import JeanClient
 
-jean = JeanClient(api_key="YOUR_API_KEY")
+const AppIcon = ({ src, alt }: { src: string; alt: string; }) => (
+    <motion.div
+        whileHover={{ scale: 1.1, y: -5 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="bg-white p-3 rounded-full shadow-md"
+    >
+        <Image src={src} alt={alt} width={28} height={28} />
+    </motion.div>
+);
 
-# Get context before calling your LLM
-context = jean.get_context(
-    user_token="USER_TOKEN",
-    message="What did we discuss?"
-).text`,
-      install: "pip install jeanmemory"
-    },
-    node: {
-      title: "Node.js SDK",
-      code: `import { JeanClient } from '@jeanmemory/node';
+export default function LandingPage() {
+  const { user, isLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState("users");
 
-const jean = new JeanClient({ 
-  apiKey: "YOUR_API_KEY" 
-});
-
-const context = await jean.getContext({
-  user_token: userToken,
-  message: "Previous conversation?"
-});`,
-      install: "npm install @jeanmemory/node"
+  useEffect(() => {
+    const params = new URLSearchParams(
+      window.location.search + window.location.hash.substring(1)
+    );
+    if (params.get("code") || params.get("access_token")) {
+      return;
     }
-  };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-black">
+        Loading...
+      </div>
+    );
+  }
+
+  const reactCode = `import { JeanChat, useJeanAgent } from 'jeanmemory-react';
+
+function MathTutorApp() {
+  const { agent, signIn } = useJeanAgent({
+    systemPrompt: "A patient math tutor."
+  });
+
+  if (!agent) return <SignInWithJean onSuccess={signIn} />;
+
+  return <JeanChat agent={agent} />;
+}`;
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Background */}
+    <div className="relative min-h-screen bg-gray-50 text-gray-900 overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <ParticleNetwork 
-          id="developer-particles" 
-          particleColor="#94a3b8" 
-          particleCount={80} 
-        />
+        <ParticleNetwork id="landing-particles-final" particleColor="#e5e7eb" particleCount={120} />
       </div>
 
-      {/* Main Content */}
-      <main className="relative z-10">
-        {/* Hero Section */}
-        <div className="container mx-auto px-6 pt-20 pb-12">
-          <div className="max-w-6xl mx-auto">
-            {/* Logo and Tagline */}
+      <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 min-h-screen">
+        {/* Left Column: Content */}
+        <div className="flex flex-col items-center p-8 pt-24 pb-12 lg:justify-center lg:p-16 lg:col-span-3">
+          <div className="max-w-2xl w-full text-center">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-12"
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mb-8"
             >
               <Image 
                 src="/images/jean-logo-full-bw-transparent.png"
-                alt="Jean Memory"
-                width={200}
-                height={67}
-                className="mx-auto mb-6 dark:invert"
+                alt="Jean Logo"
+                width={240}
+                height={80}
+                className="mx-auto"
                 priority
               />
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-                Add Memory to Your AI Applications
-              </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                Production-ready SDKs for intelligent context management. 
-                Ship personalized AI experiences in minutes, not months.
-              </p>
             </motion.div>
-
-            {/* Quick Links */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
+            
+            <motion.p
+              className="text-2xl lg:text-3xl text-gray-600 mb-8 lg:mb-12 text-center"
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="flex flex-wrap justify-center gap-4 mb-16"
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <Link href="https://docs.jeanmemory.com" target="_blank">
-                <Button size="lg" className="gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Documentation
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-              <Link href="https://github.com/jean-technologies/jean-memory" target="_blank">
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Code className="w-4 h-4" />
-                  View on GitHub
-                </Button>
-              </Link>
-              <Link href="/ai-memory-landscape-review.pdf" target="_blank">
-                <Button size="lg" variant="outline" className="gap-2">
-                  <FileText className="w-4 h-4" />
-                  AI Memory Landscape Review
-                </Button>
-              </Link>
-            </motion.div>
-
-            {/* Code Examples */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 mb-16"
-            >
-              <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-                5-Minute Integration
-              </h2>
-              
-              {/* Tab Navigation */}
-              <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-                {Object.keys(codeExamples).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 font-medium transition-colors ${
-                      activeTab === tab
-                        ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                  >
-                    {codeExamples[tab as keyof typeof codeExamples].title}
-                  </button>
-                ))}
-              </div>
-
-              {/* Installation Command */}
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Install:</p>
-                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded text-sm">
-                  {codeExamples[activeTab as keyof typeof codeExamples].install}
-                </code>
-              </div>
-
-              {/* Code Example */}
-              <CodeBlock 
-                code={codeExamples[activeTab as keyof typeof codeExamples].code}
-                language={activeTab === "python" ? "python" : "typescript"}
-              />
-            </motion.div>
-
-            {/* Features Grid */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid md:grid-cols-3 gap-8 mb-16"
-            >
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                  <Code className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-                  Production Ready
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Battle-tested SDKs with intelligent orchestration, automatic memory management, and enterprise-grade security.
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-                  Multi-Platform
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Native SDKs for React, Python, and Node.js. Works with any LLM provider or framework.
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
-                  <Building2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-                  Enterprise Solutions
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  We build bespoke memory systems for companies. Custom integrations and dedicated support available.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* CTA Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white"
-            >
-              <h2 className="text-3xl font-bold mb-4">
-                Ready to Build Intelligent Applications?
-              </h2>
-              <p className="text-xl mb-8 opacity-90">
-                Get your API key and start building in minutes.
-              </p>
-              <div className="flex gap-4 justify-center">
-                <Link href="https://docs.jeanmemory.com/quickstart" target="_blank">
-                  <Button size="lg" variant="secondary" className="gap-2">
-                    Get Started
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="mailto:jonathan@jeantechnologies.com">
-                  <Button size="lg" variant="outline" className="gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20">
-                    Contact Sales
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Enterprise Note */}
-            <motion.div
+              Universal memory across your applications
+            </motion.p>
+            
+            <motion.div 
+              className="flex bg-gray-200/70 p-1 rounded-lg mb-8 lg:mb-12"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="text-center mt-12 p-6 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800"
+              transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-                🏢 Looking for a custom memory solution?
-              </p>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                We specialize in building bespoke memory systems tailored to your company's needs. 
-                <Link href="mailto:jonathan@jeantechnologies.com" className="underline font-medium ml-1">
-                  Let's discuss your requirements
-                </Link>
-              </p>
+              <button onClick={() => setActiveTab("users")} className={cn("w-1/2 p-2 rounded-md text-sm font-medium transition-colors", activeTab === 'users' ? "bg-gray-900 text-white shadow" : "text-gray-600 hover:bg-gray-300/50")}>For Users</button>
+              <button onClick={() => setActiveTab("developers")} className={cn("w-1/2 p-2 rounded-md text-sm font-medium transition-colors", activeTab === 'developers' ? "bg-gray-900 text-white shadow" : "text-gray-600 hover:bg-gray-300/50")}>For Developers</button>
             </motion.div>
 
-            {/* Footer with link to old product */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-center mt-16 pt-8 border-t border-gray-200 dark:border-gray-800"
-            >
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Looking for the consumer memory management app?{" "}
-                <Link href="/dashboard" className="underline hover:text-gray-700 dark:hover:text-gray-300">
-                  Access the legacy dashboard
-                </Link>
-              </p>
+                className="flex flex-col items-center justify-center gap-4 h-28"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+              >
+                <AnimatePresence mode="wait">
+                  {activeTab === 'users' ? (
+                      <motion.div key="user-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full">
+                        <Link href={user ? "/dashboard" : "/auth?animate=true"} passHref className="w-full">
+                          <Button size="lg" variant="outline" className="w-full text-md py-6 border-orange-400 bg-white/50 hover:bg-gray-200/50">
+                              {user ? "Go to Dashboard" : "Sign In With Jean"}
+                          </Button>
+                        </Link>
+                      </motion.div>
+                  ) : (
+                    <motion.div key="dev-cta" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="w-full space-y-3">
+                      <Link href="https://calendly.com/jonathan-jeantechnologies/30min" passHref className="w-full">
+                        <Button size="lg" variant="outline" className="w-full text-md py-6 border-gray-300 bg-white/50 hover:bg-gray-200/50">
+                          Request a Demo
+                        </Button>
+                      </Link>
+                      <a href="https://docs.jeanmemory.com" target="_blank" rel="noopener noreferrer" className="w-full block">
+                        <Button variant="ghost" size="lg" className="w-full text-md text-gray-500 hover:text-gray-800">
+                            Go to the Docs
+                        </Button>
+                      </a>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
             </motion.div>
           </div>
+        </div>
+
+        {/* Right Column / Mobile Section: Visuals */}
+        <div className="flex items-center justify-center p-4 md:p-8 pt-0 lg:p-8 bg-gray-100/30 backdrop-blur-sm lg:bg-transparent lg:col-span-2">
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full max-w-xl"
+                >
+                    {activeTab === 'users' ? (
+                        <div className="space-y-4 md:space-y-6">
+                            <div className="flex justify-center items-center space-x-4">
+                                <AppIcon src="/images/ChatGPT-Logo.svg" alt="ChatGPT Logo" />
+                                <AppIcon src="/images/claude.webp" alt="Claude Logo" />
+                                <AppIcon src="/images/notion.svg" alt="Notion Logo" />
+                                <AppIcon src="/images/obsidian.svg" alt="Obsidian Logo" />
+                                <AppIcon src="/images/substack.png" alt="Substack Logo" />
+                                <AppIcon src="/images/vscode.svg" alt="VS Code Logo" />
+                            </div>
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-56">
+                                <h3 className="text-md font-semibold mb-2 text-center text-gray-500 flex-shrink-0">Generic AI</h3>
+                                <div className="p-2 rounded-lg flex flex-col justify-end flex-grow min-h-0">
+                                    <ChatBubble isUser={true} message="What should I work on today?" />
+                                    <ChatBubble isUser={false} message="You could work on tasks, check your calendar, or read emails." />
+                                </div>
+                            </div>
+                            <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-4 flex flex-col h-56">
+                                <h3 className="text-md font-semibold mb-2 text-center text-gray-900 flex-shrink-0">Personalized with Jean</h3>
+                                <div className="p-2 rounded-lg flex flex-col justify-end flex-grow min-h-0">
+                                    <ChatBubble isUser={true} message="What should I work on today?" />
+                                    <ChatBubble isUser={false} message="Finalize the Q3 launch slides. You also wanted to practice Spanish." isPersonalized={true} />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <h2 className="text-2xl font-bold text-center mb-4">
+                                Instantly personalize with 5 lines of code
+                            </h2>
+                            <p className="text-md text-gray-600 text-center mb-6 max-w-lg mx-auto">
+                                With the Jean SDK, you can add memory and personalization to any AI application.
+                            </p>
+                            <CodeBlock language="jsx" value={reactCode} />
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
         </div>
       </main>
     </div>
