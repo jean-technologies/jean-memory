@@ -74,7 +74,7 @@ function MathTutorApp() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              Universal memory across your applications
+              Add memory to your product
             </motion.p>
             
             <motion.div
