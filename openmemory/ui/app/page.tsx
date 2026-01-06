@@ -125,6 +125,16 @@ function MathTutorApp() {
             </motion.div>
         </div>
       </main>
+      
+      {/* Footer with legacy app link */}
+      <footer className="relative z-10 text-center py-8 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
+        <p className="text-sm text-gray-500">
+          Looking for the consumer memory management app?{" "}
+          <Link href="/dashboard" className="underline hover:text-gray-700 transition-colors">
+            Access the legacy dashboard
+          </Link>
+        </p>
+      </footer>
     </div>
   );
 }
