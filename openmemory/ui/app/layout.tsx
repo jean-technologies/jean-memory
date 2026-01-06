@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
+import { DeprecationBanner } from "@/components/DeprecationBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -83,6 +84,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <DeprecationBanner />
               <Navbar />
               <main className="flex-1">
                 {children}
