@@ -94,7 +94,7 @@ function MathTutorApp() {
                       View the Docs
                     </Button>
                   </a>
-                  <a href="/ai-memory-industry-report.pdf" target="_blank" rel="noopener noreferrer" className="flex-1">
+                  <a href="/ai-memory-landscape-review.pdf" target="_blank" rel="noopener noreferrer" className="flex-1">
                     <Button variant="ghost" size="lg" className="w-full text-md text-gray-500 hover:text-gray-800 gap-2">
                       <FileText className="w-4 h-4" />
                       AI Memory Report
