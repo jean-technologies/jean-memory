@@ -1,3 +1,8 @@
+> [!NOTE]
+> **Jean Memory is an earlier project from Jean Technologies.** Today Jean Technologies is an AI market research platform: an AI interviewer that talks with real customers, and digital twins of those customers that answer new questions in minutes. Both run on Alyosha, the company's foundation model of human behavior.
+>
+> See what the company builds now at **[jeantechnologies.com](https://www.jeantechnologies.com)**. The code in this repository remains available.
+
 <h1 align="center">Jean Memory</h1>
 
 <p align="center">
